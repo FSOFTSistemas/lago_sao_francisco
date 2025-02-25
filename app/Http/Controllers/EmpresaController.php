@@ -13,15 +13,7 @@ class EmpresaController extends Controller
     public function index()
     {
         $empresas = Empresa::all();
-        return view('empresas.index', compact('empresas'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('empresas.create');
+        return view('empresa.index', compact('empresas'));
     }
 
     /**
@@ -45,10 +37,10 @@ class EmpresaController extends Controller
                 'endereco_id' => $request->endereco_id,
             ]);
 
-            return redirect()->route('empresas.index')->with('success', 'Empresa cadastrada com sucesso!');
+            return redirect()->route('empresa.index')->with('success', 'Empresa cadastrada com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('empresas.index')->with('error', 'Erro ao cadastrar empresa!');
+            return redirect()->route('empresa.index')->with('error', 'Erro ao cadastrar empresa!');
         }
     }
     /**
@@ -57,7 +49,7 @@ class EmpresaController extends Controller
     public function show(Empresa $empresa)
     {
         $empresa = Empresa::findOrFail($empresa->id);
-        return view('empresas.show', compact('empresa'));
+        return view('empresa.show', compact('empresa'));
     }
 
     /**
@@ -66,7 +58,7 @@ class EmpresaController extends Controller
     public function edit(Empresa $empresa)
     {
         $empresa = Empresa::findOrFail($empresa->id);
-        return view('empresas.create', compact('empresa'));
+        return view('empresa.create', compact('empresa'));
     }
 
     /**
@@ -83,7 +75,7 @@ class EmpresaController extends Controller
         ]);
 
         $empresa->update($request->all());
-        return redirect()->route('empresas.index')->with('success', 'Empresa atualizada com sucesso!');
+        return redirect()->route('empresa.index')->with('success', 'Empresa atualizada com sucesso!');
     }
 
     /**
@@ -93,6 +85,6 @@ class EmpresaController extends Controller
     {
         $empresa = Empresa::findOrFail($empresa->id);
         $empresa->delete();
-        return redirect()->route('empresas.index')->with('success', 'Empresa excluída com sucesso!');
+        return redirect()->route('empresa.index')->with('success', 'Empresa excluída com sucesso!');
     }
 }

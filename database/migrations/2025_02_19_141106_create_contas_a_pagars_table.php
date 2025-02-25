@@ -19,13 +19,13 @@ return new class extends Migration {
             $table->date('data_pagamento')->nullable();
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
             $table->unsignedBigInteger('empresa_id');
-            $table->unsignedBigInteger('plano_de_conta_id')->nullable();
+            $table->unsignedBigInteger('plano_de_contas_id')->nullable();
             $table->unsignedBigInteger('fornecedor_id')->nullable();
             $table->timestamps();
 
             // Definição de chaves estrangeiras
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
-            $table->foreign('plano_de_conta_id')->references('id')->on('planos_de_contas')->onDelete('cascade');
+            $table->foreign('plano_de_contas_id')->references('id')->on('plano_de_contas')->onDelete('cascade');
 
         });
     }

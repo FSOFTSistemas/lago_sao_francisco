@@ -26,10 +26,10 @@ return new class extends Migration {
             $table->timestamps();
 
             // Definição de chaves estrangeiras
-            $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
+            // $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
-            $table->foreign('plano_de_contas_id')->references('id')->on('planos_de_contas')->onDelete('cascade');
+            $table->foreign('plano_de_contas_id')->references('id')->on('plano_de_contas')->onDelete('cascade');
         });
     }
 

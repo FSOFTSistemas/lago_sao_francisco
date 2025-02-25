@@ -16,11 +16,11 @@ return new class extends Migration {
             $table->decimal('valor', 15, 2);
             $table->date('data');
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
-            $table->unsignedBigInteger('funcionario_id');
+            // $table->unsignedBigInteger('funcionario_id');
             $table->unsignedBigInteger('empresa_id');
             $table->timestamps();
 
-            $table->foreign('funcionario_id')->references('id')->on('funcionarios')->onDelete('cascade');
+            // $table->foreign('funcionario_id')->references('id')->on('funcionarios')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });
     }

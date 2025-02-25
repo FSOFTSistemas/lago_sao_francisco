@@ -25,8 +25,8 @@ return new class extends Migration {
             $table->timestamps();
 
             // Chaves estrangeiras
-            $table->foreign('usuario_abertura_id')->references('id')->on('usuarios')->onDelete('set null');
-            $table->foreign('usuario_fechamento_id')->references('id')->on('usuarios')->onDelete('set null');
+            // $table->foreign('usuario_abertura_id')->references('id')->on('usuarios')->onDelete('set null');
+            // $table->foreign('usuario_fechamento_id')->references('id')->on('usuarios')->onDelete('set null');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });
     }

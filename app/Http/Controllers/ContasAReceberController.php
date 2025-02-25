@@ -40,7 +40,7 @@ class ContasAReceberController extends Controller
                 'parcela' => 'required|integer',
                 'venda_id' => 'nullable|exists:vendas,id',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_conta,id'
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id'
             ]);
             ContasAReceber::create($request->all());
             return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber cadastrada com sucesso!');
@@ -85,7 +85,7 @@ class ContasAReceberController extends Controller
                 'parcela' => 'required|integer',
                 'venda_id' => 'nullable|exists:vendas,id',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_conta,id'
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id'
             ]);
             $contasAReceber->update($request->all());
             return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber atualizada com sucesso!');

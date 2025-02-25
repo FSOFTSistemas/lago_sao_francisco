@@ -12,16 +12,8 @@ class PlanoDeContaController extends Controller
      */
     public function index()
     {
-        $planosDeConta = PlanoDeConta::all();
-        return redirect()->route('planoDeConta.index', compact('planosDeConta'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('planoDeConta.create', compact('planosDeConta'));
+        $planoDeContas = PlanoDeConta::all();
+        return view('planoDeConta.index', compact('planoDeContas'));
     }
 
     /**
@@ -33,7 +25,7 @@ class PlanoDeContaController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'tipo' => 'required|in:receita,despesa',
-                'plano_de_conta_pai' => 'nullable|exists:planos_de_contas,id',
+                'plano_de_contas_pai' => 'nullable|exists:plano_de_contas,id',
                 'empresa_id' => 'required|exists:empresas,id'
             ]);
             PlanoDeConta::create($request->all());
@@ -72,7 +64,7 @@ class PlanoDeContaController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'tipo' => 'required|in:receita,despesa',
-                'plano_de_conta_pai' => 'nullable|exists:planos_de_contas,id',
+                'plano_de_contas_pai' => 'nullable|exists:plano_de_contas,id',
                 'empresa_id' => 'required|exists:empresas,id'
             ]);
             $planoDeConta->update($request->all());

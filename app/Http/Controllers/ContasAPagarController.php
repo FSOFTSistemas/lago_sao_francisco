@@ -38,7 +38,7 @@ class ContasAPagarController extends Controller
                 'data_pagamento' => 'nullable|date',
                 'status' => 'required|in:pendente,finalizado',
                 'empresa_id' => 'required|exists:empresas,id',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_conta,id',
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
                 'fornecedor_id' => 'nullable|exists:fornecedores,id',
             ]);
             ContasAPagar::create($request->all());
@@ -82,7 +82,7 @@ class ContasAPagarController extends Controller
                 'data_pagamento' => 'nullable|date',
                 'status' => 'required|in:pendente,finalizado',
                 'empresa_id' => 'required|exists:empresas,id',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_conta,id',
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
                 'fornecedor_id' => 'nullable|exists:fornecedores,id',
             ]);
             $contasAPagar->update($request->all());

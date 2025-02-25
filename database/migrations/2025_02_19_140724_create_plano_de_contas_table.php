@@ -10,15 +10,15 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('planos_de_contas', function (Blueprint $table) {
-            $table->id(); // Chave primária
+        Schema::create('plano_de_contas', function (Blueprint $table) {
+            $table->id();
             $table->string('descricao');
             $table->enum('tipo', ['receita', 'despesa']);
             $table->unsignedBigInteger('plano_de_conta_pai')->nullable();
             $table->unsignedBigInteger('empresa_id');
             $table->timestamps();
 
-            $table->foreign('plano_de_conta_pai')->references('id')->on('planos_de_contas')->onDelete('set null');
+            $table->foreign('plano_de_conta_pai')->references('id')->on('plano_de_contas')->onDelete('set null');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('planos_de_contas');
+        Schema::dropIfExists('plano_de_contas');
     }
 };

@@ -12,7 +12,7 @@ class PlanoDeConta extends Model
         'id',
         'descricao',
         'tipo',
-        'plano_de_conta_pai',
+        'plano_de_contas_pai',
         'empresa_id',
     ];
     public function daEmpresa()
