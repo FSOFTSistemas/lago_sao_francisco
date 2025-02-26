@@ -313,9 +313,9 @@ return [
         ],
         [
             'text' => 'Usuários',
-            'url'  => 'users',
+            'url'  => '/usuarios',
             'icon' => 'fas fa-users',
-            'can'  => 'gerenciar usuarios',
+            // 'can'  => 'gerenciar usuarios',
         ],
     ],
 
