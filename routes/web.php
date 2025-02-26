@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\BancoController;
 use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -28,3 +30,5 @@ Route::resource('empresa', EmpresaController::class);
 Route::resource('usuarios', UserController::class);
 
 // Route::resource('usuarios', UserController::class)->middleware(['auth', 'role:Master']);
+
+Route::resource('bancos', BancoController::class);

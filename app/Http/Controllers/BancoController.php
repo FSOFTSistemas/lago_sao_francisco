@@ -13,7 +13,7 @@ class BancoController extends Controller
     public function index()
     {
         $bancos = Banco::all();
-        return view('bancos.index', compact('bancos'));
+        return view('banco.index', compact('bancos'));
     }
 
     /**
@@ -21,7 +21,7 @@ class BancoController extends Controller
      */
     public function create()
     {
-        return view('bancos.create');
+        return view('banco.create');
     }
 
     /**
@@ -46,21 +46,12 @@ class BancoController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Banco $banco)
-    {
-        $banco = Banco::findOrFail($banco->id);
-        return view('bancos.show', compact('banco'));
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Banco $banco)
     {
         $banco = Banco::findOrFail($banco->id);
-        return view('bancos.edit', compact('banco'));
+        return view('banco.create', compact('banco'));
     }
 
     /**
@@ -83,8 +74,9 @@ class BancoController extends Controller
             'taxa' => 'nullable|numeric',
         ]);
         $banco->update($request->all());
+        return redirect()->route('bancos.index')->with('success', 'Banco atualizado com sucesso!');
         } catch ( \Exception $e) {
-            dd($e)->getMessage();
+            dd($e->getMessage());
             return redirect()->route('bancos.index')->with('error', 'Erro ao atualizar banco!');
         }
     }
