@@ -1,21 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'Banco')
+@section('title', 'Fornecedor')
 
 @section('content_header')
-    <h5>Lista de Bancos</h5>
+    <h5>Lista de Fornecedores</h5>
 @stop
 
 @section('content')
-    {{-- <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createBancoModal">
-            <i class="fas fa-plus"></i> Adicionar Banco
-        </button>
-    </div> --}}
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('bancos.create')}}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Adicionar Banco
-        </a>
+        <button class="btn btn-success" data-toggle="modal" data-target="#createFornecedorModal">
+            <i class="fas fa-plus"></i> Adicionar Fornecedor
+        </button>
     </div>
 
     @component('components.data-table', [
@@ -29,46 +24,48 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="bancoTable" class="table table-striped">
+        <table id="fornecedorTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Agência</th>
-                    <th>Conta</th>
+                    <th>Razão social</th>
+                    <th>Nome fantasia</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($bancos as $banco)
+                @foreach ($fornecedor as $fornecedor)
                     <tr>
-                        <td>{{ $banco->id }}</td>
-                        <td>{{ $banco->descricao }}</td>
-                        <td>{{ $banco->agencia }}</td>
-                        <td>{{ $banco->numero_conta }}</td>
+                        <td>{{ $fornecedor->id }}</td>
+                        <td>{{ $fornecedor->razao_social }}</td>
+                        <td>{{ $fornecedor->nome_fantasia }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                                data-target="#showBanco{{ $banco->id }}">
+                                data-target="#showFornecedor{{ $fornecedor->id }}">
                                 👁️
                             </button>
 
-                            <a href="{{route('bancos.edit', $banco->id)}}" class="btn btn-warning btn-sm">
+                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
+                                data-target="#editFornecedorModal{{ $fornecedor->id }}">
                                 ✏️
-                        </a>
+                            </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deleteBancoModal{{ $banco->id }}">
+                            data-target="#deleteFornecedorModal{{ $fornecedor->id }}">
                             🗑️
                         </button>
                         </td>
                     </tr>
 
-                    @include('banco.modals._show', ['banco' => $banco])
-                    @include('banco.modals._delete', ['banco' => $banco])
+                    @include('fornecedor.modals._show', ['fornecedor' => $fornecedor])
+                    @include('fornecedor.modals._edit', ['fornecedor' => $fornecedor])
+                    @include('fornecedor.modals._delete', ['fornecedor' => $fornecedor])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
+
+    @include('fornecedor.modals._create')
 @stop
 
 @section('css')

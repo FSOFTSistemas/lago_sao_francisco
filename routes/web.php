@@ -32,3 +32,5 @@ Route::resource('usuarios', UserController::class);
 // Route::resource('usuarios', UserController::class)->middleware(['auth', 'role:Master']);
 
 Route::resource('bancos', BancoController::class);
+
+Route::resource('fornecedor', FornecedorController::class);

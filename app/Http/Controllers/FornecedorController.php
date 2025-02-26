@@ -12,17 +12,10 @@ class FornecedorController extends Controller
      */
     public function index()
     {
-        $fornecedores = Fornecedor::all();
-        return view('fornecedores.index', compact('fornecedores'));
+        $fornecedor = Fornecedor::all();
+        return view('fornecedor.index', compact('fornecedor'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('fornecedores.create');
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -37,29 +30,14 @@ class FornecedorController extends Controller
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'required|string'
             ]);
+            Fornecedor::create($request->all());
+            return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Fornecedor $fornecedor)
-    {
-        $fornecedor = Fornecedor::findOrFail($fornecedor->id);
-        return view('fornecedores.show', compact('fornecedor'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Fornecedor $fornecedor)
-    {
-        $fornecedor = Fornecedor::findOrFail($fornecedor->id);
-        return view('fornecedores.edit', compact('fornecedor'));
-    }
 
     /**
      * Update the specified resource in storage.
@@ -76,7 +54,7 @@ class FornecedorController extends Controller
                 'inscricao_estadual' => 'required|string'
             ]);
             $fornecedor->update($request->all());
-            return redirect()->route('fornecedores.index')->with('success', 'Fornecedor atualizado com sucesso');
+            return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao validar dados');
@@ -90,6 +68,6 @@ class FornecedorController extends Controller
     {
         $fornecedor = Fornecedor::findOrFail($fornecedor->id);
         $fornecedor->delete();
-        return redirect()->route('fornecedores.index')->with('success', 'Fornecedor deletado com sucesso');
+        return redirect()->route('fornecedor.index')->with('success', 'Fornecedor deletado com sucesso');
     }
 }

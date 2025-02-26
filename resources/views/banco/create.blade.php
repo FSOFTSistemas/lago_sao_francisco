@@ -9,7 +9,7 @@
 @section('content')
     <div class="card">
         <div class="card-body">
-            <form action="{{ isset($banco) ? route('bancos.update', $banco->id) : route('bancos.store') }}" method="POST">
+            <form id="createBancoForm" action="{{ isset($banco) ? route('bancos.update', $banco->id) : route('bancos.store') }}" method="POST">
                 @csrf
                 @if (isset($banco))
                     @method('PUT')

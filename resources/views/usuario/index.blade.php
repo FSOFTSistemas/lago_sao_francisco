@@ -24,7 +24,7 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="planoDeContaTable" class="table table-striped">
+        <table id="usuarioTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
