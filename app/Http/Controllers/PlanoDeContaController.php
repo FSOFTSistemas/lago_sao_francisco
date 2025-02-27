@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class PlanoDeContaController extends Controller
 {
@@ -65,8 +66,8 @@ class PlanoDeContaController extends Controller
                 'descricao' => 'required|string',
                 'tipo' => 'required|in:receita,despesa',
                 'plano_de_contas_pai' => 'nullable|exists:plano_de_contas,id',
-                'empresa_id' => 'required|exists:empresas,id'
             ]);
+            $request['empresa_id'] = PlanoDeConta::daEmpresa(Auth::user()->empresa_id);
             $planoDeConta->update($request->all());
             return redirect()->route('planoDeConta.index')->with('success', 'Plano de Conta atualizado com sucesso');
         } catch (\Exception $e) {

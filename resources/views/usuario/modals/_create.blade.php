@@ -32,6 +32,16 @@
                           </select>
                       </div>
 
+                      <div class="mb-3">
+                        <label for="empresa">Empresa</label>
+                        <select class="form-control" id="empresa" name="empresa_id">
+                            <option value="">Selecione</option>
+                            @foreach ($empresas as $empresa)
+                                <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                       <div class="modal-footer">
                           <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
                           <button type="submit" class="btn btn-primary">Criar</button>

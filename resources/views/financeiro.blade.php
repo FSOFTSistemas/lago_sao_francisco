@@ -23,14 +23,14 @@
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-danger">
+      <div class="small-box bg-warning">
         <div class="inner">
           <h2>Contas a pagar</h2>
         </div>
         <div class="icon">
           <i class="ion ion-stats-bars"></i>
         </div>
-        <a href="#" class="small-box-footer"><i class="fas fa-arrow-circle-right"></i></a>
+        <a href="{{route('contasAPagar.index')}}" class="small-box-footer"><i class="fas fa-arrow-circle-right"></i></a>
       </div>
     </div>
     <!-- ./col -->

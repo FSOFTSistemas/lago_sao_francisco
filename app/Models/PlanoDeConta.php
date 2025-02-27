@@ -15,8 +15,12 @@ class PlanoDeConta extends Model
         'plano_de_contas_pai',
         'empresa_id',
     ];
-    public function daEmpresa()
+    public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
     }
 }

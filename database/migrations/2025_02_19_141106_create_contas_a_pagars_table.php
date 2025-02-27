@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->id(); // Chave primária
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
-            $table->decimal('valor_pago', 15, 2)->default(0);
+            $table->decimal('valor_pago', 15, 2)->nullable()->default(0);
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');

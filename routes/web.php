@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BancoController;
+use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\PlanoDeContaController;
@@ -34,3 +35,5 @@ Route::resource('usuarios', UserController::class);
 Route::resource('bancos', BancoController::class);
 
 Route::resource('fornecedor', FornecedorController::class);
+
+Route::resource('contasAPagar', ContasAPagarController::class);

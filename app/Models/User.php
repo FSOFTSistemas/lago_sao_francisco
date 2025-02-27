@@ -16,7 +16,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role'];
+        'role',
+        'empresa_id'];
 
     /**
      * Relacionamento muitos-para-muitos com permissões

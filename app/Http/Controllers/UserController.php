@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Empresa;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -18,8 +19,9 @@ class UserController extends Controller
 
     public function index()
     {
+        $empresas = Empresa::all();
         $users = User::all();
-        return view('usuario.index', compact('users'));
+        return view('usuario.index', compact('users', 'empresas'));
     }
 
     public function store(Request $request)
@@ -29,20 +31,22 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users',
                 'password' => 'required|string|min:6',
-                'role' => 'required|exists:roles,name'
+                'role' => 'required|exists:roles,name',
+                'empresa_id' => 'required|exists:empresas,id'
             ]);
 
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'empresa_id' =>$request->empresa_id
             ]);
 
             $user->assignRole($request->role);
 
             return redirect()->route('usuarios.index')->with('success', 'Usuário criado com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
+            dd($e->getMessage());
             return redirect()->route('usuarios.index')->with('error', 'Erro ao cadastrar usuário!');
         }
     }

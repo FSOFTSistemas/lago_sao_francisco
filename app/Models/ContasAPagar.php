@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ContasAPagar extends Model
 {
     use HasFactory;
+    protected $table = 'contas_a_pagar';
     protected $fillable = [
         'id',
         'descricao',
@@ -20,8 +21,18 @@ class ContasAPagar extends Model
         'plano_de_conta_id',
         'fornecedor'
     ];
-    public function daEmpresa()
+    public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
+
+    public function fornecedor()
+    {
+        return $this->belongsTo(Fornecedor::class, 'fornecedor');
+    }
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
 }
+
