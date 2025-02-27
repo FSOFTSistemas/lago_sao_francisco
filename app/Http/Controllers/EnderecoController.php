@@ -14,52 +14,65 @@ class EnderecoController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'logradouro' => 'required|string',
-            'numero' => 'required|string',
-            'bairro' => 'required|string',
-            'uf' => 'required|string|size:2',
-            'cidade' => 'required|string',
-            'cep' => 'required|string|max:10',
-            'ibge' => 'nullable|string',
-            'empresa_id' => 'required|exists:empresas,id',
-        ]);
+        try {
+            $validated = $request->validate([
+                'logradouro' => 'required|string',
+                'numero' => 'required|string',
+                'bairro' => 'required|string',
+                'uf' => 'required|string|size:2',
+                'cidade' => 'required|string',
+                'cep' => 'required|string|max:10',
+                'ibge' => 'nullable|string',
+            ]);
+    
+            $endereco = Endereco::create($validated);
+    
+            return response()->json($endereco, 201);
 
-        $endereco = Endereco::create($validated);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
 
-        return response()->json($endereco, 201);
-    }
-
-    public function show($id)
-    {
-        return response()->json(Endereco::findOrFail($id));
+       
     }
 
     public function update(Request $request, $id)
     {
-        $endereco = Endereco::findOrFail($id);
+        try {
+            $endereco = Endereco::findOrFail($id);
 
-        $validated = $request->validate([
-            'logradouro' => 'sometimes|string',
-            'numero' => 'sometimes|string',
-            'bairro' => 'sometimes|string',
-            'uf' => 'sometimes|string|size:2',
-            'cidade' => 'sometimes|string',
-            'cep' => 'sometimes|string|max:10',
-            'ibge' => 'nullable|string',
-            'empresa_id' => 'sometimes|exists:empresas,id',
-        ]);
+            $validated = $request->validate([
+                'logradouro' => 'sometimes|string',
+                'numero' => 'sometimes|string',
+                'bairro' => 'sometimes|string',
+                'uf' => 'sometimes|string|size:2',
+                'cidade' => 'sometimes|string',
+                'cep' => 'sometimes|string|max:10',
+                'ibge' => 'nullable|string',
+            ]);
+    
+            $endereco->update($validated);
+    
+            return response()->json($endereco);
 
-        $endereco->update($validated);
 
-        return response()->json($endereco);
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+
     }
 
     public function destroy($id)
     {
-        $endereco = Endereco::findOrFail($id);
-        $endereco->delete();
+        try {
+            $endereco = Endereco::findOrFail($id);
+            $endereco->delete();
 
-        return response()->json(['message' => 'Endereço deletado com sucesso']);
+            return response()->json(['message' => 'Endereço deletado com sucesso']);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        
     }
 }
