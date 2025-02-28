@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Endereco;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Wavey\Sweetalert\Sweetalert;
 
 class EnderecoController extends Controller
 {
@@ -24,16 +27,16 @@ class EnderecoController extends Controller
                 'cep' => 'required|string|max:10',
                 'ibge' => 'nullable|string',
             ]);
-    
-            $endereco = Endereco::create($validated);
-    
-            return response()->json($endereco, 201);
+
+            Endereco::create($validated);
+
+            // return response()->json($endereco, 201);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
 
-       
+
     }
 
     public function update(Request $request, $id)
@@ -50,14 +53,14 @@ class EnderecoController extends Controller
                 'cep' => 'sometimes|string|max:10',
                 'ibge' => 'nullable|string',
             ]);
-    
+
             $endereco->update($validated);
-    
+
             return response()->json($endereco);
 
 
-        } catch (\Throwable $th) {
-            return response()->json(['error' => $th->getMessage()], 500);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
 
     }
@@ -73,6 +76,29 @@ class EnderecoController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-        
+
+    }
+
+    public function buscarEnderecoPorCep($cep)
+    {
+        try {
+            $cep = preg_replace('/[^0-9]/', '', $cep);
+
+            if (strlen($cep) !== 8) {
+                return response()->json(['error' => 'CEP inválido.'], 400);
+            }
+
+            $response = Http::get("https://viacep.com.br/ws/{$cep}/json/");
+
+            if ($response->failed()) {
+                return response()->json(['error' => 'Não foi possível buscar o endereço.'], 500);
+            }
+            return $response->json();
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            // Sweetalert::error('Erro ao buscar endereco !', 'Error');
+            redirect()->back()->withInput();
+        }
+
     }
 }

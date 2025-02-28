@@ -8,9 +8,7 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createEmpresaModal">
-            <i class="fas fa-plus"></i> Adicionar Empresa
-        </button>
+        <a class="btn btn-success float-end" href="{{ route('empresa.create') }}"> Adicionar Empresa</a>
     </div>
 
     @component('components.data-table', [
@@ -64,8 +62,6 @@
             </tbody>
         </table>
     @endcomponent
-
-    @include('empresa.modals._create')
 @stop
 
 @section('css')
@@ -81,6 +77,8 @@
     <script type="text/javascript" charset="utf8"
         src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         $(document).ready(function() {
             $('#planoDeContaTable').DataTable({

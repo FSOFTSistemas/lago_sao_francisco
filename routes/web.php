@@ -3,9 +3,11 @@
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -37,3 +39,9 @@ Route::resource('bancos', BancoController::class);
 Route::resource('fornecedor', FornecedorController::class);
 
 Route::resource('contasAPagar', ContasAPagarController::class);
+
+
+Route::get('endereco/{cep}', [EnderecoController::class, 'buscarEnderecoPorCep'])->name('buscarCep');
+
+Route::resource('endereco', EnderecoController::class);
+

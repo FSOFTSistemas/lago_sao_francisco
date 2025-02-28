@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
+use App\Models\Endereco;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmpresaController extends Controller
 {
@@ -12,9 +14,24 @@ class EmpresaController extends Controller
      */
     public function index()
     {
+        $enderecos = Endereco::all();
         $empresas = Empresa::all();
-        return view('empresa.index', compact('empresas'));
+        return view('empresa.index', compact('empresas', 'enderecos'));
     }
+
+
+    public function create(){
+        {
+            try {
+                $enderecos = Endereco::all();
+                return view('empresa.form', compact('enderecos'));
+            } catch (\Exception $e) {
+                dd($e->getMessage());
+                return back()->with('error', 'Erro ao carregar o formulário de cadastro: ' . $e->getMessage());
+            }
+        }
+    }
+
 
     /**
      * Store a newly created resource in storage.
@@ -36,7 +53,6 @@ class EmpresaController extends Controller
                 'inscricao_estadual' => $request->inscricao_estadual,
                 'endereco_id' => $request->endereco_id,
             ]);
-
             return redirect()->route('empresa.index')->with('success', 'Empresa cadastrada com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();

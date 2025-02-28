@@ -16,7 +16,6 @@ return new class extends Migration {
             $table->string('cidade');
             $table->string('cep', 10);
             $table->string('ibge')->nullable();
-            $table->foreignId('empresa_id')->constrained('empresas')->onDelete('cascade');
             $table->timestamps();
         });
     }

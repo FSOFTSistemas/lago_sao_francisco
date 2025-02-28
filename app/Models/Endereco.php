@@ -12,7 +12,7 @@ class Endereco extends Model
     protected $table = 'enderecos';
 
     protected $fillable = [
-        'lograouro',
+        'logradouro',
         'numero',
         'bairro',
         'uf',
@@ -22,5 +22,5 @@ class Endereco extends Model
     ];
 
 
-   
+
 }

@@ -28,6 +28,6 @@ class FluxoCaixa extends Model
         return $this->belongsTo(Caixa::class, 'caixa_id');
     }
     public function usuario(){
-        return $this->belongsTo(Usuario::class, 'usuario_id');
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

@@ -13,6 +13,10 @@
         </button>
     </div>
 
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#enderecoModal">
+        Adicionar Endereço
+    </button>
+
     @component('components.data-table', [
         'responsive' => [
             ['responsivePriority' => 1, 'targets' => 0],
@@ -49,9 +53,9 @@
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deleteUsuarioModal{{ $user->id }}">
-                            🗑️
-                        </button>
+                                data-target="#deleteUsuarioModal{{ $user->id }}">
+                                🗑️
+                            </button>
                         </td>
                     </tr>
 
@@ -62,6 +66,7 @@
         </table>
     @endcomponent
 
+    @include('components.endereco-modal')
     @include('usuario.modals._create')
 @stop
 
@@ -72,6 +77,7 @@
 @stop
 
 @section('js')
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -118,4 +124,35 @@
             });
         });
     </script>
+    <script>
+        $(document).ready(function () {
+            console.log('aqui')
+            $("#cep").on("input", function () {
+                $(this).val($(this).val().replace(/\D/g, "").slice(0, 8));
+            });
+
+            $("#cep").on("blur", function () {
+                let cep = $(this).val().replace(/\D/g, "");
+
+                if (cep.length === 8) {
+                    $.getJSON(`/buscar-cep/${cep}`, function (data) {
+                        if (!data.erro) {
+                            $("#logradouro").val(data.logradouro);
+                            $("#bairro").val(data.bairro);
+                            $("#cidade").val(data.localidade);
+                            $("#uf").val(data.uf);
+                            $("#ibge").val(data.ibge);
+                        } else {
+                            alert("CEP não encontrado!");
+                        }
+                    }).fail(function () {
+                        alert("Erro ao buscar CEP. Verifique sua conexão.");
+                    });
+                } else {
+                    alert("Formato de CEP inválido!");
+                }
+            });
+        });
+    </script>
+
 @stop
