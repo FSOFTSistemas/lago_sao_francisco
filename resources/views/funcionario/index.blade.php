@@ -1,15 +1,15 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de planos de conta')
+@section('title', 'Funcionários')
 
 @section('content_header')
-    <h5>Lista de planos de conta</h5>
+    <h5>Lista de Funcionários</h5>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createPlanoModal">
-            <i class="fas fa-plus"></i> Adicionar plano de conta
+        <button class="btn btn-success" data-toggle="modal" data-target="#createFuncionarioModal">
+            <i class="fas fa-plus"></i> Adicionar Funcionário
         </button>
     </div>
 
@@ -24,41 +24,52 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="planoDeContaTable" class="table table-striped">
+        <table id="funcionarioTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Empresa</th>
+                    <th>Nome</th>
+                    <th>Data de Contratação</th>
+                    <th>Setor</th>
+                    <th>Cargo</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($planoDeContas as $planoDeConta)
+                @foreach ($funcionarios as $funcionario)
                     <tr>
-                        <td>{{ $planoDeConta->id }}</td>
-                        <td>{{ $planoDeConta->descricao }}</td>
-                        <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->razao_social }}</td>
+                        <td>{{ $funcionario->id }}</td>
+                        <td>{{ $funcionario->nome }}</td>
+                        <td>{{ $funcionario->data_contratacao }}</td>
+                        <td>{{ $funcionario->setor }}</td>
+                        <td>{{ $funcionario->cargo }}</td>
                         <td>
-                            <a href="{{ route('planoDeConta.show', $planoDeConta->id) }}" class="btn btn-info btn-sm">Ver</a>
-                            <a href="{{ route('planoDeConta.edit', $planoDeConta->id) }}"
-                                class="btn btn-warning btn-sm">Editar</a>
-                            <form action="{{ route('planoDeConta.destroy', $planoDeConta->id) }}" method="POST"
-                                style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm btn-delete">Excluir</button>
-                            </form>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showFuncionario{{ $funcionario->id }}">
+                                👁️
+                            </button>
+
+                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
+                                data-target="#editFuncionarioModal{{ $funcionario->id }}">
+                                ✏️
+                            </button>
+
+                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#deleteFuncionarioModal{{ $funcionario->id }}">
+                            🗑️
+                        </button>
                         </td>
                     </tr>
+
+                    @include('funcionario.modals._show', ['funcionario' => $funcionario])
+                    @include('funcionario.modals._edit', ['funcionario' => $funcionario])
+                    @include('funcionario.modals._delete', ['funcionario' => $funcionario])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
 
-    @include('planoDeConta.modals._create')
+    @include('funcionario.modals._create')
 @stop
 
 @section('css')

@@ -25,46 +25,49 @@
                         <label for="valorPago">Valor Pago:</label>
                         <input type="text" class="form-control" id="valorPago" name="valor_pago" value="{{$contasAPagar->valor_pago}}">
                     </div>
+                    <div class="mb-3">
+                        <label for="dataVencimento">Data de Vencimento:</label>
+                        <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAPagar->data_vencimento}}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="dataPagamento">Data do Pagamento:</label>
+                        <input type="date" class="form-control" id="dataPagamento" name="data_pagamento" value="{{$contasAPagar->data_pagamento}}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tipo">Situação</label>
+                        <select class="form-control" id="status" name="status" required value="{{$contasAPagar->status}}">
+                            <option value="pendente">Pendente</option>
+                            <option value="finalizado">Finalizado</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="planoDeConta">Plano de contas</label>
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required value="{{$contasAPagar->plano_de_contas_pai}}">
+                            <option value="">Selecione</option>
+                            @foreach ($planoDeContas as $planoDeConta)
+                                <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fornecedor">Fornecedor</label>
+                        <select class="form-control" id="fornecedor" name="fornecedor_id" required value="{{$contasAPagar->fornecedor_id}}">
+                            <option value="">Selecione</option>
+                            @foreach ($fornecedores as $fornecedor)
+                                <option value="{{ $fornecedor->id }}">{{ $fornecedor->razao_social }}</option>
+                            @endforeach
+                        </select>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                    </form>
             </div>
 
-            <div class="mb-3">
-                <label for="dataVencimento">Data de Vencimento:</label>
-                <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAPagar->data_vencimento}}">
-            </div>
-
-            <div class="mb-3">
-                <label for="dataPagamento">Data do Pagamento:</label>
-                <input type="date" class="form-control" id="dataPagamento" name="data_pagamento" value="{{$contasAPagar->data_pagamento}}">
-            </div>
-
-            <div class="mb-3">
-                <label for="tipo">Situação</label>
-                <select class="form-control" id="status" name="status" required value="{{$contasAPagar->status}}">
-                    <option value="pendente">Pendente</option>
-                    <option value="finalizado">Finalizado</option>
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label for="planoDeConta">Plano de contas</label>
-                <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required value="{{$contasAPagar->plano_de_contas_pai}}">
-                    <option value="">Selecione</option>
-                    @foreach ($planoDeContas as $planoDeConta)
-                        <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="empresa">Empresa</label>
-                <select class="form-control" id="empresa" name="empresa_id" required value="{{$contasAPagar->empresa_id}}">
-                    <option value="">Selecione</option>
-                    @foreach ($empresas as $empresa)
-                        <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
-                    @endforeach
-                </select>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                </form>
-            </div>
         </div>
     </div>
 </div>

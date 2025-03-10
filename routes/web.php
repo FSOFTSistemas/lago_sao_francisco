@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Auth;
@@ -45,3 +47,6 @@ Route::get('endereco/{cep}', [EnderecoController::class, 'buscarEnderecoPorCep']
 
 Route::resource('endereco', EnderecoController::class);
 
+Route::resource('funcionario', FuncionarioController::class);
+
+Route::resource('adiantamento', AdiantamentoController::class);

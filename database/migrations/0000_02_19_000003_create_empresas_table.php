@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('razao_social');
             $table->string('nome_fantasia')->nullable();
-            $table->string('cnpj', 14)->unique()->nullable();
+            $table->string('cnpj', 18)->unique()->nullable();
             $table->string('endereco')->nullable();
             $table->string('inscricao_estadual');
             $table->timestamps();

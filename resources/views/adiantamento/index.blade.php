@@ -1,15 +1,15 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de planos de conta')
+@section('title', 'Adiantamentos')
 
 @section('content_header')
-    <h5>Lista de planos de conta</h5>
+    <h5>Lista de Adiantamentos</h5>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createPlanoModal">
-            <i class="fas fa-plus"></i> Adicionar plano de conta
+        <button class="btn btn-success" data-toggle="modal" data-target="#createAdiantamentoModal">
+            <i class="fas fa-plus"></i> Adicionar Adiantamento
         </button>
     </div>
 
@@ -24,41 +24,52 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="planoDeContaTable" class="table table-striped">
+        <table id="adiantamentoTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Empresa</th>
+                    <th>Funcionário</th>
+                    <th>Valor</th>
+                    <th>Data</th>
+                    <th>Situação</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($planoDeContas as $planoDeConta)
+                @foreach ($adiantamentos as $adiantamento)
                     <tr>
-                        <td>{{ $planoDeConta->id }}</td>
-                        <td>{{ $planoDeConta->descricao }}</td>
-                        <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->razao_social }}</td>
+                        <td>{{ $adiantamento->id }}</td>
+                        <td>{{ $adiantamento->funcionario_id }}</td> {{--como referenciar o nome do funcionario?--}}
+                        <td>{{ $adiantamento->valor }}</td>
+                        <td>{{ $adiantamento->data }}</td>
+                        <td>{{ $adiantamento->status }}</td>
                         <td>
-                            <a href="{{ route('planoDeConta.show', $planoDeConta->id) }}" class="btn btn-info btn-sm">Ver</a>
-                            <a href="{{ route('planoDeConta.edit', $planoDeConta->id) }}"
-                                class="btn btn-warning btn-sm">Editar</a>
-                            <form action="{{ route('planoDeConta.destroy', $planoDeConta->id) }}" method="POST"
-                                style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm btn-delete">Excluir</button>
-                            </form>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showAdiantamento{{ $adiantamento->id }}">
+                                👁️
+                            </button>
+
+                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
+                                data-target="#editAdiantamentoModal{{ $adiantamento->id }}">
+                                ✏️
+                            </button>
+
+                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                            data-target="#deleteAdiantamentoModal{{ $adiantamento->id }}">
+                            🗑️
+                        </button>
                         </td>
                     </tr>
+
+                    @include('adiantamento.modals._show', ['adiantamento' => $adiantamento])
+                    @include('adiantamento.modals._edit', ['adiantamento' => $adiantamento])
+                    @include('adiantamento.modals._delete', ['adiantamento' => $adiantamento])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
 
-    @include('planoDeConta.modals._create')
+    @include('adiantamento.modals._create')
 @stop
 
 @section('css')

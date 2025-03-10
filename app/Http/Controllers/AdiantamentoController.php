@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Adiantamento;
+use App\Models\Empresa;
+use App\Models\Funcionario;
 use Illuminate\Http\Request;
 
 class AdiantamentoController extends Controller
@@ -12,16 +14,10 @@ class AdiantamentoController extends Controller
      */
     public function index()
     {
+        $empresas = Empresa::all();
+        $funcionarios = Funcionario::all();
         $adiantamentos = Adiantamento::all();
-        return view('adiantamentos.index', compact('adiantamentos'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('adiantamentos.create');
+        return view('adiantamento.index', compact('adiantamentos', 'empresas', 'funcionarios'));
     }
 
     /**
@@ -35,15 +31,14 @@ class AdiantamentoController extends Controller
                 'data' => 'required|date',
                 'descricao' => 'required|string',
                 'funcionario_id' => 'required|exists:funcionarios,id',
-                'empresa_id' => 'required|exists:empresas,id',
                 'status' => 'required|in:pendente,finalizado'
             ]);
+            $request['empresa_id'] = Funcionario::findOrFail($request->funcionario_id)->empresa_id;
             Adiantamento::create([
                 'valor' => $request->valor,
                 'data' => $request->data,
                 'descricao' => $request->descricao,
                 'funcionario_id' => $request->funcionario_id,
-                'empresa_id' => $request->empresa_id,
                 'status' => $request->status
             ]);
             return redirect()->route('adiantamentos.index')->with('success', 'Adiantamento cadastrado com sucesso!');
@@ -51,24 +46,6 @@ class AdiantamentoController extends Controller
             dd($e)->getMessage();
             return redirect()->route('adiantamentos.index')->with('error', 'Erro ao cadastrar adiantamento!');
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Adiantamento $adiantamento)
-    {
-        $adiantamento = Adiantamento::findOrFail($adiantamento->id);
-        return view('adiantamentos.show', compact('adiantamento'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Adiantamento $adiantamento)
-    {
-        $adiantamento = Adiantamento::findOrFail($adiantamento->id);
-        return view('adiantamentos.edit', compact('adiantamento'));
     }
 
     /**
@@ -82,7 +59,6 @@ class AdiantamentoController extends Controller
                 'data' => 'required|date',
                 'descricao' => 'required|string',
                 'funcionario_id' => 'required|exists:funcionarios,id',
-                'empresa_id' => 'required|exists:empresas,id',
                 'status' => 'required|in:pendente,finalizado',
             ]);
             $adiantamento->update([
@@ -90,12 +66,11 @@ class AdiantamentoController extends Controller
                 'data' => $request->data,
                 'descricao' => $request->descricao,
                 'funcionario_id' => $request->funcionario_id,
-                'empresa_id' => $request->empresa_id,
                 'status' => $request->status,
             ]);
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('adiantamentos.index')->with('error', 'Erro ao atualizar adiantamento!');
+            return redirect()->route('adiantamento.index')->with('error', 'Erro ao atualizar adiantamento!');
         }
     }
 
@@ -104,7 +79,12 @@ class AdiantamentoController extends Controller
      */
     public function destroy(Adiantamento $adiantamento)
     {
-        $adiantamento->delete();
-        return redirect()->route('adiantamentos.index')->with('success', 'Adiantamento deletado com sucesso!');
+        try {
+            $adiantamento->delete();
+            return redirect()->route('adiantamento.index')->with('success', 'Adiantamento deletado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e)->getMessage();
+            return redirect()->route('adiantamento.index')->with('error', 'Erro ao deletar adiantamento!');
+        }
     }
 }

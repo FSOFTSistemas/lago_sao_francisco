@@ -19,9 +19,17 @@ class Adiantamento extends Model
     ];
 
 
-    public function daEmpresa()
+    public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
+    public function funcionario()
+    {
+        return $this->belongsTo(Funcionario::class, 'funcionario_id');
     }
 }
 

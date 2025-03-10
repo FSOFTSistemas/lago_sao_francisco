@@ -42,7 +42,7 @@ class EmpresaController extends Controller
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
-                'cnpj' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string|max:18',
                 'inscricao_estadual' => 'required|string|max:9',
                 'endereco_id' => 'nullable|exists:enderecos,id',
             ]);

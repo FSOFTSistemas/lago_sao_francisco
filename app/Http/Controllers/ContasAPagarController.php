@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ContasAPagar;
 use App\Models\Empresa;
+use App\Models\Fornecedor;
 use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,8 @@ class ContasAPagarController extends Controller
         $planoDeContas = PlanoDeConta::all();
         $empresas = Empresa::all();
         $contasAPagar = ContasAPagar::all();
-        return view('contasAPagar.index', compact('contasAPagar', 'planoDeContas', 'empresas'));
+        $fornecedores = Fornecedor::all();
+        return view('contasAPagar.index', compact('contasAPagar', 'planoDeContas', 'empresas', 'fornecedores'));
     }
 
     /**
@@ -34,11 +36,10 @@ class ContasAPagarController extends Controller
                 'data_vencimento' => 'required|date',
                 'data_pagamento' => 'nullable|date',
                 'status' => 'required|in:pendente,finalizado',
-                'empresa_id' => 'required|exists:empresas,id',
                 'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
-                'fornecedor_id' => 'nullable|exists:fornecedores,id',
+                'fornecedor_id' => 'nullable|exists:fornecedors,id',
             ]);
-            $request['empresa_id'] = PlanoDeConta::daEmpresa(Auth::user()->empresa_id);
+            $request['empresa_id'] = Auth::user()->empresa_id;
             ContasAPagar::create($request->all());
             return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar cadastrada com sucesso!');
         } catch (\Exception $e) {
@@ -56,12 +57,12 @@ class ContasAPagarController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'valor' => 'required|numeric',
-                'valor_pago' => 'required|numeric',
+                'valor_pago' => 'nullable|numeric',
                 'data_vencimento' => 'required|date',
                 'data_pagamento' => 'nullable|date',
                 'status' => 'required|in:pendente,finalizado',
                 'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
-                'fornecedor_id' => 'nullable|exists:fornecedores,id',
+                'fornecedor_id' => 'nullable|exists:fornecedors,id',
             ]);
 
             $contasAPagar->update($request->all());

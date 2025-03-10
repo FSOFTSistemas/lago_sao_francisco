@@ -10,20 +10,20 @@
 <div class="row">
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-danger">
+      <div class="small-box bg-warning">
         <div class="inner">
           <h2>Adiantamentos</h2>
         </div>
         <div class="icon">
           <i class="ion ion-bag"></i>
         </div>
-        <a href="#" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+        <a href="{{route('adiantamento.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
       </div>
     </div>
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-warning">
+      <div class="small-box bg-success">
         <div class="inner">
           <h2>Contas a pagar</h2>
         </div>
@@ -90,7 +90,7 @@
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-danger"">
+      <div class="small-box bg-danger">
         <div class="inner">
           <h2>Conta corrente</h2>
         </div>
@@ -118,7 +118,7 @@
   <div class="row">
     <div class="col-lg-3 col-6">
         <!-- small box -->
-        <div class="small-box bg-success"">
+        <div class="small-box bg-success">
           <div class="inner">
             <h2>Empresa</h2>
           </div>
@@ -130,7 +130,7 @@
       </div>
     <div class="col-lg-3 col-6">
         <!-- small box -->
-        <div class="small-box bg-success"">
+        <div class="small-box bg-success">
           <div class="inner">
             <h2>Fornecedores</h2>
           </div>
@@ -138,6 +138,18 @@
             <i class="ion ion-pie-graph"></i>
           </div>
           <a href="{{route('fornecedor.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+      </div>
+    <div class="col-lg-3 col-6">
+        <!-- small box -->
+        <div class="small-box bg-success">
+          <div class="inner">
+            <h2>Funcionários</h2>
+          </div>
+          <div class="icon">
+            <i class="ion ion-pie-graph"></i>
+          </div>
+          <a href="{{route('funcionario.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
         </div>
       </div>
   </div>

@@ -26,9 +26,10 @@ class PlanoDeContaController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'tipo' => 'required|in:receita,despesa',
-                'plano_de_contas_pai' => 'nullable|exists:plano_de_contas,id',
-                'empresa_id' => 'required|exists:empresas,id'
+                'plano_de_conta_pai' => 'nullable|exists:plano_de_contas,id',
+
             ]);
+            $request['empresa_id'] = Auth::user()->empresa_id;
             PlanoDeConta::create($request->all());
             return redirect()->route('planoDeConta.index')->with('success', 'Plano de Conta criado com sucesso');
         } catch (\Exception $e) {

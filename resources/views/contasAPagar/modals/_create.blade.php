@@ -58,6 +58,16 @@
                   </select>
               </div>
 
+              <div class="mb-3">
+                <label for="fornecedor">Fornecedor</label>
+                <select class="form-control" id="fornecedor" name="fornecedor_id">
+                    <option value="">Selecione</option>
+                    @foreach ($fornecedores as $fornecedor)
+                        <option value="{{ $fornecedor->id }}">{{ $fornecedor->razao_social }}</option>
+                    @endforeach
+                </select>
+              </div>
+
               <div class="modal-footer">
                   <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
                   <button type="submit" class="btn btn-primary">Criar</button>
