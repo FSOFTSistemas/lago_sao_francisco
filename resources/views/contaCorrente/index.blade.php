@@ -1,15 +1,15 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de planos de conta')
+@section('title', 'Contas Correntes')
 
 @section('content_header')
-    <h5>Lista de planos de conta</h5>
+    <h5>Lista de Contas</h5>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createPlanoModal">
-            <i class="fas fa-plus"></i> Adicionar plano de conta
+        <button class="btn btn-success" data-toggle="modal" data-target="#createContaCorrenteModal">
+            <i class="fas fa-plus"></i> Adicionar Conta Corrente
         </button>
     </div>
 
@@ -24,43 +24,52 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="planoDeContaTable" class="table table-striped">
+        <table id="contaCorrenteTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
+                    <th>Titular</th>
+                    <th>Número da Conta</th>
                     <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Empresa</th>
+                    <th>Saldo</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($planoDeContas as $planoDeConta)
+                @foreach ($contaCorrente as $contaCorrente)
                     <tr>
-                        <td>{{ $planoDeConta->id }}</td>
-                        <td>{{ $planoDeConta->descricao }}</td>
-                        <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->razao_social }}</td>
+                        <td>{{ $contaCorrente->id }}</td>
+                        <td>{{ $contaCorrente->titular }}</td>
+                        <td>{{ $contaCorrente->numero_conta }}</td>
+                        <td>{{ $contaCorrente->descricao }}</td>
+                        <td>{{ $contaCorrente->saldo }}</td>
                         <td>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showContaCorrente{{ $contaCorrente->id }}">
+                                👁️
+                            </button>
+
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editPlanoModal{{ $planoDeConta->id }}">
+                                data-target="#editContaCorrenteModal{{ $contaCorrente->id }}">
                                 ✏️
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deletePlanoModal{{ $planoDeConta->id }}">
+                            data-target="#deleteContaCorrenteModal{{ $contaCorrente->id }}">
                             🗑️
                         </button>
                         </td>
                     </tr>
-                    @include('planoDeConta.modals._edit', ['planoDeConta' => $planoDeConta])
-                    @include('planoDeConta.modals._delete', ['planoDeConta' => $planoDeConta])
+
+                    @include('contaCorrente.modals._show', ['contaCorrente' => $contaCorrente])
+                    @include('contaCorrente.modals._edit', ['contaCorrente' => $contaCorrente])
+                    @include('contaCorrente.modals._delete', ['contaCorrente' => $contaCorrente])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
 
-    @include('planoDeConta.modals._create')
+    @include('contaCorrente.modals._create')
 @stop
 
 @section('css')

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\BancoController;
+use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
@@ -50,3 +52,7 @@ Route::resource('endereco', EnderecoController::class);
 Route::resource('funcionario', FuncionarioController::class);
 
 Route::resource('adiantamento', AdiantamentoController::class);
+
+Route::resource('caixa', CaixaController::class);
+
+Route::resource('contaCorrente', ContaCorrenteController::class);

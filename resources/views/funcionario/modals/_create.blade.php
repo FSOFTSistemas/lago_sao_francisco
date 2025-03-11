@@ -20,7 +20,7 @@
                       <div class="row">
                           <div class="mb-3">
                               <label for="cpf">CPF:</label>
-                              <input type="text" class="form-control" id="valor" name="cpf" required>
+                              <input type="text" class="form-control" id="cpf" name="cpf" required>
                           </div>
 
                       </div>

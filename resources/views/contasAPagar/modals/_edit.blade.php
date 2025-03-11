@@ -37,7 +37,7 @@
 
                     <div class="mb-3">
                         <label for="tipo">Situação</label>
-                        <select class="form-control" id="status" name="status" required value="{{$contasAPagar->status}}">
+                        <select class="form-control" id="status" name="status" required">
                             <option value="pendente">Pendente</option>
                             <option value="finalizado">Finalizado</option>
                         </select>

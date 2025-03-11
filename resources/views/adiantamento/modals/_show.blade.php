@@ -7,7 +7,7 @@
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Funcionário:</strong> <span id="funcionario">{{$adiantamento->funcionario_id}}</span></p>
+                <p><strong>Funcionário:</strong> <span id="funcionario">{{$adiantamento->funcionario->nome}}</span></p>
                 <p><strong>Valor:</strong> <span id="valor">{{$adiantamento->valor}}</span></p>
                 <p><strong>Data do Adiantamento:</strong> <span id="data">{{$adiantamento->data}}</span></p>
                 <p><strong>Descrição:</strong> <span id="descricao">{{$adiantamento->descricao}}</span></p>

@@ -1,15 +1,15 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de planos de conta')
+@section('title', 'Caixa')
 
 @section('content_header')
-    <h5>Lista de planos de conta</h5>
+    <h5>Lista de Caixas</h5>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createPlanoModal">
-            <i class="fas fa-plus"></i> Adicionar plano de conta
+        <button class="btn btn-success" data-toggle="modal" data-target="#createCaixaModal">
+            <i class="fas fa-plus"></i> Adicionar Caixa
         </button>
     </div>
 
@@ -24,43 +24,54 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="planoDeContaTable" class="table table-striped">
+        <table id="caixaTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
                     <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Empresa</th>
+                    <th>Situação</th>
+                    <th>Data de Abertura</th>
+                    <th>Data de Fechamento</th>
+                    <th>Valor Final</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($planoDeContas as $planoDeConta)
+                @foreach ($caixas as $caixa)
                     <tr>
-                        <td>{{ $planoDeConta->id }}</td>
-                        <td>{{ $planoDeConta->descricao }}</td>
-                        <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->razao_social }}</td>
+                        <td>{{ $caixa->id }}</td>
+                        <td>{{ $caixa->descricao }}</td>
+                        <td>{{ $caixa->status }}</td>
+                        <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</td>
+                        <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_fechamento)->format('d/m/Y') }}</td>
+                        <td>{{ $caixa->valor_final }}</td>
                         <td>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showCaixa{{ $caixa->id }}">
+                                👁️
+                            </button>
+
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editPlanoModal{{ $planoDeConta->id }}">
+                                data-target="#editCaixaModal{{ $caixa->id }}">
                                 ✏️
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deletePlanoModal{{ $planoDeConta->id }}">
+                            data-target="#deleteCaixaModal{{ $caixa->id }}">
                             🗑️
                         </button>
                         </td>
                     </tr>
-                    @include('planoDeConta.modals._edit', ['planoDeConta' => $planoDeConta])
-                    @include('planoDeConta.modals._delete', ['planoDeConta' => $planoDeConta])
+
+                    @include('caixa.modals._show', ['caixa' => $caixa])
+                    @include('caixa.modals._edit', ['caixa' => $caixa])
+                    @include('caixa.modals._delete', ['caixa' => $caixa])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
 
-    @include('planoDeConta.modals._create')
+    @include('caixa.modals._create')
 @stop
 
 @section('css')

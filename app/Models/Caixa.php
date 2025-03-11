@@ -21,8 +21,20 @@ class Caixa extends Model
         'observacoes',
         'empresa_id',
     ];
-    public function daEmpresa()
+    public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
+    public function usuarioAbertura()
+    {
+        return $this->belongsTo(User::class, 'usuario_abertura_id');
+    }
+    public function usuarioFechamento()
+    {
+        return $this->belongsTo(User::class, 'usuario_fechamento_id');
     }
 }

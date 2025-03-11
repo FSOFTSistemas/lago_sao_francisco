@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banco;
 use App\Models\ContaCorrente;
 use Illuminate\Http\Request;
 
@@ -12,17 +13,11 @@ class ContaCorrenteController extends Controller
      */
     public function index()
     {
-        $contasCorrentes = ContaCorrente::all();
-        return view('conta_corrente.index', compact('contasCorrentes'));
+        $banco = Banco::all();
+        $contaCorrente = ContaCorrente::all();
+        return view('contaCorrente.index', compact('contaCorrente', 'banco'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('conta_corrente.create');
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -38,30 +33,12 @@ class ContaCorrenteController extends Controller
                 'banco_id' => 'required|exists:bancos,id',
             ]);
             ContaCorrente::create($request->all());
-            return redirect()->route('conta_corrente.index')->with('success', 'Conta corrente cadastrada com sucesso!');
+            return redirect()->route('contaCorrente.index')->with('success', 'Conta corrente cadastrada com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('conta_corrente.index')->with('error', 'Erro ao cadastrar conta corrente!');
+            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao cadastrar conta corrente!');
 
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(ContaCorrente $contaCorrente)
-    {
-        $contaCorrente = ContaCorrente::findOrFail($contaCorrente->id);
-        return view('conta_corrente.show', compact('contaCorrente'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ContaCorrente $contaCorrente)
-    {
-        $contaCorrente = ContaCorrente::findOrFail($contaCorrente->id);
-        return view('conta_corrente.edit', compact('contaCorrente'));
     }
 
     /**
@@ -79,10 +56,10 @@ class ContaCorrenteController extends Controller
                 'banco_id' => 'required|exists:bancos,id',
             ]);
             $contaCorrente->update($request->all());
-            return redirect()->route('conta_corrente.index')->with('success', 'Conta corrente atualizada com sucesso!');
+            return redirect()->route('contaCorrente.index')->with('success', 'Conta corrente atualizada com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('conta_corrente.index')->with('error', 'Erro ao atualizar conta corrente!');
+            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao atualizar conta corrente!');
         }
     }
 
@@ -93,6 +70,6 @@ class ContaCorrenteController extends Controller
     {
         $contaCorrente = ContaCorrente::findOrFail($contaCorrente->id);
         $contaCorrente->delete();
-        return redirect()->route('conta_corrente.index')->with('success', 'Conta corrente deletada com sucesso!');
+        return redirect()->route('contaCorrente.index')->with('success', 'Conta corrente deletada com sucesso!');
     }
 }

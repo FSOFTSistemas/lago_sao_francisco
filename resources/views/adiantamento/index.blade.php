@@ -39,7 +39,7 @@
                 @foreach ($adiantamentos as $adiantamento)
                     <tr>
                         <td>{{ $adiantamento->id }}</td>
-                        <td>{{ $adiantamento->funcionario_id }}</td> {{--como referenciar o nome do funcionario?--}}
+                        <td>{{ $adiantamento->funcionario->nome }}</td>
                         <td>{{ $adiantamento->valor }}</td>
                         <td>{{ $adiantamento->data }}</td>
                         <td>{{ $adiantamento->status }}</td>

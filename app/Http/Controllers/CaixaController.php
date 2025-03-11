@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caixa;
+use App\Models\Empresa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CaixaController extends Controller
 {
@@ -12,16 +14,10 @@ class CaixaController extends Controller
      */
     public function index()
     {
+        $users = Auth::user();
+        $empresas = Empresa::all();
         $caixas = Caixa::all();
-        return view('caixas.index', compact('caixas'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('caixas.create');
+        return view('caixa.index', compact('caixas', 'empresas', 'users'));
     }
 
     /**
@@ -38,35 +34,17 @@ class CaixaController extends Controller
                 'data_abertura' => 'required|date',
                 'data_fechamento' => 'nullable|date',
                 'status' => 'required|in:aberto,fechado',
-                'usuario_abertura_id' => 'required|exists:usuarios,id',
-                'usuario_fechamento_id' => 'nullable|exists:usuarios,id',
                 'observacoes' => 'nullable|string',
-                'empresa_id' => 'required|exists:empresas,id',
             ]);
+            $request['empresa_id'] = Auth::user()->empresa_id;
+            $request['usuario_abertura_id'] = Auth::user()->id;
+            $request['usuario_fechamento_id'] = Auth::user()->id;
             Caixa::create($request->all());
-            return redirect()->route('caixas.index')->with('success', 'Caixa cadastrado com sucesso!');
+            return redirect()->route('caixa.index')->with('success', 'Caixa cadastrado com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('caixas.index')->with('error', 'Erro ao cadastrar caixa!');
+            return redirect()->route('caixa.index')->with('error', 'Erro ao cadastrar caixa!');
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Caixa $caixa)
-    {
-        $caixa = Caixa::findOrfail($caixa->id);
-        return view('caixas.show', compact('caixa'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Caixa $caixa)
-    {
-        $caixa = Caixa::findOrfail($caixa->id);
-        return view('caixas.edit', compact('caixa'));
     }
 
     /**
@@ -89,10 +67,10 @@ class CaixaController extends Controller
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
             $caixa->update($request->all());
-            return redirect()->route('caixas.index')->with('success', 'Caixa atualizado com sucesso!');
+            return redirect()->route('caixa.index')->with('success', 'Caixa atualizado com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('caixas.index')->with('error', 'Erro ao atualizar caixa!');
+            dd($e->getMessage());
+            return redirect()->route('caixa.index')->with('error', 'Erro ao atualizar caixa!');
         }
     }
 
@@ -101,8 +79,13 @@ class CaixaController extends Controller
      */
     public function destroy(Caixa $caixa)
     {
-        $caixa = Caixa::findOrfail($caixa->id);
-        $caixa->delete();
-        return redirect()->route('caixas.index')->with('success', 'Caixa deletado com sucesso!');
+        try {
+            $caixa = Caixa::findOrfail($caixa->id);
+            $caixa->delete();
+            return redirect()->route('caixa.index')->with('success', 'Caixa deletado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->route('caixa.index')->with('error', 'Erro ao deletar caixa!');
+        }
     }
 }

@@ -10,7 +10,7 @@
 <div class="row">
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-warning">
+      <div class="small-box bg-success">
         <div class="inner">
           <h2>Adiantamentos</h2>
         </div>
@@ -49,14 +49,14 @@
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-danger"">
+      <div class="small-box bg-success">
         <div class="inner">
           <h2>Caixas</h2>
         </div>
         <div class="icon">
           <i class="ion ion-pie-graph"></i>
         </div>
-        <a href="#" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+        <a href="{{route('caixa.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
       </div>
     </div>
     <!-- ./col -->
@@ -77,7 +77,7 @@
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-success">
+      <div class="small-box bg-warning">
         <div class="inner">
           <h2>Plano de Contas</h2>
         </div>
@@ -90,14 +90,14 @@
     <!-- ./col -->
     <div class="col-lg-3 col-6">
       <!-- small box -->
-      <div class="small-box bg-danger">
+      <div class="small-box bg-success">
         <div class="inner">
           <h2>Conta corrente</h2>
         </div>
         <div class="icon">
           <i class="ion ion-person-add"></i>
         </div>
-        <a href="#" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+        <a href="{{route('contaCorrente.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
       </div>
     </div>
     <!-- ./col -->

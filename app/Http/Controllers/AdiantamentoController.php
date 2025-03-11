@@ -33,18 +33,18 @@ class AdiantamentoController extends Controller
                 'funcionario_id' => 'required|exists:funcionarios,id',
                 'status' => 'required|in:pendente,finalizado'
             ]);
-            $request['empresa_id'] = Funcionario::findOrFail($request->funcionario_id)->empresa_id;
             Adiantamento::create([
                 'valor' => $request->valor,
                 'data' => $request->data,
                 'descricao' => $request->descricao,
                 'funcionario_id' => $request->funcionario_id,
-                'status' => $request->status
+                'status' => $request->status,
+                'empresa_id' => Funcionario::findOrFail($request->funcionario_id)->empresa_id
             ]);
-            return redirect()->route('adiantamentos.index')->with('success', 'Adiantamento cadastrado com sucesso!');
+            return redirect()->route('adiantamento.index')->with('success', 'Adiantamento cadastrado com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
-            return redirect()->route('adiantamentos.index')->with('error', 'Erro ao cadastrar adiantamento!');
+            return redirect()->route('adiantamento.index')->with('error', 'Erro ao cadastrar adiantamento!');
         }
     }
 

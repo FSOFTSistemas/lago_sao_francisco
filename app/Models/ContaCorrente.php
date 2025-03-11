@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ContaCorrente extends Model
 {
     use HasFactory;
+    protected $table = 'contas_correntes';
     protected $fillable = [
         'id',
         'descricao',
@@ -19,5 +20,9 @@ class ContaCorrente extends Model
     public function daEmpresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function banco()
+    {
+        return $this->belongsTo(Banco::class, 'banco_id');
     }
 }
