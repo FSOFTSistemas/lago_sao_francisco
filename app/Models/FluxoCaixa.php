@@ -19,6 +19,7 @@ class FluxoCaixa extends Model
         'empresa_id',
         'movimento',
         'valor_total',
+        'plano_de_conta_id'
     ];
     public function daEmpresa()
     {

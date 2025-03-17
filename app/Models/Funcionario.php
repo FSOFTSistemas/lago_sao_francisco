@@ -19,4 +19,10 @@ class Funcionario extends Model
         'cargo',
         'empresa_id'
     ];
+
+    public function empresa()
+{
+    return $this->belongsTo(Empresa::class);
+}
+
 }

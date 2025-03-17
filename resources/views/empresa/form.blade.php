@@ -126,5 +126,5 @@
             });
         });
     </script>
-    <script src="../js/endereco.js"></script>
+    <script src="{{ asset('js/endereco.js') }}"></script>
 @endsection

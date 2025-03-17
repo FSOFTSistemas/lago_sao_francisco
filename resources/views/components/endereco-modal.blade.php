@@ -15,9 +15,9 @@
                         <div class="input-group">
                             <input type="text" name="cep" id="cep" class="form-control"
                                 placeholder="Digite o CEP" required />
-                            <button type="button" class="btn btn-info" id="buscarCep">
+                            {{-- <button type="button" class="btn btn-info" id="buscarCep">
                                 <i class="fas fa-search"></i> Buscar
-                            </button>
+                            </button> --}}
                         </div>
                     </div>
                     <x-adminlte-input id="logradouro" name="logradouro" label="Logradouro"

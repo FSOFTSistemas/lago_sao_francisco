@@ -28,9 +28,13 @@ class EnderecoController extends Controller
                 'ibge' => 'nullable|string',
             ]);
 
-            Endereco::create($validated);
+            $endereco = Endereco::create($validated);
 
-            // return response()->json($endereco, 201);
+
+            return response()->json([
+                'success' => true,
+                'endereco' => $endereco,
+            ], 200); 
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
