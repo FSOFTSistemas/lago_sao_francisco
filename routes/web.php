@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
@@ -56,3 +57,5 @@ Route::resource('adiantamento', AdiantamentoController::class);
 Route::resource('caixa', CaixaController::class);
 
 Route::resource('contaCorrente', ContaCorrenteController::class);
+
+Route::resource('cliente', ClienteController::class);

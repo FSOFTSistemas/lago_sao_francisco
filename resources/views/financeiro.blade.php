@@ -152,6 +152,18 @@
           <a href="{{route('funcionario.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
         </div>
       </div>
+    <div class="col-lg-3 col-6">
+        <!-- small box -->
+        <div class="small-box bg-warning">
+          <div class="inner">
+            <h2>Clientes</h2>
+          </div>
+          <div class="icon">
+            <i class="ion ion-pie-graph"></i>
+          </div>
+          <a href="{{route('cliente.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+        </div>
+      </div>
   </div>
 @stop
 

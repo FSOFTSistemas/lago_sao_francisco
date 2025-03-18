@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('cpf_cnpj')->unique();
             $table->string('rg_ie')->unique();
             $table->unsignedBigInteger('empresa_id');
-            $table->enum('tipo', ['fisica', 'juridica']);
+            $table->enum('tipo', ['PF', 'PJ']);
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->timestamps();
         });

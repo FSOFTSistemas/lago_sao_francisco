@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Empresa;
+use App\Models\Endereco;
 use Illuminate\Http\Request;
 
 class ClienteController extends Controller
@@ -12,7 +14,10 @@ class ClienteController extends Controller
      */
     public function index()
     {
-        //
+        $cliente = Cliente::all();
+        $endereco = Endereco::all();
+        $empresa = Empresa::all();
+        return view('cliente.index', compact('cliente', 'endereco', 'empresa'));
     }
 
     /**
@@ -20,7 +25,9 @@ class ClienteController extends Controller
      */
     public function create()
     {
-        //
+        $endereco = Endereco::all();
+        $empresa = Empresa::all();
+        return view('cliente.create', compact('endereco', 'empresa'));
     }
 
     /**
@@ -28,23 +35,35 @@ class ClienteController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        try {
+            $request -> validate([
+                'nome_razao_social' => 'required|string',
+                'apelido_nome_fantasia' => 'required|string',
+                'telefone' => 'nullable|string',
+                'whatsapp' => 'nullable|string',
+                'data_nascimento' => 'nullable|date',
+                'endereco_id' => 'nullable|exists:endereco,id',
+                'cpf_cnpj' => 'required|string',
+                'rg_ie' => 'nullable|string',
+                'empresa_id' => 'nullable|exists:empresa,id',
+                'tipo' => 'required|in:PF, PJ'
+            ]);
+            Cliente::create($request->all());
+            return redirect()->route('cliente.index')->with('success', 'Cliente criado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Cliente $cliente)
-    {
-        //
-    }
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Cliente $cliente)
     {
-        //
+        $cliente = Cliente::findOrFail($cliente->id);
+        return view('cliente.create', compact('cliente'));
     }
 
     /**
@@ -52,7 +71,26 @@ class ClienteController extends Controller
      */
     public function update(Request $request, Cliente $cliente)
     {
-        //
+        try{
+            $cliente = Cliente::findOrFail($cliente->id);
+            $request->validate([
+            'nome_razao_social' => 'required|string',
+            'apelido_nome_fantasia' => 'required|string',
+            'telefone' => 'nullable|string',
+            'whatsapp' => 'nullable|string',
+            'data_nascimento' => 'nullable|date',
+            'endereco_id' => 'nullable|exists:endereco,id',
+            'cpf_cnpj' => 'required|string',
+            'rg_ie' => 'nullable|string',
+            'empresa_id' => 'nullable|exists:empresa,id',
+            'tipo' => 'required|in:PF, PJ'
+            ]);
+            $cliente->update($request->all());
+            return redirect()->route('cliente.index')->with('success', 'Cliente atualizado com sucesso!'); 
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
@@ -60,6 +98,13 @@ class ClienteController extends Controller
      */
     public function destroy(Cliente $cliente)
     {
-        //
+        try {
+            $cliente = Cliente::findOrFail($cliente->id);
+            $cliente->delete();
+            return redirect()->route('cliente.index')->with('success', 'Cliente deletado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao deletar cliente');
+        }
     }
 }

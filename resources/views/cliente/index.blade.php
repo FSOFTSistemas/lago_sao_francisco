@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'Usuários')
+@section('title', 'Cliente')
 
 @section('content_header')
-    <h5>Lista de Usuários</h5>
+    <h5>Lista de Clientes</h5>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createUsuarioModal">
-            <i class="fas fa-plus"></i> Adicionar Usuário
-        </button>
+        <a href="{{route('cliente.create')}}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Adicionar Cliente
+        </a>
     </div>
 
     @component('components.data-table', [
@@ -24,46 +24,48 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="usuarioTable" class="table table-striped">
+        <table id="clienteTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Permissão</th>
+                    <th>Nome/Razão Social</th>
+                    <th>Apelido/Nome Fantasia</th>
+                    <th>Tipo</th>
+                    <th>Contato</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($users as $user)
+                @foreach ($cliente as $cliente)
                     <tr>
-                        <td>{{ $user->id }}</td>
-                        <td>{{ $user->name }}</td>
-                        <td>{{ $user->email }}</td>
-                        <td>{{ $user->role }}</td>
+                        <td>{{ $cliente->id }}</td>
+                        <td>{{ $cliente->nome_razao_social }}</td>
+                        <td>{{ $cliente->apelido_nome_fantasia }}</td>
+                        <td>{{ $cliente->tipo}}</td>
+                        <td>{{ $cliente->telefone ? $cliente->telefone : $cliente->whatsapp }}</td>
                         <td>
-
-                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editUsuarioModal{{ $user->id }}">
-                                ✏️
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showCliente{{ $cliente->id }}">
+                                👁️
                             </button>
+
+                            <a href="{{route('clientes.edit', $cliente->id)}}" class="btn btn-warning btn-sm">
+                                ✏️
+                        </a>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteUsuarioModal{{ $user->id }}">
-                                🗑️
-                            </button>
+                            data-target="#deleteClienteModal{{ $cliente->id }}">
+                            🗑️
+                        </button>
                         </td>
                     </tr>
 
-                    @include('usuario.modals._edit', ['usuario' => $user])
-                    @include('usuario.modals._delete', ['usuario' => $user])
+                    @include('cliente.modals._show', ['cliente' => $cliente])
+                    @include('cliente.modals._delete', ['cliente' => $cliente])
                 @endforeach
             </tbody>
         </table>
     @endcomponent
-
-    @include('components.endereco-modal')
-    @include('usuario.modals._create')
 @stop
 
 @section('css')
@@ -73,7 +75,6 @@
 @stop
 
 @section('js')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -120,35 +121,4 @@
             });
         });
     </script>
-    <script>
-        $(document).ready(function () {
-            console.log('aqui')
-            $("#cep").on("input", function () {
-                $(this).val($(this).val().replace(/\D/g, "").slice(0, 8));
-            });
-
-            $("#cep").on("blur", function () {
-                let cep = $(this).val().replace(/\D/g, "");
-
-                if (cep.length === 8) {
-                    $.getJSON(`/buscar-cep/${cep}`, function (data) {
-                        if (!data.erro) {
-                            $("#logradouro").val(data.logradouro);
-                            $("#bairro").val(data.bairro);
-                            $("#cidade").val(data.localidade);
-                            $("#uf").val(data.uf);
-                            $("#ibge").val(data.ibge);
-                        } else {
-                            alert("CEP não encontrado!");
-                        }
-                    }).fail(function () {
-                        alert("Erro ao buscar CEP. Verifique sua conexão.");
-                    });
-                } else {
-                    alert("Formato de CEP inválido!");
-                }
-            });
-        });
-    </script>
-
 @stop
