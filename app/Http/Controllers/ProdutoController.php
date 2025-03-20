@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produto;
-use App\Http\Controllers\Controller;
+use App\Models\Empresa;
 use Illuminate\Http\Request;
 
 class ProdutoController extends Controller
@@ -13,15 +13,9 @@ class ProdutoController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        $empresas = Empresa::all();
+        $produtos = Produto::all();
+        return view('produto.index', compact('empresas', 'produtos'));
     }
 
     /**
@@ -29,23 +23,29 @@ class ProdutoController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        try {
+            $request->validate([
+                'descricao' => 'required|string',
+                'tipo' => 'required|string',
+                'situacao' => 'required|string',
+                'ean' => 'nullable|string',
+                'preco_custo' => 'nullable|numeric',
+                'preco_venda' => 'required|numeric',
+                'ncm' => 'nullable|string',
+                'cst' => 'nullable|string',
+                'cfop_interno' => 'nullable|string',
+                'cfop_externo' => 'nullable|string',
+                'aliquota' => 'nullable|numeric',
+                'csosn' => 'nullable|string',
+                'empresa_id' => 'required|exists:empresas,id',
+            ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Produto $produto)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Produto $produto)
-    {
-        //
+            Produto::create($request->all());
+            return redirect()->route('produto.index')->with('success', 'Produto criado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
@@ -53,7 +53,29 @@ class ProdutoController extends Controller
      */
     public function update(Request $request, Produto $produto)
     {
-        //
+        try {
+            $request->validate([
+                'descricao' => 'required|string',
+                'tipo' => 'required|string',
+                'situacao' => 'required|string',
+                'ean' => 'nullable|string',
+                'preco_custo' => 'nullable|numeric',
+                'preco_venda' => 'required|numeric',
+                'ncm' => 'nullable|string',
+                'cst' => 'nullable|string',
+                'cfop_interno' => 'nullable|string',
+                'cfop_externo' => 'nullable|string',
+                'aliquota' => 'nullable|numeric',
+                'csosn' => 'nullable|string',
+                'empresa_id' => 'required|exists:empresas,id',
+            ]);
+
+            $produto->update($request->all());
+            return redirect()->route('produto.index')->with('success', 'Produto atualizado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
@@ -61,6 +83,12 @@ class ProdutoController extends Controller
      */
     public function destroy(Produto $produto)
     {
-        //
+        try {
+            $produto->delete();
+            return redirect()->route('produto.index')->with('success', 'Produto deletado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao deletar produto');
+        }
     }
 }

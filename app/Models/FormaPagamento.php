@@ -9,6 +9,7 @@ class FormaPagamento extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'id',
         'descricao'
     ];
 }

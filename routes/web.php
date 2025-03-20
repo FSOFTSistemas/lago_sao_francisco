@@ -6,13 +6,18 @@ use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
+use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\FluxoCaixaController;
+use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PlanoDeContaController;
+use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VendaController;
+use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -62,3 +67,13 @@ Route::resource('contaCorrente', ContaCorrenteController::class);
 Route::resource('cliente', ClienteController::class);
 
 Route::resource('fluxoCaixa', FluxoCaixaController::class);
+
+Route::resource('contasAReceber', ContasAReceberController::class);
+
+Route::resource('venda', VendaController::class);
+
+Route::resource('produto', ProdutoController::class);
+
+Route::resource('vendaItem', VendaItemController::class);
+
+Route::resource('formaPagamento', FormaPagamentoController::class);

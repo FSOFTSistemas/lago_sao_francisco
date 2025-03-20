@@ -34,4 +34,7 @@ class ContasAReceber extends Model
     {
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
+    public function venda(){
+        return $this->belongsTo(Venda::class, 'venda_id');
+    }
 }

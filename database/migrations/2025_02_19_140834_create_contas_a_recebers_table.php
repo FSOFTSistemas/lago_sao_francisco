@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('contas_a_receber', function (Blueprint $table) {
-            $table->id(); // Chave primária
+            $table->id();
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->decimal('valor_recebido', 15, 2)->default(0)->nullable();
@@ -25,8 +25,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('plano_de_contas_id')->nullable();
             $table->timestamps();
 
-            // Definição de chaves estrangeiras
-            // $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
+            $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->foreign('plano_de_contas_id')->references('id')->on('plano_de_contas')->onDelete('cascade');

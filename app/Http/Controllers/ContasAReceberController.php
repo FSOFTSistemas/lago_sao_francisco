@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContasAReceber;
+use App\Models\Cliente;
+use App\Models\Empresa;
+use App\Models\PlanoDeConta;
+use App\Models\Venda;
 use Illuminate\Http\Request;
 
 class ContasAReceberController extends Controller
@@ -13,15 +17,11 @@ class ContasAReceberController extends Controller
     public function index()
     {
         $contasAReceber = ContasAReceber::all();
-        return view('contas_a_receber.index', compact('contasAReceber'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('contas_a_receber.create');
+        $clientes = Cliente::all();
+        $empresas = Empresa::all();
+        $planosDeContas = PlanoDeConta::all();
+        $vendas = Venda::all();
+        return view('contas_a_receber.index', compact('contasAReceber', 'clientes', 'empresas', 'planosDeContas', 'vendas'));
     }
 
     /**
@@ -33,39 +33,23 @@ class ContasAReceberController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'valor' => 'required|numeric',
-                'valor_recebido' => 'required|numeric',
+                'valor_recebido' => 'nullable|numeric',
                 'data_vencimento' => 'required|date',
-                'data_recebimento' => 'nullable|date',
-                'status' => 'required|in:pendente,finalizado',
-                'parcela' => 'required|integer',
+                'data_pagamento' => 'nullable|date',
+                'status' => 'required|string',
                 'venda_id' => 'nullable|exists:vendas,id',
+                'parcela' => 'nullable|integer',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id'
+                'empresa_id' => 'required|exists:empresas,id',
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
             ]);
+
             ContasAReceber::create($request->all());
-            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber cadastrada com sucesso!');
+            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber criada com sucesso');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('contas_a_receber.index')->with('error', 'Erro ao cadastrar conta a receber!');
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
         }
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(ContasAReceber $contasAReceber)
-    {
-        $contasAReceber = ContasAReceber::findOrFail($contasAReceber->id);
-        return view('contas_a_receber.show', compact('contasAReceber'));
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ContasAReceber $contasAReceber)
-    {
-        $contasAReceber = ContasAReceber::findOrFail($contasAReceber->id);
-        return view('contas_a_receber.edit', compact('contasAReceber'));
     }
 
     /**
@@ -74,24 +58,25 @@ class ContasAReceberController extends Controller
     public function update(Request $request, ContasAReceber $contasAReceber)
     {
         try {
-            $contasAReceber = ContasAReceber::findOrFail($contasAReceber->id);
             $request->validate([
                 'descricao' => 'required|string',
                 'valor' => 'required|numeric',
-                'valor_recebido' => 'required|numeric',
+                'valor_recebido' => 'nullable|numeric',
                 'data_vencimento' => 'required|date',
-                'data_recebimento' => 'nullable|date',
-                'status' => 'required|in:pendente,finalizado',
-                'parcela' => 'required|integer',
+                'data_pagamento' => 'nullable|date',
+                'status' => 'required|string',
                 'venda_id' => 'nullable|exists:vendas,id',
+                'parcela' => 'nullable|integer',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id'
+                'empresa_id' => 'required|exists:empresas,id',
+                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
             ]);
+
             $contasAReceber->update($request->all());
-            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber atualizada com sucesso!');
+            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber atualizada com sucesso');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('contas_a_receber.index')->with('error', 'Erro ao atualizar conta a receber!');
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
 
@@ -100,8 +85,12 @@ class ContasAReceberController extends Controller
      */
     public function destroy(ContasAReceber $contasAReceber)
     {
-        $contasAReceber = ContasAReceber::findOrFail($contasAReceber->id);
-        $contasAReceber->delete();
-        return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber excluída com sucesso!');
+        try {
+            $contasAReceber->delete();
+            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber deletada com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao deletar conta a receber');
+        }
     }
 }

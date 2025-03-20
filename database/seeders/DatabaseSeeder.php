@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Empresa;
+use App\Models\FormaPagamento;
 use App\Models\Movimento;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -57,6 +58,18 @@ class DatabaseSeeder extends Seeder
             Movimento::firstOrCreate([
                 'descricao' => $descricao,
             ]);
+        }
+
+        $formasPagamento = [
+            'Dinheiro',
+            'Cartão de Crédito',
+            'Cartão de Débito',
+            'Pix',
+            'Boleto Bancário',
+        ];
+
+        foreach ($formasPagamento as $descricao) {
+            FormaPagamento::firstOrCreate(['descricao' => $descricao]);
         }
 
     }

@@ -9,6 +9,7 @@ class VendaItem extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'id',
         'produto_id',
         'quantidade',
         'valor_unitario',
@@ -26,5 +27,5 @@ class VendaItem extends Model
     public function produto(){
         return $this->belongsTo(Produto::class, 'produto_id');
     }
-    
+
 }

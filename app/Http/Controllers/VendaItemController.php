@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\VendaItem;
-use App\Http\Controllers\Controller;
+use App\Models\Produto;
+use App\Models\Venda;
 use Illuminate\Http\Request;
 
 class VendaItemController extends Controller
@@ -13,15 +14,10 @@ class VendaItemController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        $vendas = Venda::all();
+        $produtos = Produto::all();
+        $vendaItems = VendaItem::all();
+        return view('venda_item.index', compact('vendas', 'produtos', 'vendaItems'));
     }
 
     /**
@@ -29,23 +25,24 @@ class VendaItemController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
+        try {
+            $request->validate([
+                'produto_id' => 'required|exists:produtos,id',
+                'venda_id' => 'required|exists:vendas,id',
+                'quantidade' => 'required|integer|min:1',
+                'valor_unitario' => 'required|numeric',
+                'subtotal' => 'required|numeric',
+                'acrescimo' => 'nullable|numeric',
+                'deconto' => 'nullable|numeric',
+                'total' => 'required|numeric',
+            ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(VendaItem $vendaItem)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(VendaItem $vendaItem)
-    {
-        //
+            VendaItem::create($request->all());
+            return redirect()->route('venda_item.index')->with('success', 'Item de venda criado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
@@ -53,7 +50,24 @@ class VendaItemController extends Controller
      */
     public function update(Request $request, VendaItem $vendaItem)
     {
-        //
+        try {
+            $request->validate([
+                'produto_id' => 'required|exists:produtos,id',
+                'venda_id' => 'required|exists:vendas,id',
+                'quantidade' => 'required|integer|min:1',
+                'valor_unitario' => 'required|numeric',
+                'subtotal' => 'required|numeric',
+                'acrescimo' => 'nullable|numeric',
+                'deconto' => 'nullable|numeric',
+                'total' => 'required|numeric',
+            ]);
+
+            $vendaItem->update($request->all());
+            return redirect()->route('venda_item.index')->with('success', 'Item de venda atualizado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
@@ -61,6 +75,12 @@ class VendaItemController extends Controller
      */
     public function destroy(VendaItem $vendaItem)
     {
-        //
+        try {
+            $vendaItem->delete();
+            return redirect()->route('venda_item.index')->with('success', 'Item de venda deletado com sucesso');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao deletar item de venda');
+        }
     }
 }
