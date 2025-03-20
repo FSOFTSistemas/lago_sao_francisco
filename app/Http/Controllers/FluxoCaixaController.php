@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caixa;
+use App\Models\Empresa;
 use App\Models\FluxoCaixa;
+use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FluxoCaixaController extends Controller
 {
@@ -13,9 +17,13 @@ class FluxoCaixaController extends Controller
      */
     public function index()
     {
+        $users = Auth::user();
+        $movimento = Movimento::all();
+        $empresa = Empresa::all();
+        $caixa = Caixa::all();
         $planoDeContas = PlanoDeConta::all();
         $fluxoCaixas = FluxoCaixa::all();
-        return redirect()->route('fluxoCaixa.index', compact('fluxoCaixas', 'planoDeContas'));
+        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa' ));
     }
 
     /**
@@ -26,22 +34,6 @@ class FluxoCaixaController extends Controller
         return view('fluxoCaixa.create');
     }
 
-    /**
-     * 1 venda-dinheiro
-     * 2 venda-cartão
-     * 3 venda-pix
-     * 4 venda-carteira
-     * 5 venda-cheque
-     * 6 recebimento-dinheiro
-     * 7 recebimento-cartão
-     * 8 recebimento-pix
-     * 9 recebimento-carteira
-     * 10 recebimento-cheque
-     * 11 sangria
-     * 12 suprimento
-     * 
-     * 
-     */
     public function store(Request $request)
     {
         try{
@@ -50,17 +42,17 @@ class FluxoCaixaController extends Controller
                 'valor' => 'required|numeric',
                 'data' => 'required|date',
                 'tipo' => 'required|in:entrada,saida',
-                'movimento' => 'required|in:', 
+                'movimento_id' => 'required|exists:movimentos,id', 
                 'caixa_id' => 'required|exists:caixas,id',
-                'usuario_id' => 'required|exists:usuarios,id',
                 'empresa_id' => 'required|exists:empresas,id',
                 'valor_total' => 'required|numeric',
-                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id'
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
             ]);
+            $request['usuario_id'] = Auth::user()->id;
             FluxoCaixa::create($request->all());
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa cadastrado com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
+            dd($e->getMessage());
             return redirect()->route('fluxoCaixa.index')->with('error', 'Erro ao cadastrar fluxo de caixa!');
         }
     }
@@ -95,11 +87,12 @@ class FluxoCaixaController extends Controller
                 'valor' => 'required|numeric',
                 'data' => 'required|date',
                 'tipo' => 'required|in:entrada,saida',
-                'movimento' => 'required|integer',
+                'movimento_id' => 'required|exists:movimentos,id', 
                 'caixa_id' => 'required|exists:caixas,id',
                 'usuario_id' => 'required|exists:usuarios,id',
                 'empresa_id' => 'required|exists:empresas,id',
                 'valor_total' => 'required|numeric',
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
             ]);
             $fluxoCaixa->update($request->all());
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa atualizado com sucesso!');

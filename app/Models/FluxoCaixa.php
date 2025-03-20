@@ -17,7 +17,7 @@ class FluxoCaixa extends Model
         'caixa_id',
         'usuario_id',
         'empresa_id',
-        'movimento',
+        'movimento_id',
         'valor_total',
         'plano_de_conta_id'
     ];
@@ -30,5 +30,11 @@ class FluxoCaixa extends Model
     }
     public function usuario(){
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+    public function movimento(){
+        return $this->belongsTo(Movimento::class, 'movimento_id');
+    }
+    public function planoDeConta(){
+        return $this->belongsTo(PlanoDeConta::class, 'plano_de_conta_id');
     }
 }

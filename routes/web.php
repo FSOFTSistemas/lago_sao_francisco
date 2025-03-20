@@ -8,6 +8,7 @@ use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
+use App\Http\Controllers\FluxoCaixaController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PlanoDeContaController;
@@ -59,3 +60,5 @@ Route::resource('caixa', CaixaController::class);
 Route::resource('contaCorrente', ContaCorrenteController::class);
 
 Route::resource('cliente', ClienteController::class);
+
+Route::resource('fluxoCaixa', FluxoCaixaController::class);
