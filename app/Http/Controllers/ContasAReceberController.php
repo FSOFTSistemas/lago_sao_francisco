@@ -19,9 +19,9 @@ class ContasAReceberController extends Controller
         $contasAReceber = ContasAReceber::all();
         $clientes = Cliente::all();
         $empresas = Empresa::all();
-        $planosDeContas = PlanoDeConta::all();
+        $planoDeContas = PlanoDeConta::all();
         $vendas = Venda::all();
-        return view('contas_a_receber.index', compact('contasAReceber', 'clientes', 'empresas', 'planosDeContas', 'vendas'));
+        return view('contasAReceber.index', compact('contasAReceber', 'clientes', 'empresas', 'planoDeContas', 'vendas'));
     }
 
     /**
@@ -45,7 +45,7 @@ class ContasAReceberController extends Controller
             ]);
 
             ContasAReceber::create($request->all());
-            return redirect()->route('contas_a_receber.index')->with('success', 'Conta a receber criada com sucesso');
+            return redirect()->route('contasAReceber.index')->with('success', 'Conta a receber criada com sucesso');
         } catch (\Exception $e) {
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao validar dados');

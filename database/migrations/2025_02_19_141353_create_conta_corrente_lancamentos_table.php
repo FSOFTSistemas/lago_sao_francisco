@@ -11,17 +11,16 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('conta_corrente_lancamentos', function (Blueprint $table) {
-            $table->id(); // Chave primária
+            $table->id(); 
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->date('data');
-            $table->enum('tipo', ['entrada', 'saída']); // Define se é entrada ou saída
+            $table->enum('tipo', ['entrada', 'saída']);
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
             $table->unsignedBigInteger('banco_id');
             $table->unsignedBigInteger('empresa_id');
             $table->timestamps();
 
-            // Chaves estrangeiras
             $table->foreign('banco_id')->references('id')->on('bancos')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });

@@ -24,7 +24,6 @@ return new class extends Migration {
             $table->decimal('valor_total', 15, 2)->default(0);
             $table->timestamps();
 
-            // Chaves estrangeiras
             $table->foreign('caixa_id')->references('id')->on('caixas')->onDelete('cascade');
             // $table->foreign('usuario_id')->references('id')->on('usuarios')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');

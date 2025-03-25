@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('vendas_cartoes', function (Blueprint $table) {
-            $table->id(); // Chave primária
+            $table->id();
             $table->unsignedBigInteger('conta_id');
             $table->unsignedBigInteger('banco_id');
             $table->unsignedBigInteger('cliente_id')->nullable();
@@ -27,7 +27,7 @@ return new class extends Migration {
             $table->foreign('conta_id')->references('id')->on('contas_correntes')->onDelete('cascade');
             $table->foreign('banco_id')->references('id')->on('bancos')->onDelete('cascade');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
-            // $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
+            $table->foreign('venda_id')->references('id')->on('vendas')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
         });
     }
