@@ -1,5 +1,5 @@
 <div class="modal fade" id="enderecoModal" tabindex="-1" aria-labelledby="enderecoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form method="POST" action="{{ route('endereco.store') }}" id="formEndereco">
                 @csrf
@@ -28,8 +28,36 @@
                         required />
                     <x-adminlte-input id="cidade" name="cidade" label="Cidade" placeholder="Digite a cidade"
                         required />
-                    <x-adminlte-input id="uf" name="uf" label="Estado" placeholder="Digite o estado"
-                        required />
+                        <x-adminlte-select id="uf" name="uf" label="Estado" required>
+                            <option value="">Selecione um estado</option>
+                            <option value="AC">AC</option>
+                            <option value="AL">AL</option>
+                            <option value="AP">AP</option>
+                            <option value="AM">AM</option>
+                            <option value="BA">BA</option>
+                            <option value="CE">CE</option>
+                            <option value="DF">DF</option>
+                            <option value="ES">ES</option>
+                            <option value="GO">GO</option>
+                            <option value="MA">MA</option>
+                            <option value="MT">MT</option>
+                            <option value="MS">MS</option>
+                            <option value="MG">MG</option>
+                            <option value="PA">PA</option>
+                            <option value="PB">PB</option>
+                            <option value="PR">PR</option>
+                            <option value="PE">PE</option>
+                            <option value="PI">PI</option>
+                            <option value="RJ">RJ</option>
+                            <option value="RN">RN</option>
+                            <option value="RS">RS</option>
+                            <option value="RO">RO</option>
+                            <option value="RR">RR</option>
+                            <option value="SC">SC</option>
+                            <option value="SP">SP</option>
+                            <option value="SE">SE</option>
+                            <option value="TO">TO</option>
+                        </x-adminlte-select>
                     <x-adminlte-input id="ibge" name="ibge" label="ibge" placeholder="Digite o ebge"
                         required />
                 </div>

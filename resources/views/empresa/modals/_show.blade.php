@@ -1,6 +1,6 @@
 <!-- resources/views/users/modals/_show.blade.php -->
 <div class="modal fade" id="showEmpresa{{ $empresa->id }}" tabindex="-1" aria-labelledby="showEmpresaLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="showEmpresaLabel">Detalhes da Empresa</h5>

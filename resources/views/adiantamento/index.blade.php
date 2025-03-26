@@ -41,7 +41,7 @@
                         <td>{{ $adiantamento->id }}</td>
                         <td>{{ $adiantamento->funcionario->nome }}</td>
                         <td>{{ $adiantamento->valor }}</td>
-                        <td>{{ $adiantamento->data }}</td>
+                        <td>{{Illuminate\Support\Carbon::parse($adiantamento->data)->format('d/m/Y')}}</td>
                         <td>{{ $adiantamento->status }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"

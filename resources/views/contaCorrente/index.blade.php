@@ -42,7 +42,7 @@
                         <td>{{ $contaCorrente->titular }}</td>
                         <td>{{ $contaCorrente->numero_conta }}</td>
                         <td>{{ $contaCorrente->descricao }}</td>
-                        <td>{{ $contaCorrente->saldo }}</td>
+                        <td>R${{ $contaCorrente->saldo }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showContaCorrente{{ $contaCorrente->id }}">

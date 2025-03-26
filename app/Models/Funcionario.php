@@ -12,7 +12,7 @@ class Funcionario extends Model
         'id',
         'nome',
         'cpf',
-        'endereco',
+        'endereco_id',
         'salario',
         'data_contratacao',
         'status',
@@ -25,5 +25,8 @@ class Funcionario extends Model
 {
     return $this->belongsTo(Empresa::class);
 }
-
+    public function endereco()
+{
+    return $this->belongsTo(Endereco::class);
+}
 }

@@ -1,5 +1,5 @@
 <div class="modal fade" id="editContasAReceberModal{{$contasAReceber->id}}" tabindex="-1" aria-labelledby="editContasAReceberModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editContasAReceberModalLabel">Editar Contas A Receber</h5>
@@ -15,37 +15,50 @@
                     </div>
 
                     <div class="row">
-                        <div class="mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="valor">Valor:</label>
                             <input type="text" class="form-control" id="valor" name="valor" value="{{$contasAReceber->valor}}">
                         </div>
 
-                    </div>
-                    <div class="mb-3">
-                        <label for="valorRecebido">Valor Recebido:</label>
-                        <input type="text" class="form-control" id="valorRecebido" name="valor_recebido" value="{{$contasAReceber->valor_pago}}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="dataVencimento">Data de Vencimento:</label>
-                        <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAReceber->data_vencimento}}">
+                        <div class="col-md-6 mb-3">
+                            <label for="valorRecebido">Valor Recebido:</label>
+                            <input type="text" class="form-control" id="valorRecebido" name="valor_recebido" value="{{$contasAReceber->valor_pago}}">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="dataPagamento">Data do Pagamento:</label>
-                        <input type="date" class="form-control" id="dataPagamento" name="data_pagamento" value="{{$contasAReceber->data_pagamento}}">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dataVencimento">Data de Vencimento:</label>
+                            <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAReceber->data_vencimento}}">
+                        </div>
+    
+                        <div class="col-md-6 mb-3">
+                            <label for="dataRecebimento">Data do Recebimento:</label>
+                            <input type="date" class="form-control" id="dataRecebimento" name="data_recebimento" value="{{$contasAReceber->data_recebimento}}">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="tipo">Situação</label>
-                        <select class="form-control" id="status" name="status" required">
-                            <option value="pendente">Pendente</option>
-                            <option value="finalizado">Finalizado</option>
-                        </select>
-                    </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo">Situação</label>
+                                <select class="form-control" id="status" name="status" required">
+                                    <option value="pendente">Pendente</option>
+                                    <option value="finalizado">Finalizado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="parcela">Parcelas:</label>
+                                <select class="form-control" id="parcela" name="parcela">
+                                    @for ($i = 1; $i <= 12; $i++)
+                                        <option value="{{ $i }}">{{ $i }}</option>
+                                    @endfor
+                                </select>
+                            </div>
+                        </div>
 
                     <div class="mb-3">
                         <label for="planoDeConta">Plano de contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required value="{{$contasAReceber->plano_de_contas_pai}}">
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_id" required value="{{$contasAReceber->plano_de_contas_id}}">
                             <option value="">Selecione</option>
                             @foreach ($planoDeContas as $planoDeConta)
                                 <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>
@@ -53,10 +66,6 @@
                         </select>
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="parcela">Parcelas:</label>
-                        <input type="text" class="form-control" id="parcela" name="parcela" value="{{$contasAReceber->parcela}}">
-                    </div>
         
                     <div class="mb-3">
                         <label for="cliente">Cliente</label>

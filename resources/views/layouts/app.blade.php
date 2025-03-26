@@ -15,6 +15,8 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <script src="{{ asset('js/endereco.js') }}"></script>
+
 </head>
 <body>
     <div id="app">
@@ -76,5 +78,10 @@
             @yield('content')
         </main>
     </div>
+    <script src="{{ asset('js/endereco.js') }}"></script>
+
 </body>
 </html>
+@section('js')
+    <script src="{{ asset('js/endereco.js') }}"></script>
+@endsection

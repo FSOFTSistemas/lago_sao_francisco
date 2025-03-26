@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('nome');
             $table->string('cpf')->unique();
-            $table->string('endereco')->nullable();
+            $table->unsignedBigInteger('endereco_id')->nullable();
             $table->decimal('salario', 10, 2);
             $table->date('data_contratacao');
             $table->enum('status', ['ativo', 'inativo']);
@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('cargo');
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
+            $table->foreign('endereco_id')->references('id')->on('enderecos')->onDelete('cascade');
             $table->timestamps();
         });
     }

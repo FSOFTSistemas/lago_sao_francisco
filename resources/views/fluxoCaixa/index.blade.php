@@ -41,7 +41,7 @@
                     <tr>
                         <td>{{ $fluxoCaixa->id }}</td>
                         <td>{{ $fluxoCaixa->descricao }}</td>
-                        <td>{{ $fluxoCaixa->valor }}</td>
+                        <td>R${{ $fluxoCaixa->valor }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->data)->format('d/m/Y') }}</td>
                         <td>{{ $fluxoCaixa->tipo }}</td>
                         <td>{{ $fluxoCaixa->movimento->descricao }}</td>

@@ -49,7 +49,7 @@
                                 👁️
                             </button>
 
-                            <a href="{{route('clientes.edit', $cliente->id)}}" class="btn btn-warning btn-sm">
+                            <a href="{{route('cliente.edit', $cliente->id)}}" class="btn btn-warning btn-sm">
                                 ✏️
                         </a>
 

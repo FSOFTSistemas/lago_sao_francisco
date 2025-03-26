@@ -6,6 +6,7 @@ use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\Endereco;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ClienteController extends Controller
 {
@@ -14,10 +15,11 @@ class ClienteController extends Controller
      */
     public function index()
     {
-        $cliente = Cliente::all();
+        $user = Auth::user();
+        $cliente= Cliente::all();
         $endereco = Endereco::all();
         $empresa = Empresa::all();
-        return view('cliente.index', compact('cliente', 'endereco', 'empresa'));
+        return view('cliente.index', compact('cliente', 'endereco', 'empresa', 'user'));
     }
 
     /**
@@ -42,12 +44,13 @@ class ClienteController extends Controller
                 'telefone' => 'nullable|string',
                 'whatsapp' => 'nullable|string',
                 'data_nascimento' => 'nullable|date',
-                'endereco_id' => 'nullable|exists:endereco,id',
+                'endereco_id' => 'nullable|exists:enderecos,id',
                 'cpf_cnpj' => 'required|string',
                 'rg_ie' => 'nullable|string',
                 'empresa_id' => 'nullable|exists:empresa,id',
                 'tipo' => 'required|in:PF, PJ'
             ]);
+            $request['empresa_id'] = Auth::user()->empresa_id;
             Cliente::create($request->all());
             return redirect()->route('cliente.index')->with('success', 'Cliente criado com sucesso!');
         } catch (\Exception $e) {
@@ -62,8 +65,9 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
+        $endereco = Endereco::all();
         $cliente = Cliente::findOrFail($cliente->id);
-        return view('cliente.create', compact('cliente'));
+        return view('cliente.create', compact('cliente', 'endereco'));
     }
 
     /**
@@ -79,10 +83,9 @@ class ClienteController extends Controller
             'telefone' => 'nullable|string',
             'whatsapp' => 'nullable|string',
             'data_nascimento' => 'nullable|date',
-            'endereco_id' => 'nullable|exists:endereco,id',
+            'endereco_id' => 'nullable|exists:enderecos,id',
             'cpf_cnpj' => 'required|string',
             'rg_ie' => 'nullable|string',
-            'empresa_id' => 'nullable|exists:empresa,id',
             'tipo' => 'required|in:PF, PJ'
             ]);
             $cliente->update($request->all());

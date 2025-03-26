@@ -1,7 +1,7 @@
   <!-- Modal -->
   <div class="modal fade" id="createAdiantamentoModal" data-backdrop="static" tabindex="-1" role="dialog"
       aria-labelledby="createAdiantamentoModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
+      <div class="modal-dialog modal-dialog-centered" role="document">
           <div class="modal-content">
               <div class="modal-header">
                   <h5 class="modal-title" id="createAdiantamentoModalLabel">Cadastro de Adiantamentos</h5>

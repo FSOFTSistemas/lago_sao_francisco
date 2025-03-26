@@ -15,7 +15,7 @@ class Cliente extends Model
         'telefone',
         'whatsapp',
         'data_nascimento',
-        'endereco',
+        'endereco_id',
         'cpf_cnpj',
         'rg_ie',
         'empresa_id',
@@ -24,5 +24,9 @@ class Cliente extends Model
     public function daEmpresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function endereco()
+    {
+        return $this->belongsTo(Endereco::class, 'endereco_id');
     }
 }

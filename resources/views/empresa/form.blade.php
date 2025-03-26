@@ -3,7 +3,7 @@
 @section('title', isset($empresa) ? 'Editar Empresa' : 'Nova Empresa')
 
 @section('content_header')
-    {{-- <h4>{{ isset($empresa) ? 'Editar empresa' : 'Cadastrar Novo empresa' }}</h4> --}}
+    <h4>{{ isset($empresa) ? 'Editar empresa' : 'Cadastrar Nova empresa' }}</h4>
 @stop
 
 @section('content')
@@ -20,7 +20,7 @@
                     @method('PUT')
                 @endif
                 <!-- CNPJ -->
-                <div class="form-group col-md-12">
+                <div class="form-group col-md-6">
                     <label for="cnpj">CNPJ</label>
                     <div class="input-group">
                         <input type="text" id="cnpj" name="cnpj" class="form-control" placeholder="Digite o CNPJ"
@@ -33,22 +33,22 @@
 
                 <!-- Razão Social -->
                 <x-adminlte-input id="razaoSocial" name="razao_social" label="Razão Social"
-                    placeholder="Digite a razão social" fgroup-class="col-md-12" value="{{ $empresa->razao_social ?? '' }}"
+                    placeholder="Digite a razão social" fgroup-class="col-md-6" value="{{ $empresa->razao_social ?? '' }}"
                     required />
 
                 <!-- Nome Fantasia -->
                 <x-adminlte-input id="nomeFantasia" name="nomeFantasia" label="Nome Fantasia"
-                    placeholder="Digite o nome fantasia" fgroup-class="col-md-12"
+                    placeholder="Digite o nome fantasia" fgroup-class="col-md-6"
                     value="{{ $empresa->nome_fantasia ?? '' }}" />
 
 
                 <!-- Inscrição Estadual -->
                 <x-adminlte-input id="ie" name="inscricao_estadual" label="Inscrição Estadual"
-                    placeholder="Digite a inscrição estadual" fgroup-class="col-md-12"
+                    placeholder="Digite a inscrição estadual" fgroup-class="col-md-6"
                     value="{{ $empresa->inscricao_estadual ?? '' }}" />
 
                 <!-- Endereço -->
-                <div class="form-group col-md-12">
+                <div class="form-group col-md-6">
                     <label for="endereco_id">Endereço</label>
                     <div class="input-group">
                         <select class="form-control" id="endereco_id" name="endereco_id" required>

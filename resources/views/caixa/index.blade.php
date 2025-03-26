@@ -44,7 +44,7 @@
                         <td>{{ $caixa->status }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_fechamento)->format('d/m/Y') }}</td>
-                        <td>{{ $caixa->valor_final }}</td>
+                        <td>R${{ $caixa->valor_final }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showCaixa{{ $caixa->id }}">

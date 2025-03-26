@@ -40,7 +40,7 @@
                     <tr>
                         <td>{{ $funcionario->id }}</td>
                         <td>{{ $funcionario->nome }}</td>
-                        <td>{{ $funcionario->data_contratacao }}</td>
+                        <td>{{ Illuminate\Support\Carbon::parse($funcionario->data_contratacao)->format('d/m/Y')}}</td>
                         <td>{{ $funcionario->setor }}</td>
                         <td>{{ $funcionario->cargo }}</td>
                         <td>
@@ -70,6 +70,7 @@
     @endcomponent
 
     @include('funcionario.modals._create')
+    @include('components.endereco-modal')
 @stop
 
 @section('css')
@@ -125,4 +126,5 @@
             });
         });
     </script>
+    <script src="{{ asset('js/endereco.js') }}"></script>
 @stop

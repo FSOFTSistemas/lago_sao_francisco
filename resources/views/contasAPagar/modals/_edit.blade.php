@@ -1,5 +1,5 @@
 <div class="modal fade" id="editContasAPagarModal{{$contasAPagar->id}}" tabindex="-1" aria-labelledby="editContasAPagarModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editContasAPagarModalLabel">Editar Contas A Pagar</h5>
@@ -15,24 +15,26 @@
                     </div>
 
                     <div class="row">
-                        <div class="mb-3">
+                        <div class="col-md-6 mb-3">
                             <label for="valor">Valor:</label>
                             <input type="text" class="form-control" id="valor" name="valor" value="{{$contasAPagar->valor}}">
                         </div>
-
+                        <div class="col-md-6 mb-3">
+                            <label for="valorPago">Valor Pago:</label>
+                            <input type="text" class="form-control" id="valorPago" name="valor_pago" value="{{$contasAPagar->valor_pago}}">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="valorPago">Valor Pago:</label>
-                        <input type="text" class="form-control" id="valorPago" name="valor_pago" value="{{$contasAPagar->valor_pago}}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="dataVencimento">Data de Vencimento:</label>
-                        <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAPagar->data_vencimento}}">
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="dataPagamento">Data do Pagamento:</label>
-                        <input type="date" class="form-control" id="dataPagamento" name="data_pagamento" value="{{$contasAPagar->data_pagamento}}">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="dataVencimento">Data de Vencimento:</label>
+                            <input type="date" class="form-control" id="dataVencimento" name="data_vencimento" value="{{$contasAPagar->data_vencimento}}">
+                        </div>
+    
+                        <div class="col-md-6 mb-3">
+                            <label for="dataPagamento">Data do Pagamento:</label>
+                            <input type="date" class="form-control" id="dataPagamento" name="data_pagamento" value="{{$contasAPagar->data_pagamento}}">
+                        </div>
                     </div>
 
                     <div class="mb-3">

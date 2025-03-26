@@ -40,8 +40,8 @@
                     <tr>
                         <td>{{ $contasAPagar->id }}</td>
                         <td>{{ $contasAPagar->descricao }}</td>
-                        <td>{{ $contasAPagar->data_vencimento }}</td>
-                        <td>{{ $contasAPagar->valor }}</td>
+                        <td>{{ Illuminate\Support\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y')}}</td>
+                        <td>R${{ $contasAPagar->valor }}</td>
                         <td>{{ $contasAPagar->status }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"

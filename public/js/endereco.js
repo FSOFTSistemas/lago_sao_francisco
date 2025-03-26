@@ -18,7 +18,10 @@ $(document).ready(function () {
                     alert("CEP não encontrado!");
                 }
             })
-            .fail(onError);
+            .fail(function () {
+                console.error("❌ Erro na requisição do CEP.");
+                if (onError) onError();
+            });
     };
 
     // Preenchimento automático ao perder o foco do campo CEP
@@ -85,40 +88,4 @@ $(document).ready(function () {
             }
         });
     });
-
-    // Lógica de busca de endereço pelo botão "Buscar CEP"
-    // document.getElementById("buscarCep").addEventListener("click", function () {
-    //     const cep = document.getElementById("cep").value.trim();
-
-    //     if (!cep) {
-    //         alert("Por favor, insira um CEP.");
-    //         return;
-    //     }
-
-    //     console.log("Buscando informações do CEP via botão:", cep);
-
-    //     fetch(`/endereco/${cep}`)
-    //         .then(response => {
-    //             if (!response.ok) {
-    //                 throw new Error(`Erro ao buscar endereço. Status: ${response.status}`);
-    //             }
-    //             return response.json();
-    //         })
-    //         .then(data => {
-    //             if (!data.erro) {
-    //                 console.log("✅ Informações recebidas do servidor:", data);
-    //                 $("#logradouro").val(data.logradouro);
-    //                 $("#cidade").val(data.localidade);
-    //                 $("#uf").val(data.uf);
-    //                 $("#bairro").val(data.bairro);
-    //                 $("#ibge").val(data.ibge);
-    //             } else {
-    //                 alert("CEP não encontrado.");
-    //             }
-    //         })
-    //         .catch(error => {
-    //             console.error("❌ Erro ao buscar endereço:", error);
-    //             alert("Erro ao buscar o endereço. Tente novamente.");
-    //         });
-    // });
 });
