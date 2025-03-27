@@ -20,6 +20,13 @@ class FuncionarioController extends Controller
         return view('funcionario.index', compact('funcionarios', 'empresas', 'enderecos'));
     }
 
+    public function create()
+    {
+        $empresas = Empresa::all();
+        $enderecos = Endereco::all();
+        return view('funcionario.form', compact('empresas', 'enderecos'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -69,6 +76,14 @@ class FuncionarioController extends Controller
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
+    }
+
+    public function edit(Funcionario $funcionario)
+    {
+        $funcionario = Funcionario::findOrFail($funcionario->id);
+        $empresas = Empresa::all();
+        $enderecos = Endereco::all();
+        return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos'));
     }
 
     /**

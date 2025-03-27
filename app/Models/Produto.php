@@ -27,4 +27,8 @@ class Produto extends Model
     public function daEmpresa(){
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
 }

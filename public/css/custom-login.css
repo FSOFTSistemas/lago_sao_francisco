@@ -1,0 +1,72 @@
+/* Estilos para a página de autenticação */
+.auth_page {
+  height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('https://cf.bstatic.com/xdata/images/hotel/max1024x768/356323408.jpg?k=025a87c09253b1913ee8cc69e442a6182e8d58dff41db5e34626f8e508d6658e&o=&hp=1') no-repeat center center; /* Imagem de fundo */
+  background-size: cover; /* Ajuste automático */
+  background-attachment: fixed;
+  padding: 2rem; /* Evita overflow */
+  
+}
+.login-box{
+  width: 30vw;
+}
+/* Estilos do cartão de login */
+.auth_card {
+  width: 100%;
+  max-width: 450px; /* Largura padrão maior */
+  background: rgba(255, 255, 255, 0.85); /* Fundo branco translúcido */
+  padding: 2rem;
+  border-radius: 12px; /* Bordas arredondadas */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Sombra suave */
+  backdrop-filter: blur(1px); /* Efeito blur */
+}
+
+/* Input personalizado */
+.input-group .form-control {
+  border-radius: 8px;
+  border: 1px solid #679A4C; /* Cor principal */
+}
+
+.input-group-text {
+  background-color: #679A4C;
+  color: white;
+  border: none;
+  border-radius: 0 8px 8px 0; /* Bordas arredondadas na direita */
+}
+
+/* Botão de login */
+.btn-primary {
+  background-color: #679A4C;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+}
+
+.btn-primary:hover {
+  background-color: #567D3B; /* Cor mais escura ao passar o mouse */
+}
+
+.invalid-feedback {
+  color: #d9534f; /* Vermelho padrão para mensagens de erro */
+  font-size: 0.9rem;
+}
+
+/* Link de rodapé */
+.auth_footer a {
+  color: #679A4C;
+}
+
+.auth_footer a:hover {
+  text-decoration: underline;
+}
+
+/* Responsividade para telas maiores */
+@media (min-width: 768px) {
+  .auth_card {
+      max-width: 500px;
+  }
+}

@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
 Auth::routes();
@@ -39,11 +39,7 @@ Route::resource('planoDeConta', PlanoDeContaController::class);
 
 Route::resource('empresa', EmpresaController::class);
 
-// Route::middleware(['auth'])->group(function () {
-// });
-Route::resource('usuarios', UserController::class);
-
-// Route::resource('usuarios', UserController::class)->middleware(['auth', 'role:Master']);
+Route::resource('usuarios', UserController::class)->middleware('permission:gerenciar usuarios');
 
 Route::resource('bancos', BancoController::class);
 

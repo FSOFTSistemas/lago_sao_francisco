@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'Lago',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,8 +63,8 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+    'logo' => '<b>Lago </b>São Francisco',
+    'logo_img' => 'vendor/imgs/logofsoft.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
@@ -86,7 +86,7 @@ return [
     'auth_logo' => [
         'enabled' => false,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+            'path' => 'vendor/imgs/logofsoft.png',
             'alt' => 'Auth Logo',
             'class' => '',
             'width' => 50,
@@ -196,7 +196,7 @@ return [
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-dark-primary elevation-4', //#679A4C
     'classes_sidebar_nav' => '',
     'classes_topnav' => 'navbar-white navbar-light',
     'classes_topnav_nav' => 'navbar-expand',
@@ -305,7 +305,6 @@ return [
             'text' => 'search',
             'topnav_right' => true,
         ],
-
         // Sidebar items:
         [
             'text' => 'Financeiro',
@@ -315,8 +314,83 @@ return [
             'text' => 'Usuários',
             'url'  => '/usuarios',
             'icon' => 'fas fa-users',
-            // 'can'  => 'gerenciar usuarios',
+            'can'  => 'gerenciar usuarios'
         ],
+        [
+            'text' => 'Produtos',
+            'url'  => '/produto',
+            'icon' => 'fas fa-boxes',
+        ],
+        [
+            'text' => 'Clientes',
+            'url'  => '/cliente',
+            'icon' => 'fa fa-handshake'
+            // 'can'  => 'ver_clientes',
+        ],
+        [
+            'text' => 'Funcionários',
+            'url'  => '/funcionario',
+            'icon' => 'fas fa-user'
+            // 'can'  => 'ver_funcionarios',
+        ],
+        [
+            'text' => 'Caixa',
+            'url'  => '/caixa',
+            'icon' => 'fas fa-money-bill-alt'
+            // 'can'  => 'ver_caixa',
+        ],
+        [
+            'text' => 'Empresas',
+            'url'  => '/empresa',
+            'icon' => 'fas fa-building'
+            // 'can'  => 'ver_empresas',
+        ],
+        [
+            'text' => 'Fornecedores',
+            'url'  => '/fornecedor',
+            'icon' => 'fas fa-truck',
+            // 'can'  => 'ver_fornecedores',
+        ],
+        [
+            'text'    => 'Financeiro',
+            'icon'    => 'fas fa-money-check-alt',
+            'submenu' => [
+                [
+                    'text' => 'Adiantamentos',
+                    'url'  => '/adiantamento',
+                ],
+                [
+                    'text' => 'Banco',
+                    'url'  => '/bancos',
+                ],
+                
+                
+                [
+                    'text'  => 'Conta Corrente',
+                    'url'   => '/contaCorrente',
+                    // 'can'  => 'ver_conta-corrente',
+                ],
+                [
+                    'text' => 'Contas a Pagar',
+                    'url'  => '/contasAPagar',
+                    // 'can'  => 'ver_contas_pagar',
+                ],
+                [
+                    'text' => 'Contas a Receber',
+                    'url'  => '/contasAReceber',
+                    // 'can'  => 'ver_contas_receber',
+                ],
+                [
+                    'text' => 'Fluxos de Caixa',
+                    'url'  => '/fluxoCaixa',
+                ],                
+                [
+                    'text' => 'Plano de Contas',
+                    'url'  => '/planoDeConta',
+                ],
+            ],
+        ],
+    
     ],
 
     /*

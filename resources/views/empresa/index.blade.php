@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a class="btn btn-success float-end" href="{{ route('empresa.create') }}"> Adicionar Empresa</a>
+        <a class="btn btn-success float-end" href="{{ route('empresa.create') }}"><i class="fas fa-plus"></i> Adicionar Empresa</a>
     </div>
 
     @component('components.data-table', [

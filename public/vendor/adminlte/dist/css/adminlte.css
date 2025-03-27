@@ -69,6 +69,11 @@ body {
   background-color: #fff;
 }
 
+.sidebar-green{
+  background-color: #679A4C !important;
+    color: #ffffff;
+}
+
 [tabindex="-1"]:focus:not(:focus-visible) {
   outline: 0 !important;
 }

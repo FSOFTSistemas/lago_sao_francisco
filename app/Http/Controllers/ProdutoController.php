@@ -18,6 +18,13 @@ class ProdutoController extends Controller
         return view('produto.index', compact('empresas', 'produtos'));
     }
 
+    public function create()
+    {
+        $empresas = Empresa::all();
+        $produtos = Produto::all();
+        return view('produto.create', compact('empresas', 'produtos'));
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -76,6 +83,12 @@ class ProdutoController extends Controller
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
+    }
+
+    public function edit(Produto $produto)
+    {
+        $produto = Produto::findOrFail($produto->id);
+        return view('produto.create', compact('produto'));
     }
 
     /**
