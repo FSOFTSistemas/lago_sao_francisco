@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         Permission::firstOrCreate(['name' => 'gerenciar usuarios']);
+        Permission::firstOrCreate(['name' => 'gerenciar financeiro']);
+        Permission::firstOrCreate(['name' => 'gerenciar funcionario']);
+        Permission::firstOrCreate(['name' => 'gerenciar empresa']);
         Role::firstOrCreate(['name' => 'Master']);
         Role::firstOrCreate(['name' => 'financeiro']);
         Role::firstOrCreate(['name' => 'funcionario']);
@@ -37,7 +40,24 @@ class DatabaseSeeder extends Seeder
 
         ]);
         $masterUser->assignRole('Master');
-        $masterUser->givePermissionTo('gerenciar usuarios');
+        $masterUser->givePermissionTo('gerenciar usuarios', 'gerenciar financeiro', 'gerenciar funcionario', 'gerenciar empresa');
+
+        $funcionarioUser = User::firstOrCreate([
+            'email' => 'funcionario@teste.com',
+            'name' => 'Funcionario Teste',
+            'password' => bcrypt('12345678'),
+            'empresa_id' => $empresa->id,
+        ]);
+        $funcionarioUser->assignRole('funcionario');
+
+        $financeiroUser = User::firstOrCreate([
+            'email' => 'financeiro@teste.com',
+            'name' => 'Financeiro Teste',
+            'password' => bcrypt('12345678'),
+            'empresa_id' => $empresa->id,
+        ]);
+        $financeiroUser->assignRole('financeiro');
+        $financeiroUser->givePermissionTo('gerenciar financeiro', 'gerenciar empresa');
 
         $movimentos = [
             'venda-dinheiro',                   

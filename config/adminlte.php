@@ -330,8 +330,8 @@ return [
         [
             'text' => 'Funcionários',
             'url'  => '/funcionario',
-            'icon' => 'fas fa-user'
-            // 'can'  => 'ver_funcionarios',
+            'icon' => 'fas fa-user',
+            'can'  => 'gerenciar funcionario',
         ],
         [
             'text' => 'Caixa',
@@ -342,8 +342,8 @@ return [
         [
             'text' => 'Empresas',
             'url'  => '/empresa',
-            'icon' => 'fas fa-building'
-            // 'can'  => 'ver_empresas',
+            'icon' => 'fas fa-building',
+            'can'  => 'gerenciar empresa',
         ],
         [
             'text' => 'Fornecedores',
@@ -354,6 +354,7 @@ return [
         [
             'text'    => 'Financeiro',
             'icon'    => 'fas fa-money-check-alt',
+            'can'     => 'gerenciar financeiro',
             'submenu' => [
                 [
                     'text' => 'Adiantamentos',
