@@ -306,10 +306,10 @@ return [
             'topnav_right' => true,
         ],
         // Sidebar items:
-        [
-            'text' => 'Financeiro',
-            'url' => '/financeiro',
-        ],
+        // [
+        //     'text' => 'Financeiro',
+        //     'url' => '/financeiro',
+        // ],
         [
             'text' => 'Usuários',
             'url'  => '/usuarios',
