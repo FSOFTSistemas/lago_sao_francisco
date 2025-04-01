@@ -7,11 +7,6 @@
 @stop
 
 @section('content')
-    {{-- <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createBancoModal">
-            <i class="fas fa-plus"></i> Adicionar Banco
-        </button>
-    </div> --}}
     <div class="d-flex justify-content-end mb-3">
         <a href="{{route('bancos.create')}}" class="btn btn-success">
             <i class="fas fa-plus"></i> Adicionar Banco

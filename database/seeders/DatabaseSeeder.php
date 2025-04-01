@@ -17,13 +17,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Permission::firstOrCreate(['name' => 'gerenciar usuarios']);
-        Permission::firstOrCreate(['name' => 'gerenciar financeiro']);
-        Permission::firstOrCreate(['name' => 'gerenciar funcionario']);
-        Permission::firstOrCreate(['name' => 'gerenciar empresa']);
-        Role::firstOrCreate(['name' => 'Master']);
-        Role::firstOrCreate(['name' => 'financeiro']);
-        Role::firstOrCreate(['name' => 'funcionario']);
         $empresa = Empresa::firstOrCreate([
             'razao_social' => 'Empresa Teste',
             'nome_fantasia' => 'Empresa Teste',
@@ -31,6 +24,30 @@ class DatabaseSeeder extends Seeder
             'endereco' => null,
             'inscricao_estadual' => '12345678901234',
         ]);
+        $permissions = [
+            'gerenciar usuarios',
+            'gerenciar financeiro',
+            'gerenciar funcionario',
+            'gerenciar empresa',
+            'gerenciar adiantamento',
+            'gerenciar banco',
+            'gerenciar caixa',
+            'gerenciar cliente',
+            'gerenciar conta corrente',
+            'gerenciar contas a pagar',
+            'gerenciar contas a receber',
+            'gerenciar fluxo de caixa',
+            'gerenciar fornecedor',
+            'gerenciar plano de conta',
+            'gerenciar produto',
+        ];
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission]);
+        }
+        
+        Role::firstOrCreate(['name' => 'Master']);
+        Role::firstOrCreate(['name' => 'financeiro']);
+        Role::firstOrCreate(['name' => 'funcionario']);
 
         $masterUser = User::firstOrCreate([
             'email' => 'master@teste.com',
@@ -40,7 +57,7 @@ class DatabaseSeeder extends Seeder
 
         ]);
         $masterUser->assignRole('Master');
-        $masterUser->givePermissionTo('gerenciar usuarios', 'gerenciar financeiro', 'gerenciar funcionario', 'gerenciar empresa');
+        $masterUser->givePermissionTo(Permission::all()->pluck('name')->toArray());
 
         $funcionarioUser = User::firstOrCreate([
             'email' => 'funcionario@teste.com',

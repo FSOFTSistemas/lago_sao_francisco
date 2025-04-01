@@ -320,12 +320,13 @@ return [
             'text' => 'Produtos',
             'url'  => '/produto',
             'icon' => 'fas fa-boxes',
+            'can'  => 'gerenciar produto'
         ],
         [
             'text' => 'Clientes',
             'url'  => '/cliente',
-            'icon' => 'fa fa-handshake'
-            // 'can'  => 'ver_clientes',
+            'icon' => 'fa fa-handshake',
+            'can'  => 'gerenciar clientes',
         ],
         [
             'text' => 'Funcionários',
@@ -336,8 +337,8 @@ return [
         [
             'text' => 'Caixa',
             'url'  => '/caixa',
-            'icon' => 'fas fa-money-bill-alt'
-            // 'can'  => 'ver_caixa',
+            'icon' => 'fas fa-money-bill-alt',
+            'can'  => 'gerenciar caixa',
         ],
         [
             'text' => 'Empresas',
@@ -349,7 +350,7 @@ return [
             'text' => 'Fornecedores',
             'url'  => '/fornecedor',
             'icon' => 'fas fa-truck',
-            // 'can'  => 'ver_fornecedores',
+            'can'  => 'gerenciar fornecedor',
         ],
         [
             'text'    => 'Financeiro',
@@ -359,35 +360,39 @@ return [
                 [
                     'text' => 'Adiantamentos',
                     'url'  => '/adiantamento',
+                    'can'  => 'gerenciar adiantamento',
                 ],
                 [
                     'text' => 'Banco',
                     'url'  => '/bancos',
+                    'can'  => 'gerenciar banco',
                 ],
                 
                 
                 [
                     'text'  => 'Conta Corrente',
                     'url'   => '/contaCorrente',
-                    // 'can'  => 'ver_conta-corrente',
+                    'can'   => 'gerenciar conta corrente',
                 ],
                 [
                     'text' => 'Contas a Pagar',
                     'url'  => '/contasAPagar',
-                    // 'can'  => 'ver_contas_pagar',
+                    'can'  => 'gerenciar contas a pagar',
                 ],
                 [
                     'text' => 'Contas a Receber',
                     'url'  => '/contasAReceber',
-                    // 'can'  => 'ver_contas_receber',
+                    'can'  => 'gerenciar contas a receber',
                 ],
                 [
                     'text' => 'Fluxos de Caixa',
                     'url'  => '/fluxoCaixa',
+                    'can'  => 'gerenciar fluxo de caixa',
                 ],                
                 [
                     'text' => 'Plano de Contas',
                     'url'  => '/planoDeConta',
+                    'can'  => 'gerenciar plano de conta',
                 ],
             ],
         ],

@@ -45,8 +45,7 @@ Route::resource('bancos', BancoController::class);
 
 Route::resource('fornecedor', FornecedorController::class);
 
-Route::resource('contasAPagar', ContasAPagarController::class);
-
+Route::resource('contasAPagar', ContasAPagarController::class); 
 
 Route::get('endereco/{cep}', [EnderecoController::class, 'buscarEnderecoPorCep'])->name('buscarCep');
 

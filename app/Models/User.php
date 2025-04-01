@@ -19,11 +19,8 @@ class User extends Authenticatable
         'role',
         'empresa_id'];
 
-    /**
-     * Relacionamento muitos-para-muitos com permissões
-     */
-//     public function permissions()
-//     {
-//         return $this->belongsToMany(Permission::class, 'permission_tables');
-//     }
+        public function empresa()
+        {
+            return $this->belongsTo(Empresa::class, 'empresa_id');
+        }
 }

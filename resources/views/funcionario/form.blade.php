@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', isset($funcionario) ? 'Editar Funcionário' : 'Nova Funcionário')
+@section('title', isset($funcionario) ? 'Editar Funcionário' : 'Novo Funcionário')
 
 @section('content_header')
-    <h4>{{ isset($funcionario) ? 'Editar funcionario' : 'Cadastrar Nova funcionario' }}</h4>
+    <h4>{{ isset($funcionario) ? 'Editar funcionario' : 'Cadastrar Novo funcionario' }}</h4>
 @stop
 
 @section('content')
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h3 class="card-title">
-                {{ isset($funcionario) ? 'Editar informações da Funcionário' : 'Preencha os dados da novo Funcionário' }}</h3>
+                {{ isset($funcionario) ? 'Editar informações do Funcionário' : 'Preencha os dados do novo Funcionário' }}</h3>
         </div>
         <div class="card-body">
             <form action="{{ isset($funcionario) ? route('funcionario.update', $funcionario->id) : route('funcionario.store') }}"

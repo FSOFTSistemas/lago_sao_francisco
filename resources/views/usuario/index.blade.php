@@ -8,9 +8,9 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createUsuarioModal">
+        <a href="{{route('usuarios.create')}}" class="btn btn-success">
             <i class="fas fa-plus"></i> Adicionar Usuário
-        </button>
+        </a>
     </div>
 
     @component('components.data-table', [
@@ -30,7 +30,7 @@
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Email</th>
-                    <th>Permissão</th>
+                    <th>Tipo</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -40,13 +40,16 @@
                         <td>{{ $user->id }}</td>
                         <td>{{ $user->name }}</td>
                         <td>{{ $user->email }}</td>
-                        <td>{{ $user->role }}</td>
+                        <td>{{ $user->roles->pluck('name')->join(', ') }}</td>
                         <td>
-
-                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editUsuarioModal{{ $user->id }}">
-                                ✏️
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showUsuario{{ $user->id }}">
+                                👁️
                             </button>
+
+                            <a href="{{route('usuarios.edit', $user->id)}}" class="btn btn-warning btn-sm">
+                                ✏️
+                            </a>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                                 data-target="#deleteUsuarioModal{{ $user->id }}">
@@ -54,8 +57,7 @@
                             </button>
                         </td>
                     </tr>
-
-                    @include('usuario.modals._edit', ['usuario' => $user])
+                    @include('usuario.modals._show' , ['usuario' => $user])
                     @include('usuario.modals._delete', ['usuario' => $user])
                 @endforeach
             </tbody>
@@ -63,13 +65,13 @@
     @endcomponent
 
     @include('components.endereco-modal')
-    @include('usuario.modals._create')
 @stop
 
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" type="text/css"
         href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 @stop
 
 @section('js')
@@ -79,36 +81,5 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script type="text/javascript" charset="utf8"
         src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function () {
-            console.log('aqui')
-            $("#cep").on("input", function () {
-                $(this).val($(this).val().replace(/\D/g, "").slice(0, 8));
-            });
-
-            $("#cep").on("blur", function () {
-                let cep = $(this).val().replace(/\D/g, "");
-
-                if (cep.length === 8) {
-                    $.getJSON(`/buscar-cep/${cep}`, function (data) {
-                        if (!data.erro) {
-                            $("#logradouro").val(data.logradouro);
-                            $("#bairro").val(data.bairro);
-                            $("#cidade").val(data.localidade);
-                            $("#uf").val(data.uf);
-                            $("#ibge").val(data.ibge);
-                        } else {
-                            alert("CEP não encontrado!");
-                        }
-                    }).fail(function () {
-                        alert("Erro ao buscar CEP. Verifique sua conexão.");
-                    });
-                } else {
-                    alert("Formato de CEP inválido!");
-                }
-            });
-        });
-    </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 @stop
