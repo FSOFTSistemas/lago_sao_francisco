@@ -103,4 +103,9 @@ class EmpresaController extends Controller
         $empresa->delete();
         return redirect()->route('empresa.index')->with('success', 'Empresa excluída com sucesso!');
     }
+
+    public function preferencias()
+    {
+        return view('preferencias.index');
+    }
 }

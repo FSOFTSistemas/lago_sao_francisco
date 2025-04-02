@@ -97,17 +97,18 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $formasPagamento = [
-            'Dinheiro',
-            'Cartão de Crédito',
-            'Cartão de Débito',
-            'Pix',
-            'Boleto Bancário',
-        ];
+        // $formasPagamento = [
+        //     'Dinheiro',
+        //     'Cartão de Crédito',
+        //     'Cartão de Débito',
+        //     'Pix',
+        //     'Transferência Bancária',
+        //     'Boleto Bancário',
+        // ];
 
-        foreach ($formasPagamento as $descricao) {
-            FormaPagamento::firstOrCreate(['descricao' => $descricao]);
-        }
+        // foreach ($formasPagamento as $descricao) {
+        //     FormaPagamento::firstOrCreate(['descricao' => $descricao]);
+        // }
 
     }
 

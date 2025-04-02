@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FormaPagamento;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FormaPagamentoController extends Controller
 {
@@ -13,54 +14,58 @@ class FormaPagamentoController extends Controller
      */
     public function index()
     {
-        //
+        $formaPagamento = FormaPagamento::daEmpresa(Auth::user()->empresa_id)->get();
+        return view('preferencias.formaPagamento', compact('formaPagamento'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-    }
+        try {
+            $validated = $request->validate([
+                'descricao' => 'required|string|max:255',
+            ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(FormaPagamento $formaPagamento)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(FormaPagamento $formaPagamento)
-    {
-        //
+            $validated['empresa_id'] = Auth::user()->empresa_id;
+            FormaPagamento::create($validated);
+            return redirect()->route('formaPagamento.index')->with('success', 'Registro criado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, FormaPagamento $formaPagamento)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $validated = $request->validate([
+                'descricao' => 'required|string|max:255',
+            ]);
+
+            $formaPagamento = FormaPagamento::find($id);
+
+            $formaPagamento->update($validated);
+            return redirect()->route('formaPagamento.index')->with('success', 'Registro atualizado com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(FormaPagamento $formaPagamento)
+    public function destroy($id)
     {
-        //
+        try {
+            $formaPagamento = FormaPagamento::find($id);
+            $formaPagamento->delete();
+            return redirect()->route('formaPagamento.index')->with('success', 'Registro excluído com sucesso!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao validar dados');
+        }
     }
 }

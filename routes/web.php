@@ -72,3 +72,5 @@ Route::resource('produto', ProdutoController::class);
 Route::resource('vendaItem', VendaItemController::class);
 
 Route::resource('formaPagamento', FormaPagamentoController::class);
+
+Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');

@@ -396,6 +396,11 @@ return [
                 ],
             ],
         ],
+        [
+            'text' => 'Preferências',
+            'url'  => '/preferencias',
+            'icon' => 'fas fa-gears',
+        ]
     
     ],
 
