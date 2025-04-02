@@ -66,6 +66,7 @@ class DatabaseSeeder extends Seeder
             'empresa_id' => $empresa->id,
         ]);
         $funcionarioUser->assignRole('funcionario');
+        $funcionarioUser->givePermissionTo('gerenciar produto', 'gerenciar caixa');
 
         $financeiroUser = User::firstOrCreate([
             'email' => 'financeiro@teste.com',
@@ -74,7 +75,16 @@ class DatabaseSeeder extends Seeder
             'empresa_id' => $empresa->id,
         ]);
         $financeiroUser->assignRole('financeiro');
-        $financeiroUser->givePermissionTo('gerenciar financeiro', 'gerenciar empresa');
+        $financeiroUser->givePermissionTo(
+            'gerenciar financeiro',
+            'gerenciar funcionario',
+            'gerenciar adiantamento',
+            'gerenciar cliente',
+            'gerenciar contas a pagar',
+            'gerenciar contas a receber',
+            'gerenciar fornecedor',
+            'gerenciar plano de conta',
+            'gerenciar produto');
 
         $movimentos = [
             'venda-dinheiro',                   
