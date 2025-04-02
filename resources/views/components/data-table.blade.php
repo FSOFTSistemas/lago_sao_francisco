@@ -1,5 +1,3 @@
--
-
 @php
     $uniqueId = 'myTable_' . uniqid();
 @endphp

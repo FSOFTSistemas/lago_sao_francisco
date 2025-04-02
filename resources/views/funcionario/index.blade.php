@@ -22,7 +22,6 @@
         'showTotal' => false,
         'valueColumnIndex' => 3,
     ])
-        <table id="funcionarioTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
@@ -63,24 +62,7 @@
                     @include('funcionario.modals._delete', ['funcionario' => $funcionario])
                 @endforeach
             </tbody>
-        </table>
     @endcomponent
 
     @include('components.endereco-modal')
-@stop
-
-@section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css"
-        href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
-@stop
-
-@section('js')
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script type="text/javascript" charset="utf8"
-        src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('js/endereco.js') }}"></script>
 @stop

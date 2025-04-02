@@ -16,15 +16,17 @@
     @component('components.data-table', [
         'responsive' => [
             ['responsivePriority' => 1, 'targets' => 0],
-            ['responsivePriority' => 2, 'targets' => 1],
-            ['responsivePriority' => 3, 'targets' => 2],
+            ['responsivePriority' => 3, 'targets' => 1],
+            ['responsivePriority' => 2, 'targets' => 2],
+            ['responsivePriority' => 2, 'targets' => 3],
+            ['responsivePriority' => 3, 'targets' => 4],
+            ['responsivePriority' => 3, 'targets' => 5],
             ['responsivePriority' => 4, 'targets' => -1],
         ],
         'itemsPerPage' => 10,
-        'showTotal' => false,
-        'valueColumnIndex' => 3,
+        'showTotal' => true,
+        'valueColumnIndex' => 5,
     ])
-        <table id="caixaTable" class="table table-striped">
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
@@ -68,23 +70,11 @@
                     @include('caixa.modals._delete', ['caixa' => $caixa])
                 @endforeach
             </tbody>
-        </table>
     @endcomponent
 
     @include('caixa.modals._create')
 @stop
 
-@section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-    <link rel="stylesheet" type="text/css"
-        href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
-@stop
-
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script type="text/javascript" charset="utf8"
-        src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @stop
