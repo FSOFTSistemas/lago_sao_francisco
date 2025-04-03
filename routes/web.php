@@ -9,6 +9,7 @@ use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
+use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\FluxoCaixaController;
 use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
@@ -70,3 +71,5 @@ Route::resource('vendaItem', VendaItemController::class);
 Route::resource('formaPagamento', FormaPagamentoController::class);
 
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
+
+Route::resource('espaco', EspacoController::class); //->middleware('permission:gerenciar espaco')

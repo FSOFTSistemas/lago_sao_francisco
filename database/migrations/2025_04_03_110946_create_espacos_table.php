@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('espacos', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->string('descricao');
+            $table->enum('status', ['disponivel', 'alugado']);
             $table->string('valor');
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');

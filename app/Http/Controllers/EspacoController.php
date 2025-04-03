@@ -24,12 +24,12 @@ class EspacoController extends Controller
         try {
             $request->validate([
                 'nome' => 'required',
-                'descricao' => 'required',
+                'status' => 'required|in:disponivel,alugado',
                 'valor' => 'required',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
             Espaco::create($request->all());
-            return redirect()->route('espacos.index')->with('success', 'Espaço criado com sucesso');
+            return redirect()->route('espaco.index')->with('success', 'Espaço criado com sucesso');
         } catch (\Exception $e) {
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao criar o Espaço');
@@ -45,12 +45,12 @@ class EspacoController extends Controller
             $espaco = Espaco::findOrFail($espaco->id);
             $request->validate([
                 'nome' => 'required',
-                'descricao' => 'required',
+                'status' => 'required|in:disponivel,alugado',
                 'valor' => 'required',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
             $espaco->update($request->all());
-            return redirect()->route('espacos.index')->with('success', 'Espaço atualizado com sucesso');
+            return redirect()->route('espaco.index')->with('success', 'Espaço atualizado com sucesso');
         } catch (\Exception $e) {
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao atualizar o Espaço');
@@ -65,7 +65,7 @@ class EspacoController extends Controller
         try {
             $espaco = Espaco::findOrFail($espaco->id);
             $espaco->delete();
-            return redirect()->route('espacos.index')->with('success', 'Espaço deletado com sucesso');
+            return redirect()->route('espaco.index')->with('success', 'Espaço deletado com sucesso');
         } catch (\Exception $e) {
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao deletar o Espaço');
