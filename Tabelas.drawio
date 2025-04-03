@@ -609,7 +609,7 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="3FAdHXBdDr7Tg2NQ65O6-1" value="Aluguel" style="swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#FF0000;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-          <mxGeometry x="244" y="260" width="180" height="156" as="geometry" />
+          <mxGeometry x="234" y="290" width="180" height="156" as="geometry" />
         </mxCell>
         <mxCell id="3FAdHXBdDr7Tg2NQ65O6-2" value="+ contrato: string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="3FAdHXBdDr7Tg2NQ65O6-1" vertex="1">
           <mxGeometry y="26" width="180" height="26" as="geometry" />
@@ -659,7 +659,7 @@
         <mxCell id="pBx9DryikqFmGHi3vS5p-1" value="+ cliente_id: int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="thWI7xXx2dMAzOaTdpSe-1" vertex="1">
           <mxGeometry y="104" width="140" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="pBx9DryikqFmGHi3vS5p-2" value="+ produto_id: int" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="thWI7xXx2dMAzOaTdpSe-1" vertex="1">
+        <mxCell id="pBx9DryikqFmGHi3vS5p-2" value="+ produto_id: null" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="thWI7xXx2dMAzOaTdpSe-1" vertex="1">
           <mxGeometry y="130" width="140" height="26" as="geometry" />
         </mxCell>
         <mxCell id="pBx9DryikqFmGHi3vS5p-3" value="+ quantidade: string" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;whiteSpace=wrap;html=1;" parent="thWI7xXx2dMAzOaTdpSe-1" vertex="1">
