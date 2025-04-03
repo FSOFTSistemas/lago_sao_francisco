@@ -7,6 +7,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
+use App\Http\Controllers\DiariaController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\EspacoController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendaController;
 use App\Http\Controllers\VendaItemController;
+use App\Models\Diaria;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -73,3 +75,6 @@ Route::resource('formaPagamento', FormaPagamentoController::class);
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
 
 Route::resource('espaco', EspacoController::class); //->middleware('permission:gerenciar espaco')
+
+Route::resource('diaria', DiariaController::class); //->middleware('permission:gerenciar diaria')
+

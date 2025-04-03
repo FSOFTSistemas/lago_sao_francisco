@@ -311,10 +311,20 @@ return [
         //     'url' => '/financeiro',
         // ],
         [
-            'text' => 'Usuários',
-            'url'  => '/usuarios',
-            'icon' => 'fas fa-users',
-            'can'  => 'gerenciar usuarios'
+            'text'    => 'Lago',
+            'icon'    => 'fas fa-place-of-worship',
+            'submenu' => [
+                [
+                    'text' => 'Espaços',
+                    'icon' => 'fas fa-campground',
+                    'url'  => '/espaco',
+                ],
+                [
+                    'text' => 'Day use / Passaporte',
+                    'icon' => 'fas fa-ticket-alt',
+                    'url'  => '/diaria',
+                ],
+            ],
         ],
         [
             'text' => 'Produtos',
@@ -326,7 +336,7 @@ return [
             'text' => 'Clientes',
             'url'  => '/cliente',
             'icon' => 'fa fa-handshake',
-            'can'  => 'gerenciar clientes',
+            'can'  => 'gerenciar cliente',
         ],
         [
             'text' => 'Funcionários',
@@ -360,11 +370,13 @@ return [
                 [
                     'text' => 'Adiantamentos',
                     'url'  => '/adiantamento',
+                    'icon' => 'fas fa-cash-register',
                     'can'  => 'gerenciar adiantamento',
                 ],
                 [
                     'text' => 'Banco',
                     'url'  => '/bancos',
+                    'icon' => 'fas fa-university',
                     'can'  => 'gerenciar banco',
                 ],
                 
@@ -372,34 +384,45 @@ return [
                 [
                     'text'  => 'Conta Corrente',
                     'url'   => '/contaCorrente',
+                    'icon'  => 'fas fa-file-invoice',
                     'can'   => 'gerenciar conta corrente',
                 ],
                 [
                     'text' => 'Contas a Pagar',
                     'url'  => '/contasAPagar',
+                    'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar contas a pagar',
                 ],
                 [
                     'text' => 'Contas a Receber',
                     'url'  => '/contasAReceber',
+                    'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar contas a receber',
                 ],
                 [
                     'text' => 'Fluxos de Caixa',
                     'url'  => '/fluxoCaixa',
+                    'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar fluxo de caixa',
                 ],                
                 [
                     'text' => 'Plano de Contas',
                     'url'  => '/planoDeConta',
+                    'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar plano de conta',
                 ],
             ],
         ],
         [
+            'text' => 'Usuários',
+            'url'  => '/usuarios',
+            'icon' => 'fas fa-users',
+            'can'  => 'gerenciar usuarios'
+        ],
+        [
             'text' => 'Preferências',
             'url'  => '/preferencias',
-            'icon' => 'fas fa-gears',
+            'icon' => 'fas fa-cogs',
         ]
     
     ],
