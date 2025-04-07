@@ -327,6 +327,37 @@ return [
             ],
         ],
         [
+            'text'    => 'Hotel',
+            'icon'    => 'fas fa-hotel',
+            'submenu' => [
+                [
+                    'text' => 'Home',
+                    'icon' => 'fas fa-home',
+                    'url'  => '/hotel',
+                ],
+                [
+                    'text' => 'Mapa',
+                    'icon' => 'fas fa-map',
+                    'url'  => '/mapa',
+                ],
+                [
+                    'text' => 'Reservas',
+                    'icon' => 'fas fa-bed',
+                    'url'  => '/reserva',
+                ],
+                [
+                    'text' => 'Hóspedes',
+                    'icon' => 'fas fa-user',
+                    'url'  => '/hospede',
+                ],
+                [
+                    'text' => 'Transações',
+                    'icon' => 'fas fa-credit-card',
+                    'url'  => '/transacao',
+                ],
+            ],
+        ],
+        [
             'text' => 'Produtos',
             'url'  => '/produto',
             'icon' => 'fas fa-boxes',
