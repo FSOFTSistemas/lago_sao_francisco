@@ -17,10 +17,10 @@ use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendaController;
 use App\Http\Controllers\VendaItemController;
-use App\Models\Diaria;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -78,3 +78,4 @@ Route::resource('espaco', EspacoController::class); //->middleware('permission:g
 
 Route::resource('diaria', DiariaController::class); //->middleware('permission:gerenciar diaria')
 
+Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')

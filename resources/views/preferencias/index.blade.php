@@ -17,6 +17,16 @@
                 </div>
             </a>
         </div>
+        <!-- Tarifas Hotel -->
+        <div class="col-md-3">
+            <a href="{{ route('tarifa.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-hotel fa-3x" style="color: #007bff;"></i>
+                    <h5 class="mt-3">Tarifas do Hotel</h5>
+                </div>
+            </a>
+        </div>
+    </div>
 @endsection
 
 @section('css')
