@@ -9,5 +9,31 @@ class Reserva extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'tipo_diaria', 'data', 'valor'];
+    protected $fillable = [
+        'quarto_id',
+        'hospede_id',
+        'data_checkin',
+        'data_checkout',
+        'valor_diaria',
+        'valor_total',
+        'situacao',
+        'n_adultos',
+        'n_criancas',
+        'observacoes',
+    ];
+
+    public function quarto()
+    {
+        return $this->belongsTo(Quarto::class, 'quarto_id');
+    }
+
+    public function hospede()
+    {
+        return $this->belongsTo(Hospede::class, 'hospede_id');
+    }
+
+    public function transacoes()
+    {
+        return $this->hasMany(Transacao::class);
+    }
 }
