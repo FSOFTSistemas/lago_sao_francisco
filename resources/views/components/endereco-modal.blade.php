@@ -23,7 +23,7 @@
                     <x-adminlte-input id="logradouro" name="logradouro" label="Logradouro"
                         placeholder="Digite o logradouro" required />
                     <x-adminlte-input id="numero" name="numero" label="Número" placeholder="Digite o número"
-                        required />
+                        />
                     <x-adminlte-input id="bairro" name="bairro" label="Bairro" placeholder="Digite o bairro"
                         required />
                     <x-adminlte-input id="cidade" name="cidade" label="Cidade" placeholder="Digite a cidade"

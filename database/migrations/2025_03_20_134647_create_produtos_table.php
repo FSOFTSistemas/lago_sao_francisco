@@ -23,6 +23,7 @@ class CreateProdutosTable extends Migration
             $table->decimal('aliquota', 5, 2)->nullable();
             $table->string('csosn')->nullable();
             $table->unsignedBigInteger('empresa_id');
+            $table->string('comissao')->nullable();
             $table->timestamps();
 
             $table->foreign('empresa_id')->references('id')->on('empresas');

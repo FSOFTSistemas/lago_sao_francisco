@@ -45,6 +45,7 @@ class ProdutoController extends Controller
                 'aliquota' => 'nullable|numeric',
                 'csosn' => 'nullable|string',
                 'empresa_id' => 'required|exists:empresas,id',
+                'comissao' => 'nullable|numeric',
             ]);
 
             Produto::create($request->all());
@@ -75,6 +76,7 @@ class ProdutoController extends Controller
                 'aliquota' => 'nullable|numeric',
                 'csosn' => 'nullable|string',
                 'empresa_id' => 'required|exists:empresas,id',
+                'comissao' => 'nullable|numeric',
             ]);
 
             $produto->update($request->all());

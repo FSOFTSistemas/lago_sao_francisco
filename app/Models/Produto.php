@@ -22,7 +22,8 @@ class Produto extends Model
         'cfop_externo',
         'aliquota',
         'csosn',
-        'empresa_id'
+        'empresa_id',
+        'comissao'
     ];
     public function daEmpresa(){
         return $this->belongsTo(Empresa::class, 'empresa_id');

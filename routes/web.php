@@ -15,6 +15,7 @@ use App\Http\Controllers\FluxoCaixaController;
 use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
+use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\TarifaController;
@@ -79,3 +80,5 @@ Route::resource('espaco', EspacoController::class); //->middleware('permission:g
 Route::resource('diaria', DiariaController::class); //->middleware('permission:gerenciar diaria')
 
 Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')
+
+Route::resource('hospede', HospedeController::class);
