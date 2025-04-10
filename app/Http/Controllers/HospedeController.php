@@ -44,7 +44,7 @@ class HospedeController extends Controller
             'nascimento' => 'nullable|date',
             'sexo' => 'nullable|in:masculino,feminino,outro',
             'profissao' => 'nullable|string',
-            'observacoes' => 'nullable|string',
+            'observacao' => 'nullable|string',
             'status' => 'nullable|boolean',
             'endereco_id' => 'nullable|exists:enderecos,id',
             'avatar_base64' => 'nullable|string',
@@ -63,9 +63,10 @@ class HospedeController extends Controller
             $path = $request->file('avatar')->store('avatars', 'public');
             $validated['avatar'] = $path;
         }
+        
         Hospede::create($validated);
 
-        return redirect()->route('hospede.index')->with('success', 'Hóspede criado com sucesso');
+        return back()->with('success', 'Hóspede cadastrado com sucesso!');
     } catch (\Exception $e) {
         return redirect()->back()->with('error', 'Erro ao criar hóspede: ' . $e->getMessage());
     }
@@ -99,7 +100,7 @@ class HospedeController extends Controller
             'nascimento' => 'nullable|date',
             'sexo' => 'nullable|in:masculino,feminino,outro',
             'profissao' => 'nullable|string',
-            'observacoes' => 'nullable|string',
+            'observacao' => 'nullable|string',
             'status' => 'nullable|boolean',
             'endereco_id' => 'nullable|exists:enderecos,id',
             'avatar_base64' => 'nullable|string',

@@ -82,6 +82,7 @@
 
 </body>
 </html>
+@endsection
 @section('js')
     <script src="{{ asset('js/endereco.js') }}"></script>
 @endsection

@@ -18,6 +18,7 @@ use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendaController;
@@ -82,3 +83,5 @@ Route::resource('diaria', DiariaController::class); //->middleware('permission:g
 Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')
 
 Route::resource('hospede', HospedeController::class);
+
+Route::resource('reserva', ReservaController::class);

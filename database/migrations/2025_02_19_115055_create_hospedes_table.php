@@ -21,7 +21,7 @@ return new class extends Migration
             $table->enum('sexo', ['masculino', 'feminino', 'outro'])->nullable();
             $table->string('profissao')->nullable();
             $table->text('observacao')->nullable();
-            $table->boolean('status');
+            $table->boolean('status')->nullable()->default(1);
             $table->foreignId('endereco_id')->nullable()->constrained()->onDelete('set null');
             $table->string('avatar')->nullable();
             $table->timestamps();
