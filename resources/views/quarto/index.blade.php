@@ -1,17 +1,25 @@
 @extends('adminlte::page')
 
-@section('title', 'Hóspedes')
+@section('title', 'Quartos')
 
 @section('content_header')
-    <h5>Lista de Hóspedes</h5>
+    <h5>Lista de Quartos</h5>
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('hospede.create')}}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Adicionar Hóspede
+  <div class="row mb-3 pt-3">
+    <div class="col d-flex justify-content-start">
+      <a href="{{ route('preferencias') }}" class="btn btn-success">
+          <i class="fas fa-arrow-left"></i> Voltar
+      </a>
+    </div>
+
+    <div class="col d-flex justify-content-end">
+        <a href="{{route('quarto.create')}}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Novo Quarto
         </a>
     </div>
+  </div>
 
     @component('components.data-table', [
         'responsive' => [
@@ -26,47 +34,43 @@
         'valueColumnIndex' => 0,
     ])
 
-            <thead class="bg-primary text-white">
+            <thead class="table-primary">
                 <tr>
                     <th>Ativo?</th>
-                    <th>Nome completo</th>
-                    <th>Email</th>
-                    <th>Fone</th>
-                    <th>Cidade</th>
+                    <th>Posição</th>
+                    <th>Título</th>
+                    <th>Categoria</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($hospede as $hospede)
+                @foreach ($quartos as $quarto)
                     <tr>
                         <td>
-                          @if($hospede->status == true)
+                          @if($quarto->status == true)
                           <i class="fa-regular fa-circle-check"></i>
                           @else
                           <i class="fa-regular fa-circle-xmark"></i>
                           @endif
                         </td>
+                        <td>{{ $quarto->posicao }}</td>
                         <td>
-                          <a id="editlink" href="{{ route('hospede.edit', $hospede->id) }}">
-                            {{ $hospede->nome }}
+                          <a id="editlink" href="{{ route('quarto.edit', $quarto->id) }}">
+                            {{ $quarto->nome }}
                           </a>
                         </td>
-                        <td>{{ $hospede->email }}</td>
-                        <td>{{ $hospede->telefone }}</td>
-                        <td>{{ $hospede->endereco?->cidade ?? '' }}</td>
+                        <td>{{ $quarto->categoria_id->titulo }}</td>
                         <td>
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteHospedeModal{{ $hospede->id }}">
+                                data-target="#deleteQuartoModal{{ $quarto->id }}">
                                 🗑️
                             </button>
                         </td>
                     </tr>
-                    @include('hospede.modals._delete', ['hospede' => $hospede])
+                    @include('quarto.modals._delete', ['quarto' => $quarto])
                 @endforeach
             </tbody>
     @endcomponent
-
-    @include('components.endereco-modal')
 @stop
 
 @section('css')

@@ -1,112 +1,185 @@
 @extends('adminlte::page')
 
-@section('title', isset($produto) ? 'Editar Produto' : 'Novo Produto')
+@section('title', isset($produto) ? 'Atualizar Produto' : 'Criar Produto')
 
 @section('content_header')
-    <h4>{{ isset($produto) ? 'Editar produto' : 'Cadastrar Novo produto' }}</h4>
-@stop
+    <h1>{{ isset($produto) ? 'Atualizar Produto' : 'Criar Produto' }}</h1>
+@endsection
 
 @section('content')
+<form action="{{ isset($produto) ? route('produto.update', $produto->id) : route('produto.store') }}" method="POST">
+    @csrf
+    @if(isset($produto))
+        @method('PUT')
+    @endif
+
     <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h3 class="card-title">
-                {{ isset($produto) ? 'Editar informações do Produto' : 'Preencha os dados do novo Produto' }}</h3>
-        </div>
         <div class="card-body">
-            <form action="{{ isset($produto) ? route('produto.update', $produto->id) : route('produto.store') }}"
-                method="POST">
-                @csrf
-                @if (isset($produto))
-                    @method('PUT')
-                @endif
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="descricao">Descrição:</label>
-                        <input type="text" class="form-control" id="descricao" name="nome" required value="{{ $produto->descricao ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="tipo">Tipo:</label>
-                        <select class="form-control" id="tipo" name="tipo" required>
-                            <option value=""></option>
-                            <option value=""></option>
-                        </select>
-                    </div>
-                </div>
+            <ul class="nav nav-tabs" id="produtoTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" id="info-tab" data-toggle="tab" href="#info" role="tab">Informações da Produto</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="dias-tab" data-toggle="tab" href="#dias" role="tab">Produto / Fiscal</a>
+                </li>
+            </ul>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="ean">EAN:</label>
-                        <input type="text" class="form-control" id="ean" name="ean" required value="{{ $produto->ean ?? '' }}">
+            <div class="tab-content mt-3" id="produtoTabsContent">
+                {{-- Aba 1: Informações da Produto --}}
+                <div class="tab-pane fade show active" id="info" role="tabpanel">
+                    <div class="form-group row">
+                        <div class="col-md-6 mb-3">
+                            <label for="descricao">Descrição:</label>
+                            <input type="text" class="form-control" id="descricao" name="nome" required value="{{ $produto->descricao ?? '' }}">
+                        </div>
+                      </div>
+
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">* Categoria</label>
+                        <input type="text" class="form-control" id="categoria" name="categoria" value="{{ old('categoria', $produto->categoria ?? '') }}" required>
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label for="tipo">Situação:</label>
-                        <select class="form-control" id="status" name="status" required>
-                            <option value="ativo">Ativo</option>
-                            <option value="inativo">Inativo</option>
-                        </select>
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">Observações extras</label>
+                        <textarea class="form-control" name="observacoes" rows="3">{{ old('observacoes', $produto->observacoes ?? '') }}</textarea>
                     </div>
-                </div>
 
-                <div class="row">
-                        
-                    <div class="col-md-6 mb-3">
-                        <label for="precoCusto">Preço de Custo:</label>
-                        <input type="text" class="form-control" id="precoCusto" name="preco_custo" required value="{{ $produto->preco_custo ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="precoVenda">Preço de Venda:</label>
-                        <input type="text" class="form-control" id="precoVenda" name="preco_venda" required value="{{ $produto->preco_venda ?? '' }}">
-                    </div>
+                    <div class="mb-3">
+                      <label class="form-label d-block">* Produto Ativa?</label>
+                      <div class="form-check form-switch">
+                          <input type="hidden" name="ativo" value="0">
+                          <input 
+                              class="form-check-input" 
+                              type="checkbox" 
+                              id="ativoSwitch" 
+                              name="ativo" 
+                              value="1"
+                              {{ old('ativo', $produto->ativo ?? false) ? 'checked' : '' }}>
+                          <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
+                              {{ old('ativo', $produto->ativo ?? false) ? 'Ativa' : 'Inativa' }}
+                          </label>
+                      </div>
                   </div>
                   
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="ncm">NCM:</label>
-                        <input type="text" class="form-control" id="ncm" name="ncm" required value="{{ $produto->ncm ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="cst">CST:</label>
-                        <input type="text" class="form-control" id="cst" name="cst" required value="{{ $produto->cst ?? '' }}">
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="cfopInterno">CFOP Interno:</label>
-                        <input type="text" class="form-control" id="cfopInterno" name="cfop_interno" required value="{{ $produto->cfop_interno ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="cfopExterno">CFOP Externo:</label>
-                        <input type="text" class="form-control" id="cfopExterno" name="cfop_externo" required value="{{ $produto->cfop_externo ?? '' }}">
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="aliquota">Alíquota:</label>
-                        <input type="text" class="form-control" id="aliquota" name="aliquota" required value="{{ $produto->aliquota ?? '' }}">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="csosn">CSOSN:</label>
-                        <input type="text" class="form-control" id="csosn" name="csosn" required value="{{ $produto->csosn ?? '' }}">
-                    </div>
-                  </div>
-
-                <!-- Botão de Salvar -->
-                <div class="form-group col-md-12">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save"></i> {{ isset($produto) ? 'Atualizar' : 'Salvar' }}
-                    </button>
+                  
                 </div>
-            </form>
+
+
+                {{-- Aba 2: Produto por Dia da Semana --}}
+                <div class="tab-pane fade" id="dias" role="tabpanel">
+                    <div class="alert alert-secondary">
+                        <strong>DICA:</strong> O valor que você deve inserir em cada diária abaixo refere-se à ocupação máxima do quarto. <br>
+                        <em>EX: Se você possui um quarto que a ocupação máxima é de 3 pessoas, você deve inserir o valor cobrado por estas 3 pessoas na diária.</em>
+                    </div>
+
+                    @php
+                        $dias = [
+                            'seg' => 'Segunda-feira',
+                            'ter' => 'Terça-feira',
+                            'qua' => 'Quarta-feira',
+                            'qui' => 'Quinta-feira',
+                            'sex' => 'Sexta-feira',
+                            'sab' => 'Sábado',
+                            'dom' => 'Domingo',
+                        ];
+                    @endphp
+
+                    @foreach ($dias as $key => $label)
+                        <div class="mb-3 row">
+                            <label class="col-sm-2 col-form-label">{{ $label }}</label>
+                            <div class="col-sm-4">
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    name="{{ $key }}"
+                                    value="{{ old($key, $produto->$key ?? '') }}"
+                                >
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Aba 3: Produto / Hóspede --}}
+                <div class="tab-pane fade" id="hospede" role="tabpanel">
+                    <p>Em breve...</p>
+                </div>
+            </div>
+
+            {{-- Infos finais --}}
+            @if(isset($produto))
+                <p class="text-muted mt-3">
+                    Criado em: {{ $produto->created_at->format('d/m/Y H:i:s') }}<br>
+                    Alterado em: {{ $produto->updated_at->format('d/m/Y H:i:s') }}<br>
+                    Alterado por: {{ Auth::user()->name }}
+                </p>
+            @endif
+        </div>
+
+        
+        <div class="card-footer text-end">
+            <button type="submit" class="btn btn-{{ isset($produto) ? 'info' : 'success' }}">
+                {{ isset($produto) ? 'Atualizar Produto' : 'Criar Produto' }}
+            </button>
         </div>
     </div>
-@stop
+</form>
+@endsection
+
+
+@section('css')
+<style>
+.form-switch {
+    padding-left: 3em;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.form-switch .form-check-input {
+    width: 3.5rem;
+    height: 1.75rem;
+    background-color: #dee2e6;
+    border-radius: 1.75rem;
+    position: relative;
+    transition: background-color 0.3s ease-in-out;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #0d6efd;
+}
+
+.form-switch .form-check-input::before {
+    content: "";
+    position: absolute;
+    width: 1.5rem;
+    height: 1.5rem;
+    top: 0.125rem;
+    left: 0.125rem;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease-in-out;
+}
+
+.form-switch .form-check-input:checked::before {
+    transform: translateX(1.75rem);
+}
+</style>
+@endsection
+
 
 @section('js')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const switchInput = document.getElementById('ativoSwitch');
+        const label = document.getElementById('ativoLabel');
+
+        switchInput.addEventListener('change', function () {
+            label.textContent = this.checked ? 'Ativa' : 'Inativa';
+        });
+    });
+</script>
 @endsection

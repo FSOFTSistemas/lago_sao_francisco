@@ -59,7 +59,7 @@
                 <div class="form-group row">
                   <label for="hospede_id" class="col-md-3 label-control">Hóspede</label>
                   <div class="col-sm-4">
-                      <select class="form-control" name="hospede_id" id="hospede_id">
+                      <select class="form-control select2" name="hospede_id" id="hospede_id">
                           <option value="">Selecione um hóspede</option>
                           @foreach($hospedes as $hospede)
                               <option value="{{ $hospede->id }}">{{ $hospede->nome }}</option>
@@ -416,11 +416,9 @@ input[type="number"] {
       const situacao = $('input[name="situacao"]:checked').val();
 
       if (situacao === 'bloqueado') {
-        // Oculta todos os form-group, exceto os permitidos
         $('.form-group').not('#campoPeriodo, #campoQuarto, #campoObservacoes, #campoSituacao').slideUp(200);
         $('#campoPeriodo, #campoQuarto, #campoObservacoes, #campoSituacao').slideDown(200);
 
-        // Define o hóspede como "bloqueado", se existir o select
         if ($('#hospede_id').length) {
           $('#hospede_id').val('').prop('disabled', true);
           if ($('#hospede_id option[value="bloqueado"]').length === 0) {
@@ -435,7 +433,7 @@ input[type="number"] {
     }
 
     $('input[name="situacao"]').on('change', atualizarCampos);
-    atualizarCampos(); // roda na primeira carga
+    atualizarCampos();
   });
 </script>
 

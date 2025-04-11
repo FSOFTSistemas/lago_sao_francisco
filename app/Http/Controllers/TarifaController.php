@@ -14,12 +14,12 @@ class TarifaController extends Controller
     public function index()
     {
         $tarifa = Tarifa::all();
-        return view('preferencias.tarifa', compact('tarifa'));
+        return view('tarifa.tarifa', compact('tarifa'));
     }
 
     public function create()
     {
-        return view('preferencias.manageTarifa');
+        return view('tarifa.manageTarifa');
     }
 
     public function store(Request $request)
@@ -53,7 +53,7 @@ class TarifaController extends Controller
     public function edit(Tarifa $tarifa)
     {   
         $tarifa = Tarifa::all();
-        return view('preferencias.manageTarifa', compact('tarifa'));
+        return view('tarifa.manageTarifa', compact('tarifa'));
     }
 
     /**

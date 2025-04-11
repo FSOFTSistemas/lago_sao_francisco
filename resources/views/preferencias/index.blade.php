@@ -26,6 +26,24 @@
                 </div>
             </a>
         </div>
+        <!-- Cadastro Quarto -->
+        <div class="col-md-3">
+            <a href="{{ route('quarto.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-bed fa-3x" style="color: #007bff;"></i>
+                    <h5 class="mt-3">Cadastro de Quartos</h5>
+                </div>
+            </a>
+        </div>
+        <!-- Cadastro Categorias Quarto -->
+        <div class="col-md-3">
+            <a href="{{ route('categoria.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-tag fa-3x" style="color: #007bff;"></i>
+                    <h5 class="mt-3">Cadastro de Categorias Quarto</h5>
+                </div>
+            </a>
+        </div>
     </div>
 @endsection
 

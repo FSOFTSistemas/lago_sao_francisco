@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\QuartoController;
 use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UserController;
@@ -85,3 +87,7 @@ Route::resource('tarifa', TarifaController::class); //->middleware('permission:g
 Route::resource('hospede', HospedeController::class);
 
 Route::resource('reserva', ReservaController::class);
+
+Route::resource('quarto', QuartoController::class);
+
+Route::resource('categoria', CategoriaController::class);

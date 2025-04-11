@@ -117,18 +117,18 @@
                 </div>
 
                 <div class="form-group row">
-                  <label class="col-md-3 form-label d-block label-control" >Ativo?</label>
+                  <label class="col-md-3 form-label d-block label-control">Ativo?</label>
                   <div class="form-check form-switch">
                       <input type="hidden" name="status" value="0">
-                      <input 
-                          class="form-check-input" 
-                          type="checkbox" 
-                          id="ativoSwitch" 
-                          name="status" 
+                      <input
+                          class="form-check-input"
+                          type="checkbox"
+                          id="ativoSwitch"
+                          name="status"
                           value="1"
-                          {{ old('status', $hospede->status ?? false) ? 'checked' : '' }}>
+                          {{ old('status', $quarto->status ?? true) ? 'checked' : '' }}>
                       <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
-                          {{ old('status', $hospede->status ?? false) ? 'Ativo' : 'Inativo' }}
+                          {{ old('status', $quarto->status ?? true) ? 'Ativo' : 'Inativo' }}
                       </label>
                   </div>
                 </div>
@@ -283,11 +283,12 @@
   document.addEventListener('DOMContentLoaded', function () {
       const switchInput = document.getElementById('ativoSwitch');
       const label = document.getElementById('ativoLabel');
-
+      label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
       switchInput.addEventListener('change', function () {
           label.textContent = this.checked ? 'Ativo' : 'Inativo';
       });
   });
+</script>
 </script>
 <script>
   $(document).ready(function() {
