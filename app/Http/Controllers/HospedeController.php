@@ -66,7 +66,7 @@ class HospedeController extends Controller
         
         Hospede::create($validated);
 
-        return back()->with('success', 'Hóspede cadastrado com sucesso!');
+        return redirect()->route('hospede.index')->with('success', 'Hóspede cadastrado com sucesso!');
     } catch (\Exception $e) {
         return redirect()->back()->with('error', 'Erro ao criar hóspede: ' . $e->getMessage());
     }
@@ -124,7 +124,7 @@ class HospedeController extends Controller
 
         $hospede->update($validated);
 
-        return redirect()->route('hospede.index')->with('success', 'Hóspede atualizado com sucesso');
+        return redirect()->back()->with('success', 'Hóspede atualizado com sucesso');
     } catch (\Exception $e) {
         dd($e->getMessage());
         return redirect()->back()->with('error', 'Erro ao atualizar hóspede');

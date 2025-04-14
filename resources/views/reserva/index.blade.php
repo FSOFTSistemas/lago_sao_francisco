@@ -28,7 +28,7 @@
 
             <thead class="bg-primary text-white">
                 <tr>
-                    <th>ID</th>
+                    <th>Reserva/Hospedagem</th>
                     <th>Hóspede</th>
                     <th>Quarto</th>
                     <th>Check-in</th>
@@ -40,27 +40,23 @@
                 @foreach ($reservas as $reserva)
                     <tr>
                         <td>
-                          <a id="editlink" href="{{ route('reserva.edit', $reserva->id) }}">
-                          {{ $reserva->id }}</td>
-                          </a>
-                        <td>{{ $reserva->hospede_id->nome }}</td>
-                        <td>{{ $reserva->quarto }}</td>
+                            <a id="editlink" href="{{ route('reserva.edit', $reserva->id) }}">
+                            00000{{ $reserva->id }}
+                            </a>
+                        </td>
+                        <td>{{ $reserva->hospede->nome }}</td>
+                        <td>{{ $reserva->quarto->nome }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($reserva->data_checkin)->format('d/m/Y') }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($reserva->data_checkout)->format('d/m/Y') }}</td>
                         <td>
-                          {{ $reserva->n_adultos }}
-                          @if($reserva->n_criancas >= 1)
-                          / ({{ $reserva->n_criancas }})
-                          @else
-                          ""
-                          @endif
+                            {{ $reserva->n_adultos }}
+                            @if($reserva->n_criancas >= 1)
+                            / ({{ $reserva->n_criancas }})
+                            @else
+                            
+                            @endif
                         </td>
-                        {{-- <td>
-                            <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteReservaModal{{ $reserva->id }}">
-                                🗑️
-                            </button>
-                        </td> --}}
+                    
                     </tr>
                 @endforeach
             </tbody>

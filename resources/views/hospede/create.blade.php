@@ -150,7 +150,7 @@
                   <label class="col-md-3 label-control" for="endereco_id">Endereço</label>
                   <div class="col-md-3">
                       <div class="input-group">
-                          <select class="form-control select2" id="endereco_id" name="endereco_id" required>
+                          <select class="form-control select2" id="endereco_id" name="endereco_id">
                               <option value="" disabled {{ !isset($hospede->endereco_id) ? 'selected' : '' }}>
                                   Selecione um endereço...
                               </option>

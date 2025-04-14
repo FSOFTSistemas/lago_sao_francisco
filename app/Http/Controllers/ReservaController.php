@@ -16,11 +16,13 @@ class ReservaController extends Controller
     }
 
     public function create()
-    {
-        $quartos = Quarto::all();
-        $hospedes = Hospede::all();
-        return view('reserva.create', compact('quartos', 'hospedes'));
-    }
+{
+    $quartos = Quarto::all();
+    $hospedes = Hospede::all();
+    $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+
+    return view('reserva.create', compact('quartos', 'hospedes', 'hospedeBloqueado'));
+}
 
     public function store(Request $request)
     {
@@ -30,18 +32,18 @@ class ReservaController extends Controller
                 'hospede_id' => 'nullable|exists:hospedes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'required|numeric',
-                'valor_total' => 'required|numeric',
+                'valor_diaria' => 'required',
+                'valor_total' => 'numeric',
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
-                'n_adultos' => 'required|numeric',
-                'n_criancas' => 'required|numeric',
+                'n_adultos' => 'required',
+                'n_criancas' => 'required',
             ]);
     
             Reserva::create($request->all());
     
             return redirect()->route('reserva.index')->with('success', 'Reserva criada com sucesso!');
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao criar reserva!');
         }
     }
@@ -59,18 +61,18 @@ class ReservaController extends Controller
         try {
         $request->validate([
             'quarto_id' => 'required|exists:quartos,id',
-            'hospede_id' => 'nullable|exists:hospedes,id',
-            'data_checkin' => 'required|date',
-            'data_checkout' => 'required|date|after_or_equal:data_checkin',
-            'valor_diaria' => 'required|numeric',
-            'valor_total' => 'required|numeric',
-            'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
-            'n_adultos' => 'required|numeric',
-            'n_criancas' => 'required|numeric',
+                'hospede_id' => 'nullable|exists:hospedes,id',
+                'data_checkin' => 'required|date',
+                'data_checkout' => 'required|date|after_or_equal:data_checkin',
+                'valor_diaria' => 'required',
+                'valor_total' => 'numeric',
+                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
+                'n_adultos' => 'required',
+                'n_criancas' => 'required',
         ]);
         $reserva->update($request->all());
 
-        return redirect()->route('reserva.index')->with('success', 'Reserva atualizada com sucesso!');
+        return redirect()->back()->with('success', 'Reserva atualizada com sucesso!');
     } catch (\Exception $e) {
         dd($e->getMessage());
         return redirect()->back()->with('error', 'Erro ao atualizar reserva!');

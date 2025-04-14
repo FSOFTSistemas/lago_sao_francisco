@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Empresa;
-use App\Models\FormaPagamento;
+use App\Models\Hospede;
 use App\Models\Movimento;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -107,6 +107,9 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
+        Hospede::firstOrCreate(
+            ['nome' => 'Bloqueado']
+        );
     }
 
 }

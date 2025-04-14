@@ -17,6 +17,7 @@ use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
+use App\Http\Controllers\MapaQuartoController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
@@ -91,3 +92,5 @@ Route::resource('reserva', ReservaController::class);
 Route::resource('quarto', QuartoController::class);
 
 Route::resource('categoria', CategoriaController::class);
+
+Route::resource('mapaQuarto', MapaQuartoController::class);

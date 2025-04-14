@@ -59,7 +59,7 @@
                             {{ $quarto->nome }}
                           </a>
                         </td>
-                        <td>{{ $quarto->categoria_id->titulo }}</td>
+                        <td>{{ $quarto->categoria->titulo }}</td>
                         <td>
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                                 data-target="#deleteQuartoModal{{ $quarto->id }}">

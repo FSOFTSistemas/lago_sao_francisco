@@ -12,7 +12,7 @@ class Produto extends Model
         'id',
         'descricao',
         'tipo',
-        'situacao',
+        'ativo',
         'ean',
         'preco_custo',
         'preco_venda',
@@ -23,7 +23,8 @@ class Produto extends Model
         'aliquota',
         'csosn',
         'empresa_id',
-        'comissao'
+        'comissao',
+        'observacoes'
     ];
     public function daEmpresa(){
         return $this->belongsTo(Empresa::class, 'empresa_id');

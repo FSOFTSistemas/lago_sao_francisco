@@ -38,6 +38,7 @@
             </thead>
             <tbody>
                 @foreach ($hospede as $hospede)
+                @continue($hospede->nome === 'Bloqueado')
                     <tr>
                         <td>
                           @if($hospede->status == true)

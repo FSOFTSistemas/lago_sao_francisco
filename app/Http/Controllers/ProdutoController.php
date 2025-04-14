@@ -33,8 +33,8 @@ class ProdutoController extends Controller
         try {
             $request->validate([
                 'descricao' => 'required|string',
-                'tipo' => 'required|string',
-                'situacao' => 'required|string',
+                'categoria' => 'required|string',
+                'ativo' => 'required|boolean',
                 'ean' => 'nullable|string',
                 'preco_custo' => 'nullable|numeric',
                 'preco_venda' => 'required|numeric',
@@ -46,6 +46,7 @@ class ProdutoController extends Controller
                 'csosn' => 'nullable|string',
                 'empresa_id' => 'required|exists:empresas,id',
                 'comissao' => 'nullable|numeric',
+                'observacoes' => 'nullable|string'
             ]);
 
             Produto::create($request->all());
@@ -65,7 +66,7 @@ class ProdutoController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'tipo' => 'required|string',
-                'situacao' => 'required|string',
+                'ativo' => 'required|boolean',
                 'ean' => 'nullable|string',
                 'preco_custo' => 'nullable|numeric',
                 'preco_venda' => 'required|numeric',
@@ -77,6 +78,7 @@ class ProdutoController extends Controller
                 'csosn' => 'nullable|string',
                 'empresa_id' => 'required|exists:empresas,id',
                 'comissao' => 'nullable|numeric',
+                'observacoes' => 'nullable|string'
             ]);
 
             $produto->update($request->all());

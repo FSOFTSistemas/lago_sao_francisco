@@ -22,6 +22,14 @@ class Quarto extends Model
     }
     public function categoria()
     {
-        return $this->belongsTo(Categoria::class);
+        return $this->belongsTo(Categoria::class, 'categoria_id');
+    }
+    public function reservaAtual()
+    {
+        return $this->reservas()
+        ->whereDate('data_checkin', '<=', now())
+        ->whereDate('data_checkout', '>=', now())
+        ->latest()
+        ->first();
     }
 }

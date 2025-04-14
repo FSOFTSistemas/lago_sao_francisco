@@ -11,8 +11,8 @@ class CreateProdutosTable extends Migration
         Schema::create('produtos', function (Blueprint $table) {
             $table->id();
             $table->string('descricao');
-            $table->string('tipo');
-            $table->string('situacao');
+            $table->string('categoria');
+            $table->boolean('ativo');
             $table->string('ean')->nullable();
             $table->decimal('preco_custo', 10, 2)->nullable();
             $table->decimal('preco_venda', 10, 2);
@@ -24,6 +24,7 @@ class CreateProdutosTable extends Migration
             $table->string('csosn')->nullable();
             $table->unsignedBigInteger('empresa_id');
             $table->string('comissao')->nullable();
+            $table->string('observacoes')->nullable();
             $table->timestamps();
 
             $table->foreign('empresa_id')->references('id')->on('empresas');

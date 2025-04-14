@@ -333,7 +333,7 @@ return [
                 [
                     'text' => 'Home',
                     'icon' => 'fas fa-home',
-                    'url'  => '/hotel',
+                    'url'  => '/mapaQuarto',
                 ],
                 [
                     'text' => 'Mapa',

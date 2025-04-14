@@ -55,17 +55,20 @@
                   <hr>
                 </div>
 
-                <!-- Select de Hóspedes com Botão -->
                 <div class="form-group row">
                   <label for="hospede_id" class="col-md-3 label-control">Hóspede</label>
                   <div class="col-sm-4">
-                      <select class="form-control select2" name="hospede_id" id="hospede_id">
-                          <option value="">Selecione um hóspede</option>
-                          @foreach($hospedes as $hospede)
-                              <option value="{{ $hospede->id }}">{{ $hospede->nome }}</option>
-                          @endforeach
-                      </select>
-                  </div>
+                    <select class="form-control select2" name="hospede_id" id="hospede_id">
+                        <option value="">Selecione um hóspede</option>
+                        @foreach($hospedes as $hospede)
+                            <option value="{{ $hospede->id }}" 
+                                {{ old('hospede_id', $reserva->hospede_id ?? '') == $hospede->id ? 'selected' : '' }}>
+                                {{ $hospede->nome }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
                   <div class="col-sm-2">
                       <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalCadastrarHospede">
                           <i class="fas fa-user-plus"></i>
@@ -79,24 +82,30 @@
                 <div class="form-group row" id="campoPeriodo">
                   <label class="col-md-3 label-control" for="periodo">* Período</label>
                   <div class="col-md-4">
-                    <input type="text" class="form-control" id="periodo" name="periodo" />
+                      <input type="text" class="form-control" id="periodo" name="periodo"
+                          value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
                   </div>
-                </div>
+              </div>
+              
+              <input type="hidden" name="data_checkin" id="data_checkin" value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
+              <input type="hidden" name="data_checkout" id="data_checkout" value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
+              
+              
 
-                <input type="hidden" name="data_checkin" value="">
-                <input type="hidden" name="data_checkout" value="">
 
-
-                <div class="form-group row" id="campoQuarto">
-                  <label class="col-md-3 label-control" for="quarto">* Quarto</label>
-                  <div class="col-md-4">
-                    <select class="form-control select2" id="quarto" name="quarto">
-                      @foreach ($quartos as $quarto)
-                        <option value="{{ $quarto->id }}">{{ $quarto->nome }}</option>
-                      @endforeach
+              <div class="form-group row" id="campoQuarto">
+                <label class="col-md-3 label-control" for="quarto">* Quarto</label>
+                <div class="col-md-4">
+                    <select class="form-control select2" id="quarto" name="quarto_id">
+                        <option value="">Selecione um quarto</option>
+                        @foreach ($quartos as $quarto)
+                            <option value="{{ $quarto->id }}" {{ old('quarto_id', $reserva->quarto_id ?? '') == $quarto->id ? 'selected' : '' }}>
+                                {{ $quarto->nome }}
+                            </option>
+                        @endforeach
                     </select>
-                  </div>
                 </div>
+            </div>
 
 
                 
@@ -132,6 +141,10 @@
                 </div>
 
                 <div class="card-footer">
+                    <button type="button" class="btn btn-danger" data-toggle="modal"
+                    data-target="#deleteReservaModal{{ $reserva->id }}">
+                    Excluir 🗑️
+                    </button>
                     <a href="{{ route('reserva.index') }}" class="btn btn-secondary">Voltar</a>
                     <button type="submit" class="btn btn-primary">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
                 </div>
@@ -190,7 +203,6 @@
 
 
           <div class="dicas">
-            <!-- Quadro lateral de Dicas -->
           <div id="quadroDicas" class="card shadow-sm transition-all" >
             <div class="card-body pb-2">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -202,7 +214,6 @@
 
                 <div id="conteudoDicas">
                     <div id="textoDica" class="text-dark mb-3">
-                        <!-- Conteúdo inicial aqui -->
                     </div>
 
                     <div class="d-flex justify-content-center mb-2">
@@ -212,6 +223,7 @@
             </div>
           </div>
           </div>
+          @include('reserva.modals._delete', ['reserva' => $reserva])
     @include('components.endereco-modal')
 @stop
 
@@ -255,7 +267,6 @@ input[type="number"] {
     padding: 6px 10px;
 }
 
-/* Espaçamento entre os campos */
 .form-group .row > div {
     margin-right: 10px;
 }
@@ -274,6 +285,10 @@ input[type="number"] {
     padding-top: 0;
     padding-bottom: 0;
 }
+
+#delbtn {
+  t: left
+}
   </style>
   <style>
     @media (max-width: 768px) {
@@ -286,13 +301,14 @@ input[type="number"] {
 
 @section('js')
 <script src="{{ asset('js/endereco.js') }}"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></scrip>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
     $(document).ready(function() {
@@ -324,7 +340,18 @@ input[type="number"] {
     }, function(start, end) {
       $('input[name="data_checkin"]').val(start.format('YYYY-MM-DD'));
       $('input[name="data_checkout"]').val(end.format('YYYY-MM-DD'));
+      
+      $('#periodo').val(start.format('DD/MM/YYYY') + ' a ' + end.format('DD/MM/YYYY'));
     });
+
+    let initialStartDate = $('input[name="data_checkin"]').val();
+    let initialEndDate = $('input[name="data_checkout"]').val();
+
+    if (initialStartDate && initialEndDate) {
+      $('#periodo').data('daterangepicker').setStartDate(moment(initialStartDate, 'YYYY-MM-DD'));
+      $('#periodo').data('daterangepicker').setEndDate(moment(initialEndDate, 'YYYY-MM-DD'));
+      $('#periodo').val(moment(initialStartDate, 'YYYY-MM-DD').format('DD/MM/YYYY') + ' a ' + moment(initialEndDate, 'YYYY-MM-DD').format('DD/MM/YYYY'));
+    }
   });
 </script>
 
@@ -393,7 +420,6 @@ input[type="number"] {
         trocarDica();
         setInterval(trocarDica, 8000);
 
-        // Mostrar/esconder conteúdo
         let expandido = true;
 
         btnToggle.addEventListener('click', function () {
@@ -412,30 +438,58 @@ input[type="number"] {
 
 <script>
   $(document).ready(function () {
+    const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? '' }}";
+
     function atualizarCampos() {
       const situacao = $('input[name="situacao"]:checked').val();
 
       if (situacao === 'bloqueado') {
-        $('.form-group').not('#campoPeriodo, #campoQuarto, #campoObservacoes, #campoSituacao').slideUp(200);
-        $('#campoPeriodo, #campoQuarto, #campoObservacoes, #campoSituacao').slideDown(200);
-
-        if ($('#hospede_id').length) {
-          $('#hospede_id').val('').prop('disabled', true);
-          if ($('#hospede_id option[value="bloqueado"]').length === 0) {
-            $('#hospede_id').append(`<option value="bloqueado" selected>Bloqueado</option>`);
+        $('.form-group').each(function () {
+          const id = $(this).attr('id');
+          if (['campoPeriodo', 'campoQuarto', 'campoObservacoes', 'campoSituacao'].includes(id)) {
+            $(this).slideDown(200);
+          } else {
+            $(this).slideUp(200);
           }
-        }
+        });
+
+        $('#hospede_id').val(hospedeBloqueadoId).prop('readyonly', true);
+
+        $('#valor_diaria').val(0);
       } else {
         $('.form-group').slideDown(200);
-        $('#hospede_id').prop('disabled', false);
-        $('#hospede_id option[value="bloqueado"]').remove();
+        $('#hospede_id').prop('disabled', false).val('');
+        $('#valor_diaria').val('');
       }
     }
 
     $('input[name="situacao"]').on('change', atualizarCampos);
+
     atualizarCampos();
   });
 </script>
 
+
+@if(session('success'))
+<script>
+    Swal.fire({
+        title: 'Sucesso!',
+        text: "{{ session('success') }}",
+        icon: 'success',
+        confirmButtonText: 'OK'
+    });
+</script>
+@endif
+
+@if(session('error'))
+<script>
+    Swal.fire({
+        title: 'Erro!',
+        text: "{{ session('error') }}",
+        icon: 'error',
+        confirmButtonText: 'OK'
+    });
+</script>
+@endif
 
 @stop
