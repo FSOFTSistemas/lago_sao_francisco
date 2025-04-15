@@ -12,7 +12,7 @@
         <div class="col-md-3">
             <a href="{{ route('formaPagamento.index') }}" class="card card-opcao text-center">
                 <div class="card-body">
-                    <i class="fas fa-credit-card fa-3x" style="color: #007bff;"></i>
+                    <i class="fas fa-credit-card fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Formas de Pagamento</h5>
                 </div>
             </a>
@@ -21,7 +21,7 @@
         <div class="col-md-3">
             <a href="{{ route('tarifa.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
-                    <i class="fas fa-hotel fa-3x" style="color: #007bff;"></i>
+                    <i class="fas fa-hotel fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Tarifas do Hotel</h5>
                 </div>
             </a>
@@ -30,7 +30,7 @@
         <div class="col-md-3">
             <a href="{{ route('quarto.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
-                    <i class="fas fa-bed fa-3x" style="color: #007bff;"></i>
+                    <i class="fas fa-bed fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Cadastro de Quartos</h5>
                 </div>
             </a>
@@ -39,7 +39,7 @@
         <div class="col-md-3">
             <a href="{{ route('categoria.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
-                    <i class="fas fa-tag fa-3x" style="color: #007bff;"></i>
+                    <i class="fas fa-tag fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Cadastro de Categorias Quarto</h5>
                 </div>
             </a>
@@ -49,6 +49,10 @@
 
 @section('css')
     <style>
+        h1{
+            color: #679A4C;
+            font-weight: 600;
+        }
         .card-opcao {
             border: 2px solid transparent;
             border-radius: 10px;
@@ -61,12 +65,12 @@
         .card-opcao:hover {
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            border-color: #007bff;
+            border-color: #679A4C;
         }
 
         .card-opcao h5 {
             font-weight: bold;
-            color: inherit;
+            color: #679A4C;
         }
 
         .card-opcao i {

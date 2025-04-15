@@ -56,7 +56,7 @@
                 </div>
 
                 <div class="form-group row">
-                  <label for="hospede_id" class="col-md-3 label-control">Hóspede</label>
+                  <label for="hospede_id" class="col-md-3 label-control">* Hóspede</label>
                   <div class="col-sm-4">
                     <select class="form-control select2" name="hospede_id" id="hospede_id">
                         <option value="">Selecione um hóspede</option>
@@ -110,9 +110,10 @@
 
                 
                 <div class="form-group row">
-                  <label class="col-md-3 label-control"  for="profissao">* Valor da diária:</label>
+                  <label class="col-md-3 label-control"  for="valor_diaria">* Valor da diária:</label>
                   <div class="col-md-4">
-                    <div><input class="form-control"  type="number"  name="valor_diaria" id="valor_diaria" value="{{ old('valor_diaria', $reserva->valor_diaria ?? '') }}"></div>
+                    <div><input class="form-control" type="text" name="valor_diaria" id="valor_diaria"
+                      value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}"></div>
                   </div>
                 </div>
 
@@ -141,10 +142,13 @@
                 </div>
 
                 <div class="card-footer">
+                  @if(isset($reserva))
                     <button type="button" class="btn btn-danger" data-toggle="modal"
                     data-target="#deleteReservaModal{{ $reserva->id }}">
                     Excluir 🗑️
                     </button>
+                  @include('components.endereco-modal')
+                  @endif
                     <a href="{{ route('reserva.index') }}" class="btn btn-secondary">Voltar</a>
                     <button type="submit" class="btn btn-primary">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
                 </div>
@@ -223,8 +227,6 @@
             </div>
           </div>
           </div>
-          @include('reserva.modals._delete', ['reserva' => $reserva])
-    @include('components.endereco-modal')
 @stop
 
 @section('css')
@@ -300,15 +302,15 @@ input[type="number"] {
 @stop
 
 @section('js')
-<script src="{{ asset('js/endereco.js') }}"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></scrip>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('js/endereco.js') }}"></script>
 
 <script>
     $(document).ready(function() {

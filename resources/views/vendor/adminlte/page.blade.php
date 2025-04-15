@@ -4,6 +4,34 @@
 @inject('preloaderHelper', 'JeroenNoten\LaravelAdminLte\Helpers\PreloaderHelper')
 
 @section('adminlte_css')
+<style>
+    .main-sidebar {
+        background-color: #3e7222 !important;
+    }
+    .main-sidebar .nav-link {
+        color: #fff !important;
+    }
+    .main-sidebar .nav-link:hover {
+        color: #fff !important;
+    }
+    .main-sidebar .nav-link.active {
+        color: #fff !important;
+    }
+    .nav-sidebar>.nav-item>.nav-link.active{
+        background-color: #679A4C !important;
+    }
+    .nav-treeview>.nav-item>.nav-link.active {
+        background-color: #fff !important;
+        color: #679A4C !important;
+    }
+    .nav-treeview>.nav-item>.nav-link.active:hover {
+        background-color: #679A4C;
+    }
+    .brand-link {
+        text-decoration: none;
+        color: #fff !important;
+    }
+</style>
     @stack('css')
     @yield('css')
 @stop

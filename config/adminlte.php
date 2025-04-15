@@ -303,7 +303,7 @@ return [
         [
             'type' => 'navbar-search',
             'text' => 'search',
-            'topnav_right' => true,
+            'topnav_right' => false,
         ],
         // Sidebar items:
         // [
@@ -338,7 +338,7 @@ return [
                 [
                     'text' => 'Mapa',
                     'icon' => 'fas fa-map',
-                    'url'  => '/mapa',
+                    'url'  => '/reserva/mapa',
                 ],
                 [
                     'text' => 'Reservas',

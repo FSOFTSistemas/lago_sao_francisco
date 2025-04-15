@@ -8,8 +8,8 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('usuarios.create')}}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Adicionar Usuário
+        <a href="{{route('usuarios.create')}}" class="btn btn-success new">
+            <i class="fas fa-plus"></i> Novo Usuário
         </a>
     </div>
 
@@ -66,3 +66,17 @@
 
     @include('components.endereco-modal')
 @stop
+
+@section('css')
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
+    }
+    /* .main-sidebar {
+        background-color: #679A4C !important;
+    } */
+</style>

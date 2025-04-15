@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="d-flex justify-content-end mb-3">
-    <a class="btn btn-success float-end" href="{{ route('produto.create') }}"><i class="fas fa-plus"></i> Adicionar Produto</a>
+    <a class="btn btn-success float-end new" href="{{ route('produto.create') }}"><i class="fas fa-plus"></i> Novo Produto</a>
 </div>
 
     @component('components.data-table', [
@@ -70,3 +70,14 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
 @stop
+
+@section('css')
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
+    }
+</style>

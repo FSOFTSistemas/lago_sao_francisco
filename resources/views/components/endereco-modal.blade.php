@@ -14,21 +14,21 @@
                         <label for="cep">CEP</label>
                         <div class="input-group">
                             <input type="text" name="cep" id="cep" class="form-control"
-                                placeholder="Digite o CEP" required />
+                                placeholder="Digite o CEP" />
                             {{-- <button type="button" class="btn btn-info" id="buscarCep">
                                 <i class="fas fa-search"></i> Buscar
                             </button> --}}
                         </div>
                     </div>
                     <x-adminlte-input id="logradouro" name="logradouro" label="Logradouro"
-                        placeholder="Digite o logradouro" required />
+                        placeholder="Digite o logradouro" />
                     <x-adminlte-input id="numero" name="numero" label="Número" placeholder="Digite o número"
                         />
                     <x-adminlte-input id="bairro" name="bairro" label="Bairro" placeholder="Digite o bairro"
-                        required />
+                    />
                     <x-adminlte-input id="cidade" name="cidade" label="Cidade" placeholder="Digite a cidade"
-                        required />
-                        <x-adminlte-select id="uf" name="uf" label="Estado" required>
+                    />
+                        <x-adminlte-select id="uf" name="uf" label="Estado">
                             <option value="">Selecione um estado</option>
                             <option value="AC">AC</option>
                             <option value="AL">AL</option>
@@ -59,7 +59,7 @@
                             <option value="TO">TO</option>
                         </x-adminlte-select>
                     <x-adminlte-input id="ibge" name="ibge" label="ibge" placeholder="Digite o ebge"
-                        required />
+                         />
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-success">Salvar Endereço</button>

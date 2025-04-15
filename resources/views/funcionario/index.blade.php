@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="d-flex justify-content-end mb-3">
-    <a class="btn btn-success float-end" href="{{ route('funcionario.create') }}"><i class="fas fa-plus"></i> Adicionar Funcionário</a>
+    <a class="btn btn-success float-end new" href="{{ route('funcionario.create') }}"><i class="fas fa-plus"></i> Novo Funcionário</a>
 </div>
 
     @component('components.data-table', [
@@ -66,3 +66,14 @@
 
     @include('components.endereco-modal')
 @stop
+
+@section('css')
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
+    }
+</style>

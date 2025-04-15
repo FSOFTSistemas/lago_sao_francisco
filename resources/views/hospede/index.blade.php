@@ -8,8 +8,8 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('hospede.create')}}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Adicionar Hóspede
+        <a href="{{route('hospede.create')}}" class="btn btn-success new">
+            <i class="fas fa-plus"></i> Novo Hóspede
         </a>
     </div>
 
@@ -73,6 +73,20 @@
 @section('css')
 <style>
     #editlink {
-        text-decoration: none
+        text-decoration: none;
+        color: #679A4C;
+        font-weight: 600;
+    }
+    #editlink:hover {
+        color: #3e7222;
+    }
+</style>
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
     }
 </style>

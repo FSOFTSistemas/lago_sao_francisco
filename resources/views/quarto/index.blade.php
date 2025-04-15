@@ -9,13 +9,13 @@
 @section('content')
   <div class="row mb-3 pt-3">
     <div class="col d-flex justify-content-start">
-      <a href="{{ route('preferencias') }}" class="btn btn-success">
+      <a href="{{ route('preferencias') }}" class="btn btn-success new">
           <i class="fas fa-arrow-left"></i> Voltar
       </a>
     </div>
 
     <div class="col d-flex justify-content-end">
-        <a href="{{route('quarto.create')}}" class="btn btn-success">
+        <a href="{{route('quarto.create')}}" class="btn btn-success new">
             <i class="fas fa-plus"></i> Novo Quarto
         </a>
     </div>
@@ -77,5 +77,14 @@
 <style>
     #editlink {
         text-decoration: none
+    }
+</style>
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
     }
 </style>

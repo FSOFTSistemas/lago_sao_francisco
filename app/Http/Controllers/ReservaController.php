@@ -6,6 +6,7 @@ use App\Models\Reserva;
 use App\Models\Quarto;
 use App\Models\Hospede;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ReservaController extends Controller
 {
@@ -48,7 +49,6 @@ class ReservaController extends Controller
         }
     }
 
-
     public function edit(Reserva $reserva)
     {
         $quartos = Quarto::all();
@@ -60,7 +60,7 @@ class ReservaController extends Controller
     {
         try {
         $request->validate([
-            'quarto_id' => 'required|exists:quartos,id',
+                'quarto_id' => 'required|exists:quartos,id',
                 'hospede_id' => 'nullable|exists:hospedes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',

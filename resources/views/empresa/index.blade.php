@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a class="btn btn-success float-end" href="{{ route('empresa.create') }}"><i class="fas fa-plus"></i> Adicionar Empresa</a>
+        <a class="btn btn-success float-end new" href="{{ route('empresa.create') }}"><i class="fas fa-plus"></i> Nova Empresa</a>
     </div>
 
     @component('components.data-table', [
@@ -67,3 +67,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 @stop
+
+@section('css')
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
+    }
+</style>

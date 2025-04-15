@@ -8,8 +8,8 @@
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success" data-toggle="modal" data-target="#createContasAPagarModal">
-            <i class="fas fa-plus"></i> Adicionar Contas a Pagar
+        <button class="btn btn-success new" data-toggle="modal" data-target="#createContasAPagarModal">
+            <i class="fas fa-plus"></i> Nova Contas a Pagar
         </button>
     </div>
 
@@ -75,3 +75,14 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 @stop
+
+@section('css')
+<style>
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: #3e7222 !important;
+    }
+</style>
