@@ -19,6 +19,22 @@
     {{-- Navbar right links --}}
     <ul class="navbar-nav ml-auto">
         {{-- Custom right links --}}
+        <form action="{{ route('filtro.empresa') }}" method="POST" class="form-inline ml-2">
+            @csrf
+            <div class="input-group input-group-sm align-items-center">
+                <div class="input-group-prepend mr-2">
+                    <span class="input-group-text bg-white border-0 p-0 pr-2" style="font-size: 0.875rem; color: var(--green-2) !important;">
+                        <label for="selectEmpresa" class="mb-0">Selecione uma Empresa:</label>
+                    </span>
+                </div>
+                <select class="form-control form-control-navbar" id="selectEmpresa" name="empresa_id" onchange="this.form.submit()">
+                    <option value="">Todas</option>
+                    <option value="1" {{ session('empresa_id') == 1 ? 'selected' : '' }}>Restaurante</option>
+                    <option value="2" {{ session('empresa_id') == 2 ? 'selected' : '' }}>Hotel</option>
+                    <option value="3" {{ session('empresa_id') == 3 ? 'selected' : '' }}>Lago</option>
+                </select>
+            </div>
+        </form>   
         @yield('content_top_nav_right')
 
         {{-- Configured right links --}}

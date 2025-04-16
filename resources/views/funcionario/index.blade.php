@@ -62,18 +62,8 @@
                     @include('funcionario.modals._delete', ['funcionario' => $funcionario])
                 @endforeach
             </tbody>
-    @endcomponent
+            
+            @endcomponent
 
     @include('components.endereco-modal')
 @stop
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

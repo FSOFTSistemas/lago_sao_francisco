@@ -13,12 +13,21 @@ class FuncionarioController extends Controller
      * Display a listing of the resource.
      */
     public function index()
-    {
-        $empresas = Empresa::all();
-        $enderecos = Endereco::all();
-        $funcionarios = Funcionario::all();
-        return view('funcionario.index', compact('funcionarios', 'empresas', 'enderecos'));
-    }
+{
+    $empresas = Empresa::all();
+    $enderecos = Endereco::all();
+
+    $empresaId = session('empresa_id');
+
+    $funcionarios = Funcionario::query()
+        ->when($empresaId, function ($query) use ($empresaId) {
+            $query->where('empresa_id', $empresaId);
+        })
+        ->get();
+
+    return view('funcionario.index', compact('funcionarios', 'empresas', 'enderecos'));
+}
+
 
     public function create()
     {

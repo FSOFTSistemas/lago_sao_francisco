@@ -37,7 +37,7 @@
                     required />
 
                 <!-- Nome Fantasia -->
-                <x-adminlte-input id="nomeFantasia" name="nomeFantasia" label="Nome Fantasia"
+                <x-adminlte-input id="nomeFantasia" name="nome_fantasia" label="Nome Fantasia"
                     placeholder="Digite o nome fantasia" fgroup-class="col-md-6"
                     value="{{ $empresa->nome_fantasia ?? '' }}" />
 

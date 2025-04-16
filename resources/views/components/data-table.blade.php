@@ -114,7 +114,7 @@
             transition: all 0.5s;
         }
         .dt-search label, .dt-search input {
-            color: #679A4C
+            color: var(--green-2);
         }
     </style>
     

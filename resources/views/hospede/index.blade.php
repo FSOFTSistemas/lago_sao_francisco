@@ -74,19 +74,19 @@
 <style>
     #editlink {
         text-decoration: none;
-        color: #679A4C;
+        color: var(--green-1);
         font-weight: 600;
     }
     #editlink:hover {
-        color: #3e7222;
+        color: var(--green-2);
     }
 </style>
 <style>
     .new {
-        background-color: #679A4C !important;
+        background-color: var(--green-1) !important;
         border: none !important;
     }
     .new:hover{
-        background-color: #3e7222 !important;
+        background-color: var(--green-2) !important;
     }
 </style>

@@ -129,22 +129,12 @@
       transform: translateX(1.75rem);
   }
 
-  .label-control{
-    text-align: right
-  }
-
   .card-footer{
     text-align: right
   }
 
   </style>
-  <style>
-    @media (max-width: 768px) {
-      .label-control{
-        text-align: start
-      }
-    }
-  </style>
+
 @stop
 
 @section('js')

@@ -68,6 +68,7 @@ class AdiantamentoController extends Controller
                 'funcionario_id' => $request->funcionario_id,
                 'status' => $request->status,
             ]);
+            return redirect()->route('adiantamento.index')->with('success', 'Adiantamento atualizado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
             return redirect()->route('adiantamento.index')->with('error', 'Erro ao atualizar adiantamento!');

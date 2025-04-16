@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Adiantamentos</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -41,9 +42,15 @@
                     <tr>
                         <td>{{ $adiantamento->id }}</td>
                         <td>{{ $adiantamento->funcionario->nome }}</td>
-                        <td>{{ $adiantamento->valor }}</td>
+                        <td>R${{ $adiantamento->valor }}</td>
                         <td>{{Illuminate\Support\Carbon::parse($adiantamento->data)->format('d/m/Y')}}</td>
-                        <td>{{ $adiantamento->status }}</td>
+                        <td>
+                            @if($adiantamento->status == "finalizado")
+                          <p>Finalizado <i class="fa-regular fa-circle-check"></i></p>
+                          @else
+                          <p>Pendente <i class="fa-solid fa-triangle-exclamation"></i></p>
+                          @endif
+                        </td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showAdiantamento{{ $adiantamento->id }}">
@@ -77,12 +84,4 @@
 @stop
 
 @section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>
+

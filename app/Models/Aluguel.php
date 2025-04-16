@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Scopes\EmpresaScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -41,5 +42,9 @@ class Aluguel extends Model
     public function espaco()
     {
         return $this->belongsTo(Espaco::class, 'espaco_id');
+    }
+    protected static function booted()
+    {
+        static::addGlobalScope(new EmpresaScope);
     }
 }

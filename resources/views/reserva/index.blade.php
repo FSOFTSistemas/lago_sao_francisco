@@ -98,15 +98,6 @@
 
 @section('css')
 <style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>
-<style>
     #editlink {
         color: #679A4C;
         font-weight: 600;

@@ -3,6 +3,10 @@
 @inject('layoutHelper', 'JeroenNoten\LaravelAdminLte\Helpers\LayoutHelper')
 @inject('preloaderHelper', 'JeroenNoten\LaravelAdminLte\Helpers\PreloaderHelper')
 
+@push('css')
+    <link rel="stylesheet" href="{{ asset('css/global.css') }}">
+@endpush
+
 @section('adminlte_css')
 <style>
     .main-sidebar {
@@ -30,6 +34,42 @@
     .brand-link {
         text-decoration: none;
         color: #fff !important;
+    }
+    .card-header, .green {
+        background-color: #679A4C !important;
+        color: #fff !important;
+    }
+    .card-footer {
+        text-align: right
+    }
+    .green:hover{
+        background-color: #3e7222 !important;
+    }
+    .new {
+        background-color: var(--green-1) !important;
+        border: none !important;
+    }
+    .new:hover{
+        background-color: var(--green-2) !important;
+    }
+    .btn-primary {
+        background-color: var(--green-1) !important;
+        border: none !important;
+    }
+    h5 {
+        text-transform: uppercase;
+        color: var(--green-2) !important;
+    }
+    .label-control{
+    text-align: right
+  }
+
+
+
+  @media (max-width: 768px) {
+      .label-control{
+        text-align: start
+      }
     }
 </style>
     @stack('css')

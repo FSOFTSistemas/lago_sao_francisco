@@ -43,7 +43,7 @@ class EmpresaController extends Controller
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
                 'cnpj' => 'nullable|string|max:18',
-                'inscricao_estadual' => 'required|string|max:9',
+                'inscricao_estadual' => 'required|string|max:12',
                 'endereco_id' => 'nullable|exists:enderecos,id',
             ]);
             Empresa::create([

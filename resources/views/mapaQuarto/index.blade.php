@@ -7,6 +7,23 @@
 @stop
 
 @section('content')
+<div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #679A4C;"></span> Disponível
+    </div>
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #FFFF00;"></span> Pré-reserva
+    </div>
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #FF0000;"></span> Hospedado
+    </div>
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #007BFF;"></span> Reservado
+    </div>
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #343A40;"></span> Data bloqueada
+    </div>
+</div>
     <div class="row">
         @foreach ($quartos as $quarto)
             @php
@@ -50,3 +67,38 @@
         @endforeach
     </div>
 @stop
+
+@section('css')
+<style>
+    .status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 8px;
+}
+
+.d-flex {
+        display: flex;
+    }
+
+    .align-items-center {
+        align-items: center;
+    }
+
+    .me-3 {
+        margin-right: 1rem;
+    }
+
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    .flex-wrap {
+        flex-wrap: wrap;
+    }
+</style>

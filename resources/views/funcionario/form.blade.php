@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header text-white">
             <h3 class="card-title">
                 {{ isset($funcionario) ? 'Editar informações do Funcionário' : 'Preencha os dados do novo Funcionário' }}</h3>
         </div>
@@ -48,7 +48,7 @@
                         <select class="form-control" id="empresa" name="empresa_id" required>
                             <option value="">Selecione</option>
                             @foreach ($empresas as $empresa)
-                                <option value="{{ $empresa->id }}">{{ $empresa->razao_social }}</option>
+                                <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -92,17 +92,16 @@
                                 </option>
                             @endforeach
                         </select>
-                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#enderecoModal">
+                        <button type="button" class="btn btn-success green" data-toggle="modal" data-target="#enderecoModal">
                             <i class="fas fa-plus"></i> Novo Endereço
                         </button>
                     </div>
                 </div>
 
                 <!-- Botão de Salvar -->
-                <div class="form-group col-md-12">
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-save"></i> {{ isset($funcionario) ? 'Atualizar' : 'Salvar' }}
-                    </button>
+                <div class="card-footer">
+                    <a href="{{ route('funcionario.index') }}" class="btn btn-secondary">Voltar</a>
+                    <button type="submit" class="btn green">{{ isset($funcionario) ? 'Atualizar Funcionário' : 'Adicionar Funcionário ' }}</button>
                 </div>
             </form>
         </div>

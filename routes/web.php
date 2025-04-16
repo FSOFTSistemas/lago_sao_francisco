@@ -94,3 +94,8 @@ Route::resource('quarto', QuartoController::class);
 Route::resource('categoria', CategoriaController::class);
 
 Route::resource('mapaQuarto', MapaQuartoController::class);
+
+Route::post('/filtro-empresa', function (Illuminate\Http\Request $request) {
+    session(['empresa_id' => $request->empresa_id]);
+    return back();
+})->name('filtro.empresa');
