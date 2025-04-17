@@ -5,7 +5,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">Cadastrar Novo Endereço</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                    <button class="btn-primary" type="button" class="close" data-dismiss="modal" aria-label="Fechar">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -62,7 +62,7 @@
                          />
                 </div>
                 <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Salvar Endereço</button>
+                    <button type="submit" class="btn btn-primary">Salvar Endereço</button>
                 </div>
             </form>
         </div>

@@ -11,7 +11,7 @@
                 <p><strong>Valor:</strong> <span id="valor">R${{$contasAPagar->valor}}</span></p>
                 <p><strong>Valor Pago:</strong> <span id="valorPago">R${{$contasAPagar->valor_pago}}</span></p>
                 <p><strong>Data de Vencimento:</strong> <span id="dataVencimento">{{ Illuminate\Support\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y')}}</span></p>
-                <p><strong>Data do Pagamento:</strong> <span id="dataPagamento">{{$contasAPagar->data_pagamento}}</span></p>
+                <p><strong>Data do Pagamento:</strong> <span id="dataPagamento">{{ Illuminate\Support\Carbon::parse($contasAPagar->data_pagamento)->format('d/m/Y')}}</span></p>
                 <p><strong>Situação:</strong> <span id="status">{{$contasAPagar->status}}</span></p>
                 <p><strong>Plano de Contas:</strong> <span id="planoDeContas">{{$contasAPagar->plano_de_contas_pai}}</span></p>
                 <p><strong>Empresa:</strong> <span id="empresa">{{$contasAPagar->empresa->razao_social}}</span></p>

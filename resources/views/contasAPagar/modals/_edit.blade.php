@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editContasAPagarModalLabel">Editar Contas A Pagar</h5>
+                <h5 class="modal-title" id="editContasAPagarModalLabel">Atualizar Contas A Pagar</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -39,30 +39,36 @@
 
                     <div class="mb-3">
                         <label for="tipo">Situação</label>
-                        <select class="form-control" id="status" name="status" required">
-                            <option value="pendente">Pendente</option>
-                            <option value="finalizado">Finalizado</option>
+                        <select class="form-control" id="status" name="status" required>
+                            <option value="pendente" {{ old('status', $contasAPagar->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
+                            <option value="finalizado" {{ old('status', $contasAPagar->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <label for="planoDeConta">Plano de contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required value="{{$contasAPagar->plano_de_contas_pai}}">
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai">
                             <option value="">Selecione</option>
                             @foreach ($planoDeContas as $planoDeConta)
-                                <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>
+                                <option value="{{ $planoDeConta->id }}" 
+                                    {{ old('plano_de_contas_pai', $contasAPagar->plano_de_contas_pai) == $planoDeConta->id ? 'selected' : '' }}>
+                                    {{ $planoDeConta->descricao }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="fornecedor">Fornecedor</label>
-                        <select class="form-control" id="fornecedor" name="fornecedor_id" required value="{{$contasAPagar->fornecedor_id}}">
+                        <select class="form-control" id="fornecedor" name="fornecedor_id">
                             <option value="">Selecione</option>
                             @foreach ($fornecedores as $fornecedor)
-                                <option value="{{ $fornecedor->id }}">{{ $fornecedor->razao_social }}</option>
+                                <option value="{{ $fornecedor->id }}" 
+                                    {{ old('fornecedor_id', $contasAPagar->fornecedor_id) == $fornecedor->id ? 'selected' : '' }}>
+                                    {{ $fornecedor->razao_social }}
+                                </option>
                             @endforeach
                         </select>
-                      </div>
+                    </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
                         <button type="submit" class="btn btn-primary">Salvar</button>

@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Contas A Receber</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -43,7 +44,13 @@
                     <td>{{ $conta->descricao }}</td>
                     <td>{{ Illuminate\Support\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
                     <td>R${{ $conta->valor }}</td>
-                    <td>{{ $conta->status }}</td>
+                    <td>
+                        @if($conta->status == "finalizado")
+                      <p>Finalizado <i class="fa-regular fa-circle-check"></i></p>
+                      @else
+                      <p>Pendente <i class="fa-solid fa-triangle-exclamation"></i></p>
+                      @endif
+                    </td>
                     <td>
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                             data-target="#showContasAReceber{{ $conta->id }}">
@@ -74,14 +81,3 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 @stop
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

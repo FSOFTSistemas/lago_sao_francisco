@@ -61,8 +61,6 @@ class CaixaController extends Controller
                 'data_abertura' => 'required|date',
                 'data_fechamento' => 'nullable|date',
                 'status' => 'required|in:aberto,fechado',
-                'usuario_abertura_id' => 'required|exists:usuarios,id',
-                'usuario_fechamento_id' => 'nullable|exists:usuarios,id',
                 'observacoes' => 'nullable|string',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);

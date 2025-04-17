@@ -3,7 +3,7 @@
 @section('title', 'Mapa de Quartos')
 
 @section('content_header')
-    <h1>Mapa de Quartos</h1>
+<h1>Mapa de Quartos - {{ \Carbon\Carbon::now()->format('d/m/Y') }}</h1>
 @stop
 
 @section('content')

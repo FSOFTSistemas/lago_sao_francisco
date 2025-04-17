@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', isset($hospede) ? 'Editar Hóspede' : 'Cadastrar Hóspede')
+@section('title', isset($hospede) ? 'Atualizar Hóspede' : 'Cadastrar Hóspede')
 
 @section('content_header')
-    <h1>{{ isset($hospede) ? 'Editar Hospede' : 'Cadastrar Hospede' }}</h1>
+    <h1>{{ isset($hospede) ? 'Atualizar Hóspede' : 'Cadastrar Hóspede' }}</h1>
 @stop
 
 @section('content')
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h3 class="card-title">
-                {{ isset($hospede) ? 'Editar informações do Hóspede' : 'Preencha os dados do novo Hóspede' }}</h3>
+                {{ isset($hospede) ? 'Preencha os dados atualizados do Hóspede' : 'Preencha os dados do novo Hóspede' }}</h3>
         </div>
         <div class="card-body">
             <form id="createHospedeForm" action="{{ isset($hospede) ? route('hospede.update', $hospede->id) : route('hospede.store') }}" method="POST" enctype="multipart/form-data">
@@ -147,25 +147,21 @@
 
 
                 <div class="form-group row">
-                  <label class="col-md-3 label-control" for="endereco_id">Endereço</label>
+                  <label class="col-md-3 label-control" for="endereco_id">Endereço:</label>
                   <div class="col-md-3">
-                      <div class="input-group">
-                          <select class="form-control select2" id="endereco_id" name="endereco_id">
-                              <option value="" disabled {{ !isset($hospede->endereco_id) ? 'selected' : '' }}>
-                                  Selecione um endereço...
+                      <select class="form-control select2" id="endereco_id" name="endereco_id">
+                          <option value="">Selecione</option>
+                          @foreach ($endereco as $item)
+                              <option value="{{ $item->id }}" 
+                                  {{ old('endereco_id', $hospede->endereco_id ?? '') == $item->id ? 'selected' : '' }}>
+                                  {{ $item->logradouro }}, {{ $item->numero }}
                               </option>
-                              @foreach ($endereco as $endereco)
-                                  <option value="{{ $endereco->id }}"
-                                      {{ isset($hospede->endereco_id) && $hospede->endereco_id == $endereco->id ? 'selected' : '' }}>
-                                      {{ $endereco->logradouro }}, {{ $endereco->numero }} - {{ $endereco->cidade }}
-                                  </option>
-                              @endforeach
-                          </select>
-                          <button type="button" class="btn btn-success" data-toggle="modal" data-target="#enderecoModal">
-                              <i class="fas fa-plus"></i> Novo Endereço
-                          </button>
-                      </div>
+                          @endforeach
+                      </select>
                   </div>
+                  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#enderecoModal">
+                      <i class="fas fa-plus"></i> Novo Endereço
+                  </button>
               </div>
 
                 <div class="card-footer">
@@ -185,54 +181,6 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet"/>
 <style>
-  .form-switch {
-      padding-left: 3em;
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-  }
-  
-  .form-switch .form-check-input {
-      width: 3.5rem;
-      height: 1.75rem;
-      background-color: #dee2e6;
-      border-radius: 1.75rem;
-      position: relative;
-      transition: background-color 0.3s ease-in-out;
-      appearance: none;
-      -webkit-appearance: none;
-      cursor: pointer;
-  }
-  
-  .form-switch .form-check-input:checked {
-      background-color: #0d6efd;
-  }
-  
-  .form-switch .form-check-input::before {
-      content: "";
-      position: absolute;
-      width: 1.5rem;
-      height: 1.5rem;
-      top: 0.125rem;
-      left: 0.125rem;
-      border-radius: 50%;
-      background-color: white;
-      transition: transform 0.3s ease-in-out;
-  }
-  
-  .form-switch .form-check-input:checked::before {
-      transform: translateX(1.75rem);
-  }
-
-  .label-control{
-    text-align: right
-  }
-
-  .card-footer{
-    text-align: right
-  }
-
   .img-upload-box {
     width: 150px;
     height: 150px;
@@ -252,13 +200,6 @@
     border-radius: 50%;
 }
 
-  </style>
-  <style>
-    @media (max-width: 768px) {
-      .label-control{
-        text-align: start
-      }
-    }
   </style>
 @stop
 

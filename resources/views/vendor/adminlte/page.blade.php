@@ -56,6 +56,9 @@
         background-color: var(--green-1) !important;
         border: none !important;
     }
+    .btn-primary:hover {
+        background-color: var(--green-2) !important;
+    }
     h5 {
         text-transform: uppercase;
         color: var(--green-2) !important;
@@ -63,6 +66,55 @@
     .label-control{
     text-align: right
   }
+
+  #editlink {
+        text-decoration: none;
+        color: var(--green-1);
+        font-weight: 600;
+    }
+    #editlink:hover {
+        color: var(--green-2);
+    }
+
+        .form-switch {
+        padding-left: 3em;
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .form-switch .form-check-input {
+        width: 3.5rem;
+        height: 1.75rem;
+        background-color: #dee2e6;
+        border-radius: 1.75rem;
+        position: relative;
+        transition: background-color 0.3s ease-in-out;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+    }
+    
+    .form-switch .form-check-input:checked {
+        background-color: var(--green-1);
+    }
+    
+    .form-switch .form-check-input::before {
+        content: "";
+        position: absolute;
+        width: 1.5rem;
+        height: 1.5rem;
+        top: 0.125rem;
+        left: 0.125rem;
+        border-radius: 50%;
+        background-color: white;
+        transition: transform 0.3s ease-in-out;
+    }
+    
+    .form-switch .form-check-input:checked::before {
+        transform: translateX(1.75rem);
+    }
 
 
 

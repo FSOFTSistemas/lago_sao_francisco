@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editCaixaModalLabel">Editar Caixa</h5>
+                <h5 class="modal-title" id="editCaixaModalLabel">Atualizar Caixa</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -16,17 +16,20 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="dataAbertura">Data de Abertura:</label>
-                            <input type="date" class="form-control" id="dataAbertura" name="data_abertura" value="{{$caixa->data_abertura}}" required>
+                            <input type="date" class="form-control" id="dataAbertura" name="data_abertura" 
+                                   value="{{ old('data_abertura', isset($caixa->data_abertura) ? \Carbon\Carbon::parse($caixa->data_abertura)->format('Y-m-d') : '') }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="dataFechamento">Data de Fechamento:</label>
-                            <input type="date" class="form-control" id="dataFechamento" name="data_fechamento" value="{{$caixa->data_fechamento}}" required>
+                            <input type="date" class="form-control" id="dataFechamento" name="data_fechamento" 
+                                   value="{{ old('data_fechamento', isset($caixa->data_fechamento) ? \Carbon\Carbon::parse($caixa->data_fechamento)->format('Y-m-d') : '') }}" required>
                         </div>
                     </div>
+                    
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="valorInicial">Valor Inicial:</label>
-                            <input type="text" class="form-control" id="valorInicial" name="valor-inicial" value="{{$caixa->valor_inicial}}" required>
+                            <input type="text" class="form-control" id="valorInicial" name="valor_inicial" value="{{$caixa->valor_inicial}}" required>
                         </div>
     
                         <div class="col-md-6 mb-3">
@@ -38,8 +41,8 @@
                         <div class="col-md-6 mb-3">
                             <label for="tipo">Situação:</label>
                             <select class="form-control" id="status" name="status" required>
-                                <option value="aberto">Aberto</option>
-                                <option value="fechado">Fechado</option>
+                                <option value="aberto" {{ old('status', $caixa->status ?? '') == 'aberto' ? 'selected' : '' }}>Aberto</option>
+                                <option value="fechado" {{ old('status', $caixa->status ?? '') == 'fechado' ? 'selected' : '' }}>Fechado</option>
                             </select>
                         </div>
     
@@ -48,7 +51,10 @@
                             <select class="form-control" id="empresa" name="empresa_id" required>
                                 <option value="">Selecione</option>
                                 @foreach ($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}">{{ $empresa->razao_social }}</option>
+                                    <option value="{{ $empresa->id }}" 
+                                        {{ old('empresa_id', $caixa->empresa_id ?? '') == $empresa->id ? 'selected' : '' }}>
+                                        {{ $empresa->razao_social }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>

@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Hóspedes</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -72,14 +73,7 @@
 
 @section('css')
 <style>
-    #editlink {
-        text-decoration: none;
-        color: var(--green-1);
-        font-weight: 600;
-    }
-    #editlink:hover {
-        color: var(--green-2);
-    }
+
 </style>
 <style>
     .new {

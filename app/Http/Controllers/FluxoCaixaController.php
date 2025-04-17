@@ -89,11 +89,11 @@ class FluxoCaixaController extends Controller
                 'tipo' => 'required|in:entrada,saida',
                 'movimento_id' => 'required|exists:movimentos,id', 
                 'caixa_id' => 'required|exists:caixas,id',
-                'usuario_id' => 'required|exists:usuarios,id',
                 'empresa_id' => 'required|exists:empresas,id',
                 'valor_total' => 'required|numeric',
                 'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
             ]);
+            $request['usuario_id'] = Auth::user()->id;
             $fluxoCaixa->update($request->all());
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa atualizado com sucesso!');
         } catch (\Exception $e) {

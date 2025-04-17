@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editContasAReceberModalLabel">Editar Contas A Receber</h5>
+                <h5 class="modal-title" id="editContasAReceberModalLabel">Atualizar Contas A Receber</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -22,7 +22,7 @@
 
                         <div class="col-md-6 mb-3">
                             <label for="valorRecebido">Valor Recebido:</label>
-                            <input type="text" class="form-control" id="valorRecebido" name="valor_recebido" value="{{$contasAReceber->valor_pago}}">
+                            <input type="text" class="form-control" id="valorRecebido" name="valor_recebido" value="{{$contasAReceber->valor_recebido}}">
                         </div>
                     </div>
 
@@ -41,41 +41,49 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="tipo">Situação</label>
-                                <select class="form-control" id="status" name="status" required">
-                                    <option value="pendente">Pendente</option>
-                                    <option value="finalizado">Finalizado</option>
+                                <select class="form-control" id="status" name="status" required>
+                                    <option value="pendente" {{ old('status', $contasAReceber->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
+                                    <option value="finalizado" {{ old('status', $contasAReceber->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="parcela">Parcelas:</label>
                                 <select class="form-control" id="parcela" name="parcela">
                                     @for ($i = 1; $i <= 12; $i++)
-                                        <option value="{{ $i }}">{{ $i }}</option>
+                                        <option value="{{ $i }}" {{ old('parcela', $contasAReceber->parcela ?? '') == $i ? 'selected' : '' }}>
+                                            {{ $i }}
+                                        </option>
                                     @endfor
                                 </select>
                             </div>
                         </div>
 
-                    <div class="mb-3">
-                        <label for="planoDeConta">Plano de contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_id" required value="{{$contasAReceber->plano_de_contas_id}}">
-                            <option value="">Selecione</option>
-                            @foreach ($planoDeContas as $planoDeConta)
-                                <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div class="mb-3">
+                            <label for="planoDeConta">Plano de contas</label>
+                            <select class="form-control" id="planoDeConta" name="plano_de_contas_id" required>
+                                <option value="">Selecione</option>
+                                @foreach ($planoDeContas as $planoDeConta)
+                                    <option value="{{ $planoDeConta->id }}" 
+                                        {{ old('plano_de_contas_id', $contasAReceber->plano_de_contas_id ?? '') == $planoDeConta->id ? 'selected' : '' }}>
+                                        {{ $planoDeConta->descricao }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                     
         
-                    <div class="mb-3">
-                        <label for="cliente">Cliente</label>
-                        <select class="form-control" id="cliente" name="cliente_id">
-                            <option value="">Selecione</option>
-                            @foreach ($clientes as $cliente)
-                                <option value="{{ $cliente->id }}">{{ $cliente->apelido_nome_fantasia }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                        <div class="mb-3">
+                            <label for="cliente">Cliente</label>
+                            <select class="form-control" id="cliente" name="cliente_id">
+                                <option value="">Selecione</option>
+                                @foreach ($clientes as $cliente)
+                                    <option value="{{ $cliente->id }}" 
+                                        {{ old('cliente_id', $contasAReceber->cliente_id ?? '') == $cliente->id ? 'selected' : '' }}>
+                                        {{ $cliente->apelido_nome_fantasia }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>

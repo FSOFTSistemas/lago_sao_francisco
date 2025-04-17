@@ -3,7 +3,8 @@
 @section('title', 'Diarias')
 
 @section('content_header')
-    <h5>Lista de Diarias</h5>
+    <h5>Lista de Diárias</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -80,12 +81,3 @@
 @stop
 
 @section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

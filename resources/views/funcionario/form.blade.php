@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', isset($funcionario) ? 'Editar Funcionário' : 'Novo Funcionário')
+@section('title', isset($funcionario) ? 'Atualizar Funcionário' : 'Novo Funcionário')
 
 @section('content_header')
-    <h4>{{ isset($funcionario) ? 'Editar funcionario' : 'Cadastrar Novo funcionario' }}</h4>
+    <h4>{{ isset($funcionario) ? 'Atualizar funcionário' : 'Cadastrar Novo funcionário' }}</h4>
 @stop
 
 @section('content')
     <div class="card">
         <div class="card-header text-white">
             <h3 class="card-title">
-                {{ isset($funcionario) ? 'Editar informações do Funcionário' : 'Preencha os dados do novo Funcionário' }}</h3>
+                {{ isset($funcionario) ? 'Preencha os dados atualizados' : 'Preencha os dados do novo Funcionário' }}</h3>
         </div>
         <div class="card-body">
             <form action="{{ isset($funcionario) ? route('funcionario.update', $funcionario->id) : route('funcionario.store') }}"
@@ -19,84 +19,94 @@
                 @if (isset($funcionario))
                     @method('PUT')
                 @endif
-                <div class="mb-3">
-                    <label for="nome">Nome:</label>
-                    <input type="text" class="form-control" id="nome" name="nome" required value="{{ $funcionario->nome ?? '' }}">
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="nome">* Nome:</label>
+                    <div class="col-md-7">
+                        <input type="text" class="form-control" id="nome" name="nome" required value="{{ $funcionario->nome ?? '' }}">
+                    </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="cpf">CPF:</label>
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="cpf">* CPF:</label>
+                    <div class="col-md-3">
                         <input type="text" class="form-control" id="cpf" name="cpf" required value="{{ $funcionario->cpf ?? '' }}">
                     </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="salario">Salário:</label>
+                
+                    <label class="col-md-1 label-control" for="salario">* Salário:</label>
+                    <div class="col-md-3">
                         <input type="text" class="form-control" id="salario" name="salario" required value="{{ $funcionario->salario ?? '' }}">
                     </div>
                 </div>
 
-                <div class="row">
-                        
-                    <div class="col-md-6 mb-3">
-                        <label for="dataContratacao">Data de Contratação:</label>
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="dataContratacao">* Data de Contratação:</label>
+                    <div class="col-md-3">
                         <input type="date" class="form-control" id="dataContratacao" name="data_contratacao" required value="{{ $funcionario->data_contratacao ?? '' }}">
                     </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="empresa">Empresa:</label>
+                
+                    <label class="col-md-1 label-control" for="empresa">* Empresa:</label>
+                    <div class="col-md-3">
                         <select class="form-control" id="empresa" name="empresa_id" required>
                             <option value="">Selecione</option>
                             @foreach ($empresas as $empresa)
-                                <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                  </div>
-                  
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="setor">Setor:</label>
-                        <input type="text" class="form-control" id="setor" name="setor" required value="{{ $funcionario->setor ?? '' }}">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label for="cargo">Cargo:</label>
-                        <input type="text" class="form-control" id="cargo" name="cargo" required value="{{ $funcionario->cargo ?? '' }}">
-                    </div>
-                  </div>
-
-                  <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="tipo">Situação:</label>
-                        <select class="form-control" id="status" name="status" required>
-                            <option value="ativo">Ativo</option>
-                            <option value="inativo">Inativo</option>
-                        </select>
-                    </div>
-
-                </div>
-
-                <!-- Endereço -->
-                <div class="form-group col-md-6">
-                    <label for="endereco_id">Endereço</label>
-                    <div class="input-group">
-                        <select class="form-control" id="endereco_id" name="endereco_id" required>
-                            <option value="" disabled {{ !isset($funcionario->endereco_id) ? 'selected' : '' }}>Selecione
-                                um endereço...</option>
-                            @foreach ($enderecos as $endereco)
-                                <option value="{{ $endereco->id }}"
-                                    {{ isset($funcionario->endereco_id) && $funcionario->endereco_id == $endereco->id ? 'selected' : '' }}>
-                                    {{ $endereco->logradouro }}, {{ $endereco->numero }} - {{ $endereco->cidade }}
+                                <option value="{{ $empresa->id }}" {{ old('empresa_id', $funcionario->empresa_id ?? '') == $empresa->id ? 'selected' : '' }}>
+                                    {{ $empresa->nome_fantasia }}
                                 </option>
                             @endforeach
                         </select>
-                        <button type="button" class="btn btn-success green" data-toggle="modal" data-target="#enderecoModal">
-                            <i class="fas fa-plus"></i> Novo Endereço
-                        </button>
                     </div>
                 </div>
+                  
+
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="setor">* Setor:</label>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="setor" name="setor" required value="{{ $funcionario->setor ?? '' }}">
+                    </div>
+                
+                    <label class="col-md-1 label-control" for="cargo">* Cargo:</label>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" id="cargo" name="cargo" required value="{{ $funcionario->cargo ?? '' }}">
+                    </div>
+                </div>
+
+                  
+
+                <!-- Endereço -->
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="endereco_id">Endereço:</label>
+                    <div class="col-md-3">
+                        <select class="form-control select2" id="endereco_id" name="endereco_id">
+                            <option value="">Selecione</option>
+                            @foreach ($enderecos as $item)
+                                <option value="{{ $item->id }}" 
+                                    {{ old('endereco_id', $funcionario->endereco_id ?? '') == $item->id ? 'selected' : '' }}>
+                                    {{ $item->logradouro }}, {{ $item->numero }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#enderecoModal">
+                        <i class="fas fa-plus"></i> Novo Endereço
+                    </button>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 form-label d-block label-control">* Ativo?</label>
+                    <div class="form-check form-switch">
+                        <input type="hidden" name="status" value="0">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="ativoSwitch"
+                            name="status"
+                            value="1"
+                            {{ old('status', $funcionario->status ?? true) ? 'checked' : '' }}>
+                        <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
+                            {{ old('status', $funcionario->status ?? true) ? 'Ativo' : 'Inativo' }}
+                        </label>
+                    </div>
+                  </div>
 
                 <!-- Botão de Salvar -->
                 <div class="card-footer">
@@ -115,6 +125,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -157,4 +168,26 @@
         });
     </script>
     <script src="{{ asset('js/endereco.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const switchInput = document.getElementById('ativoSwitch');
+            const label = document.getElementById('ativoLabel');
+            label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
+            switchInput.addEventListener('change', function () {
+                label.textContent = this.checked ? 'Ativo' : 'Inativo';
+            });
+        });
+      </script>
+      <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "selecione...",
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    
+    </script>
 @endsection
+@section('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

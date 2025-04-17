@@ -30,7 +30,7 @@
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="mb-3">
                             <label for="empresa">Empresa:</label>
                             <select class="form-control" id="empresa" name="empresa_id" required>
                                 <option value="">Selecione</option>

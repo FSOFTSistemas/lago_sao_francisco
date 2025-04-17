@@ -2,7 +2,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editContaCorrenteModalLabel">Editar Conta Corrente</h5>
+                <h5 class="modal-title" id="editContaCorrenteModalLabel">Atualizar Conta Corrente</h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -37,7 +37,10 @@
                         <select class="form-control" id="banco" name="banco_id" required>
                             <option value="">Selecione</option>
                             @foreach ($banco as $banco)
-                                <option value="{{ $banco->id }}">{{ $banco->descricao }}</option>
+                                <option value="{{ $banco->id }}" 
+                                    {{ old('banco_id', $contaCorrente->banco_id) == $banco->id ? 'selected' : '' }}>
+                                    {{ $banco->descricao }}
+                                </option>
                             @endforeach
                         </select>
                     </div>

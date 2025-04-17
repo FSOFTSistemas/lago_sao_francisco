@@ -30,7 +30,7 @@
                       <div class="row">
                           <div class="col-md-6 mb-3">
                               <label for="valorInicial">Valor Inicial:</label>
-                              <input type="text" class="form-control" id="valorInicial" name="valor-inicial" required>
+                              <input type="text" class="form-control" id="valorInicial" name="valor_inicial" required>
                           </div>
     
                           <div class="col-md-6 mb-3">

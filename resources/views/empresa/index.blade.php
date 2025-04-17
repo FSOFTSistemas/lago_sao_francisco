@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Empresas</h5>
+    <hr>
 @stop
 
 @section('content')

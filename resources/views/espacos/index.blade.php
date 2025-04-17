@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Espacos para Aluguel</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -40,7 +41,15 @@
                         <td>{{ $espaco->id }}</td>
                         <td>{{ $espaco->nome }}</td>
                         <td>R${{ $espaco->valor }}</td>
-                        <td>{{ $espaco->status }}</td>
+                        <td>
+                            @if($espaco->status == "disponivel")
+                            <p>Disponível <i class="fa-regular fa-circle-check"></i></p>
+                            
+                            @else
+                            <p>Alugado <i class="fa-regular fa-circle-xmark"></i></p>
+                            
+                            @endif
+                          </td>
                         <td>
 
                           <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
@@ -66,14 +75,3 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 
 @stop
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

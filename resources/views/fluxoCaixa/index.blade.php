@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Fluxo de Caixas</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -22,7 +23,7 @@
             ['responsivePriority' => 5, 'targets' => -1],
         ],
         'itemsPerPage' => 10,
-        'showTotal' => true,
+        'showTotal' => false,
         'valueColumnIndex' => 2,
     ])
             <thead class="bg-primary text-white">
@@ -43,7 +44,9 @@
                         <td>{{ $fluxoCaixa->descricao }}</td>
                         <td>R${{ $fluxoCaixa->valor }}</td>
                         <td>{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->data)->format('d/m/Y') }}</td>
-                        <td>{{ $fluxoCaixa->tipo }}</td>
+                        <td style="color: {{ $fluxoCaixa->tipo === 'entrada' ? 'green' : 'red' }};">
+                            {{ $fluxoCaixa->tipo }}
+                        </td>
                         <td>{{ $fluxoCaixa->movimento->descricao }}</td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
@@ -76,15 +79,3 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 @stop
-
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

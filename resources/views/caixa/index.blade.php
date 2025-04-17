@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Caixas</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -24,7 +25,7 @@
             ['responsivePriority' => 4, 'targets' => -1],
         ],
         'itemsPerPage' => 10,
-        'showTotal' => true,
+        'showTotal' => false,
         'valueColumnIndex' => 5,
     ])
             <thead class="bg-primary text-white">

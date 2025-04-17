@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Categorias</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -71,19 +72,3 @@
             </tbody>
     @endcomponent
 @stop
-
-@section('css')
-<style>
-    #editlink {
-        text-decoration: none
-    }
-</style>
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

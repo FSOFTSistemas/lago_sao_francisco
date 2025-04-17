@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h5>Lista de Contas</h5>
+    <hr>
 @stop
 
 @section('content')
@@ -73,14 +74,3 @@
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 @stop
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

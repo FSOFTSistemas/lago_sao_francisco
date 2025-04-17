@@ -99,3 +99,5 @@ Route::post('/filtro-empresa', function (Illuminate\Http\Request $request) {
     session(['empresa_id' => $request->empresa_id]);
     return back();
 })->name('filtro.empresa');
+
+Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponiveis'])->name('quartos.disponiveis');

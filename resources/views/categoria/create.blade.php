@@ -29,14 +29,14 @@
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="ocupantes">* Ocupantes:</label>
                   <div class="col-md-3">
-                    <div><input class="form-control"  type="number" name="ocupantes" id="ocupantes" value="{{ old('ocupantes', $quarto->ocupantes ?? '') }}"></div>
+                    <div><input class="form-control"  type="text" name="ocupantes" id="ocupantes" value="{{ old('ocupantes', $quarto->ocupantes ?? '') }}"></div>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="posicao">Posição:</label>
                   <div class="col-md-3">
-                    <div><input class="form-control"  type="number" name="posicao" id="posicao" value="{{ old('posicao', $quarto->posicao ?? '') }}"></div>
+                    <div><input class="form-control"  type="text" name="posicao" id="posicao" value="{{ old('posicao', $quarto->posicao ?? '') }}"></div>
                   </div>
                 </div>
 
@@ -80,63 +80,6 @@
 
 @section('css')
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-<style>
-  .form-switch {
-      padding-left: 3em;
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-  }
-  
-  .form-switch .form-check-input {
-      width: 3.5rem;
-      height: 1.75rem;
-      background-color: #dee2e6;
-      border-radius: 1.75rem;
-      position: relative;
-      transition: background-color 0.3s ease-in-out;
-      appearance: none;
-      -webkit-appearance: none;
-      cursor: pointer;
-  }
-  
-  .form-switch .form-check-input:checked {
-      background-color: #0d6efd;
-  }
-  
-  .form-switch .form-check-input::before {
-      content: "";
-      position: absolute;
-      width: 1.5rem;
-      height: 1.5rem;
-      top: 0.125rem;
-      left: 0.125rem;
-      border-radius: 50%;
-      background-color: white;
-      transition: transform 0.3s ease-in-out;
-  }
-  
-  .form-switch .form-check-input:checked::before {
-      transform: translateX(1.75rem);
-  }
-
-  .label-control{
-    text-align: right
-  }
-
-  .card-footer{
-    text-align: right
-  }
-
-  </style>
-  <style>
-    @media (max-width: 768px) {
-      .label-control{
-        text-align: start
-      }
-    }
-  </style>
 @stop
 
 @section('js')
