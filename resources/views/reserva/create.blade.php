@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header green bg-primary text-white">
             <h3 class="card-title">
                 {{ isset($reserva) ? 'Editar informações do Reserva' : 'Preencha os dados do novo Reserva' }}</h3>
         </div>
@@ -25,7 +25,7 @@
                     
                       <label class="radio-option">
                           <input type="radio" name="situacao" value="pre-reserva"
-                              @checked(old('situacao', $reserva->situacao ?? '') === 'pre-reserva')>
+                              @checked(old('situacao', $reserva->situacao ?? '') === 'pre-reserva') required>
                           <span class="badge badge-warning">pré-reservar</span>
                       </label>
               
@@ -58,54 +58,68 @@
                 <div class="form-group row">
                   <label for="hospede_id" class="col-md-3 label-control">* Hóspede</label>
                   <div class="col-sm-4">
-                    <select class="form-control select2" name="hospede_id" id="hospede_id">
-                        <option value="">Selecione um hóspede</option>
-                        @foreach($hospedes as $hospede)
-                            <option value="{{ $hospede->id }}" 
-                                {{ old('hospede_id', $reserva->hospede_id ?? '') == $hospede->id ? 'selected' : '' }}>
-                                {{ $hospede->nome }}
-                            </option>
-                        @endforeach
-                    </select>
+                    @php
+                        $hospedeSelecionado = old('hospede_id', $reserva->hospede_id ?? '');
+                    @endphp
+                
+                    @if ($hospedeSelecionado)
+                        <select class="form-control select2" name="hospede_id_disabled" id="hospede_id" disabled>
+                            <option value="">Selecione um hóspede</option>
+                            @foreach($hospedes as $hospede)
+                                <option value="{{ $hospede->id }}" 
+                                    {{ $hospedeSelecionado == $hospede->id ? 'selected' : '' }}>
+                                    {{ $hospede->nome }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <input type="hidden" name="hospede_id" value="{{ $hospedeSelecionado }}">
+                    @else
+                        <select class="form-control select2" name="hospede_id" id="hospede_id">
+                            <option value="">Selecione um hóspede</option>
+                            @foreach($hospedes as $hospede)
+                                <option value="{{ $hospede->id }}" 
+                                    {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
+                                    {{ $hospede->nome }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @endif
                 </div>
                 
-                  <div class="col-sm-2">
-                      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalCadastrarHospede">
-                          <i class="fas fa-user-plus"></i>
-                      </button>
-                  </div>
+                
+                
+                <div class="col-sm-2">
+                  <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalCadastrarHospede">
+                    <i class="fas fa-user-plus"></i>
+                  </button>
                 </div>
+              </div>
 
-
-
-
+                <!-- Campo do período -->
                 <div class="form-group row" id="campoPeriodo">
                   <label class="col-md-3 label-control" for="periodo">* Período</label>
                   <div class="col-md-4">
                       <input type="text" class="form-control" id="periodo" name="periodo"
                           value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
                   </div>
-              </div>
-              
-              <input type="hidden" name="data_checkin" id="data_checkin" value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
-              <input type="hidden" name="data_checkout" id="data_checkout" value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
-              
-              
-
-
-              <div class="form-group row" id="campoQuarto">
-                <label class="col-md-3 label-control" for="quarto">* Quarto</label>
-                <div class="col-md-4">
-                    <select class="form-control select2" id="quarto" name="quarto_id">
-                        <option value="">Selecione um quarto</option>
-                        @foreach ($quartos as $quarto)
-                            <option value="{{ $quarto->id }}" {{ old('quarto_id', $reserva->quarto_id ?? '') == $quarto->id ? 'selected' : '' }}>
-                                {{ $quarto->nome }}
-                            </option>
-                        @endforeach
-                    </select>
                 </div>
-            </div>
+
+                <input type="hidden" name="data_checkin" id="data_checkin" value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
+                <input type="hidden" name="data_checkout" id="data_checkout" value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
+
+                <!-- Select de quartos (desabilitado inicialmente) -->
+                <div class="form-group row" id="campoQuarto">
+                  <label class="col-md-3 label-control" for="quarto">* Quarto</label>
+                  <div class="col-md-4">
+                      <select class="form-control select2" id="quarto" name="quarto_id" disabled>
+                          <option value="">Selecione um quarto</option>
+                      </select>
+                  </div>
+                </div>
+
+                @if(isset($reserva))
+                  <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
+                @endif
 
 
                 
@@ -455,7 +469,7 @@ input[type="number"] {
           }
         });
 
-        $('#hospede_id').val(hospedeBloqueadoId).prop('readyonly', true);
+        $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
 
         $('#valor_diaria').val(0);
       } else {
@@ -471,6 +485,68 @@ input[type="number"] {
   });
 </script>
 
+<script>
+  $(document).ready(function () {
+      const reservaId = $('#reserva_id').val(); // Pega o ID da reserva se estiver editando
+      const quartoSelecionado = $('#quarto_selecionado').val(); // Pega o quarto já selecionado (em edição)
+  
+      $('#periodo').daterangepicker({
+          locale: {
+              format: 'DD/MM/YYYY',
+              separator: ' a ',
+              applyLabel: 'Aplicar',
+              cancelLabel: 'Cancelar',
+              daysOfWeek: ['Dom','Seg','Ter','Qua','Qui','Sex','Sab'],
+              monthNames: ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+              firstDay: 0
+          },
+          opens: 'center'
+      }, function(start, end) {
+          // Atualiza os inputs hidden
+          $('#data_checkin').val(start.format('YYYY-MM-DD'));
+          $('#data_checkout').val(end.format('YYYY-MM-DD'));
+  
+          // Faz requisição para buscar quartos disponíveis
+          $.ajax({
+              url: '{{ route('quartos.disponiveis') }}',
+              method: 'GET',
+              data: {
+                  checkin: start.format('DD/MM/YYYY'),
+                  checkout: end.format('DD/MM/YYYY'),
+                  reserva_id: reservaId
+              },
+              success: function(response) {
+                  let $select = $('#quarto');
+                  $select.prop('disabled', false);
+                  $select.empty().append('<option value="">Selecione um quarto</option>');
+  
+                  response.forEach(function(quarto) {
+                      $select.append('<option value="' + quarto.id + '">' + quarto.nome + '</option>');
+                  });
+  
+                  if (quartoSelecionado) {
+                      $select.val(quartoSelecionado);
+                  }
+              },
+              error: function() {
+                  alert('Erro ao buscar quartos disponíveis.');
+              }
+          });
+      });
+  
+      let checkin = $('#data_checkin').val();
+      let checkout = $('#data_checkout').val();
+  
+      if (checkin && checkout) {
+          let start = moment(checkin, 'YYYY-MM-DD');
+          let end = moment(checkout, 'YYYY-MM-DD');
+          $('#periodo').data('daterangepicker').setStartDate(start);
+          $('#periodo').data('daterangepicker').setEndDate(end);
+          $('#periodo').val(start.format('DD/MM/YYYY') + ' a ' + end.format('DD/MM/YYYY'));
+      }
+  });
+  </script>
+  
 
 @if(session('success'))
 <script>

@@ -16,14 +16,33 @@ class ReservaController extends Controller
         return view('reserva.index', compact('reservas'));
     }
 
-    public function create()
+    public function create(Request $request)
 {
-    $quartos = Quarto::all();
+    $checkin = $request->data_checkin;
+    $checkout = $request->data_checkout;
+
+    $quartos = Quarto::query();
+
+    if ($checkin && $checkout) {
+        $ocupados = Reserva::where(function ($query) use ($checkin, $checkout) {
+            $query->whereBetween('data_checkin', [$checkin, $checkout])
+                  ->orWhereBetween('data_checkout', [$checkin, $checkout])
+                  ->orWhere(function ($query) use ($checkin, $checkout) {
+                      $query->where('data_checkin', '<=', $checkin)
+                            ->where('data_checkout', '>=', $checkout);
+                  });
+        })->pluck('quarto_id');
+
+        $quartos = $quartos->whereNotIn('id', $ocupados);
+    }
+
+    $quartos = $quartos->get();
     $hospedes = Hospede::all();
     $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
 
-    return view('reserva.create', compact('quartos', 'hospedes', 'hospedeBloqueado'));
+    return view('reserva.create', compact('quartos', 'hospedes', 'hospedeBloqueado', 'checkin', 'checkout'));
 }
+
 
     public function store(Request $request)
     {
@@ -89,4 +108,32 @@ class ReservaController extends Controller
             return redirect()->back()->with('error', 'Erro ao remover reserva!');
             }
     }
+
+    public function quartosDisponiveis(Request $request)
+{
+    $checkin = Carbon::createFromFormat('d/m/Y', $request->checkin);
+    $checkout = Carbon::createFromFormat('d/m/Y', $request->checkout);
+    $reservaId = $request->reserva_id; // pode ser null
+
+    $quartosIndisponiveis = Reserva::where(function ($query) use ($checkin, $checkout) {
+            $query->whereBetween('data_checkin', [$checkin, $checkout->copy()->subDay()])
+                  ->orWhereBetween('data_checkout', [$checkin->copy()->addDay(), $checkout])
+                  ->orWhere(function ($query) use ($checkin, $checkout) {
+                      $query->where('data_checkin', '<', $checkin)
+                            ->where('data_checkout', '>', $checkout);
+                  });
+        })
+        ->when($reservaId, function ($query, $reservaId) {
+            $query->where('id', '!=', $reservaId);
+        })
+        ->pluck('quarto_id');
+
+    $quartosDisponiveis = Quarto::whereNotIn('id', $quartosIndisponiveis)->get();
+
+    return response()->json($quartosDisponiveis);
+}
+
+
+
+
 }

@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="card">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header green bg-primary text-white">
             <h3 class="card-title">
                 {{ isset($categoria) ? 'Editar informações da Categoria' : 'Preencha os dados da nova Categoria' }}</h3>
         </div>

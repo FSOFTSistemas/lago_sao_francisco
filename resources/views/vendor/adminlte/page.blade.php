@@ -35,7 +35,7 @@
         text-decoration: none;
         color: #fff !important;
     }
-    .card-header, .green {
+    .green {
         background-color: #679A4C !important;
         color: #fff !important;
     }
