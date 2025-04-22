@@ -338,7 +338,7 @@ return [
                 [
                     'text' => 'Mapa',
                     'icon' => 'fas fa-map',
-                    'url'  => '/reserva/mapa',
+                    'url'  => '/mapa-reservas',
                 ],
                 [
                     'text' => 'Reservas',

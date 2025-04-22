@@ -113,7 +113,7 @@
     margin-right: 8px;
 }
 
-.d-flex {
+    .d-flex {
         display: flex;
     }
 

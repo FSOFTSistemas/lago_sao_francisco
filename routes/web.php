@@ -18,6 +18,7 @@ use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\MapaQuartoController;
+use App\Http\Controllers\MapaReservaController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
@@ -101,3 +102,5 @@ Route::post('/filtro-empresa', function (Illuminate\Http\Request $request) {
 })->name('filtro.empresa');
 
 Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponiveis'])->name('quartos.disponiveis');
+
+Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
