@@ -16,7 +16,7 @@
               {{ $user->permissions->pluck('name')->join(' | ') ?? 'Nenhuma' }}
           </span></p>
           <p><strong>Empresa:</strong> <span id="empresa">
-            {{ $user->empresa->razao_social ?? 'Não definida' }}
+            {{ $user->empresa->nome_fantasia ?? 'Não definida' }}
         </span></p>
 
           </div>

@@ -117,11 +117,11 @@ class ReservaController extends Controller
 
     $quartosIndisponiveis = Reserva::where(function ($query) use ($checkin, $checkout) {
             $query->whereBetween('data_checkin', [$checkin, $checkout->copy()->subDay()])
-                  ->orWhereBetween('data_checkout', [$checkin->copy()->addDay(), $checkout])
-                  ->orWhere(function ($query) use ($checkin, $checkout) {
-                      $query->where('data_checkin', '<', $checkin)
+                    ->orWhereBetween('data_checkout', [$checkin->copy()->addDay(), $checkout])
+                    ->orWhere(function ($query) use ($checkin, $checkout) {
+                        $query->where('data_checkin', '<', $checkin)
                             ->where('data_checkout', '>', $checkout);
-                  });
+                    });
         })
         ->when($reservaId, function ($query, $reservaId) {
             $query->where('id', '!=', $reservaId);

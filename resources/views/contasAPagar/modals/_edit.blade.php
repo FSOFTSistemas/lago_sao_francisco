@@ -64,7 +64,7 @@
                             @foreach ($fornecedores as $fornecedor)
                                 <option value="{{ $fornecedor->id }}" 
                                     {{ old('fornecedor_id', $contasAPagar->fornecedor_id) == $fornecedor->id ? 'selected' : '' }}>
-                                    {{ $fornecedor->razao_social }}
+                                    {{ $fornecedor->nome_fantasia }}
                                 </option>
                             @endforeach
                         </select>

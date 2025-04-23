@@ -1,16 +1,15 @@
 @extends('adminlte::page')
 
-@section('title', 'Lista de planos de conta')
+@section('title', 'Empresa')
 
 @section('content_header')
-    <h5>Lista de planos de conta</h5>
+    <h5>Lista de Empresas</h5>
+    <hr>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <button class="btn btn-success new" data-toggle="modal" data-target="#createPlanoModal">
-            <i class="fas fa-plus"></i> Novo plano de conta
-        </button>
+        <a class="btn btn-success float-end new" href="{{ route('empresa.create') }}"><i class="fas fa-plus"></i> Nova Empresa</a>
     </div>
 
     @component('components.data-table', [
@@ -27,51 +26,45 @@
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
-                    <th>Descrição</th>
-                    <th>Tipo</th>
-                    <th>Empresa</th>
+                    <th>Razão social</th>
+                    <th>Nome fantasia</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($planoDeContas as $planoDeConta)
+                @foreach ($empresas as $empresa)
                     <tr>
-                        <td>{{ $planoDeConta->id }}</td>
-                        <td>{{ $planoDeConta->descricao }}</td>
-                        <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->nome_fantasia }}</td>
+                        <td>{{ $empresa->id }}</td>
+                        <td>{{ $empresa->razao_social }}</td>
+                        <td>{{ $empresa->nome_fantasia }}</td>
                         <td>
+                            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                                data-target="#showEmpresa{{ $empresa->id }}">
+                                👁️
+                            </button>
+
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editPlanoModal{{ $planoDeConta->id }}">
+                                data-target="#editEmpresaModal{{ $empresa->id }}">
                                 ✏️
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deletePlanoModal{{ $planoDeConta->id }}">
+                            data-target="#deleteEmpresaModal{{ $empresa->id }}">
                             🗑️
                         </button>
                         </td>
                     </tr>
-                    @include('planoDeConta.modals._edit', ['planoDeConta' => $planoDeConta])
-                    @include('planoDeConta.modals._delete', ['planoDeConta' => $planoDeConta])
+
+                    @include('empresa.modals._show', ['empresa' => $empresa])
+                    @include('empresa.modals._edit', ['empresa' => $empresa])
+                    @include('empresa.modals._delete', ['empresa' => $empresa])
                 @endforeach
             </tbody>
     @endcomponent
-
-    @include('planoDeConta.modals._create')
 @stop
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 @stop
-
-@section('css')
-<style>
-    .new {
-        background-color: #679A4C !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: #3e7222 !important;
-    }
-</style>

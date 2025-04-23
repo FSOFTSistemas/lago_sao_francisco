@@ -17,12 +17,29 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $empresa = Empresa::firstOrCreate([
-            'razao_social' => 'Empresa Teste',
-            'nome_fantasia' => 'Empresa Teste',
-            'cnpj' => '12345678901234',
-            'endereco' => null,
-            'inscricao_estadual' => '12345678901234',
+
+        $empresaLago = Empresa::create([
+            'razao_social' => 'Maria Laura Pereira Paes',
+            'nome_fantasia' => 'Lago São Francisco',
+            'cnpj' => '40.065.099/0001-24',
+            'endereco_id' => null,
+            'inscricao_estadual' => '092969305',
+        ]);
+        
+        Empresa::create([
+            'razao_social' => 'Maria Laura Pereira Paes',
+            'nome_fantasia' => 'Restaurante Dom Dina',
+            'cnpj' => '40.065.099/0001-24',
+            'endereco_id' => null,
+            'inscricao_estadual' => '092969305',
+        ]);
+        
+        Empresa::create([
+            'razao_social' => 'Maria Laura Pereira Paes',
+            'nome_fantasia' => 'Hotel Estação Chico',
+            'cnpj' => '40.065.099/0001-24',
+            'endereco_id' => null,
+            'inscricao_estadual' => '092969305',
         ]);
         $permissions = [
             'gerenciar usuarios',
@@ -53,7 +70,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'master@teste.com',
             'name' => 'Master Admin',
             'password' => bcrypt('12345678'),
-            'empresa_id' => $empresa->id,
+            'empresa_id' => $empresaLago->id,
 
         ]);
         $masterUser->assignRole('Master');
@@ -63,7 +80,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'funcionario@teste.com',
             'name' => 'Funcionario Teste',
             'password' => bcrypt('12345678'),
-            'empresa_id' => $empresa->id,
+            'empresa_id' => $empresaLago->id,
         ]);
         $funcionarioUser->assignRole('funcionario');
         $funcionarioUser->givePermissionTo('gerenciar produto', 'gerenciar caixa');
@@ -72,7 +89,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'financeiro@teste.com',
             'name' => 'Financeiro Teste',
             'password' => bcrypt('12345678'),
-            'empresa_id' => $empresa->id,
+            'empresa_id' => $empresaLago->id,
         ]);
         $financeiroUser->assignRole('financeiro');
         $financeiroUser->givePermissionTo(

@@ -76,7 +76,7 @@
                             <option value="">Selecione</option>
                             @foreach ($empresa as $item)
                                 <option value="{{ $item->id }}" {{ old('empresa_id', $fluxoCaixa->empresa_id ?? '') == $item->id ? 'selected' : '' }}>
-                                    {{ $item->razao_social }}
+                                    {{ $item->nome_fantasia }}
                                 </option>
                             @endforeach
                         </select>

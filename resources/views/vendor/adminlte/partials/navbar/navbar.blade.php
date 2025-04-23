@@ -29,9 +29,9 @@
                 </div>
                 <select class="form-control form-control-navbar" id="selectEmpresa" name="empresa_id" onchange="this.form.submit()">
                     <option value="">Todas</option>
-                    <option value="1" {{ session('empresa_id') == 1 ? 'selected' : '' }}>Restaurante</option>
-                    <option value="2" {{ session('empresa_id') == 2 ? 'selected' : '' }}>Hotel</option>
-                    <option value="3" {{ session('empresa_id') == 3 ? 'selected' : '' }}>Lago</option>
+                    <option value="1" {{ session('empresa_id') == 1 ? 'selected' : '' }}>Lago</option>
+                    <option value="2" {{ session('empresa_id') == 2 ? 'selected' : '' }}>Restaurante</option>
+                    <option value="3" {{ session('empresa_id') == 3 ? 'selected' : '' }}>Hotel</option>
                 </select>
             </div>
         </form>   

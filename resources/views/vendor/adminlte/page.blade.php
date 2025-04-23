@@ -42,9 +42,9 @@
     .card-footer {
         text-align: right
     }
-    .green:hover{
+    /* .green:hover{
         background-color: #3e7222 !important;
-    }
+    } */
     .new {
         background-color: var(--green-1) !important;
         border: none !important;
@@ -76,6 +76,14 @@
         color: var(--green-2);
     }
 
+    .editlink {
+        text-decoration: none;
+        color: var(--green-1);
+        font-weight: 600;
+    }
+    .editlink:hover {
+        color: var(--green-2);
+    }
         .form-switch {
         padding-left: 3em;
         position: relative;

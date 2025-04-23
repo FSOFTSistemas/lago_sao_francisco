@@ -12,7 +12,7 @@
                 <p><strong>Data do Adiantamento:</strong> <span id="data">{{Illuminate\Support\Carbon::parse($adiantamento->data)->format('d/m/Y')}}</span></p>
                 <p><strong>Descrição:</strong> <span id="descricao">{{$adiantamento->descricao}}</span></p>
                 <p><strong>Situação:</strong> <span id="status">{{$adiantamento->status}}</span></p>
-                <p><strong>Empresa:</strong> <span id="empresa">{{$adiantamento->empresa->razao_social}}</span></p>
+                <p><strong>Empresa:</strong> <span id="empresa">{{$adiantamento->empresa->nome_fantasia}}</span></p>
             </div>
         </div>
     </div>

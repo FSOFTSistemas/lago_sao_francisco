@@ -14,7 +14,7 @@
                 <p><strong>Caixa do dia:</strong> <span id="caixa">{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->caixa->data_abertura)->format('d/m/Y') }}</span></p>
                 <p><strong>Usuário:</strong> <span id="usuario">{{$users->name}}</span></p>
                 <p><strong>Movimento:</strong> <span id="status">{{$fluxoCaixa->movimento->descricao}}</span></p>
-                <p><strong>Empresa:</strong> <span id="empresa">{{$fluxoCaixa->daEmpresa->razao_social}}</span></p>
+                <p><strong>Empresa:</strong> <span id="empresa">{{$fluxoCaixa->daEmpresa->nome_fantasia}}</span></p>
                 <p><strong>Valor Total:</strong> <span id="valorTotal">{{$fluxoCaixa->valor_total}}</span></p>
                 <p><strong>Plano de Conta:</strong> <span id="planoDeConta">{{$fluxoCaixa->planoDeConta->descricao}}</span></p>
             </div>

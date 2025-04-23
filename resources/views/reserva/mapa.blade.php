@@ -8,11 +8,18 @@
 @stop
 
 @section('content')
-<form method="GET" class="mb-3 d-flex gap-2">
-    <input type="date" name="inicio" value="{{ request('inicio', now()->toDateString()) }}" class="form-control w-auto">
-    <input type="date" name="fim" value="{{ request('fim', now()->addDays(7)->toDateString()) }}" class="form-control w-auto">
-    <button type="submit" class="btn btn-primary">Filtrar</button>
+<form method="GET" class="mb-3 row g-2">
+    <div class="col-md-auto col-12">
+        <input type="date" name="inicio" value="{{ request('inicio', now()->toDateString()) }}" class="form-control">
+    </div>
+    <div class="col-md-auto col-12">
+        <input type="date" name="fim" value="{{ request('fim', now()->addDays(7)->toDateString()) }}" class="form-control">
+    </div>
+    <div class="col-md-auto col-12">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+    </div>
 </form>
+
 
 <div class="table-responsive">
 <table class="table mapa-reservas text-center">
@@ -93,85 +100,115 @@
 
 @section('css')
 <style>
-    .mapa-reservas {
-        border-collapse: separate;
-        border-spacing: 0;
-    }
+h1 {
+    color: var(--green-2);
+}
+.mapa-reservas {
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border-radius: 10px;
+    overflow: hidden;
+}
 
-    .mapa-reservas th,
-    .mapa-reservas td {
-        min-width: 40px;
-        height: 32px;
-        padding: 0;
-        font-size: 13px;
-        vertical-align: middle;
-        border: 1px solid #dee2e6;
-    }
+.mapa-reservas th {
+    position: sticky;
+    top: 0;
+    background-color: #f1f3f5;
+    z-index: 5;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px;
+    text-align: center;
+    border-bottom: 2px solid #dee2e6;
+}
 
-    .mapa-reservas td.no-border {
-        border-left: none;
-    }
+.mapa-reservas td {
+    min-width: 42px;
+    height: 36px;
+    padding: 0;
+    font-size: 13px;
+    vertical-align: middle;
+    border: 1px solid #dee2e6;
+    transition: background-color 0.2s;
+}
 
-    .mapa-reservas .quarto-nome {
-        font-weight: bold;
-        background-color: #f8f9fa;
-        text-align: left;
-        padding-left: 8px;
-        border-right: 1px solid #dee2e6;
-    }
+.mapa-reservas td:hover {
+    background-color: #f8f9fa;
+}
 
-    .bg-warning { background-color: #ffc107 !important; }
-    .bg-primary { background-color: #007bff !important; }
-    .bg-danger { background-color: #dc3545 !important; }
-    .bg-dark { background-color: #343a40 !important; }
-    .bg-success { background-color: #28a745 !important; }
+.mapa-reservas .quarto-nome {
+    font-weight: bold;
+    background-color: #f8f9fa;
+    text-align: left;
+    padding-left: 12px;
+    border-right: 1px solid #dee2e6;
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+}
 
-    .rounded-start {
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-    }
+a.text-white {
+    color: white;
+    text-decoration: none;
+    padding: 4px 6px;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+}
 
-    .rounded-end {
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
+.bg-warning    { background-color: #ffc107 !important; }
+.bg-primary    { background-color: #007bff !important; }
+.bg-danger     { background-color: #dc3545 !important; }
+.bg-dark       { background-color: #343a40 !important; }
+.bg-success    { background-color: #28a745 !important; }
 
-    a.text-white {
-        color: white;
-        text-decoration: none;
-        padding: 6px;
-    }
+.rounded-start {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
 
-    .status-indicator {
+.rounded-end {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.status-indicator {
     display: inline-block;
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 2px;
-    margin-right: 8px;
-    }
-    .d-flex {
-        display: flex;
-    }
+    margin-right: 6px;
+}
 
-    .align-items-center {
-        align-items: center;
-    }
+.d-flex {
+    display: flex;
+}
 
-    .me-3 {
-        margin-right: 1rem;
-    }
+.align-items-center {
+    align-items: center;
+}
 
-    .mb-3 {
-        margin-bottom: 1rem;
-    }
+.me-3 {
+    margin-right: 1rem;
+}
 
-    .gap-2 {
-        gap: 0.5rem;
-    }
+.mb-3 {
+    margin-bottom: 1rem;
+}
 
-    .flex-wrap {
-        flex-wrap: wrap;
-    }
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
 </style>
 @stop
 

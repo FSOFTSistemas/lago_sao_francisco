@@ -72,15 +72,3 @@
 @stop
 
 @section('css')
-<style>
-
-</style>
-<style>
-    .new {
-        background-color: var(--green-1) !important;
-        border: none !important;
-    }
-    .new:hover{
-        background-color: var(--green-2) !important;
-    }
-</style>

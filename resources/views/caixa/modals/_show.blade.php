@@ -15,7 +15,7 @@
                 <p><strong>Usuário de Abertura:</strong> <span id="usuarioAbertura">{{$users->name}}</span></p>
                 <p><strong>Usuário de Fechamento:</strong> <span id="usuarioFechamento">{{$users->name}}</span></p>
                 <p><strong>Situação:</strong> <span id="status">{{$caixa->status}}</span></p>
-                <p><strong>Empresa:</strong> <span id="empresa">{{$caixa->empresa->razao_social}}</span></p>
+                <p><strong>Empresa:</strong> <span id="empresa">{{$caixa->empresa->nome_fantasia}}</span></p>
                 <p><strong>Observações:</strong> <span id="observacoes">{{$caixa->observacoes}}</span></p>
             </div>
         </div>

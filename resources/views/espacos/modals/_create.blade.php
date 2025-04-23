@@ -35,7 +35,7 @@
                             <select class="form-control" id="empresa" name="empresa_id" required>
                                 <option value="">Selecione</option>
                                 @foreach ($empresas as $empresa)
-                                    <option value="{{ $empresa->id }}">{{ $empresa->razao_social }}</option>
+                                    <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
                                 @endforeach
                             </select>
                         </div>
