@@ -94,19 +94,19 @@
                 <div class="form-group row">
                     <label class="col-md-3 form-label d-block label-control">* Ativo?</label>
                     <div class="form-check form-switch">
-                        <input type="hidden" name="status" value="0">
+                        <input type="hidden" name="status" value="inativo">
                         <input
                             class="form-check-input"
                             type="checkbox"
                             id="ativoSwitch"
                             name="status"
-                            value="1"
-                            {{ old('status', $funcionario->status ?? true) ? 'checked' : '' }}>
+                            value="ativo"
+                            {{ old('status', $funcionario->status ?? 'ativo') === 'ativo' ? 'checked' : '' }}>
                         <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
-                            {{ old('status', $funcionario->status ?? true) ? 'Ativo' : 'Inativo' }}
+                            {{ old('status', $funcionario->status ?? 'ativo') === 'ativo' ? 'Ativo' : 'Inativo' }}
                         </label>
                     </div>
-                  </div>
+                </div>
 
                 <!-- Botão de Salvar -->
                 <div class="card-footer">
@@ -170,15 +170,17 @@
     <script src="{{ asset('js/endereco.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const switchInput = document.getElementById('ativoSwitch');
-            const label = document.getElementById('ativoLabel');
-            label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
-            switchInput.addEventListener('change', function () {
-                label.textContent = this.checked ? 'Ativo' : 'Inativo';
-            });
-        });
-      </script>
-      <script>
+        const switchInput = document.getElementById('ativoSwitch');
+        const label = document.getElementById('ativoLabel');
+        label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
+        switchInput.value = switchInput.checked ? 'ativo' : 'inativo';
+        switchInput.addEventListener('change', function () {
+        label.textContent = this.checked ? 'Ativo' : 'Inativo';
+        this.value = this.checked ? 'ativo' : 'inativo';
+    });
+});
+    </script>
+    <script>
         $(document).ready(function() {
             $('.select2').select2({
                 placeholder: "selecione...",

@@ -4,9 +4,9 @@
         <div class="modal-content">
             <!-- Cabeçalho do Modal -->
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteFuncionarioModalLabel{{ $funcionario->id }}">
+                <h4 class="modal-title" id="deleteFuncionarioModalLabel{{ $funcionario->id }}">
                     <i class="fas fa-trash"></i> Confirmar Exclusão
-                </h5>
+                </h4>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
 

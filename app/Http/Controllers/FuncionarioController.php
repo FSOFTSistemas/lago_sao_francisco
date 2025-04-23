@@ -56,7 +56,7 @@ class FuncionarioController extends Controller
             Funcionario::create($request->all());
             return redirect()->route('funcionario.index')->with('success', 'Funcionário criado com sucesso');
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
@@ -82,7 +82,7 @@ class FuncionarioController extends Controller
             $funcionario->update($request->all());
             return redirect()->route('funcionario.index')->with('success', 'Funcionário atualizado com sucesso');
         } catch (\Exception $e) {
-            dd($e->getMessage());
+            dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
