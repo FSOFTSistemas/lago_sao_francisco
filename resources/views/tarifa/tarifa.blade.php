@@ -3,10 +3,12 @@
 @section('title', 'Tarifas')
 
 @section('content_header')
+    <h5>Tarifas do Hotel</h5>
+    <hr>
 @stop
 
 @section('content')
-<div class="row mb-3 pt-3">
+<div class="row mb-3">
   <div class="col d-flex justify-content-start">
       <a href="{{ route('preferencias') }}" class="btn btn-success new">
           <i class="fas fa-arrow-left"></i> Voltar

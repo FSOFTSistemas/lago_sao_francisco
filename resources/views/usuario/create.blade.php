@@ -1,9 +1,10 @@
 @extends('adminlte::page')
 
-@section('title', isset($user) ? 'Editar Usuario' : 'Cadastrar Usuario')
+@section('title', isset($user) ? 'Editar Usuário' : 'Cadastrar Usuário')
 
 @section('content_header')
-    <h1>{{ isset($user) ? 'Editar Usuario' : 'Cadastrar Usuario' }}</h1>
+    <h1>{{ isset($user) ? 'Editar Usuário' : 'Cadastrar Usuário' }}</h1>
+    <hr>
 @stop
 
 @section('content')
@@ -19,9 +20,9 @@
                     @method('PUT')
                 @endif
 
-                <div class="form-group">
-                    <label for="name">Nome</label>
-                    <div class="input-group">
+                <div class="form-group row">
+                    <label for="name" class="col-md-3 label-control">* Nome:</label>
+                    <div class="input-group col-md-6">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-user"></i></span>
                         </div>
@@ -30,9 +31,9 @@
                     </div>
                 </div>
         
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <div class="input-group">
+                <div class="form-group row">
+                    <label for="email" class="col-md-3 label-control">* Email:</label>
+                    <div class="input-group col-md-6">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                         </div>
@@ -41,9 +42,9 @@
                     </div>
                 </div>
         
-                <div class="form-group">
-                    <label for="password">Senha</label>
-                    <div class="input-group">
+                <div class="form-group row">
+                    <label for="password" class="col-md-3 label-control">* Senha:</label>
+                    <div class="input-group  col-md-6">
                         <div class="input-group-prepend">
                             <span class="input-group-text"><i class="fas fa-lock"></i></span>
                         </div>
@@ -54,46 +55,52 @@
                 </div>
                 
         
-                <div class="mb-3">
-                    <label for="role">Tipo</label>
-                    <select class="form-control select2" id="role" name="role" required>
-                        <option value="">Selecione um tipo</option>
-                        @foreach ($roles as $role)
-                            @if ($role->name !== 'Master') <!-- Exclui a role "Master" -->
-                                <option value="{{ $role->name }}" 
-                                    {{ isset($user) && ($user->roles->first()->name ?? '') == $role->name ? 'selected' : '' }}>
-                                    {{ ucfirst($role->name) }}
+                <div class="form-group row">
+                    <label for="role" class="col-md-3 label-control">* Tipo:</label>
+                    <div class="col-md-3">
+                        <select class="form-control select2" id="role" name="role" required>
+                            <option value="">Selecione um tipo</option>
+                            @foreach ($roles as $role)
+                                @if ($role->name !== 'Master') <!-- Exclui a role "Master" -->
+                                    <option value="{{ $role->name }}" 
+                                        {{ isset($user) && ($user->roles->first()->name ?? '') == $role->name ? 'selected' : '' }}>
+                                        {{ ucfirst($role->name) }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group row">
+                    <label for="empresa" class="col-md-3 label-control">* Empresa:</label>
+                    <div class="col-md-3">
+                        <select class="form-control select2" id="empresa" name="empresa_id" required>
+                            <option value="">Selecione</option>
+                            @foreach ($empresas as $empresa)
+                                <option value="{{ $empresa->id }}" {{ ($user->empresa_id ?? '') == $empresa->id ? 'selected' : '' }}>
+                                    {{ $empresa->nome_fantasia }}
                                 </option>
-                            @endif
-                        @endforeach
-                    </select>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 
-                <div class="mb-3">
-                    <label for="empresa">Empresa</label>
-                    <select class="form-control select2" id="empresa" name="empresa_id" required>
-                        <option value="">Selecione</option>
-                        @foreach ($empresas as $empresa)
-                            <option value="{{ $empresa->id }}" {{ ($user->empresa_id ?? '') == $empresa->id ? 'selected' : '' }}>
-                                {{ $empresa->nome_fantasia }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="permissions">Permissões</label>
-                    <select class="form-control select2" id="permissions" name="permissions[]" multiple="multiple">
-                        @php
-                            $selectedPermissions = isset($user) && $user->permissions ? $user->permissions->pluck('id')->toArray() : [];
-                        @endphp
-                        @foreach ($permissions as $permission)
-                            <option value="{{ $permission->id }}" 
-                                {{ in_array($permission->id, $selectedPermissions) ? 'selected' : '' }}>
-                                {{ $permission->name }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="form-goup row mb-3">
+                    <label for="permissions" class="col-md-3 label-control">* Permissões:</label>
+                    <div class="col-md-6">
+                        <select class="form-control select2" id="permissions" name="permissions[]" multiple="multiple">
+                            @php
+                                $selectedPermissions = isset($user) && $user->permissions ? $user->permissions->pluck('id')->toArray() : [];
+                            @endphp
+                            @foreach ($permissions as $permission)
+                                <option value="{{ $permission->id }}" 
+                                    {{ in_array($permission->id, $selectedPermissions) ? 'selected' : '' }}>
+                                    {{ $permission->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 
           
@@ -108,6 +115,12 @@
 
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-selection__choice {
+        color: var(--green-2) !important;
+        padding-left: 1.5rem !important;
+    }
+</style>
 @stop
 
 @section('js')

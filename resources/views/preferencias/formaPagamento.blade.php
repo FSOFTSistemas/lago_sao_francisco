@@ -3,22 +3,22 @@
 @section('title', 'Formas de Pagamento')
 
 @section('content_header')
+    <h5>Formas de Pagamento</h5>
+    <hr>
 @stop
 
 @section('content')
     <div class="row mb-3">
         <div class="col">
-            <a href="{{ route('preferencias') }}">
-                <button class="btn btn-success float-start">
+            <a href="{{ route('preferencias') }}" class="btn btn-success new">               
                     <i class="fas fa-arrow-left"></i>
                     Voltar
-                </button>
             </a>
         </div>
 
         <div class="col">
             <!-- Botão para abrir o modal de criação -->
-            <button class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#createFormaPagamentoModal">
+            <button class="btn btn-success new float-end" data-bs-toggle="modal" data-bs-target="#createFormaPagamentoModal">
                 <i class="fas fa-plus"></i>
                 Nova Forma de Pagamento
             </button>
@@ -129,7 +129,7 @@
             <div class="modal-content">
                 <form action="{{ route('formaPagamento.store') }}" method="POST">
                     @csrf
-                    <div class="modal-header bg-primary text-white">
+                    <div class="modal-header text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-cogs"></i> Adicionar Nova Forma de Pagamento
                         </h5>

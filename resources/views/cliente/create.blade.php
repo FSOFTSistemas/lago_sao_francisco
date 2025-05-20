@@ -4,6 +4,7 @@
 
 @section('content_header')
     <h1>{{ isset($cliente) ? 'Editar Cliente' : 'Cadastrar Cliente' }}</h1>
+    <hr>
 @stop
 
 @section('content')
@@ -17,14 +18,14 @@
 
                 <div class="form-group row">
                     <label class="col-md-3 label-control" for="nomeRazaoSocial">* Nome/Razão Social:</label>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="text" class="form-control" id="nomeRazaoSocial" name="nome_razao_social"
                             value="{{ $cliente->nome_razao_social ?? '' }}" required>
                     </div>
                 </div>
                 <div class="form-group row">
                     <label class="col-md-3 label-control" for="apelidoNomeFantasia">* Apelido/Nome Fantasia:</label>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <input type="text" class="form-control" id="apelidoNomeFantasia" name="apelido_nome_fantasia"
                             value="{{ $cliente->apelido_nome_fantasia ?? '' }}" required>
                     </div>
@@ -108,6 +109,11 @@
     <!-- Modal para Novo Endereço -->
     @include('components.endereco-modal')
 @stop
+
+@section('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endsection
+
 @section('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
@@ -122,13 +128,9 @@
     $(document).ready(function() {
         $('.select2').select2({
             placeholder: "Selecione...",
-            allowClear: true,
             width: '100%'
         });
     });
 </script>
 <script src="{{ asset('js/endereco.js') }}"></script>
 @endsection
-
-@section('css')
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

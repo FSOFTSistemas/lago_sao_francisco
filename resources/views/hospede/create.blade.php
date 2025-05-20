@@ -61,14 +61,14 @@
 
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="nome">* Nome completo:</label>
-                  <div class="col-md-9">
+                  <div class="col-md-6">
                     <div><input class="form-control" required="required" type="text" name="nome" id="nome" value="{{ old('nome', $hospede->nome ?? '') }}" autocomplete="off"></div>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="email">Email:</label>
-                  <div class="col-md-9">
+                  <div class="col-md-6">
                     <div><input class="form-control" type="email" name="email" id="email" value="{{ old('email', $hospede->email ?? '') }}"></div>
                   </div>
                 </div>
@@ -104,14 +104,14 @@
               
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="profissao">Profissão:</label>
-                  <div class="col-md-9">
+                  <div class="col-md-6">
                     <div><input class="form-control"  type="text" name="profissao" id="profissao" value="{{ old('profissao', $hospede->profissao ?? '') }}"></div>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <label for="observacoes" class="col-md-3 label-control" >Observações</label>
-                  <div class="col-md-9">
+                  <div class="col-md-6">
                     <textarea class="form-control" name="observacoes" rows="3">{{ old('observacoes', $hospede->observacoes ?? '') }}</textarea>
                   </div>
                 </div>
