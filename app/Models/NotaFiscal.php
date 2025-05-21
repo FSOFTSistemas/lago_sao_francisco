@@ -12,8 +12,8 @@ class NotaFiscal extends Model
     protected $fillable = [
         'id',
         'cliente_id',
-        'mcm',
-        'cfop',
+        'mcm_id',
+        'cfop_id',
         'usuario_id',
         'data',
         'empresa_id',
@@ -47,5 +47,13 @@ class NotaFiscal extends Model
 
     public function usuario(){
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function cfop(){
+        return $this->belongsTo(CFOP::class, 'cfop_id');
+    }
+
+    public function ncm(){
+        return $this->belongsTo(NCM::class, 'mcp_id');
     }
 }
