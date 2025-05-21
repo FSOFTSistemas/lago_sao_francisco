@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('nota_fiscals', function (Blueprint $table) {
             $table->id();
-            $table->foreign('cliente_id')->references('id')->on('cliente');
-            $table->foreign('ncm_id')->references('id')->on('ncm');
-            $table->foreign('cfop_id')->references('id')->on('cfop');
-            $table->foreign('usuario_id')->references('id')->on('usuario');
-            $table->foreign('empresa_id')->references('id')->on('empresa');
+            $table->unsignedBigInteger('cliente_id');
+            $table->unsignedBigInteger('ncm_id');
+            $table->unsignedBigInteger('cfop_id');
+            $table->unsignedBigInteger('usuario_id');
+            $table->unsignedBigInteger('empresa_id');
             $table->date('data');
             $table->string('chave')->nullable();
             $table->integer('serie');
@@ -39,6 +39,12 @@ return new class extends Migration
             $table->double('base_ST');
             $table->double('vST');
             $table->timestamps();
+
+            $table->foreign('cliente_id')->references('id')->on('cliente');
+            $table->foreign('ncm_id')->references('id')->on('ncm');
+            $table->foreign('cfop_id')->references('id')->on('cfop');
+            $table->foreign('usuario_id')->references('id')->on('usuario');
+            $table->foreign('empresa_id')->references('id')->on('empresa');
             
         });
     }

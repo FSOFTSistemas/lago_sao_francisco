@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('nota_fiscal_itens', function (Blueprint $table) {
             $table->id();
-            $table->integer('nota_fical_id');
-            $table->integer('produto_id');
+            $table->unsignedBigInteger('nota_fical_id');
+            $table->unsignedBigInteger('produto_id');
             $table->integer('quantidade');
             $table->double('v_unitario');
             $table->double('desconto');
             $table->double('subtotal');
             $table->string('cst');
-            $table->integer('cfop_id');
+            $table->unsignedBigInteger('cfop_id');
             $table->string('csosm');
             $table->double('total');
             $table->double('base_ICMS');
@@ -28,6 +28,10 @@ return new class extends Migration
             $table->double('base_ST');
             $table->double('v_ST');
             $table->timestamps();
+
+            $table->foreign('nota_fical_id')->references('id')->on('notaFiscal');
+            $table->foreign('produto_id')->references('id')->on('produto');
+            $table->foreign('cfop_id')->refereces('id')->on('cfop');
         });
     }
 
