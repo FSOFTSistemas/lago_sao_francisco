@@ -1,10 +1,12 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\Produto;
 use App\Models\Estoque;
 use App\Http\Controllers\Controller;
 use GrahamCampbell\ResultType\Success;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EstoqueController extends Controller
 {
@@ -13,7 +15,8 @@ class EstoqueController extends Controller
      */
     public function index()
     {
-        $estoques = Estoque::all();
+        $produtos = Produto::with('estoque')->get();
+        
         return view('estoques.index', compact('estoques'));
     }
 
@@ -34,10 +37,11 @@ class EstoqueController extends Controller
             $request->validate([
                 'produto_id' => 'required|exists:produtos,id',
                 'estoque_atual' => 'required|numeric|min:0',
-                'empresa_id' => 'required|exists:empresas,id',
                 'entradas' => 'required|numeric|min:0',
                 'saidas' => 'required|numeric|min:0',
             ]);
+
+            $request['empresa_id'] = Auth::user()->empresa_id;
             Estoque::create($request->all());
             return redirect()->route('estoque.index')->with('sucess', 'Estoque criado com sucesso');
         }catch(\Exception $e){
@@ -71,14 +75,13 @@ class EstoqueController extends Controller
         try{
            $estoque = Estoque::findOrFail($id);
            $request->validate([
-                'produto_id' => 'required|exists:produtos,id',
                 'estoque_atual' => 'required|numeric|min:0',
-                'empresa_id' => 'required|exists:empresas,id',
                 'entradas' => 'required|numeric|min:0',
                 'saidas' => 'required|numeric|min:0',
             ]);
+            $request['empresa_id'] = Auth::user()->empresa_id;
             $estoque->update($request->all);
-            return redirect()->route('estoque.index')->with('sucess', 'Estoque atualiza com sucesso');
+            return redirect()->route('estoque.index')->with('sucess', 'Estoque atualizado com sucesso');
         }catch(\Exception $e){
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao atualizar estoque');
