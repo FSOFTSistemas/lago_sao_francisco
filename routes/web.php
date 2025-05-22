@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AdiantamentoController;
+use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
+use App\Http\Controllers\BuffetItemController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\ClienteController;
@@ -104,3 +106,7 @@ Route::post('/filtro-empresa', function (Illuminate\Http\Request $request) {
 Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponiveis'])->name('quartos.disponiveis');
 
 Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
+
+Route::resource('aluguel', AluguelController::class);
+
+Route::resource('buffet', BuffetItemController::class);

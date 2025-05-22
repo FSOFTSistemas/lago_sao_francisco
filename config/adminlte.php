@@ -314,16 +314,21 @@ return [
             'text'    => 'Lago',
             'icon'    => 'fas fa-place-of-worship',
             'submenu' => [
-                [
-                    'text' => 'Espaços',
-                    'icon' => 'fas fa-campground',
-                    'url'  => '/espaco',
-                ],
+                // [
+                //     'text' => 'Espaços',
+                //     'icon' => 'fas fa-campground',
+                //     'url'  => '/espaco',
+                // ],
                 [
                     'text' => 'Day use / Passaporte',
                     'icon' => 'fas fa-ticket-alt',
                     'url'  => '/diaria',
                 ],
+                [
+                    'text' => 'Aluguel de Espaços',
+                    'icon' => 'fas fa-campground',
+                    'url'  => '/aluguel',
+                ]
             ],
         ],
         [

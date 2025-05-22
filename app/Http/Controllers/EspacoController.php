@@ -24,7 +24,7 @@ class EspacoController extends Controller
         try {
             $request->validate([
                 'nome' => 'required',
-                'status' => 'required|in:disponivel,alugado',
+                'status' => 'nullable|in:disponivel,alugado',
                 'valor' => 'required',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
@@ -45,7 +45,7 @@ class EspacoController extends Controller
             $espaco = Espaco::findOrFail($espaco->id);
             $request->validate([
                 'nome' => 'required',
-                'status' => 'required|in:disponivel,alugado',
+                'status' => 'nullable|in:disponivel,alugado',
                 'valor' => 'required',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);

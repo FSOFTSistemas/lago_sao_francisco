@@ -45,6 +45,25 @@
             </a>
         </div>
     </div>
+    <div class="row">
+         <!-- Cadastro de Espaços -->
+        <div class="col-md-3">
+            <a href="{{ route('espaco.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-campground fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Cadastro de Espaços</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('buffet.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-utensils fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Cadastro de Itens Buffet</h5>
+                </div>
+            </a>
+        </div>
+    </div>
 @endsection
 
 @section('css')
