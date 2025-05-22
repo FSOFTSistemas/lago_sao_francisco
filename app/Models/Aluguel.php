@@ -10,8 +10,8 @@ class Aluguel extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'id',
-        'data',
+        'data_inicio',
+        'data_fim',
         'observacoes',
         'subtotal',
         'total',
@@ -20,12 +20,12 @@ class Aluguel extends Model
         'parcelas',
         'vencimento',
         'contrato',
-        'adicionais',
         'status',
         'espaco_id',
         'cliente_id',
         'empresa_id',
         'forma_pagamento_id',
+        'numero_pessoas_buffet'
     ];
     public function cliente()
     {
@@ -42,6 +42,14 @@ class Aluguel extends Model
     public function espaco()
     {
         return $this->belongsTo(Espaco::class, 'espaco_id');
+    }
+    public function adicionais()
+    {
+        return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
+    }
+    public function buffetItens()
+    {
+        return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item');
     }
     protected static function booted()
     {

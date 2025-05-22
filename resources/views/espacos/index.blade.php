@@ -18,20 +18,19 @@
         'responsive' => [
             ['responsivePriority' => 1, 'targets' => 0],
             ['responsivePriority' => 2, 'targets' => 1],
-            ['responsivePriority' => 2, 'targets' => 3],
             ['responsivePriority' => 3, 'targets' => 2],
             ['responsivePriority' => 4, 'targets' => -1],
         ],
         'itemsPerPage' => 10,
         'showTotal' => false,
-        'valueColumnIndex' => 3,
+        'valueColumnIndex' => 1,
     ])
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Valor</th>
-                    <th>Situação</th>
+                    {{-- <th>Situação</th> --}}
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -41,7 +40,7 @@
                         <td>{{ $espaco->id }}</td>
                         <td>{{ $espaco->nome }}</td>
                         <td>R${{ $espaco->valor }}</td>
-                        <td>
+                        {{-- <td>
                             @if($espaco->status == "disponivel")
                             <p>Disponível <i class="fa-regular fa-circle-check"></i></p>
                             
@@ -49,7 +48,7 @@
                             <p>Alugado <i class="fa-regular fa-circle-xmark"></i></p>
                             
                             @endif
-                          </td>
+                        </td> --}}
                         <td>
 
                           <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"

@@ -22,6 +22,7 @@ class HomeController extends Controller
      */
     public function index()
     {
+        // dd(auth()->user()->hasRole('Master'));
         return view('home');
     }
 }

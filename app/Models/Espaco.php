@@ -14,7 +14,12 @@ class Espaco extends Model
         'valor',
         'empresa_id'
     ];
-    public function empresa(){
+    public function empresa()
+    {
         return $this->belongsTo(Empresa::class, 'empresa_id', 'id');
     }
+    public function alugueis()
+{
+    return $this->hasMany(Aluguel::class, 'espaco_id', 'id');
+}
 }
