@@ -24,9 +24,8 @@ return new class extends Migration
             $table->string('observacoes')->nullable();
             $table->unsignedBigInteger('reserva_id');
 
-            
-            $table->foreignId('reserva_id')->constrained()->onDelete('cascade');
-            $table->foreignId('forma_pagamento_id')->constrained()->onDelete('cascade');
+            $table->foreign('forma_pagamento_id')->references('id')->on('forma_pagamentos')->onDelete('cascade');
+            $table->foreign('reserva_id')->references('id')->on('reservas')->onDelete('cascade');
             $table->timestamps();
         });
     }

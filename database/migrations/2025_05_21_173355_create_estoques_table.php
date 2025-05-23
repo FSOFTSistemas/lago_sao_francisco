@@ -20,8 +20,7 @@ return new class extends Migration
             $table->double('saidas');
             $table->timestamps();
 
-            $table->foreign('produto_id')->references('id')->on('produto')->onDelete('cascade');
-            $table->foreign('empresa_id')->references('id')->on('produto')->onDelete('cascade');
+            $table->foreign('produto_id')->references('id')->on('produtos')->onDelete('cascade');
 
         });
     }

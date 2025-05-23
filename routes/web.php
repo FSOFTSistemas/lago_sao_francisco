@@ -33,6 +33,7 @@ use App\Http\Controllers\VendaController;
 use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EstoqueController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -116,3 +117,6 @@ Route::resource('buffet', BuffetItemController::class);
 Route::resource('cardapios', CardapioController::class);
 
 Route::resource('categoriasCardapio', CategoriasCardapioController::class);
+
+Route::resource('estoques', EstoqueController::class);
+

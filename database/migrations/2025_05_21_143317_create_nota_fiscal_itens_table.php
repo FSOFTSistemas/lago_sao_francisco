@@ -29,9 +29,10 @@ return new class extends Migration
             $table->double('v_ST');
             $table->timestamps();
 
-            $table->foreign('nota_fical_id')->references('id')->on('notaFiscal');
-            $table->foreign('produto_id')->references('id')->on('produto');
-            $table->foreign('cfop_id')->refereces('id')->on('cfop');
+            $table->foreign('nota_fical_id')->references('id')->on('nota_fiscals')->onDelete('cascade');;
+            $table->foreign('produto_id')->references('id')->on('produtos');
+            // $table->foreign('cfop_id')->refereces('id')->on('cfop');//comentado pois a tabela ainda nao existe
+
         });
     }
 

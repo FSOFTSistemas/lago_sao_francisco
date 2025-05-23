@@ -12,7 +12,7 @@ class NotaFiscal extends Model
     protected $fillable = [
         'id',
         'cliente_id',
-        'mcm_id',
+        'ncm_id',
         'cfop_id',
         'usuario_id',
         'data',
