@@ -34,10 +34,13 @@ use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\NotaFiscalItensController;
+use App\Http\Controllers\LogController;
 
 Route::get('/', function () {
     return redirect('/login');
 });
+
 
 Auth::routes();
 
@@ -120,3 +123,6 @@ Route::resource('categoriasCardapio', CategoriasCardapioController::class);
 
 Route::resource('estoques', EstoqueController::class);
 
+Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
+
+Route::resource('logs', LogController::class);
