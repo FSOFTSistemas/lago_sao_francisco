@@ -31,6 +31,7 @@ use App\Http\Controllers\VendaController;
 use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EstoqueController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -110,3 +111,5 @@ Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('map
 Route::resource('aluguel', AluguelController::class);
 
 Route::resource('buffet', BuffetItemController::class);
+
+Route::resource('estoques', EstoqueController::class);

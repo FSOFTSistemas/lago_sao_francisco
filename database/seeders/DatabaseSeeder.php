@@ -127,6 +127,11 @@ class DatabaseSeeder extends Seeder
         Hospede::firstOrCreate(
             ['nome' => 'Bloqueado']
         );
+
+         $this->call([
+            NotaFiscalItensSeeder::class,
+            NotaFiscalItensSeeder::class,
+        ]);
     }
 
 }
