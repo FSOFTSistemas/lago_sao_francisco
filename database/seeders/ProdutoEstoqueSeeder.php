@@ -17,7 +17,7 @@ class ProdutoEstoqueSeeder extends Seeder
         $produtos = [
             [
                 'descricao' => 'Produto A',
-                'tipo' => 'Tipo 1',
+                'categoria' => 2,
                 'ativo' => true,
                 'ean' => '1234567890123',
                 'preco_custo' => 10.50,
@@ -34,7 +34,7 @@ class ProdutoEstoqueSeeder extends Seeder
             ],
             [
                 'descricao' => 'Produto B',
-                'tipo' => 'Tipo 2',
+                'categoria' => 1,
                 'ativo' => true,
                 'ean' => '9876543210987',
                 'preco_custo' => 20.00,

@@ -129,7 +129,7 @@ class DatabaseSeeder extends Seeder
         );
 
          $this->call([
-            NotaFiscalItensSeeder::class,
+            ProdutoEstoqueSeeder::class,
             NotaFiscalItensSeeder::class,
         ]);
     }

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use App\Models\NotaFiscal;
 use App\Models\NotaFiscalItens;
 
@@ -10,7 +11,28 @@ class NotaFiscalItensSeeder extends Seeder
 {
     public function run(): void
     {
-        // Criar algumas notas fiscais
+        DB::table('ncms')->insert([
+            ['ncm' => '00000000', 'descricao' => 'Produto genérico 1'],
+            ['ncm' => '00000001', 'descricao' => 'Produto genérico 2'],
+        ]);
+
+        // Inserir cliente para garantir cliente_id = 1
+        DB::table('clientes')->insert([
+            'nome_razao_social' => 'Cliente Teste Ltda',
+            'apelido_nome_fantasia' => 'Cliente Teste',
+            'telefone' => '(11) 99999-9999',
+            'whatsapp' => '(11) 98888-8888',
+            'data_nascimento' => '1990-01-01',
+            'endereco_id' => null,
+            'cpf_cnpj' => '12345678000199',
+            'rg_ie' => '123456789',
+            'empresa_id' => 1,
+            'tipo' => 'PJ',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Criar notas fiscais
         $nota1 = NotaFiscal::create([
             'cliente_id' => 1,
             'ncm_id' => 1,
@@ -25,22 +47,22 @@ class NotaFiscalItensSeeder extends Seeder
             'info_complementares' => '',
             'peso_liquido' => 10,
             'peso_bruto' => 11,
-            'pt_frete' => 'FOB',
-            'pt_transporte' => 'Rodoviário',
-            'pt_nota' => 'Interna',
+            'tp_frete' => 1,
+            'tp_transporte' => 3,
+            'tp_nota' => 2,
             'nfe_referenciavel' => '0',
             'total_produtos' => 100,
-            'total_notas' => 110,
+            'total_nota' => 110,
             'total_desconto' => 5,
             'outras_despesas' => 2,
             'base_ICMS' => 90,
             'vICMS' => 18,
             'base_ST' => 0,
-            'vST' => 0,
+            'v_ST' => 0,
         ]);
 
         $nota2 = NotaFiscal::create([
-            'cliente_id' => 2,
+            'cliente_id' => 1,
             'ncm_id' => 2,
             'cfop_id' => 2,
             'usuario_id' => 1,
@@ -53,18 +75,18 @@ class NotaFiscalItensSeeder extends Seeder
             'info_complementares' => '',
             'peso_liquido' => 20,
             'peso_bruto' => 21,
-            'pt_frete' => 'CIF',
-            'pt_transporte' => 'Ferroviário',
-            'pt_nota' => 'Interna',
+            'tp_frete' => 2,
+            'tp_transporte' => 1,
+            'tp_nota' => 2,
             'nfe_referenciavel' => '0',
             'total_produtos' => 200,
-            'total_notas' => 220,
+            'total_nota' => 220,
             'total_desconto' => 10,
             'outras_despesas' => 5,
             'base_ICMS' => 180,
             'vICMS' => 36,
             'base_ST' => 0,
-            'vST' => 0,
+            'v_ST' => 0,
         ]);
 
         // Criar itens para a nota 1
@@ -82,7 +104,7 @@ class NotaFiscalItensSeeder extends Seeder
             'base_ICMS' => 90,
             'vICMS' => 18,
             'base_st' => 0,
-            'vST' => 0,
+            'v_ST' => 0,
         ]);
 
         // Criar itens para a nota 2
@@ -100,7 +122,7 @@ class NotaFiscalItensSeeder extends Seeder
             'base_ICMS' => 180,
             'vICMS' => 36,
             'base_st' => 0,
-            'vST' => 0,
+            'v_ST' => 0,
         ]);
     }
 }

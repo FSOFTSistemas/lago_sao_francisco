@@ -37,7 +37,7 @@ return new class extends Migration
             $table->double('base_ICMS');
             $table->double('vICMS');
             $table->double('base_ST');
-            $table->double('vST');
+            $table->double('v_ST');
             $table->timestamps();
 
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');

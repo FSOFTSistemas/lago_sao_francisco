@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('nota_fiscal_itens', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('nota_fical_id');
+            $table->unsignedBigInteger('nota_fiscal_id');
             $table->unsignedBigInteger('produto_id');
             $table->integer('quantidade');
             $table->double('v_unitario');
@@ -29,7 +29,7 @@ return new class extends Migration
             $table->double('v_ST');
             $table->timestamps();
 
-            $table->foreign('nota_fical_id')->references('id')->on('nota_fiscals')->onDelete('cascade');;
+            $table->foreign('nota_fiscal_id')->references('id')->on('nota_fiscals')->onDelete('cascade');;
             $table->foreign('produto_id')->references('id')->on('produtos');
             // $table->foreign('cfop_id')->refereces('id')->on('cfop');//comentado pois a tabela ainda nao existe
 
