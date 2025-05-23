@@ -63,6 +63,22 @@
                 </div>
             </a>
         </div>
+        <div class="col-md-3">
+            <a href="{{ route('cardapios.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-book-open fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Cadastro de Cardapios Buffet</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('categoriasCardapio.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Cadastro de Categorias do Cardapio</h5>
+                </div>
+            </a>
+        </div>
     </div>
 @endsection
 
