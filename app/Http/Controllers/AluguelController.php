@@ -15,8 +15,8 @@ class AluguelController extends Controller
 {
     public function index()
     {
-        $aluguels = Aluguel::with(['cliente', 'espaco'])->latest()->paginate(15);
-        return view('aluguel.index', compact('aluguels'));
+        $aluguel = Aluguel::with(['cliente', 'espaco'])->latest()->paginate(15);
+        return view('aluguel.index', compact('aluguel'));
     }
 
     public function create()
@@ -65,15 +65,16 @@ class AluguelController extends Controller
         return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
     }
 
-    public function edit(Aluguel $aluguel)
+    public function edit($id)
     {
+        $aluguel = Aluguel::find($id);
         $clientes = Cliente::all();
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
         $itens = Adicional::all();
         $buffetItens = BuffetItem::all();
 
-        return view('aluguels.edit', compact(
+        return view('aluguels.create', compact(
             'aluguel', 'clientes', 'espacos', 'formasPagamento', 'itens', 'buffetItens'
         ));
     }

@@ -40,11 +40,11 @@ return new class extends Migration
             $table->double('vST');
             $table->timestamps();
 
-            $table->foreign('cliente_id')->references('id')->on('cliente');
-            $table->foreign('ncm_id')->references('id')->on('ncm');
-            $table->foreign('cfop_id')->references('id')->on('cfop');
-            $table->foreign('usuario_id')->references('id')->on('usuario');
-            $table->foreign('empresa_id')->references('id')->on('empresa');
+            $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
+            $table->foreign('ncm_id')->references('id')->on('ncms');
+            // $table->foreign('cfop_id')->references('id')->on('cfops');
+            $table->foreign('usuario_id')->references('id')->on('users');
+            $table->foreign('empresa_id')->references('id')->on('empresas');
             
         });
     }

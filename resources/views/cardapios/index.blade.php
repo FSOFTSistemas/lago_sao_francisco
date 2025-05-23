@@ -1,16 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'Buffet')
+@section('title', 'Cardapio')
 
 @section('content_header')
-    <h5>Lista de Itens do Buffet</h5>
+    <h5>Lista de Cardápios</h5>
     <hr>
 @stop
 
 @section('content')
     <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('buffet.create')}}" class="btn btn-success new">
-            <i class="fas fa-plus"></i> Novo Item
+        <a href="{{route('cardapios.create')}}" class="btn btn-success new">
+            <i class="fas fa-plus"></i> Novo Cardapio
         </a>
     </div>
 
@@ -18,8 +18,6 @@
         'responsive' => [
             ['responsivePriority' => 1, 'targets' => 0],
             ['responsivePriority' => 2, 'targets' => 1],
-            ['responsivePriority' => 3, 'targets' => 2],
-            ['responsivePriority' => 4, 'targets' => 3],
             ['responsivePriority' => 5, 'targets' => -1],
         ],
         'itemsPerPage' => 10,
@@ -31,28 +29,26 @@
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
-                    <th>Valor unitário</th>
                     <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($itens as $item)
+                @foreach ($cardapios as $cardapio)
                     <tr>
-                        <td>{{ $item->id }}</td>
-                        <td>{{ $item->nome }}</td>
-                        <td>R${{ $item->valor_unitario }}</td>
+                        <td>{{ $cardapio->id }}</td>
+                        <td>{{ $cardapio->nome }}</td>
                         <td>
-                            <a href="{{route('buffet.edit', $item->id)}}" class="btn btn-warning btn-sm">
+                            <a href="{{route('cardapios.edit', $cardapio->id)}}" class="btn btn-warning btn-sm">
                                 ✏️
                             </a>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteItemModal{{ $item->id }}">
+                                data-target="#deleteCardapioModal{{ $cardapio->id }}">
                                 🗑️
                             </button>
                         </td>
                     </tr>
-                    @include('buffet.modals._delete', ['itens' => $item])
+                    @include('cardapios.modals._delete', ['cardapio' => $cardapio])
                 @endforeach
             </tbody>
     @endcomponent

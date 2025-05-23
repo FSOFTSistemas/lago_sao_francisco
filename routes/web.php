@@ -5,7 +5,9 @@ use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\BuffetItemController;
 use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\CategoriasCardapioController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
@@ -112,4 +114,9 @@ Route::resource('aluguel', AluguelController::class);
 
 Route::resource('buffet', BuffetItemController::class);
 
+Route::resource('cardapios', CardapioController::class);
+
+Route::resource('categoriasCardapio', CategoriasCardapioController::class);
+
 Route::resource('estoques', EstoqueController::class);
+
