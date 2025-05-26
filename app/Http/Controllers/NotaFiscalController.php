@@ -16,7 +16,7 @@ class NotaFiscalController extends Controller
     public function index()
     {
         $notasFiscais = NotaFiscal::all();
-        return view('nota_fiscal.index', compact('notasFiscais'));
+        return view('NFe.index', compact('notasFiscais'));
     }
 
     /**
@@ -24,7 +24,7 @@ class NotaFiscalController extends Controller
      */
     public function create()
     {
-        //
+        return View('NFe.create');
     }
 
     /**

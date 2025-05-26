@@ -23,6 +23,7 @@ use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\MapaQuartoController;
 use App\Http\Controllers\MapaReservaController;
+use App\Http\Controllers\NotaFiscalController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
@@ -126,3 +127,5 @@ Route::resource('estoques', EstoqueController::class);
 Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
 Route::resource('logs', LogController::class);
+
+Route::resource('nota_fiscal', NotaFiscalController::class);

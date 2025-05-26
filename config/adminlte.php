@@ -459,7 +459,37 @@ return [
             'text' => 'Preferências',
             'url'  => '/preferencias',
             'icon' => 'fas fa-cogs',
-        ]
+        ],
+        [
+            'text'    => 'NFe',
+            'icon'    => 'far fa-file-alt',
+            'submenu' => [
+                [
+                    'text'        => 'Emitir NFe',
+                    'url'         => '/vendas/nova',
+                    'icon'        => 'fas fa-upload',
+                    'shift' => 'ml-2'
+                ],
+                [
+                    'text'        => 'Notas Emitidas (NFe)',
+                    'url'         => '/nota_fiscal',
+                    'icon'        => 'fas fa-list-ul',
+                    'shift' => 'ml-2'
+                ],
+                [
+                    'text'        => 'Baixar XML (NFe)',
+                    'url'         => '/notas',
+                    'icon'        => 'fas fa-download',
+                    'shift' => 'ml-2'
+                ],
+                [
+                    'text'        => 'Relatórios (NFe)',
+                    'url'         => '/relatorios',
+                    'icon'        => 'fas fa-chart-area',
+                    'shift' => 'ml-2'
+                ],
+            ],
+        ],
     
     ],
 
