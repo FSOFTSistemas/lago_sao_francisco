@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BuffetItem;
+use App\Models\CategoriasCardapio;
 use Illuminate\Http\Request;
 
 class BuffetItemController extends Controller
@@ -15,7 +16,8 @@ class BuffetItemController extends Controller
 
     public function create()
     {
-        return view('buffet.create');
+        $categorias = CategoriasCardapio::all();
+        return view('buffet.create', compact('categorias'));
     }
 
     public function store(Request $request)
@@ -23,12 +25,10 @@ class BuffetItemController extends Controller
         $request->validate([
             'nome' => 'required|string|max:255',
             'valor_unitario' => 'required|numeric|min:0',
+            'categoria_id' => 'required|exists:categorias_cardapio,id',
         ]);
 
-        BuffetItem::create([
-            'nome' => $request->nome,
-            'valor_unitario' => $request->valor_unitario,
-        ]);
+        BuffetItem::create($request->all());
 
         return redirect()->route('buffet.index')->with('success', 'Item de buffet cadastrado com sucesso!');
     }
@@ -36,7 +36,8 @@ class BuffetItemController extends Controller
     public function edit($id)
     {
         $item = BuffetItem::find($id);
-        return view('buffet.create', compact('item'));
+        $categorias = CategoriasCardapio::all();
+        return view('buffet.create', compact('item', 'categorias'));
     }
 
     public function update(Request $request, BuffetItem $buffet)
@@ -44,9 +45,10 @@ class BuffetItemController extends Controller
         $request->validate([
             'nome' => 'required|string|max:255',
             'valor_unitario' => 'required|numeric|min:0',
+            'categoria_id' => 'required|exists:categorias_cardapio,id',
         ]);
 
-        $buffet->update($request->only('nome', 'valor_por_pessoa'));
+        $buffet->update($request->all());
 
         return redirect()->route('buffet.index')->with('success', 'Item atualizado com sucesso!');
     }
