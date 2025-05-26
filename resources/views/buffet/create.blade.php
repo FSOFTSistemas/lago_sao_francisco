@@ -33,6 +33,20 @@
             </div>
         </div>
 
+        <div class="form-group row">
+          <label for="categoria" class="col-md-3 label-control">* Categoria</label>
+          <div class="col-md-3">
+            <select name="categoria_id" id="categoria" class="form-control select2">
+              @foreach($categorias as $categoria)
+              <option value="{{$categoria->id}}" 
+                {{ old('categoria_id', $item->categoria_id ?? '') == $categoria->id ? 'selected' : '' }}>
+                {{$categoria->nome}}
+              </option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+
         <div class="card-footer">
           <a href="{{ route('buffet.index') }}" class="btn btn-secondary">Cancelar</a>
           <button type="submit" class="btn btn-primary">Salvar</button>

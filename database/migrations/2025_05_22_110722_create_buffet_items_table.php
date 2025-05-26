@@ -15,6 +15,8 @@ return new class extends Migration
         $table->id();
         $table->string('nome');
         $table->decimal('valor_unitario', 10, 2);
+        $table->unsignedBigInteger('categoria_id');
+        $table->foreign('categoria_id')->references('id')->on('categorias_cardapio')->onDelete('cascade');
         $table->timestamps();
     });
     }

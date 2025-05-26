@@ -8,11 +8,20 @@
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{route('buffet.create')}}" class="btn btn-success new">
+    <div class="row mb-3">
+            <div class="col">
+                <a href="{{ route('preferencias') }}" class="btn btn-success new">               
+                        <i class="fas fa-arrow-left"></i>
+                        Voltar
+                </a>
+            </div>
+
+            <div class="col d-flex justify-content-end mb-3">
+                <a href="{{route('buffet.create')}}" class="btn btn-success new">
             <i class="fas fa-plus"></i> Novo Item
         </a>
-    </div>
+            </div>
+        </div>
 
     @component('components.data-table', [
         'responsive' => [
@@ -31,6 +40,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
+                    <th>Categoria</th>
                     <th>Valor unitário</th>
                     <th>Ações</th>
                 </tr>
@@ -40,6 +50,7 @@
                     <tr>
                         <td>{{ $item->id }}</td>
                         <td>{{ $item->nome }}</td>
+                        <td>{{ $item->categoria->nome }}</td>
                         <td>R${{ $item->valor_unitario }}</td>
                         <td>
                             <a href="{{route('buffet.edit', $item->id)}}" class="btn btn-warning btn-sm">

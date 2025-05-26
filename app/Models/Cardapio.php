@@ -16,4 +16,11 @@ class Cardapio extends Model
                     ->withPivot('quantidade_itens')
                     ->withTimestamps();
     }
+    public function itensPorCategoria()
+{
+    return $this->belongsToMany(BuffetItem::class, 'cardapio_categoria_item')
+        ->withPivot('categoria_cardapio_id')
+        ->withTimestamps();
+}
+
 }

@@ -12,10 +12,16 @@ class BuffetItem extends Model
     protected $fillable = [
         'nome',
         'valor_unitario',
+        'categoria_id'
     ];
 
     public function alugueis()
     {
         return $this->belongsToMany(Aluguel::class, 'aluguel_buffet_item');
+    }
+
+    public function categoria()
+    {
+        return $this->belongsTo(CategoriasCardapio::class, 'categoria_id');
     }
 }
