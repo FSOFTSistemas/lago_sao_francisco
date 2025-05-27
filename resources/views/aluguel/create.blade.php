@@ -27,17 +27,49 @@
 
             <div class="tab-content mt-3" id="aluguelTabsContent">
                 {{-- Aba 1: Informações da Reserva --}}
-                 <!-- Campo do período -->
-                {{-- <div class="form-group row" id="campoPeriodo">
-                  <label class="col-md-3 label-control" for="periodo">* Data</label>
-                  <div class="col-md-4">
-                      <input type="text" class="form-control" id="periodo" name="periodo"
-                          value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
-                  </div>
-                </div>
+                 {{-- ====================================================== --}}
+                    {{-- INÍCIO: Mapa de Reservas Integrado --}}
+                    {{-- ====================================================== --}}
+                    <div class="card card-primary card-outline mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Selecionar Período e Espaço</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtros de Data -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="map_start_date">Data Início:</label>
+                                    <input type="date" id="map_start_date" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="map_end_date">Data Fim:</label>
+                                    <input type="date" id="map_end_date" class="form-control">
+                                </div>
+                                <div class="col-md-4 align-self-end">
+                                    <button type="button" id="filter_button" class="btn btn-primary">Atualizar Mapa</button> {{-- type="button" para não submeter o form principal --}}
+                                </div>
+                            </div>
 
-                <input type="hidden" name="data_checkin" id="data_checkin" value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
-                <input type="hidden" name="data_checkout" id="data_checkout" value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}"> --}}
+                            <!-- Mapa de Reservas -->
+                            <div id="reservation_map_container" class="table-responsive">
+                                <p>Carregando mapa...</p>
+                            </div>
+
+                            <div id="selection_feedback" class="mt-2 text-success font-weight-bold"></div>
+
+                            <!-- Campos Hidden para o formulário principal (serão preenchidos pelo JS do mapa) -->
+                            {{-- Use os nomes corretos que seu backend espera para data_inicio e data_fim --}}
+                            <input type="hidden" id="data_inicio" name="data_inicio" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
+                            <input type="hidden" id="data_fim" name="data_fim" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
+                            {{-- Adicione um campo hidden para espaco_id se necessário --}}
+                            {{-- <input type="hidden" id="espaco_id" name="espaco_id" value="{{ old('espaco_id', $aluguel->espaco_id ?? '') }}"> --}}
+
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    {{-- ====================================================== --}}
+                    {{-- FIM: Mapa de Reservas Integrado --}}
+                    {{-- ====================================================== --}}
 
                 <!-- Campo de cliente -->
                 <div class="tab-pane fade show active" id="info" role="tabpanel">
@@ -95,7 +127,7 @@
                           <div class="form-group row">
                             <label class="col-md-4 label-control" for="nomeRazaoSocial">* Nome/Razão Social:</label>
                             <div class="col-md-6">
-                              <div><input class="form-control" required="required" type="text" name="nome_razao_social" id="nomeRazaoSocial" autocomplete="off"></div>
+                              <div><input class="form-control" type="text" name="nome_razao_social" id="nomeRazaoSocial" autocomplete="off"></div>
                             </div>
                         </div>
           
@@ -118,7 +150,7 @@
                             <div class=" row col-md-8">
                                 <div class="col-md-4">
                                     <label for="cpfCnpj">CPF/CNPJ</label>
-                                    <input type="text" class="form-control" id="cpfCnpj" name="cpf_cnpj" required>
+                                    <input type="text" class="form-control" id="cpfCnpj" name="cpf_cnpj" >
                                 </div>
                                 <div class="col-md-8">
                                     <label for="rgIe">RG/Inscrição Estadual:</label>
@@ -206,6 +238,23 @@
                     </div>
 
                     <div class="form-group row">
+                        <label for="cardapio_id" class="col-md-3 label-control">* Cardápio:</label>
+                        <div class="col-md-6">
+                            <select name="cardapio_id" id="cardapio_id" class="form-control">
+                                <option value="">Selecione um cardápio</option>
+                                @foreach ($cardapios as $cardapio)
+                                    <option value="{{ $cardapio->id }}">{{ $cardapio->nome }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="buffet-categorias-itens">
+                        <!-- As categorias e itens serão carregados aqui via JavaScript -->
+                    </div>
+
+
+                    {{-- <div class="form-group row">
                         <label class="col-md-3 label-control">Itens de Buffet:</label>
                         <div class="col">
                             @foreach ($buffetItens as $item)
@@ -222,7 +271,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control">Total Buffet Estimado:</label>
@@ -253,6 +302,7 @@
 @endsection
 
 @section('js')
+<script src="{{ asset('js/reservation_map.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const switchInput = document.getElementById('ativoSwitch');
@@ -301,4 +351,285 @@
 
     window.addEventListener('DOMContentLoaded', calcularBuffet);
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cardapioSelect = document.getElementById('cardapio_id');
+        const categoriasContainer = document.getElementById('buffet-categorias-itens');
+
+        cardapioSelect.addEventListener('change', function () {
+            const cardapioId = this.value;
+            categoriasContainer.innerHTML = '';
+
+            if (cardapioId) {
+                fetch(`/cardapios/${cardapioId}/dados`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(categoria => {
+                            const categoriaDiv = document.createElement('div');
+                            categoriaDiv.classList.add('card', 'mb-3', 'border');
+
+                            const categoriaCardHeader = document.createElement('div');
+                            categoriaCardHeader.classList.add('card-header', 'green', 'pb-0');
+                            
+                            const label = document.createElement('label');
+                            label.classList.add('label-control');
+                            label.textContent = `${categoria.nome} (Selecione até ${categoria.quantidade_itens})`;
+                            
+                            const categoriaCardBody = document.createElement('div');
+                            categoriaCardBody.classList.add('card-body');
+
+                            const itensDiv = document.createElement('div');
+                            itensDiv.classList.add('col-md-6');
+
+                            categoria.itens.forEach(item => {
+                                const checkboxDiv = document.createElement('div');
+                                checkboxDiv.classList.add('form-check');
+
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.name = `categorias[${categoria.id}][itens][]`;
+                                checkbox.value = item.id;
+                                checkbox.classList.add('form-check-input');
+                                checkbox.dataset.categoriaId = categoria.id;
+
+                                const itemLabel = document.createElement('label');
+                                itemLabel.classList.add('form-check-label');
+                                itemLabel.textContent = item.nome;
+
+                                checkboxDiv.appendChild(checkbox);
+                                checkboxDiv.appendChild(itemLabel);
+                                itensDiv.appendChild(checkboxDiv);
+                            });
+
+                            categoriaDiv.appendChild(categoriaCardHeader)
+                            categoriaCardHeader.appendChild(label);
+                            categoriaDiv.appendChild(categoriaCardBody);
+                            categoriaCardBody.appendChild(itensDiv);
+                            categoriasContainer.appendChild(categoriaDiv);
+                        });
+
+                        // Adiciona a lógica para limitar a seleção de itens por categoria
+                        const checkboxes = categoriasContainer.querySelectorAll('input[type="checkbox"]');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.addEventListener('change', function () {
+                                const categoriaId = this.dataset.categoriaId;
+                                const categoriaCheckboxes = categoriasContainer.querySelectorAll(`input[data-categoria-id="${categoriaId}"]`);
+                                const categoria = data.find(cat => cat.id == categoriaId);
+                                const selecionados = Array.from(categoriaCheckboxes).filter(cb => cb.checked);
+
+                                if (selecionados.length > categoria.quantidade_itens) {
+                                    this.checked = false;
+                                    alert(`Você pode selecionar no máximo ${categoria.quantidade_itens} itens para a categoria ${categoria.nome}.`);
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do cardápio:', error);
+                    });
+            }
+        });
+    });
+</script>
 @endsection
+
+@section('css')
+<style>
+/* Estilos para o container do mapa */
+#reservation_map_container {
+    overflow-x: auto; /* Permite rolagem horizontal */
+    -webkit-overflow-scrolling: touch; /* Melhora scroll em iOS */
+    margin-top: 20px;
+    padding-bottom: 10px; /* Espaço para a barra de rolagem não cobrir conteúdo */
+    border: 1px solid #dee2e6; /* Borda sutil no container */
+    border-radius: 0.25rem; /* Cantos arredondados */
+}
+
+/* Estilos básicos para a tabela do mapa */
+.reservation-map-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Colunas de data com largura igual, melhor performance */
+    min-width: 700px; /* Ajuste conforme necessário, baseado no número de dias e padding */
+    /* border: 1px solid #dee2e6; */ /* Borda externa movida para o container */
+}
+
+.reservation-map-table th,
+.reservation-map-table td {
+    border: 1px solid #dee2e6;
+    padding: 0.6rem 0.4rem; /* Ajuste padding (vertical / horizontal) */
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.8rem; /* Tamanho base da fonte */
+    height: 45px; /* Altura base da célula */
+    position: relative;
+    box-sizing: border-box; /* Inclui padding e borda na largura/altura */
+}
+
+/* Cabeçalhos */
+.reservation-map-table th {
+    background-color: #f8f9fa;
+    font-weight: 600; /* Um pouco mais forte */
+    white-space: nowrap; /* Não quebrar cabeçalhos de data/espaço */
+    font-size: 0.75rem; /* Fonte ligeiramente menor para cabecalhos */
+    position: sticky; /* Fixar cabeçalho ao rolar verticalmente */
+    top: 0;
+    z-index: 10;
+}
+
+/* Cabeçalho da coluna de Espaços */
+.reservation-map-table th.space-header {
+    text-align: left;
+    min-width: 130px; /* Largura mínima para nome do espaço */
+    width: 130px; /* Largura fixa pode ajudar no layout fixo */
+    padding-left: 0.8rem; /* Mais espaço à esquerda */
+    position: sticky; /* Fixar coluna de espaços ao rolar horizontalmente */
+    left: 0;
+    background-color: #f8f9fa; /* Manter fundo igual ao header */
+    z-index: 11; /* Acima do header de data */
+    border-right: 2px solid #ced4da; /* Separador mais visível */
+}
+
+/* Células de dados (nome do espaço) */
+.reservation-map-table td.space-header {
+    text-align: left;
+    font-weight: 500;
+    background-color: #ffffff; /* Fundo branco para diferenciar do header */
+    position: sticky;
+    left: 0;
+    z-index: 5; /* Abaixo dos headers, mas acima das células de data */
+    border-right: 2px solid #ced4da; /* Separador mais visível */
+    /* Herdar min-width e width do cabeçalho para consistência */
+    min-width: 130px;
+    width: 130px;
+    padding-left: 0.8rem;
+}
+
+
+/* Estilos para as células de data */
+.date-cell {
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    width: 45px;
+}
+
+.date-cell.available:hover {
+    background-color: #e9f5e9;
+}
+
+.date-cell.booked {
+    background-color: #f8d7da;
+    color: #721c24;
+    cursor: not-allowed;
+    font-style: italic;
+}
+/* Adicionar um estilo visual mais claro para ocupado */
+.date-cell.booked span {
+    font-weight: bold;
+    color: #dc3545;
+}
+
+
+.date-cell.selected {
+    background-color: var(--green-1);
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1); /* Contorno sutil */
+}
+
+.date-cell.selecting {
+    background-color: #b8ffb8;
+}
+
+/* Estilos para os filtros */
+#filter_button {
+    margin-top: 5px; /* Pequeno ajuste de alinhamento */
+}
+
+/* Placeholder de feedback */
+#selection_feedback {
+    min-height: 1.5em; /* Evita que o layout salte quando a mensagem aparece/desaparece */
+}
+
+
+/* --- Media Queries para Responsividade --- */
+
+/* Telas Médias (Tablets) */
+@media (max-width: 992px) {
+    .reservation-map-table {
+        min-width: 600px; /* Reduzir largura mínima */
+    }
+    .reservation-map-table th,
+    .reservation-map-table td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+        height: 40px;
+    }
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 110px;
+        width: 110px;
+    }
+     .date-cell {
+        min-width: 35px;
+    }
+}
+
+/* Telas Pequenas (Celulares) */
+@media (max-width: 767px) {
+     .reservation-map-table {
+        min-width: 500px; /* Reduzir mais a largura mínima */
+    }
+    .reservation-map-table th,
+    .reservation-map-table td {
+        padding: 0.4rem 0.2rem; /* Menos padding */
+        font-size: 0.7rem; /* Fonte ainda menor */
+        height: 35px; /* Células mais baixas */
+    }
+     .reservation-map-table th {
+         font-size: 0.65rem; /* Cabeçalhos ainda menores */
+     }
+
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 90px; /* Coluna de espaço mais estreita */
+        width: 90px;
+        font-size: 0.7rem; /* Ajustar fonte do nome do espaço */
+        padding-left: 0.5rem;
+    }
+     .date-cell {
+        min-width: 30px; /* Células de data mais estreitas */
+    }
+    /* Opcional: Esconder o texto 'X' e usar só fundo em telas muito pequenas */
+    /*
+    .date-cell.booked span {
+        display: none;
+    }
+    */
+}
+
+/* Ajustes finos para telas muito pequenas (opcional) */
+@media (max-width: 480px) {
+    .reservation-map-table {
+        min-width: 400px;
+    }
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 75px;
+        width: 75px;
+        font-size: 0.65rem;
+    }
+     .date-cell {
+        min-width: 28px;
+    }
+     .reservation-map-table th,
+    .reservation-map-table td {
+         height: 30px;
+         padding: 0.3rem 0.1rem;
+     }
+}
+
+
+
+</style>

@@ -107,5 +107,27 @@ class CardapioController extends Controller
         $cardapio->delete();
         return redirect()->route('cardapios.index')->with('success', 'Cardápio removido!');
     }
+
+    public function dados($id)
+{
+    $cardapio = Cardapio::with(['categorias', 'categorias.itens'])->findOrFail($id);
+
+    $dados = $cardapio->categorias->map(function ($categoria) {
+        return [
+            'id' => $categoria->id,
+            'nome' => $categoria->nome,
+            'quantidade_itens' => $categoria->pivot->quantidade_itens,
+            'itens' => $categoria->itens->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'nome' => $item->nome,
+                ];
+            }),
+        ];
+    });
+
+    return response()->json($dados);
+}
+
 }
 

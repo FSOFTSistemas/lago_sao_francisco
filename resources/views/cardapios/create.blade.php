@@ -9,7 +9,7 @@
 
 @section('content')
 <div class="card">
-    <div class="card-header bg-primary text-white">
+    <div class="card-header green bg-primary text-white">
         <h3 class="card-title">
             {{ isset($cardapio) ? 'Editar informações do cardápio' : 'Preencha os dados do cardápio' }}
         </h3>
@@ -47,8 +47,8 @@
                     $itensMarcados = $itensSelecionados[$categoria->id] ?? [];
                 @endphp
 
-                <div class="card mb-3 border border-primary">
-                    <div class="card-header bg-light">
+                <div class="card mb-3 border">
+                    <div class="card-header green bg-light">
                         <div class="form-check">
                             <input class="form-check-input categoria-checkbox" type="checkbox" id="categoria_{{ $categoria->id }}"
                                 name="categorias[{{ $categoria->id }}][ativa]" value="1"

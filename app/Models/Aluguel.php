@@ -25,7 +25,8 @@ class Aluguel extends Model
         'cliente_id',
         'empresa_id',
         'forma_pagamento_id',
-        'numero_pessoas_buffet'
+        'numero_pessoas_buffet',
+        'cardapio_id'
     ];
     public function cliente()
     {
@@ -51,6 +52,10 @@ class Aluguel extends Model
     {
         return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item');
     }
+    public function cardapio()
+{
+    return $this->belongsTo(Cardapio::class);
+}
     protected static function booted()
     {
         static::addGlobalScope(new EmpresaScope);
