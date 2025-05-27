@@ -55,6 +55,8 @@
                                 <p>Carregando mapa...</p>
                             </div>
 
+                            <div id="selection_feedback" class="mt-2 text-success font-weight-bold"></div>
+
                             <!-- Campos Hidden para o formulário principal (serão preenchidos pelo JS do mapa) -->
                             {{-- Use os nomes corretos que seu backend espera para data_inicio e data_fim --}}
                             <input type="hidden" id="data_inicio" name="data_inicio" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
@@ -300,6 +302,7 @@
 @endsection
 
 @section('js')
+<script src="{{ asset('js/reservation_map.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const switchInput = document.getElementById('ativoSwitch');
@@ -430,3 +433,203 @@
     });
 </script>
 @endsection
+
+@section('css')
+<style>
+/* Estilos para o container do mapa */
+#reservation_map_container {
+    overflow-x: auto; /* Permite rolagem horizontal */
+    -webkit-overflow-scrolling: touch; /* Melhora scroll em iOS */
+    margin-top: 20px;
+    padding-bottom: 10px; /* Espaço para a barra de rolagem não cobrir conteúdo */
+    border: 1px solid #dee2e6; /* Borda sutil no container */
+    border-radius: 0.25rem; /* Cantos arredondados */
+}
+
+/* Estilos básicos para a tabela do mapa */
+.reservation-map-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed; /* Colunas de data com largura igual, melhor performance */
+    min-width: 700px; /* Ajuste conforme necessário, baseado no número de dias e padding */
+    /* border: 1px solid #dee2e6; */ /* Borda externa movida para o container */
+}
+
+.reservation-map-table th,
+.reservation-map-table td {
+    border: 1px solid #dee2e6;
+    padding: 0.6rem 0.4rem; /* Ajuste padding (vertical / horizontal) */
+    text-align: center;
+    vertical-align: middle;
+    font-size: 0.8rem; /* Tamanho base da fonte */
+    height: 45px; /* Altura base da célula */
+    position: relative;
+    box-sizing: border-box; /* Inclui padding e borda na largura/altura */
+}
+
+/* Cabeçalhos */
+.reservation-map-table th {
+    background-color: #f8f9fa;
+    font-weight: 600; /* Um pouco mais forte */
+    white-space: nowrap; /* Não quebrar cabeçalhos de data/espaço */
+    font-size: 0.75rem; /* Fonte ligeiramente menor para cabecalhos */
+    position: sticky; /* Fixar cabeçalho ao rolar verticalmente */
+    top: 0;
+    z-index: 10;
+}
+
+/* Cabeçalho da coluna de Espaços */
+.reservation-map-table th.space-header {
+    text-align: left;
+    min-width: 130px; /* Largura mínima para nome do espaço */
+    width: 130px; /* Largura fixa pode ajudar no layout fixo */
+    padding-left: 0.8rem; /* Mais espaço à esquerda */
+    position: sticky; /* Fixar coluna de espaços ao rolar horizontalmente */
+    left: 0;
+    background-color: #f8f9fa; /* Manter fundo igual ao header */
+    z-index: 11; /* Acima do header de data */
+    border-right: 2px solid #ced4da; /* Separador mais visível */
+}
+
+/* Células de dados (nome do espaço) */
+.reservation-map-table td.space-header {
+    text-align: left;
+    font-weight: 500;
+    background-color: #ffffff; /* Fundo branco para diferenciar do header */
+    position: sticky;
+    left: 0;
+    z-index: 5; /* Abaixo dos headers, mas acima das células de data */
+    border-right: 2px solid #ced4da; /* Separador mais visível */
+    /* Herdar min-width e width do cabeçalho para consistência */
+    min-width: 130px;
+    width: 130px;
+    padding-left: 0.8rem;
+}
+
+
+/* Estilos para as células de data */
+.date-cell {
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+    width: 45px;
+}
+
+.date-cell.available:hover {
+    background-color: #e9f5e9;
+}
+
+.date-cell.booked {
+    background-color: #f8d7da;
+    color: #721c24;
+    cursor: not-allowed;
+    font-style: italic;
+}
+/* Adicionar um estilo visual mais claro para ocupado */
+.date-cell.booked span {
+    font-weight: bold;
+    color: #dc3545;
+}
+
+
+.date-cell.selected {
+    background-color: var(--green-1);
+    color: white;
+    font-weight: bold;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.1); /* Contorno sutil */
+}
+
+.date-cell.selecting {
+    background-color: #b8ffb8;
+}
+
+/* Estilos para os filtros */
+#filter_button {
+    margin-top: 5px; /* Pequeno ajuste de alinhamento */
+}
+
+/* Placeholder de feedback */
+#selection_feedback {
+    min-height: 1.5em; /* Evita que o layout salte quando a mensagem aparece/desaparece */
+}
+
+
+/* --- Media Queries para Responsividade --- */
+
+/* Telas Médias (Tablets) */
+@media (max-width: 992px) {
+    .reservation-map-table {
+        min-width: 600px; /* Reduzir largura mínima */
+    }
+    .reservation-map-table th,
+    .reservation-map-table td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.75rem;
+        height: 40px;
+    }
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 110px;
+        width: 110px;
+    }
+     .date-cell {
+        min-width: 35px;
+    }
+}
+
+/* Telas Pequenas (Celulares) */
+@media (max-width: 767px) {
+     .reservation-map-table {
+        min-width: 500px; /* Reduzir mais a largura mínima */
+    }
+    .reservation-map-table th,
+    .reservation-map-table td {
+        padding: 0.4rem 0.2rem; /* Menos padding */
+        font-size: 0.7rem; /* Fonte ainda menor */
+        height: 35px; /* Células mais baixas */
+    }
+     .reservation-map-table th {
+         font-size: 0.65rem; /* Cabeçalhos ainda menores */
+     }
+
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 90px; /* Coluna de espaço mais estreita */
+        width: 90px;
+        font-size: 0.7rem; /* Ajustar fonte do nome do espaço */
+        padding-left: 0.5rem;
+    }
+     .date-cell {
+        min-width: 30px; /* Células de data mais estreitas */
+    }
+    /* Opcional: Esconder o texto 'X' e usar só fundo em telas muito pequenas */
+    /*
+    .date-cell.booked span {
+        display: none;
+    }
+    */
+}
+
+/* Ajustes finos para telas muito pequenas (opcional) */
+@media (max-width: 480px) {
+    .reservation-map-table {
+        min-width: 400px;
+    }
+    .reservation-map-table th.space-header,
+    .reservation-map-table td.space-header {
+        min-width: 75px;
+        width: 75px;
+        font-size: 0.65rem;
+    }
+     .date-cell {
+        min-width: 28px;
+    }
+     .reservation-map-table th,
+    .reservation-map-table td {
+         height: 30px;
+         padding: 0.3rem 0.1rem;
+     }
+}
+
+
+
+</style>
