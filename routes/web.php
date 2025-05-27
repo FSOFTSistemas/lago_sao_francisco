@@ -126,3 +126,5 @@ Route::resource('estoques', EstoqueController::class);
 Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
 Route::resource('logs', LogController::class);
+
+Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');

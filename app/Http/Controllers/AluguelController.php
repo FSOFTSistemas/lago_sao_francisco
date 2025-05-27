@@ -7,7 +7,9 @@ use App\Models\Cliente;
 use App\Models\Espaco;
 use App\Models\FormaPagamento;
 use App\Models\Adicional;
+use App\Models\AluguelCategoriaItem;
 use App\Models\BuffetItem;
+use App\Models\Cardapio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,44 +28,60 @@ class AluguelController extends Controller
         $formasPagamento = FormaPagamento::all();
         $itens = Adicional::all();
         $buffetItens = BuffetItem::all();
+        $cardapios = Cardapio::all();
 
         return view('aluguel.create', compact(
-            'clientes', 'espacos', 'formasPagamento', 'itens', 'buffetItens'
+            'clientes', 'espacos', 'formasPagamento', 'itens', 'buffetItens', 'cardapios'
         ));
     }
 
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'data_inicio' => 'required|date',
-            'data_fim' => 'required|date|after_or_equal:data_inicio',
-            'cliente_id' => 'required|exists:clientes,id',
-            'espaco_id' => 'required|exists:espacos,id',
-            'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
-            'observacoes' => 'nullable|string',
-            'subtotal' => 'nullable|numeric',
-            'total' => 'nullable|numeric',
-            'acrescimo' => 'nullable|numeric',
-            'desconto' => 'nullable|numeric',
-            'parcelas' => 'nullable|integer',
-            'vencimento' => 'nullable|date',
-            'contrato' => 'nullable|string',
-            'status' => 'nullable|string',
-            'numero_pessoas_buffet' => 'nullable|integer|min:1',
-        ]);
+{
+    $validated = $request->validate([
+        'data_inicio' => 'required|date',
+        'data_fim' => 'required|date|after_or_equal:data_inicio',
+        'cliente_id' => 'required|exists:clientes,id',
+        'espaco_id' => 'required|exists:espacos,id',
+        'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
+        'observacoes' => 'nullable|string',
+        'subtotal' => 'nullable|numeric',
+        'total' => 'nullable|numeric',
+        'acrescimo' => 'nullable|numeric',
+        'desconto' => 'nullable|numeric',
+        'parcelas' => 'nullable|integer',
+        'vencimento' => 'nullable|date',
+        'contrato' => 'nullable|string',
+        'status' => 'nullable|string',
+        'numero_pessoas_buffet' => 'nullable|integer|min:1',
+        'cardapio_id' => 'nullable|exists:cardapios,id',
+    ]);
 
-        $validated['empresa_id'] = Auth::user()->empresa_id;
+    $validated['empresa_id'] = Auth::user()->empresa_id;
 
-        $aluguel = Aluguel::create($validated);
+    // Criação do aluguel
+    $aluguel = Aluguel::create($validated);
 
-        // Relacionar itens adicionais
-        $aluguel->adicionais()->sync($request->input('itens', []));
+    // Relacionar itens adicionais
+    $aluguel->adicionais()->sync($request->input('itens', []));
 
-        // Relacionar buffet itens
-        $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
+    // Relacionar buffet itens simples
+    $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
 
-        return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
+    // Salvar os itens selecionados por categoria (pivot aluguel_categoria_item)
+    $categoriasSelecionadas = $request->input('buffet_categoria_item', []);
+
+    foreach ($categoriasSelecionadas as $categoriaId => $itensIds) {
+        foreach ($itensIds as $itemId) {
+            AluguelCategoriaItem::create([
+                'aluguel_id' => $aluguel->id,
+                'cardapio_categoria_id' => $categoriaId,
+                'buffet_item_id' => $itemId,
+            ]);
+        }
     }
+
+    return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
+}
 
     public function edit($id)
     {

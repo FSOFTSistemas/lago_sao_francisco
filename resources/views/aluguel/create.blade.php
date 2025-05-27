@@ -27,17 +27,47 @@
 
             <div class="tab-content mt-3" id="aluguelTabsContent">
                 {{-- Aba 1: Informações da Reserva --}}
-                 <!-- Campo do período -->
-                {{-- <div class="form-group row" id="campoPeriodo">
-                  <label class="col-md-3 label-control" for="periodo">* Data</label>
-                  <div class="col-md-4">
-                      <input type="text" class="form-control" id="periodo" name="periodo"
-                          value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
-                  </div>
-                </div>
+                 {{-- ====================================================== --}}
+                    {{-- INÍCIO: Mapa de Reservas Integrado --}}
+                    {{-- ====================================================== --}}
+                    <div class="card card-primary card-outline mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Selecionar Período e Espaço</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Filtros de Data -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="map_start_date">Data Início:</label>
+                                    <input type="date" id="map_start_date" class="form-control">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="map_end_date">Data Fim:</label>
+                                    <input type="date" id="map_end_date" class="form-control">
+                                </div>
+                                <div class="col-md-4 align-self-end">
+                                    <button type="button" id="filter_button" class="btn btn-primary">Atualizar Mapa</button> {{-- type="button" para não submeter o form principal --}}
+                                </div>
+                            </div>
 
-                <input type="hidden" name="data_checkin" id="data_checkin" value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
-                <input type="hidden" name="data_checkout" id="data_checkout" value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}"> --}}
+                            <!-- Mapa de Reservas -->
+                            <div id="reservation_map_container" class="table-responsive">
+                                <p>Carregando mapa...</p>
+                            </div>
+
+                            <!-- Campos Hidden para o formulário principal (serão preenchidos pelo JS do mapa) -->
+                            {{-- Use os nomes corretos que seu backend espera para data_inicio e data_fim --}}
+                            <input type="hidden" id="data_inicio" name="data_inicio" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
+                            <input type="hidden" id="data_fim" name="data_fim" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
+                            {{-- Adicione um campo hidden para espaco_id se necessário --}}
+                            {{-- <input type="hidden" id="espaco_id" name="espaco_id" value="{{ old('espaco_id', $aluguel->espaco_id ?? '') }}"> --}}
+
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    {{-- ====================================================== --}}
+                    {{-- FIM: Mapa de Reservas Integrado --}}
+                    {{-- ====================================================== --}}
 
                 <!-- Campo de cliente -->
                 <div class="tab-pane fade show active" id="info" role="tabpanel">
@@ -95,7 +125,7 @@
                           <div class="form-group row">
                             <label class="col-md-4 label-control" for="nomeRazaoSocial">* Nome/Razão Social:</label>
                             <div class="col-md-6">
-                              <div><input class="form-control" required="required" type="text" name="nome_razao_social" id="nomeRazaoSocial" autocomplete="off"></div>
+                              <div><input class="form-control" type="text" name="nome_razao_social" id="nomeRazaoSocial" autocomplete="off"></div>
                             </div>
                         </div>
           
@@ -118,7 +148,7 @@
                             <div class=" row col-md-8">
                                 <div class="col-md-4">
                                     <label for="cpfCnpj">CPF/CNPJ</label>
-                                    <input type="text" class="form-control" id="cpfCnpj" name="cpf_cnpj" required>
+                                    <input type="text" class="form-control" id="cpfCnpj" name="cpf_cnpj" >
                                 </div>
                                 <div class="col-md-8">
                                     <label for="rgIe">RG/Inscrição Estadual:</label>
@@ -206,6 +236,23 @@
                     </div>
 
                     <div class="form-group row">
+                        <label for="cardapio_id" class="col-md-3 label-control">* Cardápio:</label>
+                        <div class="col-md-6">
+                            <select name="cardapio_id" id="cardapio_id" class="form-control">
+                                <option value="">Selecione um cardápio</option>
+                                @foreach ($cardapios as $cardapio)
+                                    <option value="{{ $cardapio->id }}">{{ $cardapio->nome }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="buffet-categorias-itens">
+                        <!-- As categorias e itens serão carregados aqui via JavaScript -->
+                    </div>
+
+
+                    {{-- <div class="form-group row">
                         <label class="col-md-3 label-control">Itens de Buffet:</label>
                         <div class="col">
                             @foreach ($buffetItens as $item)
@@ -222,7 +269,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control">Total Buffet Estimado:</label>
@@ -300,5 +347,86 @@
     document.querySelectorAll('.buffet-item').forEach(item => item.addEventListener('change', calcularBuffet));
 
     window.addEventListener('DOMContentLoaded', calcularBuffet);
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cardapioSelect = document.getElementById('cardapio_id');
+        const categoriasContainer = document.getElementById('buffet-categorias-itens');
+
+        cardapioSelect.addEventListener('change', function () {
+            const cardapioId = this.value;
+            categoriasContainer.innerHTML = '';
+
+            if (cardapioId) {
+                fetch(`/cardapios/${cardapioId}/dados`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(categoria => {
+                            const categoriaDiv = document.createElement('div');
+                            categoriaDiv.classList.add('card', 'mb-3', 'border');
+
+                            const categoriaCardHeader = document.createElement('div');
+                            categoriaCardHeader.classList.add('card-header', 'green', 'pb-0');
+                            
+                            const label = document.createElement('label');
+                            label.classList.add('label-control');
+                            label.textContent = `${categoria.nome} (Selecione até ${categoria.quantidade_itens})`;
+                            
+                            const categoriaCardBody = document.createElement('div');
+                            categoriaCardBody.classList.add('card-body');
+
+                            const itensDiv = document.createElement('div');
+                            itensDiv.classList.add('col-md-6');
+
+                            categoria.itens.forEach(item => {
+                                const checkboxDiv = document.createElement('div');
+                                checkboxDiv.classList.add('form-check');
+
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.name = `categorias[${categoria.id}][itens][]`;
+                                checkbox.value = item.id;
+                                checkbox.classList.add('form-check-input');
+                                checkbox.dataset.categoriaId = categoria.id;
+
+                                const itemLabel = document.createElement('label');
+                                itemLabel.classList.add('form-check-label');
+                                itemLabel.textContent = item.nome;
+
+                                checkboxDiv.appendChild(checkbox);
+                                checkboxDiv.appendChild(itemLabel);
+                                itensDiv.appendChild(checkboxDiv);
+                            });
+
+                            categoriaDiv.appendChild(categoriaCardHeader)
+                            categoriaCardHeader.appendChild(label);
+                            categoriaDiv.appendChild(categoriaCardBody);
+                            categoriaCardBody.appendChild(itensDiv);
+                            categoriasContainer.appendChild(categoriaDiv);
+                        });
+
+                        // Adiciona a lógica para limitar a seleção de itens por categoria
+                        const checkboxes = categoriasContainer.querySelectorAll('input[type="checkbox"]');
+                        checkboxes.forEach(checkbox => {
+                            checkbox.addEventListener('change', function () {
+                                const categoriaId = this.dataset.categoriaId;
+                                const categoriaCheckboxes = categoriasContainer.querySelectorAll(`input[data-categoria-id="${categoriaId}"]`);
+                                const categoria = data.find(cat => cat.id == categoriaId);
+                                const selecionados = Array.from(categoriaCheckboxes).filter(cb => cb.checked);
+
+                                if (selecionados.length > categoria.quantidade_itens) {
+                                    this.checked = false;
+                                    alert(`Você pode selecionar no máximo ${categoria.quantidade_itens} itens para a categoria ${categoria.nome}.`);
+                                }
+                            });
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erro ao carregar dados do cardápio:', error);
+                    });
+            }
+        });
+    });
 </script>
 @endsection
