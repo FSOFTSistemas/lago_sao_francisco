@@ -6,7 +6,7 @@
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body">
-                <input type="search" class="form-control mb-3" id="produtoSearch" placeholder="Pesquisar produto...">
+                
 
                 <hr class="my-3">
                 <h5 class="mb-12 text-center">Itens</h5>
