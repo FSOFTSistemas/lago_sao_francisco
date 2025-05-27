@@ -5,24 +5,23 @@
     <h5 class="mb-4 font-weight-bold text-center">Cabeçalho</h5>
 
     <div class="row mb-3">
-        <div class="col-md-6">
-            <label for="empresa_id">Empresa</label>
-            <select class="form-control" id="empresa_id">
-                <option selected>Selecione a empresa</option>
-                <option>PANIFICADORA LOPES | 07.098.947/0001-26</option>
-                {{-- Outras opções aqui --}}
-            </select>
-        </div>
+       <div class="col-md-12">
+            <label for="cliente">Cliente</label>
+            <div class="input-group" style="gap: 8px; width: 100%;">
+                <input type="text" class="form-control flex-grow-1" id="cliente" placeholder="Selecione o cliente" readonly>
+                <button class="btn btn-outline-secondary" type="button" data-toggle="modal" data-target="#clienteModal">
+                <i class="fas fa-search"></i>
+                </button>
+            </div>
+       </div>
 
-        <div class="col-md-6">
-            <label for="cliente_id">Cliente</label>
-            <select class="form-control" id="cliente_id">
-                <option selected>Selecione o cliente</option>
-                <option>JOSE LUCIANO A. DE CARVALHO | 42.879.649/0001-74</option>
-                {{-- Outras opções aqui --}}
-            </select>
-        </div>
     </div>
+
+    <div>
+    @include('components.cliente-modal')
+    </div>
+
+    
 
     <div class="row mb-3">
         <div class="col-md-4">
@@ -54,7 +53,7 @@
         </div>
     </div>
 
-    <hr class="my-4">
+    <!-- <hr class="my-4">
 <h5 class="mb-3 text-center">Itens</h5>
 
 {{-- Formulário de itens --}}
@@ -83,10 +82,14 @@
         <label>Total</label>
         <input type="text" class="form-control" value="0" readonly>
     </div>
-</div>
+</div> -->
 
 <div class="mb-3 text-center">
-    <button class="btn btn-primary px-5">+ Adicionar</button>
+    <button class="btn btn-primary px-5" type="button" data-toggle="modal" data-target="#produtoModal">+ Adicionar Itens</button>
+</div>
+
+<div>
+    @include('components.produto-modal')
 </div>
 
 {{-- Tabela de Itens Adicionados --}}

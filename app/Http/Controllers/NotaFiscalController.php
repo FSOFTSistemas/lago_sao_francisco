@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Cliente;
 use App\Models\NotaFiscal;
+use App\Models\Produto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -16,7 +18,11 @@ class NotaFiscalController extends Controller
     public function index()
     {
         $notasFiscais = NotaFiscal::all();
-        return view('NFe.index', compact('notasFiscais'));
+        
+        $clientes= Cliente::all();
+        $produtos = Produto::all();
+
+        return view('NFe.index', compact('notasFiscais', 'produtos', 'clientes'));
     }
 
     /**

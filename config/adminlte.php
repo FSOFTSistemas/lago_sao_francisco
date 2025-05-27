@@ -466,7 +466,7 @@ return [
             'submenu' => [
                 [
                     'text'        => 'Emitir NFe',
-                    'url'         => '/vendas/nova',
+                    'url'         => '/nota_fiscal/create',
                     'icon'        => 'fas fa-upload',
                     'shift' => 'ml-2'
                 ],
