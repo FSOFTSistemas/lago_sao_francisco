@@ -19,7 +19,7 @@ class PreferenciaSeeder extends Seeder
         $preferencias = [
             [
                 'empresa_id' => $empresa1Id,
-                'certificado_digital' => 'certificado1.pfx',
+                'certificado_digital' => null,
                 'numero_ultima_nota' => 123,
                 'serie' => 'A1',
                 'cfop_padrao' => '5101',
@@ -27,7 +27,7 @@ class PreferenciaSeeder extends Seeder
             ],
             [
                 'empresa_id' => $empresa2Id,
-                'certificado_digital' => 'certificado2.pfx',
+                'certificado_digital' => null,
                 'numero_ultima_nota' => 456,
                 'serie' => 'B2',
                 'cfop_padrao' => '6102',

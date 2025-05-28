@@ -20,8 +20,10 @@ return new class extends Migration
             $table->string('endereco_id')->nullable();
             $table->string('inscricao_estadual');
             $table->timestamps();
+            $table->unsignedBigInteger('responsavel_tecnico_id');
 
             $table->foreign('contador_id')->references('id')->on('empresa_contadors');
+            $table->foreign('responsavel_tecnico_id')->references('id')->on('empresa_r_t_s');
         });
 
     }

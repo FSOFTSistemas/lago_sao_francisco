@@ -17,10 +17,14 @@ class DatabaseSeeder extends Seeder
         $contador = new ContadorSeeder();
         $contador->run();
 
+        $resposavelTecnico = new ResponsavelTecnicoSeeder();
+        $resposavelTecnico->run();
+
         $empresa = new EmpresaSeeder();
         $empresa->contador1 = $contador->contador1->id;
         $empresa->contador2 = $contador->contador2->id;
         $empresa->contador3 = $contador->contador3->id;
+        $empresa->rt = $resposavelTecnico->RT;
         $empresa->run();
 
         $preferencia = new PreferenciaSeeder();

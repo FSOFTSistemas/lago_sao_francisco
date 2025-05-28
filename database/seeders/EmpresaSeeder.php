@@ -19,6 +19,8 @@ class EmpresaSeeder extends Seeder
     public $contador1;
     public $contador2;
     public $contador3;
+
+    public $rt;
     
     
     public function run(): void
@@ -27,13 +29,16 @@ class EmpresaSeeder extends Seeder
         $contador2 = $this->contador2;
         $contador3 = $this->contador3;
 
+        $rt = $this->rt;
+
         $empresaLago = Empresa::create([
             'razao_social' => 'Maria Laura Pereira Paes',
             'nome_fantasia' => 'Lago São Francisco',
             'cnpj' => '40.065.099/0001-24',
             'endereco_id' => null,
             'inscricao_estadual' => '092969305',
-            'contador_id'=> $contador1
+            'contador_id'=> $contador1,
+            'responsavel_tecnico_id' => $rt->id
         ]);
         
         $empresaRestaurante = Empresa::create([
@@ -42,7 +47,8 @@ class EmpresaSeeder extends Seeder
             'cnpj' => '40.065.099/0001-24',
             'endereco_id' => null,
             'inscricao_estadual' => '092969305',
-            'contador_id'=> $contador2
+            'contador_id'=> $contador2,
+            'responsavel_tecnico_id' => $rt->id
         ]);
         
         $empresaHotel = Empresa::create([
@@ -51,7 +57,8 @@ class EmpresaSeeder extends Seeder
             'cnpj' => '40.065.099/0001-24',
             'endereco_id' => null,
             'inscricao_estadual' => '092969305',
-            'contador_id'=> $contador3
+            'contador_id'=> $contador3,
+            'responsavel_tecnico_id' => $rt->id
         ]);
 
         $this->empresaHotel = $empresaHotel;
