@@ -108,26 +108,57 @@ class CardapioController extends Controller
         return redirect()->route('cardapios.index')->with('success', 'Cardápio removido!');
     }
 
+
     public function dados($id)
 {
-    $cardapio = Cardapio::with(['categorias', 'categorias.itens'])->findOrFail($id);
+    $cardapio = Cardapio::with('categorias')->findOrFail($id);
 
-    $dados = $cardapio->categorias->map(function ($categoria) {
+    $dados = $cardapio->categorias->map(function ($categoria) use ($id) {
+        // Pega o limite de itens da pivot cardapio_categoria
+        $quantidade_itens = $categoria->pivot->quantidade_itens ?? 0;
+
+        // Busca os itens filtrando na tabela cardapio_categoria_item (pivot)
+        $itens = \App\Models\BuffetItem::select('buffet_items.id', 'buffet_items.nome')
+            ->join('cardapio_categoria_item', function ($join) use ($id, $categoria) {
+                $join->on('buffet_items.id', '=', 'cardapio_categoria_item.buffet_item_id')
+                     ->where('cardapio_categoria_item.cardapio_id', $id)
+                     ->where('cardapio_categoria_item.categoria_id', $categoria->id);
+            })
+            ->get();
+
         return [
             'id' => $categoria->id,
             'nome' => $categoria->nome,
-            'quantidade_itens' => $categoria->pivot->quantidade_itens,
-            'itens' => $categoria->itens->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'nome' => $item->nome,
-                ];
-            }),
+            'quantidade_itens' => $quantidade_itens,
+            'itens' => $itens,
         ];
     });
 
     return response()->json($dados);
 }
+
+
+
+//     public function dados($id)
+// {
+    // $cardapio = Cardapio::with(['categorias', 'categorias.itens'])->findOrFail($id);
+
+//     $dados = $cardapio->categorias->map(function ($categoria) {
+//         return [
+//             'id' => $categoria->id,
+//             'nome' => $categoria->nome,
+//             'quantidade_itens' => $categoria->pivot->quantidade_itens,
+//             'itens' => $categoria->itens->map(function ($item) {
+//                 return [
+//                     'id' => $item->id,
+//                     'nome' => $item->nome,
+//                 ];
+//             }),
+//         ];
+//     });
+
+//     return response()->json($dados);
+// }
 
 }
 

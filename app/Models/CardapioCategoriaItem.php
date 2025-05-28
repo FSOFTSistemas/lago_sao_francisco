@@ -15,4 +15,15 @@ class CardapioCategoriaItem extends Model
         'categoria_id',
         'buffet_item_id',
     ];
+
+    public function categoria()
+{
+    return $this->belongsTo(CategoriasCardapio::class, 'categoria_id');
+}
+
+public function item()
+{
+    return $this->belongsTo(BuffetItem::class, 'buffet_item_id');
+}
+
 }

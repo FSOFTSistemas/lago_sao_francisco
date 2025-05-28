@@ -16,7 +16,7 @@
             </div>
 
             <div class="modal-footer">
-                <form action="{{ route('buffet.destroy', $cardapio->id) }}" method="POST">
+                <form action="{{ route('cardapios.destroy', $cardapio->id) }}" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Excluir</button>
