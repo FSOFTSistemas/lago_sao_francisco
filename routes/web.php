@@ -13,7 +13,10 @@ use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\DiariaController;
+use App\Http\Controllers\EmpresaContadorController;
 use App\Http\Controllers\EmpresaController;
+use App\Http\Controllers\EmpresaPreferenciaController;
+use App\Http\Controllers\EmpresaRTController;
 use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
@@ -135,3 +138,12 @@ Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name(
 
 Route::get('/espacos/disponibilidade', [EspacoDisponibilidadeController::class, 'getDisponibilidade']);
 
+
+// Responsável Técnico (RT)
+Route::resource('empresaRT', EmpresaRTController::class)->middleware('permission:gerenciar empresa');
+
+// Contador
+Route::resource('empresaContador', EmpresaContadorController::class)->middleware('permission:gerenciar empresa');
+
+// Preferências da Empresa
+Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->middleware('permission:gerenciar empresa');

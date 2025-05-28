@@ -45,7 +45,7 @@
                 <div class="tab-content mt-2" id="empresaInnerTabsContent-{{ $empresa->id }}">
                     <div class="tab-pane fade show active" id="info-{{ $empresa->id }}" role="tabpanel">
                         {{-- {{ route('empresa.update', $empresa->id) }} --}}
-                        <form action="#" method="POST" class="empresa-form">
+                        <form action="{{ route('empresa.update', $empresa->id) }}" method="POST" class="empresa-form">
                             @csrf
                             @method('PUT')
                             <div class="card">
@@ -88,8 +88,8 @@
                         </form>
                     </div>
                     <div class="tab-pane fade" id="preferencias-{{ $empresa->id }}" role="tabpanel">
-                        {{-- {{ route('empresa.updatePreferencias', $empresa->id) }} --}}
-                        <form action="#" method="POST" enctype="multipart/form-data">
+                        {{-- {{ route('empresaPreferencia.update', $empresa->id) }} --}}
+                        <form action="{{ route('empresaPreferencia.update', $empresa->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
                             <div class="card">
@@ -128,8 +128,8 @@
                         </form>
                     </div>
                     <div class="tab-pane fade" id="resp-tecnico-{{ $empresa->id }}" role="tabpanel">
-                        {{-- {{ route('empresa.updateResponsavelTecnico', $empresa->id) }} --}}
-                        <form action="#" method="POST">
+                        {{-- {{ route('empresaRT.update', $empresa->id) }} --}}
+                        <form action="{{ route('empresaRT.update', $empresa->id) }}" method="POST">
                             @csrf
                             @method('PUT')
                             <div class="card">
@@ -164,8 +164,8 @@
                         </form>
                     </div>
                     <div class="tab-pane fade" id="contador-{{ $empresa->id }}" role="tabpanel">
-                        {{-- {{  route('empresa.updateContador', $empresa->id)  }} --}}
-                        <form action="#" method="POST">
+                        {{-- {{  route('empresaContador.update', $empresa->id)  }} --}}
+                        <form action="{{  route('empresaContador.update', $empresa->id)  }}" method="POST">
                             @csrf
                             @method('PUT')
                             <div class="card">
