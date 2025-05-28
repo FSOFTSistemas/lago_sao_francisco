@@ -44,6 +44,8 @@ class NFeNew extends Component
         'produto' => '',
         'quantidade' => 1,
         'valor_unitario' => 0,
+        'subtotal' => 0,
+        'total' => 0,
         'cst' => '',
         'cfop' => '',
         'csosn' => '',
@@ -79,11 +81,8 @@ class NFeNew extends Component
 
     public function salvarItem()
     {
-        $subtotal = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
-        $this->novoItem['total'] = $subtotal;
-
+        $this->atualizarTotaisItem();
         $this->itens[] = $this->novoItem;
-
         $this->fecharModal();
     }
 
@@ -93,6 +92,8 @@ class NFeNew extends Component
             'produto' => '',
             'quantidade' => 1,
             'valor_unitario' => 0,
+            'subtotal' => 0,
+            'total' => 0,
             'cst' => '',
             'cfop' => '',
             'csosn' => '',
@@ -100,6 +101,11 @@ class NFeNew extends Component
             'valor_icms' => 0,
             'base_calculo' => 0,
         ];
+    }
+    public function atualizarTotaisItem()
+    {
+        $this->novoItem['subtotal'] = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
+        $this->novoItem['total'] = $this->novoItem['subtotal'];
     }
 
     public function abrirModalProduto()
@@ -169,4 +175,12 @@ class NFeNew extends Component
         $this->clientes = Cliente::where('nome', 'like', '%' . $this->buscaCliente . '%')
             ->limit(20)->get()->toArray();
     }
+
+    public function updatedNovoItem($value, $key)
+    {
+        if (in_array($key, ['quantidade', 'valor_unitario'])) {
+            $this->atualizarTotaisItem();
+        }
+    }
+    
 }
