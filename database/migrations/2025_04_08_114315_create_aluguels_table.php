@@ -33,7 +33,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreignId('cardapio_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('cardapio_id')->nullable()->references('id')->on('cardapios')->onDelete('set null');
             $table->foreign('espaco_id')->references('id')->on('espacos')->onDelete('cascade');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');

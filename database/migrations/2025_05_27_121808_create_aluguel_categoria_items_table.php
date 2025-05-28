@@ -14,7 +14,7 @@ return new class extends Migration
          Schema::create('aluguel_categoria_item', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('aluguel_id')->constrained()->onDelete('cascade');
-                $table->foreignId('cardapio_categoria_id')->constrained()->onDelete('cascade');
+                $table->foreignId('cardapio_categoria_id')->references('id')->on('categorias_cardapio')->onDelete('cascade');
                 $table->foreignId('buffet_item_id')->constrained()->onDelete('cascade');
                 $table->timestamps();
             });

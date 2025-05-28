@@ -31,11 +31,19 @@
             </div>
             <div class="col-md-3">
                 <label for="finalidade" class="form-label">Finalidade da Nota</label>
-                <input type="text" id="finalidade" wire:model="finalidade" class="form-control" />
+                <select id="finalidade" wire:model="finalidade" class="form-select form-control">
+                    <option value="1">NF-e normal</option>
+                    <option value="2">NF-e complementar</option>
+                    <option value="3">NF-e de ajuste</option>
+                    <option value="4">Devolução de mercadoria</option>
+                </select>
             </div>
             <div class="col-md-3">
                 <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
-                <input type="text" id="forma_pagamento" wire:model="forma_pagamento" class="form-control" />
+                <select id="forma_pagamento" wire:model="forma_pagamento" class="form-select form-control">
+                    <option value="0">Pagamento à Vista</option>
+                    <option value="1">Pagamento a Prazo</option>
+                </select>
             </div>
         </div>
     </div>
@@ -229,9 +237,9 @@
 
                     <div style="max-height: 300px; overflow-y: auto;">
                         @foreach($produtos as $produto)
-                            <div wire:click="selecionarProduto('{{ $produto['nome'] }}')" class="p-2 border-bottom"
+                            <div wire:click="selecionarProduto('{{ $produto['id'] }}')" class="p-2 border-bottom"
                                 style="cursor:pointer;">
-                                {{ $produto['nome'] }}
+                                {{ $produto['descricao'] }}
                             </div>
                         @endforeach
                         @if(count($produtos) === 0)

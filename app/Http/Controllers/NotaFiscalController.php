@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\NotaFiscal;
 use App\Models\Produto;
 use Illuminate\Http\Request;
@@ -141,11 +142,17 @@ class NotaFiscalController extends Controller
     {
         try{
             $notaFiscal = NotaFiscal::findOrFail($id);
-            $notaFiscal.delete();
+            $notaFiscal->delete();
             return redirect()->route('nota_fiscal.index')->with('success', 'nota fiscal excluída com sucesso!');
         }catch(\Exception $e){
             dd($e->getMessage());
             return redirect()->back()->with('error', 'Erro ao excluir nota fiscal'); 
         }
     }
+
+    public function getEmpresaCurrent(){
+        return Empresa::where('id', Auth::user()->empresa_id)->get();
+    }
+
+    
 }

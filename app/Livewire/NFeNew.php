@@ -2,12 +2,17 @@
 
 namespace App\Livewire;
 
+use App\Http\Controllers\NotaFiscalController;
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\Produto;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class NFeNew extends Component
-{ public $empresa = 'Minha Empresa LTDA';
+{ 
+
+    public $empresa = 'FSOFT SISTEMAS';
     public $numero;
     public $serie;
     public $data_emissao;
@@ -23,6 +28,7 @@ class NFeNew extends Component
 
     public $modalProdutoAberto = false;
     public $buscaProduto = '';
+   
 
     public $produtos = [
         ['nome' => 'Produto A'],
@@ -43,6 +49,17 @@ class NFeNew extends Component
     ];
 
     public $itens = [];
+
+    public function mount()
+    {
+        $empresaID = Auth::user()->empresa_id;
+        $this->empresa = Empresa::find($empresaID)->razao_social;
+        $this->produtos = Produto::where('empresa_id', $empresaID)->get();
+        $this->data_emissao = now()->toDateString();
+        $this->data_saida = now()->toDateString();
+        $this->serie = 1;
+        $this->numero = 1;
+    }
 
     public function openModal()
     {
@@ -92,9 +109,21 @@ class NFeNew extends Component
         $this->modalProdutoAberto = false;
     }
 
-    public function selecionarProduto($nomeProduto)
+    public function selecionarProduto($id)
     {
-        $this->novoItem['produto'] = $nomeProduto;
+        $produto = Produto::find($id);
+
+        if ($produto) {
+            $this->novoItem['produto'] = $produto->descricao;
+            $this->novoItem['valor_unitario'] = $produto->preco_venda ?? 0;
+            $this->novoItem['cst'] = $produto->cst ?? '';
+            $this->novoItem['cfop'] = $produto->cfop_interno ?? '';
+            $this->novoItem['csosn'] = $produto->csosn ?? '';
+            $this->novoItem['aliquota'] = $produto->aliquota ?? 0;
+            $this->novoItem['base_calculo'] = $produto->preco_venda ?? 0;
+            $this->novoItem['valor_icms'] = ($produto->preco_venda ?? 0) * ($produto->aliquota ?? 0) / 100;
+        }
+
         $this->modalProdutoAberto = false;
     }
 
