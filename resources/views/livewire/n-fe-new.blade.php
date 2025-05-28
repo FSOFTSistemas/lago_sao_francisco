@@ -7,8 +7,15 @@
                 <input type="text" id="empresa" wire:model="empresa" disabled class="form-control" />
             </div>
             <div class="col-md-3">
+                <label for="cliente" class="form-label">Cliente</label>
+                <input type="text" id="cliente" wire:model="cliente.nome_razao_social" readonly
+                    class="form-control" placeholder="Clique para selecionar" style="cursor: pointer;"
+                    wire:click="abrirModalCliente" />
+            </div>
+            <div class="col-md-3">
                 <label for="numero" class="form-label">Número da Nota</label>
-                <input type="text" id="numero" wire:model="numero" class="form-control fw-bold text-danger fs-3" />
+                <input type="text" id="numero" wire:model="numero"
+                    class="form-control fw-bold text-danger fs-3" />
             </div>
             <div class="col-md-2">
                 <label for="serie" class="form-label">Série</label>
@@ -65,7 +72,8 @@
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link {{ $aba == 'complementares' ? 'active' : '' }}"
-                wire:click="$set('aba', 'complementares')" type="button" role="tab">Informações Complementares</button>
+                wire:click="$set('aba', 'complementares')" type="button" role="tab">Informações
+                Complementares</button>
         </li>
         <li class="nav-item" role="presentation">
             <button class="nav-link {{ $aba == 'referenciada' ? 'active' : '' }}"
@@ -74,9 +82,9 @@
     </ul>
 
     <div class="tab-content">
-        @if($aba == 'itens')
+        @if ($aba == 'itens')
             <div role="tabpanel" class="tab-pane active">
-                @if(count($itens) > 0)
+                @if (count($itens) > 0)
                     @component('components.data-table', [
                         'responsive' => [
                             ['responsivePriority' => 1, 'targets' => 0],
@@ -88,36 +96,51 @@
                         'showTotal' => false,
                         'valueColumnIndex' => 4,
                     ])
-                    <thead class="bg-primary text-white">
-                        <tr>
-                            <th>Produto</th>
-                            <th>Qtde</th>
-                            <th>CST</th>
-                            <th>CFOP</th>
-                            <th>Valor Unitário</th>
-                            <th>SubTotal</th>
-                            <th>Desconto</th>
-                            <th>Acrescimo</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($itens as $item)
+                        <thead class="bg-primary text-white">
                             <tr>
-                                <td>{{ $item['produto'] }}</td>
-                                <td>{{ $item['quantidade'] }}</td>
-                                <td>{{ $item['cst'] ?? '' }}</td>
-                                <td>{{ $item['cfop'] ?? '' }}</td>
-                                <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
-                                <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
-                                <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
-                                <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
-                                <td>{{ number_format($item['total'], 2, ',', '.') }}</td>
+                                <th>Produto</th>
+                                <th>Qtde</th>
+                                <th>CST</th>
+                                <th>CFOP</th>
+                                <th>Valor Unitário</th>
+                                <th>SubTotal</th>
+                                <th>Desconto</th>
+                                <th>Acrescimo</th>
+                                <th>Total</th>
                             </tr>
-                        @endforeach
-                    </tbody>
+                        </thead>
+                        <tbody>
+                            @foreach ($itens as $item)
+                                <tr>
+                                    <td>{{ $item['produto'] }}</td>
+                                    <td>{{ $item['quantidade'] }}</td>
+                                    <td>{{ $item['cst'] ?? '' }}</td>
+                                    <td>{{ $item['cfop'] ?? '' }}</td>
+                                    <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
+                                    <td>{{ number_format($item['subtotal'] ?? 0, 2, ',', '.') }}</td>
+                                    <td>{{ number_format($item['desconto'] ?? 0, 2, ',', '.') }}</td>
+                                    <td>{{ number_format($item['acrescimo'] ?? 0, 2, ',', '.') }}</td>
+                                    <td>{{ number_format($item['total'], 2, ',', '.') }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
                     @endcomponent
-
+                    <div class="mt-3 p-3 border rounded bg-light">
+                        <div class="row text-end">
+                            <div class="col-md-3 offset-md-6">
+                                <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
+                            </div>
+                            <div class="col-md-3 offset-md-6">
+                                <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
+                            </div>
+                            <div class="col-md-3">
+                                <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
+                            </div>
+                        </div>
+                    </div>
                 @else
                     <p>Nenhum item adicionado.</p>
                 @endif
@@ -138,9 +161,9 @@
     </div>
 
     <!-- Modal para adicionar item -->
-    <div class="modal fade @if($modalAberto) show d-block @endif" tabindex="-1"
-        style="@if($modalAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif" aria-modal="true"
-        role="dialog">
+    <div class="modal fade @if ($modalAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -151,53 +174,58 @@
                     <form>
                         <div class="mb-3">
                             <label for="produto" class="form-label">Produto</label>
-                            <input type="text" id="produto" wire:model="novoItem.produto" readonly class="form-control"
-                                placeholder="Clique para selecionar" style="cursor: pointer;"
+                            <input type="text" id="produto" wire:model="novoItem.produto" readonly
+                                class="form-control" placeholder="Clique para selecionar" style="cursor: pointer;"
                                 wire:click="abrirModalProduto" />
                         </div>
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="quantidade" class="form-label">Quantidade</label>
-                                <input type="number" id="quantidade" wire:model="novoItem.quantidade"
+                                <input type="number" id="quantidade" wire:model="novoItem.quantidade" wire:blur="atualizarTotaisItem"
                                     class="form-control" min="1" />
                             </div>
                             <div class="col-md-4">
                                 <label for="valor_unitario" class="form-label">Valor Unitário</label>
-                                <input type="number" id="valor_unitario" wire:model="novoItem.valor_unitario"
+                                <input type="number" id="valor_unitario" wire:model="novoItem.valor_unitario" wire:blur="atualizarTotaisItem"
                                     class="form-control" step="0.01" />
                             </div>
                             <div class="col-md-4">
                                 <label for="subtotal" class="form-label">Subtotal</label>
-                                <input type="number" id="subtotal" class="form-control"
-                                    value="{{ number_format($novoItem['quantidade'] * $novoItem['valor_unitario'], 2, ',', '.') }}"
-                                    readonly />
+                                <input type="text" id="subtotal" class="form-control" value="{{ number_format($novoItem['subtotal'], 2, ',', '.') }}" readonly />
                             </div>
                         </div>
 
                         <hr>
 
                         <button class="btn btn-link" type="button" wire:click="$toggle('mostrarTributaria')">
-                            Dados Tributários @if($mostrarTributaria) &#9650; @else &#9660; @endif
+                            Dados Tributários @if ($mostrarTributaria)
+                                &#9650;
+                            @else
+                                &#9660;
+                            @endif
                         </button>
 
-                        @if($mostrarTributaria)
+                        @if ($mostrarTributaria)
                             <div class="row g-3 mt-2">
                                 <div class="col-md-3">
                                     <label for="cst" class="form-label">CST</label>
-                                    <input type="text" id="cst" wire:model="novoItem.cst" class="form-control" />
+                                    <input type="text" id="cst" wire:model="novoItem.cst"
+                                        class="form-control" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="cfop" class="form-label">CFOP</label>
-                                    <input type="text" id="cfop" wire:model="novoItem.cfop" class="form-control" />
+                                    <input type="text" id="cfop" wire:model="novoItem.cfop"
+                                        class="form-control" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="csosn" class="form-label">CSOSN</label>
-                                    <input type="text" id="csosn" wire:model="novoItem.csosn" class="form-control" />
+                                    <input type="text" id="csosn" wire:model="novoItem.csosn"
+                                        class="form-control" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="aliquota" class="form-label">Alíquota (%)</label>
-                                    <input type="number" id="aliquota" wire:model="novoItem.aliquota" class="form-control"
-                                        step="0.01" />
+                                    <input type="number" id="aliquota" wire:model="novoItem.aliquota"
+                                        class="form-control" step="0.01" />
                                 </div>
                                 <div class="col-md-4">
                                     <label for="valor_icms" class="form-label">Valor do ICMS</label>
@@ -222,9 +250,9 @@
     </div>
 
     <!-- Modal para selecionar produto -->
-    <div class="modal fade @if($modalProdutoAberto) show d-block @endif" tabindex="-1"
-        style="@if($modalProdutoAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif" aria-modal="true"
-        role="dialog">
+    <div class="modal fade @if ($modalProdutoAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalProdutoAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -236,19 +264,51 @@
                         class="form-control mb-3" />
 
                     <div style="max-height: 300px; overflow-y: auto;">
-                        @foreach($produtos as $produto)
+                        @foreach ($produtos as $produto)
                             <div wire:click="selecionarProduto('{{ $produto['id'] }}')" class="p-2 border-bottom"
                                 style="cursor:pointer;">
                                 {{ $produto['descricao'] }}
                             </div>
                         @endforeach
-                        @if(count($produtos) === 0)
+                        @if (count($produtos) === 0)
                             <p>Nenhum produto encontrado.</p>
                         @endif
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" wire:click="fecharModalProduto" class="btn btn-secondary">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para selecionar cliente -->
+    <div class="modal fade @if ($modalClienteAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalClienteAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Cliente</h5>
+                    <button type="button" class="btn-close" wire:click="fecharModalCliente"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" wire:model="buscaCliente" placeholder="Buscar cliente..."
+                        class="form-control mb-3" />
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @foreach ($clientes as $cliente)
+                            <div wire:click="selecionarCliente('{{ $cliente['id'] }}')" class="p-2 border-bottom"
+                                style="cursor:pointer;">
+                                {{ $cliente['nome_razao_social'] }}
+                            </div>
+                        @endforeach
+                        @if (count($clientes) === 0)
+                            <p>Nenhum cliente encontrado.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" wire:click="fecharModalCliente" class="btn btn-secondary">Fechar</button>
                 </div>
             </div>
         </div>

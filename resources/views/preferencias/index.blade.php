@@ -3,10 +3,12 @@
 @section('title', 'Configurações')
 
 @section('content_header')
-    <h1>Configurações Gerais</h1>
+    <h1>Preferências</h1>
+    <hr>
 @endsection
 
 @section('content')
+<h5>Configurações de Hotel</h5>
     <div class="row">
         <!-- Formas de Pagamento -->
         <div class="col-md-3">
@@ -45,6 +47,7 @@
             </a>
         </div>
     </div>
+    <h5>Configurações de Eventos</h5>
     <div class="row">
          <!-- Cadastro de Espaços -->
         <div class="col-md-3">

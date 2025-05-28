@@ -20,6 +20,10 @@ class NFeNew extends Component
     public $tipo_nota = 'saida';
     public $finalidade;
     public $forma_pagamento;
+    public $cliente = ['id' => null, 'nome' => 'Consumidor'];
+    public $modalClienteAberto = false;
+    public $buscaCliente = '';
+    public $clientes = [];
 
     public $aba = 'itens';
 
@@ -40,6 +44,8 @@ class NFeNew extends Component
         'produto' => '',
         'quantidade' => 1,
         'valor_unitario' => 0,
+        'subtotal' => 0,
+        'total' => 0,
         'cst' => '',
         'cfop' => '',
         'csosn' => '',
@@ -75,11 +81,8 @@ class NFeNew extends Component
 
     public function salvarItem()
     {
-        $subtotal = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
-        $this->novoItem['total'] = $subtotal;
-
+        $this->atualizarTotaisItem();
         $this->itens[] = $this->novoItem;
-
         $this->fecharModal();
     }
 
@@ -89,6 +92,8 @@ class NFeNew extends Component
             'produto' => '',
             'quantidade' => 1,
             'valor_unitario' => 0,
+            'subtotal' => 0,
+            'total' => 0,
             'cst' => '',
             'cfop' => '',
             'csosn' => '',
@@ -96,6 +101,11 @@ class NFeNew extends Component
             'valor_icms' => 0,
             'base_calculo' => 0,
         ];
+    }
+    public function atualizarTotaisItem()
+    {
+        $this->novoItem['subtotal'] = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
+        $this->novoItem['total'] = $this->novoItem['subtotal'];
     }
 
     public function abrirModalProduto()
@@ -127,6 +137,28 @@ class NFeNew extends Component
         $this->modalProdutoAberto = false;
     }
 
+    public function getSubtotalNotaProperty()
+    {
+        return collect($this->itens)->sum('subtotal');
+    }
+
+    public function getDescontoNotaProperty()
+    {
+        return collect($this->itens)->sum('desconto');
+    }
+
+    public function getAcrescimoNotaProperty()
+    {
+        return collect($this->itens)->sum('acrescimo');
+    }
+
+    public function getTotalNotaProperty()
+    {
+        return collect($this->itens)->sum(function ($i) {
+            return ($i['subtotal'] ?? 0) - ($i['desconto'] ?? 0) + ($i['acrescimo'] ?? 0);
+        });
+    }
+
     public function render()
     {
         $produtosFiltrados = collect($this->produtos)
@@ -138,4 +170,39 @@ class NFeNew extends Component
             'produtos' => $produtosFiltrados,
         ]);
     }
+
+    public function abrirModalCliente()
+    {
+        $this->modalClienteAberto = true;
+        $this->buscaCliente = '';
+        $this->clientes = Cliente::limit(20)->get()->toArray();
+    }
+    
+    public function fecharModalCliente()
+    {
+        $this->modalClienteAberto = false;
+    }
+    
+    public function selecionarCliente($id)
+    {
+        $cliente = Cliente::find($id);
+        if ($cliente) {
+            $this->cliente = ['id' => $cliente->id, 'nome_razao_social' => $cliente->nome_razao_social];
+        }
+        $this->fecharModalCliente();
+    }
+    
+    public function updatedBuscaCliente()
+    {
+        $this->clientes = Cliente::where('nome', 'like', '%' . $this->buscaCliente . '%')
+            ->limit(20)->get()->toArray();
+    }
+
+    public function updatedNovoItem($value, $key)
+    {
+        if (in_array($key, ['quantidade', 'valor_unitario'])) {
+            $this->atualizarTotaisItem();
+        }
+    }
+    
 }
