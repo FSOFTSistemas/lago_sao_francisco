@@ -23,6 +23,12 @@ class DatabaseSeeder extends Seeder
         $empresa->contador3 = $contador->contador3->id;
         $empresa->run();
 
+        $preferencia = new PreferenciaSeeder();
+        $preferencia->empresa1Id = $empresa->empresaLago->id;
+        $preferencia->empresa2Id = $empresa->empresaRestaurante->id;
+        $preferencia->empresa3Id = $empresa->empresaHotel->id;
+        $preferencia->run();
+
         $formaPagamento = new FormaPagamentoSeeder();
         $formaPagamento->run();
 

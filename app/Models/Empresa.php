@@ -16,11 +16,12 @@ class Empresa extends Model
         'cnpj',
         'endereco',
         'inscricao_estadual',
-        'contador_id'
+        'contador_id',
     ];
 
     public function contador(): BelongsTo
     {
         return $this->belongsTo(EmpresaContador::class, 'contador_id');
     }
+
 }
