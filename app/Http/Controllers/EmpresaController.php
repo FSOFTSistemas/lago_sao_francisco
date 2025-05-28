@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
+use App\Models\EmpresaContador;
+use App\Models\EmpresaPreferencia;
 use App\Models\EmpresaRT;
 use App\Models\Endereco;
 use Illuminate\Http\Request;
@@ -16,9 +18,9 @@ class EmpresaController extends Controller
     public function index()
     {
         $enderecos = Endereco::all();
-        $empresas = Empresa::all();
-        $contadores = EmpresaRT::all();
-        return view('empresa.index', compact('empresas', 'enderecos', 'contadores'));
+        $empresas = Empresa::with('contadors', 'responsavelTecnico')->all();
+        $preferencias = EmpresaPreferencia::where('empresa_id', Auth::user()->empresa_id)->get();
+        return view('empresa.index', compact('empresas', 'enderecos', 'preferencias'));
     }
 
 

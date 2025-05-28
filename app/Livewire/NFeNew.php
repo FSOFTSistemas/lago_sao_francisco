@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class NFeNew extends Component
-{ 
+{
 
     public $empresa = 'FSOFT SISTEMAS';
     public $numero;
@@ -25,6 +25,12 @@ class NFeNew extends Component
     public $buscaCliente = '';
     public $clientes = [];
 
+    // Propriedades para campos dinâmicos da aba de faturamento
+    public $forma_pagamento_detalhada = '';
+    public $quantidade_parcelas;
+    public $bandeira_cartao;
+    public $data_vencimento;
+    
     public $aba = 'itens';
 
     public $modalAberto = false;
@@ -205,4 +211,16 @@ class NFeNew extends Component
         }
     }
     
+    public function updatedFormaPagamentoDetalhada($value)
+    {
+        // Limpa campos específicos sempre que a forma de pagamento muda
+        $this->quantidade_parcelas = null;
+        $this->bandeira_cartao = null;
+        $this->data_vencimento = null;
+
+        // Se a finalidade da nota for Ajuste (3) ou Devolução (4), força "Sem Pagamento"
+        if (in_array($this->finalidade, ['3', '4'])) {
+            $this->forma_pagamento_detalhada = '90';
+        }
+    }
 }

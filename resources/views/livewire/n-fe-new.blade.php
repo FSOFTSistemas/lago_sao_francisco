@@ -12,12 +12,12 @@
                     class="form-control" placeholder="Clique para selecionar" style="cursor: pointer;"
                     wire:click="abrirModalCliente" />
             </div>
-            <div class="col-md-3">
-                <label for="numero" class="form-label">Número da Nota</label>
+            <div class="col-md-1">
+                <label for="numero" class="form-label">N. Nota</label>
                 <input type="text" id="numero" wire:model="numero"
                     class="form-control fw-bold text-danger fs-3" />
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="serie" class="form-label">Série</label>
                 <input type="text" id="serie" wire:model="serie" class="form-control" />
             </div>
@@ -83,79 +83,136 @@
 
     <div class="tab-content">
         @if ($aba == 'itens')
-            <div role="tabpanel" class="tab-pane active">
-                @if (count($itens) > 0)
-                    @component('components.data-table', [
-                        'responsive' => [
-                            ['responsivePriority' => 1, 'targets' => 0],
-                            ['responsivePriority' => 2, 'targets' => 1],
-                            ['responsivePriority' => 3, 'targets' => 2],
-                            ['responsivePriority' => 4, 'targets' => -1],
-                        ],
-                        'itemsPerPage' => 10,
-                        'showTotal' => false,
-                        'valueColumnIndex' => 4,
-                    ])
-                        <thead class="bg-primary text-white">
-                            <tr>
-                                <th>Produto</th>
-                                <th>Qtde</th>
-                                <th>CST</th>
-                                <th>CFOP</th>
-                                <th>Valor Unitário</th>
-                                <th>SubTotal</th>
-                                <th>Desconto</th>
-                                <th>Acrescimo</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($itens as $item)
+            <div role="tabpanel" class="tab-pane active d-flex flex-column" style="height: calc(100vh - 400px);">
+                <div class="flex-grow-1 overflow-auto" style="min-height: 100px;">
+                    @if (count($itens) > 0)
+                        @component('components.data-table', [
+                            'responsive' => [
+                                ['responsivePriority' => 1, 'targets' => 0],
+                                ['responsivePriority' => 2, 'targets' => 1],
+                                ['responsivePriority' => 3, 'targets' => 2],
+                                ['responsivePriority' => 4, 'targets' => -1],
+                            ],
+                            'itemsPerPage' => 10,
+                            'showTotal' => false,
+                            'valueColumnIndex' => 4,
+                        ])
+                            <thead class="bg-primary text-white">
                                 <tr>
-                                    <td>{{ $item['produto'] }}</td>
-                                    <td>{{ $item['quantidade'] }}</td>
-                                    <td>{{ $item['cst'] ?? '' }}</td>
-                                    <td>{{ $item['cfop'] ?? '' }}</td>
-                                    <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
-                                    <td>{{ number_format($item['subtotal'] ?? 0, 2, ',', '.') }}</td>
-                                    <td>{{ number_format($item['desconto'] ?? 0, 2, ',', '.') }}</td>
-                                    <td>{{ number_format($item['acrescimo'] ?? 0, 2, ',', '.') }}</td>
-                                    <td>{{ number_format($item['total'], 2, ',', '.') }}</td>
+                                    <th>Produto</th>
+                                    <th>Qtde</th>
+                                    <th>CST</th>
+                                    <th>CFOP</th>
+                                    <th>Valor Unitário</th>
+                                    <th>SubTotal</th>
+                                    <th>Desconto</th>
+                                    <th>Acrescimo</th>
+                                    <th>Total</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    @endcomponent
-                    <div class="mt-3 p-3 border rounded bg-light">
-                        <div class="row text-end">
-                            <div class="col-md-3 offset-md-6">
-                                <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
-                            </div>
-                            <div class="col-md-3 offset-md-6">
-                                <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
-                            </div>
+                            </thead>
+                            <tbody>
+                                @foreach ($itens as $item)
+                                    <tr>
+                                        <td>{{ $item['produto'] }}</td>
+                                        <td>{{ $item['quantidade'] }}</td>
+                                        <td>{{ $item['cst'] ?? '' }}</td>
+                                        <td>{{ $item['cfop'] ?? '' }}</td>
+                                        <td>{{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
+                                        <td>{{ number_format($item['subtotal'] ?? 0, 2, ',', '.') }}</td>
+                                        <td>{{ number_format($item['desconto'] ?? 0, 2, ',', '.') }}</td>
+                                        <td>{{ number_format($item['acrescimo'] ?? 0, 2, ',', '.') }}</td>
+                                        <td>{{ number_format($item['total'], 2, ',', '.') }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        @endcomponent
+                    @else
+                        <p class="m-3">Nenhum item adicionado.</p>
+                    @endif
+                </div>
+
+                <div class="p-3 border-top bg-light" style="background: white;">
+                    <div class="row text-end">
+                        <div class="col-md-3 offset-md-6">
+                            <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
+                        </div>
+                        <div class="col-md-3 offset-md-6">
+                            <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
                         </div>
                     </div>
-                @else
-                    <p>Nenhum item adicionado.</p>
-                @endif
+                </div>
             </div>
-        @elseif($aba == 'faturamento')
-            <div role="tabpanel" class="tab-pane active">
-                <p>Conteúdo de faturamento aqui...</p>
-            </div>
+@elseif($aba == 'faturamento')
+    <div x-data="{ forma: '' }" role="tabpanel" class="tab-pane active">
+        <div class="mb-3">
+            <label for="forma_pagamento_detalhada" class="form-label">Forma de Pagamento</label>
+            <select id="forma_pagamento_detalhada" x-model="forma" wire:model="forma_pagamento_detalhada" class="form-control">
+                <option value="">Selecione</option>
+                <option value="01">01 - Dinheiro</option>
+                <option value="02">02 - Cheque</option>
+                <option value="03">03 - Cartão de Crédito</option>
+                <option value="04">04 - Cartão de Débito</option>
+                <option value="15">15 - Boleto Bancário</option>
+                <option value="16">16 - Depósito Bancário</option>
+                <option value="17">17 - Pagamento Instantâneo (PIX)</option>
+                <option value="90">90 - Sem Pagamento</option>
+                <option value="99">99 - Outros</option>
+            </select>
+        </div>
+        <div x-show="forma === '03'" class="mb-3">
+            <label for="quantidade_parcelas" class="form-label">Quantidade de Parcelas</label>
+            <input type="number" id="quantidade_parcelas" wire:model.defer="quantidade_parcelas" class="form-control" min="1" />
+        </div>
+        <div x-show="forma === '03'" class="mb-3">
+            <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
+            <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao" class="form-control" />
+        </div>
+
+        <div x-show="forma === '04'" class="mb-3">
+            <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
+            <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao" class="form-control" />
+        </div>
+
+        <div x-show="forma === '15'" class="mb-3">
+            <label for="data_vencimento" class="form-label">Data de Vencimento</label>
+            <input type="date" id="data_vencimento" wire:model.defer="data_vencimento" class="form-control" />
+        </div>
+    </div>
         @elseif($aba == 'complementares')
             <div role="tabpanel" class="tab-pane active">
-                <p>Informações complementares aqui...</p>
+                <div class="mb-3">
+                    <label for="informacoes_complementares" class="form-label">Informações Complementares</label>
+                    <textarea
+                        id="informacoes_complementares"
+                        wire:model.defer="informacoes_complementares"
+                        class="form-control"
+                        rows="5"
+                        style="text-transform: uppercase;"
+                        oninput="this.value = this.value.toUpperCase();"
+                        placeholder="Digite informações complementares..."
+                    ></textarea>
+                </div>
             </div>
         @elseif($aba == 'referenciada')
             <div role="tabpanel" class="tab-pane active">
-                <p>NFe referenciada aqui...</p>
+                <div class="mb-3">
+                    <label for="nfe_referenciada" class="form-label">Chave da NFe Referenciada</label>
+                    <input
+                        type="text"
+                        id="nfe_referenciada"
+                        wire:model.defer="chave_nfe_referenciada"
+                        class="form-control"
+                        maxlength="44"
+                        oninput="this.value = this.value.replace(/\D/g, '').slice(0, 44)"
+                        placeholder="Digite a chave com até 44 dígitos"
+                    />
+                </div>
             </div>
         @endif
     </div>

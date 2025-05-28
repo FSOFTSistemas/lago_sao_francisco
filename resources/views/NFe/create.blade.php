@@ -3,11 +3,11 @@
 @section('title', 'Dashboard')
 
 @section('content_header')
-<h1>Dashboard</h1>
+    <h1>Dashboard</h1>
 @stop
 
 @section('content')
-@livewire('NFeNew')
+    @livewire('NFeNew')
 @stop
 
 @section('css')
@@ -15,5 +15,4 @@
 @stop
 
 @section('js')
-
 @stop
