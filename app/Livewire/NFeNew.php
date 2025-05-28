@@ -137,6 +137,28 @@ class NFeNew extends Component
         $this->modalProdutoAberto = false;
     }
 
+    public function getSubtotalNotaProperty()
+    {
+        return collect($this->itens)->sum('subtotal');
+    }
+
+    public function getDescontoNotaProperty()
+    {
+        return collect($this->itens)->sum('desconto');
+    }
+
+    public function getAcrescimoNotaProperty()
+    {
+        return collect($this->itens)->sum('acrescimo');
+    }
+
+    public function getTotalNotaProperty()
+    {
+        return collect($this->itens)->sum(function ($i) {
+            return ($i['subtotal'] ?? 0) - ($i['desconto'] ?? 0) + ($i['acrescimo'] ?? 0);
+        });
+    }
+
     public function render()
     {
         $produtosFiltrados = collect($this->produtos)

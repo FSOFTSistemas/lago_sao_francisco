@@ -128,18 +128,16 @@
                     <div class="mt-3 p-3 border rounded bg-light">
                         <div class="row text-end">
                             <div class="col-md-3 offset-md-6">
-                                <strong>Subtotal:</strong> R$ {{ number_format(collect($itens)->sum('subtotal'), 2, ',', '.') }}
+                                <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Descontos:</strong> R$ {{ number_format(collect($itens)->sum('desconto'), 2, ',', '.') }}
+                                <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
                             </div>
                             <div class="col-md-3 offset-md-6">
-                                <strong>Acréscimos:</strong> R$ {{ number_format(collect($itens)->sum('acrescimo'), 2, ',', '.') }}
+                                <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
                             </div>
                             <div class="col-md-3">
-                                <strong>Total da Nota:</strong>
-                                R$
-                                {{ number_format(collect($itens)->sum(fn($i) => $i['subtotal'] - $i['desconto'] + $i['acrescimo']), 2, ',', '.') }}
+                                <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
                             </div>
                         </div>
                     </div>
