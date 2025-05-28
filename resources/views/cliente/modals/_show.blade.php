@@ -7,16 +7,16 @@
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Nome/Razão Social:</strong> <span id="nomeRazaoSocial">{{$cliente->nome_razao_social}}</span></p>
-                <p><strong>Apelido/Nome Fantasia:</strong> <span id="apelidoNomeFantasia"></span>{{$cliente->apelido_nome_fantasia}}</p>
+                <p><strong>Nome/Razão Social:</strong> <span id="nomeRazaoSocial">{{$cliente->nome_razao_social ?? "Não informado"}}</span></p>
+                <p><strong>Apelido/Nome Fantasia:</strong> <span id="apelidoNomeFantasia"></span>{{$cliente->apelido_nome_fantasia ?? "Não informado"}}</p>
                 <p><strong>Telefone:</strong> <span id="telefone"></span>{{$cliente->telefone ?? " Não informado"}}</p>
                 <p><strong>Whatsapp:</strong> <span id="whatsapp"></span>{{$cliente->whatsapp ?? " Não informado"}}</p>
                 {!! $cliente->data_nascimento ? '<p><strong>Data de Nascimento:</strong> <span id="dataNascimento">' . \Illuminate\Support\Carbon::parse($cliente->data_nascimento)->format('d/m/Y') . '</span></p>' : '' !!}
 
-                <p><strong>Endereço:</strong> <span id="endereco"></span>{{$cliente->endereco->logradouro}}</p>
-                <p><strong>CPF/CNPJ:</strong> <span id="cpfCnpj"></span>{{$cliente->cpf_cnpj}}</p>
-                <p><strong>RG/Inscrição Estadual:</strong> <span id="rgIe"></span>{{$cliente->rg_ie}}</p>
-                <p><strong>Tipo:</strong> <span id="tipo"></span>{{$cliente->tipo}}</p>
+                <p><strong>Endereço:</strong> <span id="endereco"></span>{{$cliente->endereco->logradouro ?? "Não informado"}}</p>
+                <p><strong>CPF/CNPJ:</strong> <span id="cpfCnpj"></span>{{$cliente->cpf_cnpj ?? "Não informado"}}</p>
+                <p><strong>RG/Inscrição Estadual:</strong> <span id="rgIe"></span>{{$cliente->rg_ie ?? "Não informado"}}</p>
+                <p><strong>Tipo:</strong> <span id="tipo"></span>{{$cliente->tipo ?? "Não informado"}}</p>
             </div>
         </div>
     </div>
