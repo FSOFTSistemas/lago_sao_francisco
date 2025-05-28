@@ -47,6 +47,9 @@ class DatabaseSeeder extends Seeder
         $notaFiscalItens->usuarioId = $permissionUsuarios->usuario_id;
         $notaFiscalItens->run();
 
+        $quartos = new QuartosSeeder();
+        $quartos->run();
+
     }
 
 }
