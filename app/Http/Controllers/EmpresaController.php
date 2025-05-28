@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Empresa;
+use App\Models\EmpresaRT;
 use App\Models\Endereco;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +17,8 @@ class EmpresaController extends Controller
     {
         $enderecos = Endereco::all();
         $empresas = Empresa::all();
-        return view('empresa.index', compact('empresas', 'enderecos'));
+        $contadores = EmpresaRT::all();
+        return view('empresa.index', compact('empresas', 'enderecos', 'contadores'));
     }
 
 

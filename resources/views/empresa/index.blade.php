@@ -172,7 +172,7 @@
                                 <div class="card-body mt-3">
                                     <div class="form-group">
                                         <label>Nome:</label>
-                                        <input type="text" name="contador_nome" class="form-control">
+                                        <input type="text" name="contador_nome" class="form-control" value="$">
                                     </div>
                                     <div class="form-group">
                                         <label>CPF:</label>

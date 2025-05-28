@@ -13,13 +13,17 @@ return new class extends Migration
     {
         Schema::create('empresas', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('contador_id');
             $table->string('razao_social');
             $table->string('nome_fantasia')->nullable();
             $table->string('cnpj', 18)->nullable();
             $table->string('endereco_id')->nullable();
             $table->string('inscricao_estadual');
             $table->timestamps();
+
+            $table->foreign('contador_id')->references('id')->on('empresa_contadors');
         });
+
     }
 
     /**

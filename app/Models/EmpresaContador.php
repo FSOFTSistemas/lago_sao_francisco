@@ -15,11 +15,5 @@ class EmpresaContador extends Model
         'crc',
         'email',
         'telefone',
-        'empresa_id',
     ];
-
-    public function empresa(): BelongsTo
-    {
-        return $this->belongsTo(Empresa::class, 'empresa_id');
-    }
 }

@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('empresa_contadors', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('empresa_id');
             $table->string('cnpj')->nullable();
             $table->string('nome')->nullable();
             $table->string('crc')->nullable();
@@ -21,7 +20,6 @@ return new class extends Migration
             $table->string('telefone')->nullable();
             $table->timestamps();
 
-             $table->foreign('empresa_id')->references('id')->on('empresas')->constrained()->onDelete('cascade');
         });
     }
 

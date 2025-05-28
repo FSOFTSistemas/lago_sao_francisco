@@ -14,7 +14,8 @@ class EmpresaRTController extends Controller
      */
     public function index()
     {
-        //
+       $contadores = EmpresaRT::all();
+        
     }
 
     /**

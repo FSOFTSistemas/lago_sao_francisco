@@ -6,7 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class FormaPagamento extends Seeder
+class FormaPagamentoSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -54,6 +54,6 @@ class FormaPagamento extends Seeder
 
         DB::table('forma_pagamentos')->insert($formasPagamento);
 
-        $this->command->info('Formas de pagamento semeadas com sucesso.');
+        //$this->command->info('Formas de pagamento semeadas com sucesso.');
     }
 }

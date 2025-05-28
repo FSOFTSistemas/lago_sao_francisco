@@ -9,8 +9,11 @@ use App\Models\NotaFiscalItens;
 
 class NotaFiscalItensSeeder extends Seeder
 {
+    public $usuarioId;
+
     public function run(): void
     {
+        $usuarioId = $this->usuarioId;
         DB::table('ncms')->insert([
             ['ncm' => '00000000', 'descricao' => 'Produto genérico 1'],
             ['ncm' => '00000001', 'descricao' => 'Produto genérico 2'],
@@ -37,7 +40,7 @@ class NotaFiscalItensSeeder extends Seeder
             'cliente_id' => 1,
             'ncm_id' => 1,
             'cfop_id' => 1,
-            'usuario_id' => 1,
+            'usuario_id' => $usuarioId,
             'data' => now(),
             'empresa_id' => 1,
             'chave' => '12345678901234567890123456789012345678901234',
@@ -65,7 +68,7 @@ class NotaFiscalItensSeeder extends Seeder
             'cliente_id' => 1,
             'ncm_id' => 2,
             'cfop_id' => 2,
-            'usuario_id' => 1,
+            'usuario_id' => $usuarioId,
             'data' => now(),
             'empresa_id' => 1,
             'chave' => '98765432109876543210987654321098765432109876',
