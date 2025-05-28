@@ -20,6 +20,10 @@ class NFeNew extends Component
     public $tipo_nota = 'saida';
     public $finalidade;
     public $forma_pagamento;
+    public $cliente = ['id' => null, 'nome' => 'Consumidor'];
+    public $modalClienteAberto = false;
+    public $buscaCliente = '';
+    public $clientes = [];
 
     public $aba = 'itens';
 
@@ -137,5 +141,32 @@ class NFeNew extends Component
         return view('livewire.n-fe-new', [
             'produtos' => $produtosFiltrados,
         ]);
+    }
+
+    public function abrirModalCliente()
+    {
+        $this->modalClienteAberto = true;
+        $this->buscaCliente = '';
+        $this->clientes = Cliente::limit(20)->get()->toArray();
+    }
+    
+    public function fecharModalCliente()
+    {
+        $this->modalClienteAberto = false;
+    }
+    
+    public function selecionarCliente($id)
+    {
+        $cliente = Cliente::find($id);
+        if ($cliente) {
+            $this->cliente = ['id' => $cliente->id, 'nome_razao_social' => $cliente->nome_razao_social];
+        }
+        $this->fecharModalCliente();
+    }
+    
+    public function updatedBuscaCliente()
+    {
+        $this->clientes = Cliente::where('nome', 'like', '%' . $this->buscaCliente . '%')
+            ->limit(20)->get()->toArray();
     }
 }

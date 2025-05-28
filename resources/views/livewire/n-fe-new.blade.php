@@ -7,6 +7,12 @@
                 <input type="text" id="empresa" wire:model="empresa" disabled class="form-control" />
             </div>
             <div class="col-md-3">
+                <label for="cliente" class="form-label">Cliente</label>
+                <input type="text" id="cliente" wire:model="cliente.nome_razao_social" readonly class="form-control"
+                       placeholder="Clique para selecionar" style="cursor: pointer;"
+                       wire:click="abrirModalCliente" />
+            </div>
+            <div class="col-md-3">
                 <label for="numero" class="form-label">Número da Nota</label>
                 <input type="text" id="numero" wire:model="numero" class="form-control fw-bold text-danger fs-3" />
             </div>
@@ -249,6 +255,38 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" wire:click="fecharModalProduto" class="btn btn-secondary">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para selecionar cliente -->
+    <div class="modal fade @if($modalClienteAberto) show d-block @endif" tabindex="-1"
+        style="@if($modalClienteAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif" aria-modal="true"
+        role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Cliente</h5>
+                    <button type="button" class="btn-close" wire:click="fecharModalCliente"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" wire:model="buscaCliente" placeholder="Buscar cliente..."
+                        class="form-control mb-3" />
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @foreach($clientes as $cliente)
+                            <div wire:click="selecionarCliente('{{ $cliente['id'] }}')" class="p-2 border-bottom"
+                                style="cursor:pointer;">
+                                {{ $cliente['nome_razao_social'] }}
+                            </div>
+                        @endforeach
+                        @if(count($clientes) === 0)
+                            <p>Nenhum cliente encontrado.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" wire:click="fecharModalCliente" class="btn btn-secondary">Fechar</button>
                 </div>
             </div>
         </div>
