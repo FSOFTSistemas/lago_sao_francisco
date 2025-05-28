@@ -30,6 +30,7 @@ return new class extends Migration
             $table->unsignedBigInteger('empresa_id');
             $table->unsignedBigInteger('forma_pagamento_id')->nullable();
             $table->unsignedInteger('numero_pessoas_buffet')->nullable();
+            $table->unsignedBigInteger('cardapio_id')->nullable();
 
             $table->timestamps();
 

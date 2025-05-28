@@ -37,7 +37,7 @@ class AluguelController extends Controller
 
     public function store(Request $request)
 {
-    dd($request);
+    // dd($request);
     $validated = $request->validate([
         'data_inicio' => 'required|date',
         'data_fim' => 'required|date|after_or_equal:data_inicio',
@@ -55,6 +55,8 @@ class AluguelController extends Controller
         'status' => 'nullable|string',
         'numero_pessoas_buffet' => 'nullable|integer|min:1',
         'cardapio_id' => 'nullable|exists:cardapios,id',
+        'buffet_itens' => 'nullable|array',
+        'buffet_itens.*' => 'exists:buffet_items,id',
     ]);
 
     $validated['empresa_id'] = Auth::user()->empresa_id;
@@ -65,7 +67,7 @@ class AluguelController extends Controller
     // Relacionar itens adicionais
     $aluguel->adicionais()->sync($request->input('itens', []));
 
-    // Relacionar buffet itens simples
+    // Salvar os itens de buffet selecionados no relacionamento many-to-many
     $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
 
     // Salvar os itens selecionados por categoria (pivot aluguel_categoria_item)
@@ -80,6 +82,8 @@ class AluguelController extends Controller
             ]);
         }
     }
+     // Salvar os itens de buffet selecionados no relacionamento many-to-many
+    $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
 
     return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
 }

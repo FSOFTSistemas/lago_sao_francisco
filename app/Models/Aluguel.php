@@ -48,10 +48,11 @@ class Aluguel extends Model
     {
         return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
     }
-    public function buffetItens()
-    {
-        return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item');
-    }
+   public function buffetItens()
+{
+    return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item', 'aluguel_id', 'buffet_item_id');
+}
+
     public function cardapio()
 {
     return $this->belongsTo(Cardapio::class);

@@ -21,7 +21,7 @@ class AluguelCategoriaItem extends Model
 
     public function categoria()
     {
-        return $this->belongsTo(CardapioCategoriaz::class, 'cardapio_categoria_id');
+        return $this->belongsTo(CardapioCategoria::class, 'cardapio_categoria_id');
     }
 
     public function item()

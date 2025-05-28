@@ -21,7 +21,7 @@ class CardapioCategoria extends Model
 
     public function categoria()
     {
-        return $this->belongsTo(Categoria::class); // Pode ser BuffetCategoria ou Categoria
+        return $this->belongsTo(CategoriasCardapio::class); // Pode ser BuffetCategoria ou Categoria
     }
 
     public function itens()
