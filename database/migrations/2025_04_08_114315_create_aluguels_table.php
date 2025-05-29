@@ -20,7 +20,7 @@ return new class extends Migration
             $table->decimal('total', 10, 2)->nullable();
             $table->decimal('desconto', 10, 2)->nullable();
             $table->decimal('acrescimo', 10, 2)->nullable();
-            $table->integer('parcelas')->default(1)->nullable();
+            $table->integer('parcelas')->nullable();
             $table->date('vencimento')->nullable();
             $table->string('contrato')->nullable();
             $table->enum('status', ['pendente', 'pago', 'cancelado'])->default('pendente');
@@ -34,7 +34,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            //$table->foreignId('cardapio_id')->nullable()->references('id')->on('cardapios')->onDelete('set null');
+            $table->foreign('cardapio_id')->references('id')->on('cardapios')->onDelete('set null');
             $table->foreign('espaco_id')->references('id')->on('espacos')->onDelete('cascade');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
