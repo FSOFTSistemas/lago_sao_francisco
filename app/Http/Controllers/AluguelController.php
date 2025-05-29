@@ -37,48 +37,54 @@ class AluguelController extends Controller
 
   public function store(Request $request)
 {
-    $validated = $request->validate([
-        'data_inicio' => 'required|date',
-        'data_fim' => 'required|date|after_or_equal:data_inicio',
-        'cliente_id' => 'required|exists:clientes,id',
-        'espaco_id' => 'required|exists:espacos,id',
-        'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
-        'observacoes' => 'nullable|string',
-        'subtotal' => 'nullable|numeric',
-        'total' => 'nullable|numeric',
-        'acrescimo' => 'nullable|numeric',
-        'desconto' => 'nullable|numeric',
-        'parcelas' => 'nullable|integer',
-        'vencimento' => 'nullable|date',
-        'contrato' => 'nullable|string',
-        'status' => 'nullable|string',
-        'numero_pessoas_buffet' => 'nullable|integer|min:1',
-        'cardapio_id' => 'nullable|exists:cardapios,id',
-        'categorias' => 'nullable|array',
-        'categorias.*.itens' => 'nullable|array',
-        'categorias.*.itens.*' => 'exists:buffet_items,id',
-    ]);
+    try {
 
-    $validated['empresa_id'] = Auth::user()->empresa_id;
-
-    // Criação do aluguel
-    $aluguel = Aluguel::create($validated);
-
-    // Relacionar itens adicionais
-    $aluguel->adicionais()->sync($request->input('itens', []));
-
-    // Salvar os itens de buffet agrupados por categoria
-    foreach ($request->input('categorias', []) as $categoriaId => $dados) {
-        foreach ($dados['itens'] ?? [] as $itemId) {
-            AluguelCategoriaItem::create([
-                'aluguel_id' => $aluguel->id,
-                'cardapio_categoria_id' => $categoriaId,
-                'buffet_item_id' => $itemId,
-            ]);
+        $validated = $request->validate([
+            'data_inicio' => 'required|date',
+            'data_fim' => 'required|date|after_or_equal:data_inicio',
+            'cliente_id' => 'required|exists:clientes,id',
+            'espaco_id' => 'required|exists:espacos,id',
+            'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
+            'observacoes' => 'nullable|string',
+            'subtotal' => 'nullable|numeric',
+            'total' => 'nullable|numeric',
+            'acrescimo' => 'nullable|numeric',
+            'desconto' => 'nullable|numeric',
+            'parcelas' => 'nullable|integer',
+            'vencimento' => 'nullable|date',
+            'contrato' => 'nullable|string',
+            'status' => 'nullable|string',
+            'numero_pessoas_buffet' => 'nullable|integer|min:1',
+            'cardapio_id' => 'nullable|exists:cardapios,id',
+            'categorias' => 'nullable|array',
+            'categorias.*.itens' => 'nullable|array',
+            'categorias.*.itens.*' => 'exists:buffet_items,id',
+        ]);
+    
+        $validated['empresa_id'] = Auth::user()->empresa_id;
+    
+        // Criação do aluguel
+        $aluguel = Aluguel::create($validated);
+    
+        // Relacionar itens adicionais
+        $aluguel->adicionais()->sync($request->input('itens', []));
+    
+        // Salvar os itens de buffet agrupados por categoria
+        foreach ($request->input('categorias', []) as $categoriaId => $dados) {
+            foreach ($dados['itens'] ?? [] as $itemId) {
+                AluguelCategoriaItem::create([
+                    'aluguel_id' => $aluguel->id,
+                    'cardapio_categoria_id' => $categoriaId,
+                    'buffet_item_id' => $itemId,
+                ]);
+            }
         }
+    
+        return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
+    } catch( \Exception $e) {
+        return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel');
+        dd($e->getMessage());
     }
-
-    return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
 }
 
 
@@ -114,6 +120,7 @@ class AluguelController extends Controller
 
     public function update(Request $request, Aluguel $aluguel)
 {
+    try {
     $validated = $request->validate([
         'data_inicio' => 'required|date',
         'data_fim' => 'required|date|after_or_equal:data_inicio',
@@ -162,12 +169,19 @@ class AluguelController extends Controller
     $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
 
     return redirect()->route('aluguel.index')->with('success', 'Aluguel atualizado com sucesso!');
+    } catch(\Exception $e) {
+        return redirect()->back()->with('error', 'Erro ao Atualizar Aluguel');
+    }
 }
 
 
     public function destroy(Aluguel $aluguel)
     {
+        try{
         $aluguel->delete();
         return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
+        } catch(\Exception $e) {
+            return redirect()->back()->with('error', 'erro ao Deletar Aluguel');
+        }
     }
 }
