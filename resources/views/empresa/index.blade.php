@@ -148,10 +148,6 @@
                                         <input type="text" name="resp_tecnico_cnpj" class="form-control" value="{{ old('resp_tecnico_cnpj', $empresa->responsavelTecnico->cnpj) }}">
                                     </div>
                                     <div class="form-group">
-                                        <label>CPF:</label>
-                                        <input type="text" name="resp_tecnico_cpf" class="form-control" value="{{ old('resp_tecnico_cpf', $empresa->responsavelTecnico->cpf) }}">
-                                    </div>
-                                    <div class="form-group">
                                         <label>Telefone:</label>
                                         <input type="text" name="resp_tecnico_telefone" class="form-control" value="{{ old('resp_tecnico_telefone', $empresa->responsavelTecnico->telefone) }}">
                                     </div>
@@ -178,10 +174,6 @@
                                     <div class="form-group">
                                         <label>Nome:</label>
                                         <input type="text" name="contador_nome" class="form-control" value="{{ old('contador_nome', $empresa->contador->nome ?? '') }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>CPF:</label>
-                                        <input type="text" name="contador_cpf" class="form-control" value="{{ old('contador_cpf', $empresa->contador->cpf ?? '') }}">
                                     </div>
                                     <div class="form-group">
                                         <label>CNPJ:</label>
