@@ -8,11 +8,20 @@
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
+<div class="row mb-3">
+    <div class="col d-flex justify-content-start">
+        <a href="{{ route('preferencias') }}" class="btn btn-success new">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="col d-flex justify-content-end">
       <button class="btn btn-success new" data-toggle="modal" data-target="#createEspacoModal">
           <i class="fas fa-plus"></i> Novo Espaço
       </button>
     </div>
+</div>
+    
 
     @component('components.data-table', [
         'responsive' => [
