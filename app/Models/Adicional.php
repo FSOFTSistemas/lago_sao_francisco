@@ -11,17 +11,11 @@ class Adicional extends Model
 
     protected $fillable = [
         'descricao',
-        'empresa_id',
         'valor',
     ];
 
     public function alugueis()
     {
         return $this->belongsToMany(Aluguel::class, 'adicionais_aluguel');
-    }
-
-    public function empresa()
-    {
-        return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 }

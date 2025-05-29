@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('adicionals', function (Blueprint $table) {
         $table->id();
         $table->string('descricao');
-        $table->foreignId('empresa_id')->constrained()->onDelete('cascade');
         $table->decimal('valor', 10, 2);
         $table->timestamps();
     });
