@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Aluguel extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'data_inicio',
         'data_fim',
@@ -28,35 +29,56 @@ class Aluguel extends Model
         'numero_pessoas_buffet',
         'cardapio_id'
     ];
+
+    // === Relacionamentos diretos ===
+
     public function cliente()
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
+        return $this->belongsTo(Cliente::class);
     }
+
     public function empresa()
     {
-        return $this->belongsTo(Empresa::class, 'empresa_id');
+        return $this->belongsTo(Empresa::class);
     }
+
     public function formaPagamento()
     {
-        return $this->belongsTo(FormaPagamento::class, 'forma_pagamento_id');
+        return $this->belongsTo(FormaPagamento::class);
     }
+
     public function espaco()
     {
-        return $this->belongsTo(Espaco::class, 'espaco_id');
+        return $this->belongsTo(Espaco::class);
     }
+
+    public function cardapio()
+    {
+        return $this->belongsTo(Cardapio::class);
+    }
+
+    // === Relacionamentos Many-to-Many ===
+
     public function adicionais()
     {
         return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
     }
-   public function buffetItens()
-{
-    return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item', 'aluguel_id', 'buffet_item_id');
-}
 
-    public function cardapio()
-{
-    return $this->belongsTo(Cardapio::class);
-}
+    public function buffetItens()
+    {
+        return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item', 'aluguel_id', 'buffet_item_id');
+    }
+
+    // === Relacionamento com itens agrupados por categoria ===
+
+    public function categoriaItens()
+    {
+        return $this->hasMany(AluguelCategoriaItem::class);
+    }
+    
+
+    // === Escopos globais ===
+
     protected static function booted()
     {
         static::addGlobalScope(new EmpresaScope);
