@@ -8,7 +8,7 @@
 @endsection
 
 @section('content')
-<h5>Configurações de Hotel</h5>
+<h5>Configurações de Hotel / Cadastro</h5>
     <div class="row">
         <!-- Formas de Pagamento -->
         <div class="col-md-3">
@@ -33,7 +33,7 @@
             <a href="{{ route('quarto.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-bed fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Quartos</h5>
+                    <h5 class="mt-3">Quartos</h5>
                 </div>
             </a>
         </div>
@@ -42,19 +42,19 @@
             <a href="{{ route('categoria.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-tag fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Categorias Quarto</h5>
+                    <h5 class="mt-3">Categorias Quarto</h5>
                 </div>
             </a>
         </div>
     </div>
-    <h5>Configurações de Eventos</h5>
+    <h5>Configurações de Eventos / Cadastro</h5>
     <div class="row">
          <!-- Cadastro de Espaços -->
         <div class="col-md-3">
             <a href="{{ route('espaco.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-campground fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Espaços</h5>
+                    <h5 class="mt-3">Espaços</h5>
                 </div>
             </a>
         </div>
@@ -62,7 +62,7 @@
             <a href="{{ route('buffet.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-utensils fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Itens Buffet</h5>
+                    <h5 class="mt-3">Itens Buffet</h5>
                 </div>
             </a>
         </div>
@@ -70,7 +70,7 @@
             <a href="{{ route('cardapios.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-book-open fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Cardapios Buffet</h5>
+                    <h5 class="mt-3">Cardapios Buffet</h5>
                 </div>
             </a>
         </div>
@@ -78,7 +78,7 @@
             <a href="{{ route('categoriasCardapio.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Cadastro de Categorias do Cardapio</h5>
+                    <h5 class="mt-3">Categorias do Cardapio</h5>
                 </div>
             </a>
         </div>
