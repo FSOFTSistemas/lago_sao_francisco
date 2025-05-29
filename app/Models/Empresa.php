@@ -17,11 +17,17 @@ class Empresa extends Model
         'endereco',
         'inscricao_estadual',
         'contador_id',
+        'responsavel_tecnico_id'
     ];
 
     public function contador(): BelongsTo
     {
         return $this->belongsTo(EmpresaContador::class, 'contador_id');
+    }
+
+    public function responsavelTecnico(): BelongsTo
+    {
+        return $this->belongsTo(EmpresaRT::class, 'responsavel_tecnico_id');
     }
 
 }
