@@ -114,7 +114,7 @@
                                        <input type="date" id="map_end_date" class="form-control">
                                    </div>
                                    <div class="col-md-4 align-self-end">
-                                       <button type="button" id="filter_button" class="btn btn-primary">Atualizar Mapa</button> {{-- type="button" para não submeter o form principal --}}
+                                       <button type="button" id="filter_button" class="btn btn-primary">Atualizar Mapa</button> 
                                    </div>
                                </div>
     
@@ -125,12 +125,10 @@
     
                                <div id="selection_feedback" class="mt-2 text-success font-weight-bold"></div>
     
-                               <!-- Campos Hidden para o formulário principal (serão preenchidos pelo JS do mapa) -->
-                               {{-- Use os nomes corretos que seu backend espera para data_inicio e data_fim --}}
                                <input type="hidden" id="data_inicio" name="data_inicio" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
                                <input type="hidden" id="data_fim" name="data_fim" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
                                {{-- Adicione um campo hidden para espaco_id se necessário --}}
-                               {{-- <input type="hidden" id="espaco_id" name="espaco_id" value="{{ old('espaco_id', $aluguel->espaco_id ?? '') }}"> --}}
+                                <input type="hidden" id="espaco_id_hidden" name="espaco_id" value="{{ old("espaco_id", $aluguel->espaco_id ?? "") }}">
     
                            </div>
                            <!-- /.card-body -->
@@ -149,36 +147,8 @@
                             <div class="col-md-6">
                                 <textarea class="form-control" name="observacoes" rows="3">{{ old('observacoes', $tarifa->observacoes ?? '') }}</textarea>
                             </div>
-                        </div>
-
-                       
-
-             
-          
-{{--    
-                <!-- Campo de itens extras-->
-                <div class="form-group row mb-3">
-                    <label for="itens" class="col-md-3 label-control">Itens Adicionais:</label>
-                    <div class="col-md-6">
-                        <select class="form-control select2" id="itens" name="itens[]" multiple="multiple">
-                            @php
-                                $selecteditens = isset($aluguel) ? $aluguel->adicionais->pluck('id')->toArray() : [];
-                            @endphp
-                            @foreach ($itens as $adicional)
-                                <option value="{{ $adicional->id }}"
-                                    {{ in_array($adicional->id, $selecteditens) ? 'selected' : '' }}>
-                                    {{ $adicional->nome }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div> --}}
-
-                   
-
-                   
-                  
-                  
+                        </div>           
+                                  
                 </div>
 
 
@@ -208,26 +178,6 @@
                         <!-- As categorias e itens serão carregados aqui via JavaScript -->
                     </div>
 
-
-                    {{-- <div class="form-group row">
-                        <label class="col-md-3 label-control">Itens de Buffet:</label>
-                        <div class="col">
-                            @foreach ($buffetItens as $item)
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="buffet_itens[]" value="{{ $item->id }}"
-                                            class="form-check-input buffet-item"
-                                            data-valor="{{ $item->valor_unitario }}"
-                                            {{ isset($aluguel) && $aluguel->buffetItens->contains($item->id) ? 'checked' : '' }}>
-                                        <label class="form-check-label">
-                                            {{ $item->nome }} - R$ {{ number_format($item->valor_unitario, 2, ',', '.') }}
-                                        </label>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div> --}}
-
                     <div class="form-group row">
                         <label class="col-md-3 label-control">Total Buffet Estimado:</label>
                         <div class="col-md-3">
@@ -236,10 +186,10 @@
                     </div>
                 </div>
                 
-                {{--Aba de Parceiros--}}
+                {{--Aba 3: Parceiros--}}
                 <div class="tab-pane fade" id="tab-parceiro">
                 </div>
-                {{--Aba de Pagamento--}}
+                {{--Aba 4: Pagamento--}}
                 <div class="tab-pane fade" id="tab-pagamento">
                 </div>
             </div>
@@ -667,7 +617,5 @@
          padding: 0.3rem 0.1rem;
      }
 }
-
-
 
 </style>

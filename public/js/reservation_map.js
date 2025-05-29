@@ -127,7 +127,7 @@ function handleDateClick(event) {
         resetSelection();
     }
 
-    selectedSpaceId = clickedSpaceId;
+    selectedSpaceId = clickedSpaceId; // Atualiza o ID do espaço selecionado
 
     if (!isSelecting) {
         selectedStartDate = clickedDate;
@@ -157,14 +157,15 @@ function handleDateClick(event) {
                 resetSelection();
             } else {
                 updateCellStyles();
-                updateHiddenFields(selectedStartDate, selectedEndDate);
-                
-                // **NOVO: Adiciona feedback visual**
+                // **ATUALIZADO: Passa selectedSpaceId para updateHiddenFields**
+                updateHiddenFields(selectedStartDate, selectedEndDate, selectedSpaceId);
+
+                // Adiciona feedback visual
                 const spaceRow = document.querySelector(`tr[data-space-id="${selectedSpaceId}"]`);
                 const spaceName = spaceRow ? spaceRow.dataset.spaceName : `Espaço ID ${selectedSpaceId}`;
                 const feedbackMsg = `Período selecionado: ${formatDateBR(selectedStartDate)} a ${formatDateBR(selectedEndDate)} para ${spaceName}.`;
                 updateSelectionFeedback(feedbackMsg);
-                
+
                 console.log(`Intervalo selecionado: ${selectedStartDate} a ${selectedEndDate} para Espaço ID: ${selectedSpaceId}`);
             }
         }
@@ -247,16 +248,22 @@ function resetSelection() {
     selectedEndDate = null;
     selectedSpaceId = null;
     isSelecting = false;
-    updateHiddenFields('', '');
+    // **ATUALIZADO: Passa null para spaceId ao resetar**
+    updateHiddenFields('', '', null);
     updateCellStyles();
-    updateSelectionFeedback(); // **NOVO: Limpa feedback visual**
+    updateSelectionFeedback(); // Limpa feedback visual
     console.log("Seleção resetada.");
 }
 
-// Função para atualizar os campos hidden
-function updateHiddenFields(startDate, endDate) {
+// **ATUALIZADO: Função para atualizar os campos hidden (inclui spaceId)**
+function updateHiddenFields(startDate, endDate, spaceId) {
     document.getElementById('data_inicio').value = startDate;
     document.getElementById('data_fim').value = endDate;
+    // Atualiza o campo hidden do espaço
+    const spaceIdInput = document.getElementById('espaco_id_hidden');
+    if (spaceIdInput) {
+        spaceIdInput.value = spaceId !== null ? spaceId : ''; // Define como string vazia se null
+    }
 }
 
 // Função de inicialização
@@ -285,7 +292,7 @@ async function initMap() {
             return;
         }
         resetSelection(); // Reseta seleção ao atualizar o mapa
-        updateSelectionFeedback(); // **NOVO: Limpa feedback ao atualizar**
+        updateSelectionFeedback(); // Limpa feedback ao atualizar
         const container = document.getElementById('reservation_map_container');
         container.innerHTML = '<p>Atualizando mapa...</p>';
         const newData = await fetchAvailability(startDate, endDate);
