@@ -47,7 +47,9 @@
             </a>
         </div>
     </div>
+    <br>
     <h5>Configurações de Eventos / Cadastro</h5>
+    <br>
     <div class="row">
          <!-- Cadastro de Espaços -->
         <div class="col-md-3">
