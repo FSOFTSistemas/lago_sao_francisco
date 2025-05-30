@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('itens_do_cardapios', function (Blueprint $table) {
             $table->id();
+            $table->string('nome_item');
+            $table->string('tipo_item');
             $table->timestamps();
         });
     }
