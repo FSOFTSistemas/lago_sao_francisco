@@ -61,7 +61,7 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ route('itens-do-cardapio.index')}}" class="card card-opcao text-center">
+            <a href="{{ route('itemCardapio.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-utensils fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Itens Buffet</h5>

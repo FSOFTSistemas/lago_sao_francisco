@@ -149,4 +149,4 @@ Route::resource('empresaContador', EmpresaContadorController::class)->middleware
 // Preferências da Empresa
 Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->middleware('permission:gerenciar empresa');
 
-Route::resource('itens-do-cardapio', ItensDoCardapioController::class);
+Route::resource('itemCardapio', ItensDoCardapioController::class);

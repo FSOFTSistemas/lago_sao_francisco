@@ -16,52 +16,53 @@ class ItensDoCardapioController extends Controller
         return view('itemCardapio.index', compact('itens'));
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 'nome_item' => 'string|required',
                 'tipo_item' => 'string|required'
             ]);
+            
             ItensDoCardapio::create($request->all());
             return redirect()->route('itemCardapio.index')->with('success', 'Item Cadastrado com Sucesso');
-        } catch(\Exception $e){
-            return redirect()->back()->with('error', 'Erro ao Cadastrar Item');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao Cadastrar Item')->withInput();
         }
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ItensDoCardapio $itensDoCardapio)
+    public function update(Request $request, $id)
     {
-        try{
-            $itensDoCardapio = ItensDoCardapio::findOrFail($itensDoCardapio->id);
+        try {
             $validated = $request->validate([
                 'nome_item' => 'string|required',
                 'tipo_item' => 'string|required'
             ]);
-            $itensDoCardapio->update($validated);
+            $item = ItensDoCardapio::find($id);
+            $item->update($validated);
             return redirect()->route('itemCardapio.index')->with('success', 'Item Atualizado com Sucesso');
-        } catch(\Exception $e){
-            return redirect()->back()->with('error', 'Erro ao Atualizar Item');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao Atualizar Item')->withInput();
         }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ItensDoCardapio $itensDoCardapio)
+    public function destroy($id)
     {
-        try{
-            $itensDoCardapio = ItensDoCardapio::finOrFail($itensDoCardapio->id);
-            $itensDoCardapio->delete();
+        try {
+            $item = ItensDoCardapio::find($id);
+            $item->delete();
+
             return redirect()->route('itemCardapio.index')->with('success', 'Item deletado com sucesso');
-        } catch(\Exception $e){
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao deletar item');
         }
     }

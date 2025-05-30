@@ -12,7 +12,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <form action="{{ route('itens-do-cardapio.destroy', $item->id) }}" method="POST">
+                <form action="{{ route('itemCardapio.destroy', $item->id) }}" method="POST">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">Excluir</button>
