@@ -13,9 +13,20 @@ return new class extends Migration
     {
         Schema::create('categorias_de_itens_cardapios', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('sessao_cardapio_id');
+            $table->unsignedBigInteger('refeicao_principal_id');
+            $table->string('nome_categoria_item');
+            $table->integer('numero_escolhas_permitidas');
+            $table->boolean('eh_grupo_escolha_exclusiva');
+            $table->integer('ordem_exibicao');
             $table->timestamps();
+
+            $table->foreign('sessao_cardapio_id')->references('id')->on('secoes_cardapios');
+            $table->foreign('refeicao_principal_id')->references('id')->on('refeicao_principals');
         });
     }
+
+
 
     /**
      * Reverse the migrations.

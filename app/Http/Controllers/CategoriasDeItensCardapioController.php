@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\CategoriasDeItensCardapio;
+use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use View;
 
 class CategoriasDeItensCardapioController extends Controller
 {
@@ -12,7 +15,8 @@ class CategoriasDeItensCardapioController extends Controller
      */
     public function index()
     {
-        //
+        $categoriasDeItens= CategoriasDeItensCardapio::all();
+        return view('categorias_de_itens_cardapio.index', compact('categoriasDeItens'));
     }
 
     /**
@@ -28,7 +32,22 @@ class CategoriasDeItensCardapioController extends Controller
      */
     public function store(Request $request)
     {
-        //
+      try {
+            $validated = $request->validate([
+                'sessao_cardapio_id' => 'required|exists:secoes_cardapios,id',
+                'refeicao_principal_id' => 'required|exists:refeicao_principals,id',
+                'nome_categoria_item' => 'required|string|max:255',
+                'numero_escolhas_permitidas' => 'required|integer',
+                'eh_grupo_escolha_exclusiva' => 'required|boolean',
+                'ordem_exibicao' => 'required|integer',
+            ]);
+
+            $categoria = CategoriasDeItensCardapio::create($validated);
+
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio criado com sucesso');
+        } catch (Exception $e) {
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao criar categoria de itens do cardapio');
+        }
     }
 
     /**
@@ -50,16 +69,44 @@ class CategoriasDeItensCardapioController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, CategoriasDeItensCardapio $categoriasDeItensCardapio)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $categoria = CategoriasDeItensCardapio::findOrFail($id);
+
+            $validated = $request->validate([
+                'sessao_cardapio_id' => 'sometimes|required|exists:secoes_cardapios,id',
+                'refeicao_principal_id' => 'sometimes|required|exists:refeicao_principals,id',
+                'nome_categoria_item' => 'sometimes|required|string|max:255',
+                'numero_escolhas_permitidas' => 'sometimes|required|integer',
+                'eh_grupo_escolha_exclusiva' => 'sometimes|required|boolean',
+                'ordem_exibicao' => 'sometimes|required|integer',
+            ]);
+
+            $categoria->update($validated);
+
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio atualizado com sucesso');
+        } catch (ModelNotFoundException $e) {
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+        } catch (Exception $e) {
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao atualizar categoria de itens do cardapio');
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(CategoriasDeItensCardapio $categoriasDeItensCardapio)
+    public function destroy($id)
     {
-        //
+       try {
+            $categoria = CategoriasDeItensCardapio::findOrFail($id);
+            $categoria->delete();
+
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio deletado com sucesso');
+        } catch (ModelNotFoundException $e) {
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+        } catch (Exception $e) {
+            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao deletar categoria de itens do cardapio');
+        }
     }
 }

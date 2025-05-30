@@ -2,9 +2,26 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CategoriasDeItensCardapio extends Model
 {
-    //
+    use HasFactory;
+    protected $fillable = [
+        'sessao_cardapio_id',
+        'refeicao_principal_id',
+        'nome_categoria_item',
+        'numero_escolhas_permitidas',
+        'eh_grupo_escolha_exclusiva',
+        'ordem_exibicao',   
+    ];
+
+    public function secoesCardapio(){
+        return $this->belongsTo(SecoesCardapio::class, 'sessao_cardapio_id');
+    }
+
+    public function refeicaoPrincipal(){
+        return $this->belongsTo(SecoesCardapio::class, 'refeicao_principal_id');
+    }
 }
