@@ -13,7 +13,7 @@
     @if(isset($aluguel))
         @method('PUT')
     @endif
-
+ 
     <div class="card">
         <div class="card-body mt-3">
             <ul class="nav nav-tabs" id="aluguelTabs" role="tablist">
