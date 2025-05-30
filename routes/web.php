@@ -25,6 +25,7 @@ use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
+use App\Http\Controllers\ItensDoCardapioController;
 use App\Http\Controllers\MapaQuartoController;
 use App\Http\Controllers\MapaReservaController;
 use App\Http\Controllers\NotaFiscalController;
@@ -147,3 +148,5 @@ Route::resource('empresaContador', EmpresaContadorController::class)->middleware
 
 // Preferências da Empresa
 Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->middleware('permission:gerenciar empresa');
+
+Route::resource('itens-do-cardapio', ItensDoCardapioController::class);

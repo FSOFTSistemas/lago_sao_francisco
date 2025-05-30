@@ -12,8 +12,8 @@ class ItensDoCardapioController extends Controller
      */
     public function index()
     {
-        $itensDoCardapio = ItensDoCardapio::all();
-        return view('itensDoCardapio.index', compact('itensDoCardapio'));
+        $itens = ItensDoCardapio::all();
+        return view('itemCardapio.index', compact('itens'));
     }
 
 
@@ -28,7 +28,7 @@ class ItensDoCardapioController extends Controller
                 'tipo_item' => 'string|required'
             ]);
             ItensDoCardapio::create($request->all());
-            return redirect()->route('itensDoCardapio.index')->with('success', 'Item Cadastrado com Sucesso');
+            return redirect()->route('itemCardapio.index')->with('success', 'Item Cadastrado com Sucesso');
         } catch(\Exception $e){
             return redirect()->back()->with('error', 'Erro ao Cadastrar Item');
         }
@@ -46,7 +46,7 @@ class ItensDoCardapioController extends Controller
                 'tipo_item' => 'string|required'
             ]);
             $itensDoCardapio->update($validated);
-            return redirect()->route('itensDoCardapio.index')->with('success', 'Item Atualizado com Sucesso');
+            return redirect()->route('itemCardapio.index')->with('success', 'Item Atualizado com Sucesso');
         } catch(\Exception $e){
             return redirect()->back()->with('error', 'Erro ao Atualizar Item');
         }
@@ -60,7 +60,7 @@ class ItensDoCardapioController extends Controller
         try{
             $itensDoCardapio = ItensDoCardapio::finOrFail($itensDoCardapio->id);
             $itensDoCardapio->delete();
-            return redirect()->route('itensDoCardapio.index')->with('success', 'Item deletado com sucesso');
+            return redirect()->route('itemCardapio.index')->with('success', 'Item deletado com sucesso');
         } catch(\Exception $e){
             return redirect()->back()->with('error', 'Erro ao deletar item');
         }

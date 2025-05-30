@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\CategoriasCardapio;
+use App\Models\CategoriasDeItensCardapio;
+use App\Models\ItensDoCardapio;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -22,7 +24,7 @@ class CategoriaCardapioSeeder extends Seeder
             'Canapés'
         ];
         foreach ($categorias as $categoria) {
-            CategoriasCardapio::firstOrCreate(['nome' => $categoria]);
+            CategoriasDeItensCardapio::firstOrCreate(['nome' => $categoria]);
         }
     }
 }

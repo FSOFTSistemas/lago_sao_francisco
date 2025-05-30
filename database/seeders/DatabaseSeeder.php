@@ -50,8 +50,11 @@ class DatabaseSeeder extends Seeder
         $quartos = new QuartosSeeder();
         $quartos->run();
 
-        $categoriasCardapio = new CategoriaCardapioSeeder();
-        $categoriasCardapio->run();
+        // $categoriasCardapio = new CategoriaCardapioSeeder();
+        // $categoriasCardapio->run();
+
+        $itensCardapio = new ItensCardapioSeeder();
+        $itensCardapio->run();
 
     }
 

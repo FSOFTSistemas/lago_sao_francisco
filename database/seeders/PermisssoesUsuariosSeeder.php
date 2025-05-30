@@ -37,6 +37,7 @@ class PermisssoesUsuariosSeeder extends Seeder
             'gerenciar fornecedor',
             'gerenciar plano de conta',
             'gerenciar produto',
+            'gerenciar cardapio'
         ];
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
