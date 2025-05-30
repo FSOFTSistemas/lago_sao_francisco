@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('refeicao_principals', function (Blueprint $table) {
             $table->id();
+            $table->string('NomeOpcaoRefeicao');
+            $table->decimal('PrecoPorPessoa', 10, 2)->default(0);
+            $table->text('DescricaoOpcaoRefeicao')->nullable();
+            $table->unsignedBigInteger('CardapioID');
+            $table->foreign('CardapioID')->references('id')->on('cardapios')->onDelete('cascade');
             $table->timestamps();
         });
     }
