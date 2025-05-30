@@ -4,62 +4,104 @@ namespace App\Http\Controllers;
 
 use App\Models\Cardapio;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CardapioController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        try {
+            $cardapios = Cardapio::all();
+            return view('cardapios.index', compact('cardapios'));
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        try {
+            $validated = $request->validate([
+                'NomeCardapio' => 'required|string|max:255',
+                'AnoCardapio' => 'nullable|integer',
+                'PrecoBasePorPessoa' => 'nullable|numeric',
+                'ValidadeOrcamentoDias' => 'nullable|integer',
+                'PoliticaCriancaGratisLimiteIdade' => 'nullable|integer',
+                'PoliticaCriancaDescontoPercentual' => 'nullable|numeric',
+                'PoliticaCriancaDescontoIdadeInicio' => 'nullable|integer',
+                'PoliticaCriancaDescontoIdadeFim' => 'nullable|integer',
+                'PoliticaCriancaPrecoIntegralIdadeInicio' => 'nullable|integer',
+                'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'nullable|boolean',
+            ],[
+                'NomeCardapio.required' => 'O campo Nome do Cardápio é obrigatório.',
+                'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
+                'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
+                'AnoCardapio.integer' => 'O campo Ano do Cardápio deve ser um número inteiro.',
+                'PrecoBasePorPessoa.numeric' => 'O campo Preço Base por Pessoa deve ser um valor numérico.',
+                'ValidadeOrcamentoDias.integer' => 'O campo Validade do Orçamento deve ser um número inteiro.',
+                'PoliticaCriancaGratisLimiteIdade.integer' => 'O campo Limite de Idade para Criança Grátis deve ser um número inteiro.',
+                'PoliticaCriancaDescontoPercentual.numeric' => 'O campo Percentual de Desconto para Criança deve ser um número.',
+                'PoliticaCriancaDescontoIdadeInicio.integer' => 'O campo Idade Inicial para Desconto de Criança deve ser um número inteiro.',
+                'PoliticaCriancaDescontoIdadeFim.integer' => 'O campo Idade Final para Desconto de Criança deve ser um número inteiro.',
+                'PoliticaCriancaPrecoIntegralIdadeInicio.integer' => 'O campo Idade Inicial para Preço Integral deve ser um número inteiro.',
+                'PossuiOpcaoEscolhaConteudoPrincipalRefeicao.boolean' => 'O campo Opção de Escolha do Conteúdo Principal deve ser verdadeiro ou falso.',
+            ]);
+
+            Cardapio::create($validated);
+            return redirect()->route('cardapios.index')->with('success', 'Cardapio criado com sucesso!');
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Cardapio $cardapio)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Cardapio $cardapio)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Cardapio $cardapio)
     {
-        //
+        try {
+            $validated = $request->validate([
+                'NomeCardapio' => 'required|string|max:255',
+                'AnoCardapio' => 'nullable|integer',
+                'PrecoBasePorPessoa' => 'nullable|numeric',
+                'ValidadeOrcamentoDias' => 'nullable|integer',
+                'PoliticaCriancaGratisLimiteIdade' => 'nullable|integer',
+                'PoliticaCriancaDescontoPercentual' => 'nullable|numeric',
+                'PoliticaCriancaDescontoIdadeInicio' => 'nullable|integer',
+                'PoliticaCriancaDescontoIdadeFim' => 'nullable|integer',
+                'PoliticaCriancaPrecoIntegralIdadeInicio' => 'nullable|integer',
+                'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'nullable|boolean',
+            ],[
+                'NomeCardapio.required' => 'O campo Nome do Cardápio é obrigatório.',
+                'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
+                'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
+                'AnoCardapio.integer' => 'O campo Ano do Cardápio deve ser um número inteiro.',
+                'PrecoBasePorPessoa.numeric' => 'O campo Preço Base por Pessoa deve ser um valor numérico.',
+                'ValidadeOrcamentoDias.integer' => 'O campo Validade do Orçamento deve ser um número inteiro.',
+                'PoliticaCriancaGratisLimiteIdade.integer' => 'O campo Limite de Idade para Criança Grátis deve ser um número inteiro.',
+                'PoliticaCriancaDescontoPercentual.numeric' => 'O campo Percentual de Desconto para Criança deve ser um número.',
+                'PoliticaCriancaDescontoIdadeInicio.integer' => 'O campo Idade Inicial para Desconto de Criança deve ser um número inteiro.',
+                'PoliticaCriancaDescontoIdadeFim.integer' => 'O campo Idade Final para Desconto de Criança deve ser um número inteiro.',
+                'PoliticaCriancaPrecoIntegralIdadeInicio.integer' => 'O campo Idade Inicial para Preço Integral deve ser um número inteiro.',
+                'PossuiOpcaoEscolhaConteudoPrincipalRefeicao.boolean' => 'O campo Opção de Escolha do Conteúdo Principal deve ser verdadeiro ou falso.',
+            ]);
+
+            $cardapio->update($validated);
+            return redirect()->route('cardapios.index')->with('success', 'Cardapio atualizado com sucesso!');
+        } catch (ValidationException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Cardapio $cardapio)
     {
-        //
+        try {
+            $cardapio->delete();
+            return redirect()->route('cardapios.index')->with('success', 'Cardapio deletado com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

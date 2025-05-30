@@ -13,6 +13,16 @@ return new class extends Migration
     {
         Schema::create('cardapios', function (Blueprint $table) {
             $table->id();
+            $table->string('NomeCardapio');
+            $table->year('AnoCardapio')->nullable();
+            $table->decimal('PrecoBasePorPessoa', 10, 2)->default(0);
+            $table->integer('ValidadeOrcamentoDias')->nullable();
+            $table->integer('PoliticaCriancaGratisLimiteIdade')->nullable();
+            $table->decimal('PoliticaCriancaDescontoPercentual', 5, 2)->nullable();
+            $table->integer('PoliticaCriancaDescontoIdadeInicio')->nullable();
+            $table->integer('PoliticaCriancaDescontoIdadeFim')->nullable();
+            $table->integer('PoliticaCriancaPrecoIntegralIdadeInicio')->nullable();
+            $table->boolean('PossuiOpcaoEscolhaConteudoPrincipalRefeicao')->default(false);
             $table->timestamps();
         });
     }
