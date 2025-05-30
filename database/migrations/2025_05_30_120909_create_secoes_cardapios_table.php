@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('secoes_cardapios', function (Blueprint $table) {
             $table->id();
+            $table->string('nome_secao_cardapio');
+            $table->boolean('opcao_conteudo_principal_refeicao');
+            $table->integer('ordem_exibicao');
+            $table->unsignedBigInteger('cardapio_id');
+            $table->foreign('cardapio_id')->references('id')->on('cardapios')->onDelete('cascade');
             $table->timestamps();
         });
     }

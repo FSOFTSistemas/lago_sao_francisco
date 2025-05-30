@@ -12,7 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('disponibilidade_item_categorias', function (Blueprint $table) {
-            $table->id();
+            $table->id('DisponibilidadeID');
+            $table->boolean('ItemInclusoPadrao')->default(false);
+            $table->integer('OrdemExibicao')->default(0);
+            $table->unsignedBigInteger('CategoriaItemID');
+            $table->unsignedBigInteger('ItemID');
+            $table->foreign('CategoriaItemID')->references('id')->on('categoria_itens')->onDelete('cascade');
+            $table->foreign('ItemID')->references('id')->on('itens')->onDelete('cascade');
             $table->timestamps();
         });
     }
