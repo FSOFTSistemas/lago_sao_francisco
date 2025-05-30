@@ -9,18 +9,17 @@ class RefeicaoPrincipal extends Model
 {
     use HasFactory;
 
-    protected $table = 'OpcoesDeRefeicaoPrincipal';
-    protected $primaryKey = 'OpcaoRefeicaoPrincipalID';
+    protected $table = 'refeicao_principals';
 
     protected $fillable = [
         'NomeOpcaoRefeicao',
         'PrecoPorPessoa',
         'DescricaoOpcaoRefeicao',
-        'CardapioID',
+        'cardapio_id',
     ];
 
     public function cardapio()
     {
-        return $this->belongsTo(Cardapio::class, 'CardapioID');
+        return $this->belongsTo(Cardapio::class, 'cardapio_id');
     }
 }

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('NomeOpcaoRefeicao');
             $table->decimal('PrecoPorPessoa', 10, 2)->default(0);
             $table->text('DescricaoOpcaoRefeicao')->nullable();
-            $table->unsignedBigInteger('CardapioID');
-            $table->foreign('CardapioID')->references('id')->on('cardapios')->onDelete('cascade');
+            $table->unsignedBigInteger('cardapio_id');
+            $table->foreign('cardapio_id')->references('id')->on('cardapios')->onDelete('cascade');
             $table->timestamps();
         });
     }

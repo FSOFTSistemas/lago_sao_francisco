@@ -18,6 +18,15 @@ class CardapioController extends Controller
         }
     }
 
+    public function create()
+    {
+        return view('cardapios._form');
+    }
+
+    public function show(Cardapio $cardapio)
+    {
+        return view('cardapios.show', compact('cardapio'));
+    }
 
     public function store(Request $request)
     {
@@ -33,7 +42,7 @@ class CardapioController extends Controller
                 'PoliticaCriancaDescontoIdadeFim' => 'nullable|integer',
                 'PoliticaCriancaPrecoIntegralIdadeInicio' => 'nullable|integer',
                 'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'nullable|boolean',
-            ],[
+            ], [
                 'NomeCardapio.required' => 'O campo Nome do Cardápio é obrigatório.',
                 'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
                 'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
@@ -48,8 +57,9 @@ class CardapioController extends Controller
                 'PossuiOpcaoEscolhaConteudoPrincipalRefeicao.boolean' => 'O campo Opção de Escolha do Conteúdo Principal deve ser verdadeiro ou falso.',
             ]);
 
-            Cardapio::create($validated);
-            return redirect()->route('cardapios.index')->with('success', 'Cardapio criado com sucesso!');
+            $cardapio = Cardapio::create($validated);
+            return redirect()->route('cardapios.show', $cardapio->CardapioID);
+            // return redirect()->route('cardapios.index')->with('success', 'Cardapio criado com sucesso!');
         } catch (ValidationException $e) {
             return redirect()->back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
@@ -71,7 +81,7 @@ class CardapioController extends Controller
                 'PoliticaCriancaDescontoIdadeFim' => 'nullable|integer',
                 'PoliticaCriancaPrecoIntegralIdadeInicio' => 'nullable|integer',
                 'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'nullable|boolean',
-            ],[
+            ], [
                 'NomeCardapio.required' => 'O campo Nome do Cardápio é obrigatório.',
                 'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
                 'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
