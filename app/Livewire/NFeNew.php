@@ -223,4 +223,27 @@ class NFeNew extends Component
             $this->forma_pagamento_detalhada = '90';
         }
     }
+
+    public function salvarNfe()
+    {
+        $dados = [
+            'empresa' => $this->empresa,
+            'numero' => $this->numero,
+            'serie' => $this->serie,
+            'data_emissao' => $this->data_emissao,
+            'data_saida' => $this->data_saida,
+            'tipo_nota' => $this->tipo_nota,
+            'finalidade' => $this->finalidade,
+            'forma_pagamento' => $this->forma_pagamento,
+            'forma_pagamento_detalhada' => $this->forma_pagamento_detalhada,
+            'quantidade_parcelas' => $this->quantidade_parcelas,
+            'bandeira_cartao' => $this->bandeira_cartao,
+            'data_vencimento' => $this->data_vencimento,
+            'cliente' => $this->cliente,
+            'itens' => $this->itens,
+        ];
+
+        $controller = new NotaFiscalController();
+        return $controller->store($dados);
+    }
 }
