@@ -32,7 +32,7 @@ class SecoesCardapioController extends Controller
             SecoesCardapio::create($request->all());
             return redirect()->route('secoesDoCardapio.index')->with('success', 'Seção criada com sucesso.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao criar seção do cardápio.');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
@@ -54,7 +54,7 @@ class SecoesCardapioController extends Controller
             return redirect()->route('secoesDoCardapio.index')->with('success', 'Seção atualizada com sucesso.');
 
         } catch(\Exception $e){
-            return redirect()->back()->with('error', 'Erro ao atualizar seção do cardápio.');
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 

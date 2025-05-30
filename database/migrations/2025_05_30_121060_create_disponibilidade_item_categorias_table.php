@@ -17,8 +17,8 @@ return new class extends Migration
             $table->integer('OrdemExibicao')->default(0);
             $table->unsignedBigInteger('CategoriaItemID');
             $table->unsignedBigInteger('ItemID');
-            $table->foreign('CategoriaItemID')->references('id')->on('categoria_itens')->onDelete('cascade');
-            $table->foreign('ItemID')->references('id')->on('itens')->onDelete('cascade');
+            $table->foreign('CategoriaItemID')->references('id')->on('categorias_de_itens_cardapios')->onDelete('cascade');
+            $table->foreign('ItemID')->references('id')->on('itens_do_cardapios')->onDelete('cascade');
             $table->timestamps();
         });
     }
