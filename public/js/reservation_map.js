@@ -35,13 +35,21 @@ async function fetchAvailability(startDate, endDate) {
         if (!response.ok) {
             console.error("Erro na resposta da API:", response.status, response.statusText);
             const errorText = await response.text(); // Pegar texto do erro
-            alert(`Erro ao buscar disponibilidade: ${response.status} ${response.statusText}\n${errorText}`);
+            Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: `Erro ao buscar disponibilidade: ${response.status} ${response.statusText}\n${errorText}`,
+                    });
             return null;
         }
         return await response.json();
     } catch (error) {
         console.error("Erro ao buscar dados de disponibilidade:", error);
-        alert("Ocorreu um erro de rede ao buscar a disponibilidade. Verifique o console para mais detalhes.");
+        Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: `Ocorreu um erro de rede ao buscar a disponibilidade. Verifique o console para mais detalhes.`,
+            });
         return null;
     }
 }
@@ -127,7 +135,7 @@ function handleDateClick(event) {
         resetSelection();
     }
 
-    selectedSpaceId = clickedSpaceId;
+    selectedSpaceId = clickedSpaceId; // Atualiza o ID do espaço selecionado
 
     if (!isSelecting) {
         selectedStartDate = clickedDate;
@@ -153,18 +161,23 @@ function handleDateClick(event) {
             isSelecting = false;
 
             if (isRangeBooked(selectedStartDate, selectedEndDate, selectedSpaceId)) {
-                alert("O intervalo selecionado inclui dias já reservados. Por favor, escolha um período diferente.");
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: `O intervalo selecionado inclui dias já reservados. Por favor, escolha um período diferente.`,
+                    });
                 resetSelection();
             } else {
                 updateCellStyles();
-                updateHiddenFields(selectedStartDate, selectedEndDate);
-                
-                // **NOVO: Adiciona feedback visual**
+                // **ATUALIZADO: Passa selectedSpaceId para updateHiddenFields**
+                updateHiddenFields(selectedStartDate, selectedEndDate, selectedSpaceId);
+
+                // Adiciona feedback visual
                 const spaceRow = document.querySelector(`tr[data-space-id="${selectedSpaceId}"]`);
                 const spaceName = spaceRow ? spaceRow.dataset.spaceName : `Espaço ID ${selectedSpaceId}`;
                 const feedbackMsg = `Período selecionado: ${formatDateBR(selectedStartDate)} a ${formatDateBR(selectedEndDate)} para ${spaceName}.`;
                 updateSelectionFeedback(feedbackMsg);
-                
+
                 console.log(`Intervalo selecionado: ${selectedStartDate} a ${selectedEndDate} para Espaço ID: ${selectedSpaceId}`);
             }
         }
@@ -247,16 +260,22 @@ function resetSelection() {
     selectedEndDate = null;
     selectedSpaceId = null;
     isSelecting = false;
-    updateHiddenFields('', '');
+    // **ATUALIZADO: Passa null para spaceId ao resetar**
+    updateHiddenFields('', '', null);
     updateCellStyles();
-    updateSelectionFeedback(); // **NOVO: Limpa feedback visual**
+    updateSelectionFeedback(); // Limpa feedback visual
     console.log("Seleção resetada.");
 }
 
-// Função para atualizar os campos hidden
-function updateHiddenFields(startDate, endDate) {
+// **ATUALIZADO: Função para atualizar os campos hidden (inclui spaceId)**
+function updateHiddenFields(startDate, endDate, spaceId) {
     document.getElementById('data_inicio').value = startDate;
     document.getElementById('data_fim').value = endDate;
+    // Atualiza o campo hidden do espaço
+    const spaceIdInput = document.getElementById('espaco_id_hidden');
+    if (spaceIdInput) {
+        spaceIdInput.value = spaceId !== null ? spaceId : ''; // Define como string vazia se null
+    }
 }
 
 // Função de inicialização
@@ -277,15 +296,23 @@ async function initMap() {
         const startDate = document.getElementById('map_start_date').value;
         const endDate = document.getElementById('map_end_date').value;
         if (!startDate || !endDate) {
-            alert("Por favor, selecione as datas de início e fim.");
+             Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: `Por favor, selecione as datas de início e fim.`,
+                    });
             return;
         }
         if (new Date(startDate) > new Date(endDate)) {
-             alert("A data de início não pode ser posterior à data de fim.");
+            Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: `A data de início não pode ser posterior à data de fim.`,
+                });
             return;
         }
         resetSelection(); // Reseta seleção ao atualizar o mapa
-        updateSelectionFeedback(); // **NOVO: Limpa feedback ao atualizar**
+        updateSelectionFeedback(); // Limpa feedback ao atualizar
         const container = document.getElementById('reservation_map_container');
         container.innerHTML = '<p>Atualizando mapa...</p>';
         const newData = await fetchAvailability(startDate, endDate);

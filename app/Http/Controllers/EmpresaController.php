@@ -18,8 +18,8 @@ class EmpresaController extends Controller
     public function index()
     {
         $enderecos = Endereco::all();
-        $empresas = Empresa::with('contadors', 'responsavelTecnico')->all();
-        $preferencias = EmpresaPreferencia::where('empresa_id', Auth::user()->empresa_id)->get();
+        $empresas = Empresa::with('contador', 'responsavelTecnico')->get();
+        $preferencias = EmpresaPreferencia::all();
         return view('empresa.index', compact('empresas', 'enderecos', 'preferencias'));
     }
 

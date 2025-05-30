@@ -92,6 +92,9 @@
                         <form action="{{ route('empresaPreferencia.update', $empresa->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
+                            @php
+                                $preferencia = $preferencias->firstWhere('empresa_id', $empresa->id);
+                            @endphp
                             <div class="card">
                                 <div class="card-body mt-3">
                                     <div class="form-group">
@@ -100,23 +103,25 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Número da Última Nota:</label>
-                                        <input type="number" name="ultima_nota" class="form-control">
+                                        <input type="number" name="ultima_nota" class="form-control" value="{{ old('ultima_nota', $preferencia->numero_ultima_nota) }}">
                                     </div>
                                     <div class="form-group">
                                         <label>Série:</label>
-                                        <input type="text" name="serie" class="form-control">
+                                        <input type="text" name="serie" class="form-control" value="{{ old('serie', $preferencia->serie) }}">
                                     </div>
                                     <div class="form-group">
                                         <label>CFOP Padrão:</label>
-                                        <input type="text" name="cfop_padrao" class="form-control">
+                                        <input type="text" name="cfop_padrao" class="form-control" value="{{ old('cfop_padrao', $preferencia->cfop_padrao) }}">
                                     </div>
                                     <div class="form-group">
                                         <label>Regime Tributário:</label>
                                         <select name="regime_tributario" class="form-control">
-                                            <option value="1">Simples Nacional</option>
-                                            <option value="2">Lucro Presumido</option>
-                                            <option value="3">Lucro Real</option>
+                                            <option value="Simples Nacional" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Simples Nacional' ? 'selected' : '' }}>Simples Nacional</option>
+                                            <option value="Lucro Presumido" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Lucro Presumido' ? 'selected' : '' }}>Lucro Presumido</option>
+                                            <option value="Lucro Real" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Lucro Real' ? 'selected' : '' }}>Lucro Real</option>
                                         </select>
+
+
                                     </div>
                                 </div>
                                 <div class="card-footer text-end">
@@ -136,23 +141,19 @@
                                 <div class="card-body mt-3">
                                     <div class="form-group">
                                         <label>Nome:</label>
-                                        <input type="text" name="resp_tecnico_nome" class="form-control">
+                                        <input type="text" name="resp_tecnico_nome" class="form-control" value="{{ old('resp_tecnico_nome', $empresa->responsavelTecnico->nome ?? '') }}">
                                     </div>
                                     <div class="form-group">
                                         <label>CNPJ:</label>
-                                        <input type="text" name="resp_tecnico_cnpj" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>CPF:</label>
-                                        <input type="text" name="resp_tecnico_cpf" class="form-control">
+                                        <input type="text" name="resp_tecnico_cnpj" class="form-control" value="{{ old('resp_tecnico_cnpj', $empresa->responsavelTecnico->cnpj) }}">
                                     </div>
                                     <div class="form-group">
                                         <label>Telefone:</label>
-                                        <input type="text" name="resp_tecnico_telefone" class="form-control">
+                                        <input type="text" name="resp_tecnico_telefone" class="form-control" value="{{ old('resp_tecnico_telefone', $empresa->responsavelTecnico->telefone) }}">
                                     </div>
                                     <div class="form-group">
                                         <label>Email:</label>
-                                        <input type="email" name="resp_tecnico_email" class="form-control">
+                                        <input type="email" name="resp_tecnico_email" class="form-control" value="{{ old('resp_tecnico_email', $empresa->responsavelTecnico->email) }}">
                                     </div>
                                 </div>
                                 <div class="card-footer text-end">
@@ -172,27 +173,23 @@
                                 <div class="card-body mt-3">
                                     <div class="form-group">
                                         <label>Nome:</label>
-                                        <input type="text" name="contador_nome" class="form-control" value="$">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>CPF:</label>
-                                        <input type="text" name="contador_cpf" class="form-control">
+                                        <input type="text" name="contador_nome" class="form-control" value="{{ old('contador_nome', $empresa->contador->nome ?? '') }}">
                                     </div>
                                     <div class="form-group">
                                         <label>CNPJ:</label>
-                                        <input type="text" name="contador_cnpj" class="form-control">
+                                        <input type="text" name="contador_cnpj" class="form-control" value="{{old('contador_cnpj', $empresa->contador->cnpj ?? '')  }}">
                                     </div>
                                     <div class="form-group">
                                         <label>CRC:</label>
-                                        <input type="text" name="contador_crc" class="form-control">
+                                        <input type="text" name="contador_crc" class="form-control" value="{{ old('contador_crc' , $empresa->contador->crc )}}">
                                     </div>
                                     <div class="form-group">
                                         <label>Email:</label>
-                                        <input type="email" name="contador_email" class="form-control">
+                                        <input type="email" name="contador_email" class="form-control" value="{{ old('contador_email', $empresa->contador->email ?? '') }}">
                                     </div>
                                     <div class="form-group">
                                         <label>Telefone:</label>
-                                        <input type="text" name="contador_telefone" class="form-control">
+                                        <input type="text" name="contador_telefone" class="form-control" value="{{ old('contador_telefone', $empresa->contador->telefone ?? '') }}">
                                     </div>
                                 </div>
                                 <div class="card-footer text-end">
