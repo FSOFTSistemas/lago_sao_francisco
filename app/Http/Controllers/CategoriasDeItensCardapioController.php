@@ -15,8 +15,8 @@ class CategoriasDeItensCardapioController extends Controller
      */
     public function index()
     {
-        $categoriasDeItens= CategoriasDeItensCardapio::all();
-        return view('categorias_de_itens_cardapio.index', compact('categoriasDeItens'));
+        $categorias = CategoriasDeItensCardapio::all();
+        return view('categoriaItensCardapio.index', compact('categorias'));
     }
 
     /**
@@ -44,9 +44,9 @@ class CategoriasDeItensCardapioController extends Controller
 
             $categoria = CategoriasDeItensCardapio::create($validated);
 
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio criado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio criado com sucesso');
         } catch (Exception $e) {
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao criar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao criar categoria de itens do cardapio');
         }
     }
 
@@ -85,11 +85,11 @@ class CategoriasDeItensCardapioController extends Controller
 
             $categoria->update($validated);
 
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio atualizado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio atualizado com sucesso');
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
         } catch (Exception $e) {
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao atualizar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao atualizar categoria de itens do cardapio');
         }
     }
 
@@ -102,11 +102,11 @@ class CategoriasDeItensCardapioController extends Controller
             $categoria = CategoriasDeItensCardapio::findOrFail($id);
             $categoria->delete();
 
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('sucess', 'Categoria de itens do cardapio deletado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio deletado com sucesso');
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
         } catch (Exception $e) {
-            return redirect()->route('categorias_de_itens_cardapio.index')->with('error', 'Erro ao deletar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao deletar categoria de itens do cardapio');
         }
     }
 }
