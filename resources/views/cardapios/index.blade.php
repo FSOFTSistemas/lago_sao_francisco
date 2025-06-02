@@ -8,10 +8,18 @@
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{ route('cardapios.create') }}" class="btn btn-success new">
+    <div class="row mb-3">
+        <div class="col d-flex justify-content-start">
+            <a href="{{ route('preferencias') }}" class="btn btn-success new">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div class="col d-flex justify-content-end">
+           <a href="{{ route('cardapios.create') }}" class="btn btn-success new">
             <i class="fas fa-plus"></i> Novo Cardápio
         </a>
+        </div>
     </div>
 
     @component('components.data-table', [
