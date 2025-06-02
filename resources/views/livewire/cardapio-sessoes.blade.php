@@ -3,26 +3,57 @@
 
     <form wire:submit.prevent="addSessao" class="mb-4">
         <div class="form-row">
-            <div class="col">
+            <div class="col-md-3">
                 <label>Nome da Seção</label>
-                <input type="text" wire:model.defer="nomeSessao" class="form-control" required>
+                <input type="text" wire:model="nomeSessao" class="form-control" required  wire:key="nomeSessao-{{ $inputKey }}">
                 @error('nomeSessao') <span class="text-danger">{{ $message }}</span> @enderror
+
             </div>
-            <div class="col">
+            <div class="col-md-3">
                 <label>Ordem de Exibição</label>
-                <input type="number" wire:model.defer="ordemExibicao" class="form-control" required>
-                @error('ordemExibicao') <span class="text-danger">{{ $message }}</span> @enderror
+                <input
+                    type="number"
+                    wire:model="ordemExibicao"
+                    wire:keyup="verificarOrdemExibicao"
+                    wire:key="ordemExibicao-{{ $inputKey }}"
+                    class="form-control @if($ordemExibicaoError) is-invalid @enderror"
+                    required
+                >
+
+                @error('ordemExibicao')
+                    <span class="text-danger">{{ $message }}</span>
+                @enderror
+
+                @if($ordemExibicaoError)
+                    <span class="text-danger">{{ $ordemExibicaoError }}</span>
+                @endif
+
             </div>
-            <div class="col">
-                <label>É conteúdo principal?</label>
-                <select wire:model.defer="ehOpcaoPrincipal" class="form-control" required>
-                    <option value="0">Não</option>
-                    <option value="1">Sim</option>
-                </select>
+
+            <div class="form-group row" x-data="{ ativo: @entangle('ehOpcaoPrincipal').live }" wire:key="switch-{{ $inputKey }}">
+                <label class="col-md-6 form-label d-block label-control">É conteúdo principal?</label>
+                <div class="form-check form-switch">
+                    <input
+                        class="form-check-input" 
+                        type="checkbox"
+                        id="ehOpcaoPrincipalSwitch"
+                        x-model="ativo"
+                        wire:key="ehOpcaoPrincipal-{{ $inputKey }}"
+                        @change="$wire.set('ehOpcaoPrincipal', ativo ? 1 : 0)"
+                    >
+                    <label class="form-check-label ms-2" for="ehOpcaoPrincipalSwitch">
+                        <span x-text="ativo ? 'Sim' : 'Não'"></span>
+                    </label>
+                </div>
                 @error('ehOpcaoPrincipal') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
+
+
+
+
+          
             <div class="col-auto d-flex align-items-end">
-                <button class="btn btn-primary">Adicionar</button>
+                <button class="btn btn-primary" @if($ordemExibicaoError) disabled @endif>Adicionar</button>
             </div>
         </div>
     </form>
@@ -40,13 +71,18 @@
             <tbody>
                 @foreach ($sessoes as $sessao)
                     <tr>
-                        <td>{{ $sessao->NomeSecaoCardapio }}</td>
-                        <td>{{ $sessao->OrdemExibicao }}</td>
-                        <td>{{ $sessao->EhOpcaoConteudoPrincipalRefeicao ? 'Sim' : 'Não' }}</td>
+                        <td>{{ $sessao->nome_secao_cardapio }}</td>
+                        <td>{{ $sessao->ordem_exibicao }}</td>
+                        <td>{{ $sessao->opcao_conteudo_principal_refeicao ? 'Sim' : 'Não' }}</td>
                         <td>
-                            {{-- Futuro: editar e excluir --}}
-                            <button class="btn btn-sm btn-outline-secondary" disabled>✏️</button>
-                            <button class="btn btn-sm btn-outline-danger" disabled>🗑️</button>
+                            <button 
+                                type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                wire:click="deletarSessao({{$sessao->id}})"
+                                title="Excluir Seção"
+                            >
+                                🗑️
+                            </button>
                         </td>
                     </tr>
                 @endforeach
@@ -55,4 +91,26 @@
     @else
         <p class="text-muted">Nenhuma seção cadastrada ainda.</p>
     @endif
+
+    @script
+    <script>
+        $wire.on("confirm", (event) => {
+            Swal.fire({
+            title: "Deletar seção?",
+            text: "Você não poderá desfazer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, deletar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("delete", { id: event.id})
+            }
+            });
+        })
+    </script>
+    @endscript
 </div>
+
+

@@ -15,4 +15,10 @@
 @stop
 
 @section('js')
+<script>
+    window.addEventListener('fecharModalDelete', () => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalDeleteSessao'));
+        modal.hide();
+    });
+</script>
 @stop

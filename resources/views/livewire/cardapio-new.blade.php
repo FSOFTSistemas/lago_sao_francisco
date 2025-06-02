@@ -25,6 +25,8 @@
 
 
             <form wire:submit.prevent="save">
+               <input type="hidden" name="modo" value="{{ $cardapioID ? 'edit' : 'create' }}">
+
                 <div class="form-group">
                     <label>Nome do Cardápio</label>
                     <input type="text" wire:model.defer="NomeCardapio" class="form-control">
@@ -95,8 +97,8 @@
 
                 <div class="form-check mt-2">
                     <input type="checkbox" class="form-check-input"
-                        wire:model.defer="PossuiOpcaoEscolhaConteudoPrincipalRefeicao">
-                    <label class="form-check-label">Permite escolher conteúdo principal da refeição?</label>
+                        wire:model.defer="PossuiOpcaoEscolhaConteudoPrincipalRefeicao" id="escolha">
+                    <label class="form-check-label" for="escolha">Permite escolher conteúdo principal da refeição?</label>
                 </div>
 
                 <button class="btn btn-success mt-3">Seguinte</button>

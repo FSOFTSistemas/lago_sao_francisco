@@ -13,6 +13,7 @@ class CardapioNew extends Component
     public $PoliticaCriancaPrecoIntegralIdadeInicio, $PossuiOpcaoEscolhaConteudoPrincipalRefeicao = false;
     public $cardapioID;
     public $abaAtual = 'geral';
+    public $cardapioSalvo = false;
 
     protected $rules = [
         'NomeCardapio' => 'required|string|max:255',
@@ -31,9 +32,16 @@ class CardapioNew extends Component
     {
         $this->validate();
 
-        $cardapio = Cardapio::create($this->only(array_keys($this->rules)));
-
-        $this->cardapioID = $cardapio->CardapioID;
+        if($this->cardapioSalvo) {
+            $cardapio = Cardapio::findOrFail($this->cardapioID);
+            $cardapio->update($this->only(array_keys($this->rules)));
+            session()->flash('success', 'Cardápio atualizado com sucesso');
+        } else {
+            $cardapio = Cardapio::create($this->only(array_keys($this->rules)));
+            $this->cardapioSalvo = true;
+            session()->flash('success', 'Cardápio criado com sucesso');
+        }
+        $this->cardapioID = $cardapio->id;
         $this->abaAtual = 'sessoes';
     }
 

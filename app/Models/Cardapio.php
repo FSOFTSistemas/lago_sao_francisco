@@ -9,7 +9,6 @@ class Cardapio extends Model
 {
     use HasFactory;
     protected $table = 'cardapios';
-    protected $primaryKey = 'CardapioID';
 
     protected $fillable = [
         'NomeCardapio',
