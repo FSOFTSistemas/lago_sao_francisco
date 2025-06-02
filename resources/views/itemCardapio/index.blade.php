@@ -3,15 +3,24 @@
 @section('title', 'Dashboard')
 
 @section('content_header')
-    <h1>Dashboard</h1>
+    <h5>Cadastro de itens do cardapio</h5>
+    <hr>
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createItemModal">
-        <i class="fas fa-plus"></i> Novo Item
-    </button>
-</div>
+    <div class="row mb-3">
+    <div class="col d-flex justify-content-start">
+        <a href="{{ route('preferencias') }}" class="btn btn-success new">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="col d-flex justify-content-end">
+        <button type="button" class="btn btn-success new" data-toggle="modal" data-target="#createItemModal">
+            <i class="fas fa-plus"></i> Novo Item
+        </button>
+    </div>
+    </div>
 
 @component('components.data-table', [
     'responsive' => [
