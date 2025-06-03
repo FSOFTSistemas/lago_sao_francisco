@@ -1,21 +1,31 @@
 <div>
     <h5 class="mb-3">Opções de Refeição</h5>
+    <div class="row">
+        <div class="col d-flex justify-content-start">
+            <a href="#" class="btn btn-success new">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+        <div class="col d-flex justify-content-end">
+        <button class="btn btn-success new" wire:click="finalizar">Finalizar</button>
+    </div>
+    </div>
 
     <form wire:submit.prevent="addOpcao" class="mb-4">
         <div class="form-row">
             <div class="col-md-4">
                 <label>Nome da Opção</label>
-                <input type="text" wire:model.defer="nomeOpcao" class="form-control">
+                <input type="text" wire:model="nomeOpcao" class="form-control" wire:key="nomeOpcao-{{ $inputKey }}">
                 @error('nomeOpcao') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="col-md-2">
                 <label>Preço por Pessoa</label>
-                <input type="text" wire:model.defer="precoPorPessoa" class="form-control">
+                <input type="text" wire:model="precoPorPessoa" class="form-control" wire:key="precoPorPessoa-{{ $inputKey }}">
                 @error('precoPorPessoa') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="col-md-4">
                 <label>Descrição</label>
-                <input type="text" wire:model.defer="descricaoOpcao" class="form-control">
+                <input type="text" wire:model="descricaoOpcao" class="form-control" wire:key="descricaoOpcao-{{ $inputKey }}">
                 @error('descricaoOpcao') <span class="text-danger">{{ $message }}</span> @enderror
             </div>
             <div class="col-md-2 d-flex align-items-end">
@@ -41,8 +51,14 @@
                         <td>R$ {{ number_format($opcao->PrecoPorPessoa, 2, ',', '.') }}</td>
                         <td>{{ $opcao->DescricaoOpcaoRefeicao }}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline-secondary" disabled>✏️</button>
-                            <button class="btn btn-sm btn-outline-danger" disabled>🗑️</button>
+                            <button 
+                                type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                wire:click="deletarOpcao({{$opcao->id}})"
+                                title="Excluir Opção"
+                            >
+                                🗑️
+                            </button>
                         </td>
                     </tr>
                 @endforeach
@@ -51,4 +67,24 @@
     @else
         <p class="text-muted">Nenhuma opção cadastrada ainda.</p>
     @endif
+
+     @script
+    <script>
+        $wire.on("confirm", (event) => {
+            Swal.fire({
+            title: "Deletar opção?",
+            text: "Você não poderá desfazer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, deletar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("deleteOpcao", { id: event.id})
+            }
+            });
+        })
+    </script>
+    @endscript
 </div>

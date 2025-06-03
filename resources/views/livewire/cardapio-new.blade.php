@@ -1,12 +1,12 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist">
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>
         </li>
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'sessoes' ? 'active' : '' }}" id="sessoes-tab" href="#"
-                role="tab" wire:click.prevent="$set('abaAtual', 'sessoes')">Seções</a>
+                role="tab" wire:click.prevent="$set('abaAtual', 'sessoes')" >Seções</a>
         </li>
         @if ($cardapioID ?? false)
             @if ($PossuiOpcaoEscolhaConteudoPrincipalRefeicao)
@@ -22,92 +22,165 @@
         <div class="tab-pane fade {{ $abaAtual === 'geral' ? 'show active' : '' }}" id="geral" role="tabpanel">
             {{-- Informações Gerais --}}
             <h5 class="mb-3">Novo Cardápio</h5>
+            <div class="alert alert-secondary">
+                        <strong>DICA:</strong> Campos referentes ao Cardápio. <br>
+                        <em>O preenchimento de todos os campos é obrigatório.</em>
+                    </div>
 
 
             <form wire:submit.prevent="save">
                <input type="hidden" name="modo" value="{{ $cardapioID ? 'edit' : 'create' }}">
 
-                <div class="form-group">
-                    <label>Nome do Cardápio</label>
-                    <input type="text" wire:model.defer="NomeCardapio" class="form-control">
-                    @error('NomeCardapio')
-                        <span class="text-danger">{{ $message }}</span>
-                    @enderror
-                </div>
-                <div class="row">
-
-                    <div class="form-group col-md-4">
-                        <label>Ano do Cardápio</label>
-                        <input type="number" wire:model.defer="AnoCardapio" class="form-control">
+               <div class="row">
+                   <div class="form-group col-md-3">
+                       <label>Nome do Cardápio</label>
+                           <input type="text" wire:model.defer="NomeCardapio" class="form-control">
+                       @error('NomeCardapio')
+                           <span class="text-danger">{{ $message }}</span>
+                       @enderror
+                   </div>
+                    <div class="form-group col-md-3">
+                        <label for="ano-cardapio">Ano do Cardápio</label>
+                        <input type="text"
+                            id="ano-cardapio"
+                            wire:model.defer="AnoCardapio"
+                            class="form-control"
+                            maxlength="4"
+                            pattern="\d{4}"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);"
+                            placeholder="Ex: 2025">
                         @error('AnoCardapio')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+               </div>
 
-                    <div class="form-group col-md-4">
+                <div class="row">
+                    <div class="form-group col-md-3">
                         <label>Preço Base por Pessoa</label>
-                        <input type="text" wire:model.defer="PrecoBasePorPessoa" class="form-control">
+                        <div class="input-group">
+                            <input type="text" wire:model.defer="PrecoBasePorPessoa" class="form-control">
+                            <i class="fas fa-info-circle info-icon"></i>
+                           <div class="info-tooltip">
+                                       <strong>Dica:</strong> Defina o valor base por pessoa.
+                                   </div>
+                        </div>
                         @error('PrecoBasePorPessoa')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
 
-                    <div class="form-group col-md-4">
+                    <div class="form-group col-md-3">
                         <label>Validade do Orçamento (dias)</label>
-                        <input type="number" wire:model.defer="ValidadeOrcamentoDias" class="form-control">
+                        <div class="inpunt-group">
+                            <input type="number" wire:model.defer="ValidadeOrcamentoDias" class="form-control">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Aviso:</strong> Determine por quantos dias esse valor do orçamento será válido!
+                                </div>
+                        </div>
                         @error('ValidadeOrcamentoDias')
                             <span class="text-danger">{{ $message }}</span>
                         @enderror
                     </div>
+
                 </div>
 
-
+                <br>
+                <h5>Política para Crianças</h5>
                 <hr>
-                <h6>Política para Crianças</h6>
 
                 <div class="form-row">
-                    <div class="col">
+                    <div class="form-group col-md-3">
                         <label>Idade limite para gratuidade</label>
-                        <input type="number" wire:model.defer="PoliticaCriancaGratisLimiteIdade" class="form-control">
+                        <div class="input-group">
+                            <input type="number" wire:model.defer="PoliticaCriancaGratisLimiteIdade" class="form-control">
+                            <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Dica:</strong> Insira a idade máxima para gratuitidade.
+                                </div>
+                        </div>
                     </div>
-                    <div class="col">
-                        <label>Desconto (%)</label>
-                        <input type="number" step="0.01" wire:model.defer="PoliticaCriancaDescontoPercentual"
-                            class="form-control">
-                    </div>
-                </div>
-
-                <div class="form-row mt-2">
-                    <div class="col">
+                    <div class="form-group col-md-3">
                         <label>Idade início do desconto</label>
+                        <div class="input-group">
+                            <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Dica:</strong> Insira a idade mínima em que é cobrado o valor com desconto.
+                                </div>
+                        </div>
                         <input type="number" wire:model.defer="PoliticaCriancaDescontoIdadeInicio"
                             class="form-control">
                     </div>
-                    <div class="col">
+                    <div class="form-group col-md-3">
                         <label>Idade fim do desconto</label>
-                        <input type="number" wire:model.defer="PoliticaCriancaDescontoIdadeFim" class="form-control">
+                        <div class="input-group">
+                            <input type="number" wire:model.defer="PoliticaCriancaDescontoIdadeFim" class="form-control">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Dica:</strong> Insira a idade máxima em que o desconto é aplicado.
+                                </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>Desconto (%)</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" wire:model.defer="PoliticaCriancaDescontoPercentual"
+                                class="form-control">
+                                <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Dica:</strong> determine o Desconto para a faixa de idade!
+                                </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>Idade com preço integral</label>
+                        <div class="input-group">
+                            <input type="number" wire:model.defer="PoliticaCriancaPrecoIntegralIdadeInicio"
+                            class="form-control">
+                            <i class="fas fa-info-circle info-icon"></i>
+                                <div class="info-tooltip">
+                                    <strong>Dica:</strong> insira a idade em que o preço integral é cobrado.
+                                </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group mt-2">
-                    <label>Idade com preço integral</label>
-                    <input type="number" wire:model.defer="PoliticaCriancaPrecoIntegralIdadeInicio"
-                        class="form-control">
+                <hr>
+                <div class="form-group row"
+                    x-data="{ ativo: @entangle('PossuiOpcaoEscolhaConteudoPrincipalRefeicao').live}">
+                    <label class="form-label d-block label-control">
+                        Permite escolher conteúdo principal da refeição?
+                    </label>
+                    <div class="form-check form-switch">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="PossuiOpcaoSwitch"
+                            x-model="ativo"
+                            @change="$wire.set('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', ativo ? 1 : 0)"
+                        >
+                        <label class="form-check-label ms-2" for="PossuiOpcaoSwitch">
+                            <span x-text="ativo ? 'Sim' : 'Não'"></span>
+                        </label>
+                    </div>
+
+                    @error('PossuiOpcaoEscolhaConteudoPrincipalRefeicao')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
                 </div>
 
-                <div class="form-check mt-2">
-                    <input type="checkbox" class="form-check-input"
-                        wire:model.defer="PossuiOpcaoEscolhaConteudoPrincipalRefeicao" id="escolha">
-                    <label class="form-check-label" for="escolha">Permite escolher conteúdo principal da refeição?</label>
-                </div>
 
-                <button class="btn btn-success mt-3">Seguinte</button>
+
+                <div class="col d-flex justify-content-end">
+                    <button class="btn btn-success mt-3 new">Seguinte</button>
+                </div>
             </form>
         </div>
 
         <div class="tab-pane fade {{ $abaAtual === 'sessoes' ? 'show active' : '' }}" id="sessoes" role="tabpanel">
             @if ($cardapioID ?? false)
-                @livewire('cardapio-sessoes', ['cardapioId' => $cardapioID])
+                @livewire('cardapio-sessoes', ['cardapioId' => $cardapioID, 'refeicao' => $PossuiOpcaoEscolhaConteudoPrincipalRefeicao])
             @else
                 <div class="text-muted mt-3">Salve o cardápio para adicionar seções.</div>
             @endif
@@ -122,4 +195,33 @@
             @endif
         @endif
     </div>
+    @section('css')
+     <style>
+        .info-icon {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            color: var(--green-2);
+            cursor: pointer;
+        }
+
+        .info-tooltip {
+            display: none;
+            position: absolute;
+            top: 35px;
+            right: 0;
+            color: white;
+            background-color: var(--green-2);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            width: 300px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-icon:hover+.info-tooltip {
+            display: block;
+        }
+    </style>
+    @endsection
 </div>

@@ -1,5 +1,21 @@
 <div>
     <h5 class="mb-3">Seções do Cardápio</h5>
+    <div class="row">
+        <div class="col d-flex justify-content-start">
+            <a href="#" class="btn btn-success new">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+        <div class="col d-flex justify-content-end">
+            @dump($refeicao)
+            @if($refeicao)
+            <button class="btn btn-success new" wire:click="proximo">Próximo</button>
+            @else
+            <button class="btn btn-success new" wire:click="finalizar">Finalizar</button>
+            @endif
+        </div>
+    </div>
+    <br>
 
     <form wire:submit.prevent="addSessao" class="mb-4">
         <div class="form-row">
@@ -29,6 +45,7 @@
                 @endif
 
             </div>
+            
 
             <div class="form-group row" x-data="{ ativo: @entangle('ehOpcaoPrincipal').live }" wire:key="switch-{{ $inputKey }}">
                 <label class="col-md-6 form-label d-block label-control">É conteúdo principal?</label>
@@ -91,6 +108,12 @@
     @else
         <p class="text-muted">Nenhuma seção cadastrada ainda.</p>
     @endif
+    <div class="footer">
+        @if($refeicao)
+
+        @else
+        @endif
+    </div>
 
     @script
     <script>

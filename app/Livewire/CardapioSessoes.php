@@ -14,6 +14,9 @@ class CardapioSessoes extends Component
     public $inputKey;
     public $ordemExibicaoError;
     public $sessaoIdToDelete;
+    public $refeicao;
+
+
 
     protected $rules = [
         'nome_secao_cardapio' => 'required|string|max:255',
@@ -96,4 +99,19 @@ class CardapioSessoes extends Component
         $this->loadSessoes();
     }
 
+    public function proximo()
+    {
+        $this->dispatch('mudarAba', aba: 'opcoes');
+    }
+    public function finalizar()
+    {
+        return redirect()->route('cardapios.index')->with('success', 'Cardápio Finalizado com sucesso');
+    }
+
+
+     #[On('atualizar')]
+    public function atualizar($refeicao)
+    {
+        $this->refeicao = $refeicao;
+    }
 }

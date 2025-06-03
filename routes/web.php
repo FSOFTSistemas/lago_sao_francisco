@@ -43,6 +43,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
+use App\Livewire\CardapioNew;
 
 Route::get('/', function () {
     return redirect('/login');

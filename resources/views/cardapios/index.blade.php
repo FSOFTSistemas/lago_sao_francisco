@@ -46,7 +46,7 @@
         <tbody>
             @foreach ($cardapios as $cardapio)
                 <tr>
-                    <td>{{ $cardapio->CardapioID }}</td>
+                    <td>{{ $cardapio->id }}</td>
                     <td>{{ $cardapio->NomeCardapio }}</td>
                     <td>{{ $cardapio->AnoCardapio }}</td>
                     <td>R$ {{ number_format($cardapio->PrecoBasePorPessoa, 2, ',', '.') }}</td>

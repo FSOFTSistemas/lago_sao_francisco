@@ -4,13 +4,15 @@ namespace App\Livewire;
 
 use App\Models\Cardapio;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class CardapioNew extends Component
 {
     public $NomeCardapio, $AnoCardapio, $PrecoBasePorPessoa, $ValidadeOrcamentoDias;
     public $PoliticaCriancaGratisLimiteIdade, $PoliticaCriancaDescontoPercentual;
     public $PoliticaCriancaDescontoIdadeInicio, $PoliticaCriancaDescontoIdadeFim;
-    public $PoliticaCriancaPrecoIntegralIdadeInicio, $PossuiOpcaoEscolhaConteudoPrincipalRefeicao = false;
+    public $PoliticaCriancaPrecoIntegralIdadeInicio;
+    public $PossuiOpcaoEscolhaConteudoPrincipalRefeicao = 0;
     public $cardapioID;
     public $abaAtual = 'geral';
     public $cardapioSalvo = false;
@@ -36,6 +38,7 @@ class CardapioNew extends Component
             $cardapio = Cardapio::findOrFail($this->cardapioID);
             $cardapio->update($this->only(array_keys($this->rules)));
             session()->flash('success', 'Cardápio atualizado com sucesso');
+            $this->proximo($this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
         } else {
             $cardapio = Cardapio::create($this->only(array_keys($this->rules)));
             $this->cardapioSalvo = true;
@@ -48,5 +51,16 @@ class CardapioNew extends Component
     public function render()
     {
         return view('livewire.cardapio-new');
+    }
+
+     #[On('mudarAba')]
+    public function atualizarAba($aba)
+    {
+        $this->abaAtual = $aba;
+    }
+
+    public function proximo($opcaoRefeicao)
+    {
+        $this->dispatch('atualizar', refeicao: $opcaoRefeicao);
     }
 }

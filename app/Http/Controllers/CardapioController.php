@@ -23,6 +23,12 @@ class CardapioController extends Controller
         return view('cardapios._form');
     }
 
+    public function edit($id) 
+    {
+        $cardapios = Cardapio::findOrFail($id);
+        return view('cardapios._form', compact('cardapios'));
+    }
+
     public function show(Cardapio $cardapio)
     {
         return view('cardapios.show', compact('cardapio'));
