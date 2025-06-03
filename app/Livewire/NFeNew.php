@@ -6,6 +6,7 @@ use App\Http\Controllers\NotaFiscalController;
 use App\Models\Cliente;
 use App\Models\Empresa;
 use App\Models\Produto;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -19,8 +20,10 @@ class NFeNew extends Component
     public $data_saida;
     public $tipo_nota = 'saida';
     public $finalidade;
+    public $keyCliente;
+    public $keyProd;
     public $forma_pagamento;
-    public $cliente = ['id' => null, 'nome' => 'Consumidor'];
+    public $cliente = ['id' => null, 'razao_social' => 'Consumidor'];
     public $modalClienteAberto = false;
     public $buscaCliente = '';
     public $clientes = [];
@@ -110,8 +113,13 @@ class NFeNew extends Component
     }
     public function atualizarTotaisItem()
     {
-        $this->novoItem['subtotal'] = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
+        $sub = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario']; 
+        $this->novoItem['subtotal'] = $sub;
         $this->novoItem['total'] = $this->novoItem['subtotal'];
+        $this->novoItem['base_calculo'] = $this->novoItem['quantidade'] * $this->novoItem['valor_unitario'];
+        $this->novoItem['valor_icms'] = ($sub ?? 1) * ($this->novoItem['aliquota'] ?? 1) / 100;
+
+        $this->keyProd = now()->timestamp;
     }
 
     public function abrirModalProduto()
@@ -122,6 +130,7 @@ class NFeNew extends Component
 
     public function fecharModalProduto()
     {
+
         $this->modalProdutoAberto = false;
     }
 
@@ -138,8 +147,10 @@ class NFeNew extends Component
             $this->novoItem['aliquota'] = $produto->aliquota ?? 0;
             $this->novoItem['base_calculo'] = $produto->preco_venda ?? 0;
             $this->novoItem['valor_icms'] = ($produto->preco_venda ?? 0) * ($produto->aliquota ?? 0) / 100;
+            $this->novoItem['subtotal'] = $produto->preco_venda * 1;
         }
 
+        $this->keyProd = now()->timestamp;
         $this->modalProdutoAberto = false;
     }
 
@@ -193,7 +204,8 @@ class NFeNew extends Component
     {
         $cliente = Cliente::find($id);
         if ($cliente) {
-            $this->cliente = ['id' => $cliente->id, 'nome_razao_social' => $cliente->nome_razao_social];
+            $this->cliente = ['id' => $cliente->id, 'razao_social' => $cliente->nome_razao_social];
+            $this->keyCliente = now()->timestamp;
         }
         $this->fecharModalCliente();
     }
@@ -224,6 +236,8 @@ class NFeNew extends Component
         }
     }
 
+    
+
     public function salvarNfe()
     {
         $dados = [
@@ -243,7 +257,8 @@ class NFeNew extends Component
             'itens' => $this->itens,
         ];
 
+        $request = new Request($dados);
         $controller = new NotaFiscalController();
-        return $controller->store($dados);
+        return $controller->store($request);
     }
 }

@@ -8,6 +8,7 @@ use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CategoriasCardapioController;
+use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
@@ -121,11 +122,11 @@ Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('map
 
 Route::resource('aluguel', AluguelController::class);
 
-Route::resource('buffet', BuffetItemController::class);
+//Route::resource('buffet', BuffetItemController::class);
 
 Route::resource('cardapios', CardapioController::class);
 
-Route::resource('categoriasCardapio', CategoriasCardapioController::class);
+//Route::resource('categoriasCardapio', CategoriasCardapioController::class);
 
 Route::resource('estoques', EstoqueController::class);
 
@@ -150,3 +151,5 @@ Route::resource('empresaContador', EmpresaContadorController::class)->middleware
 Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->middleware('permission:gerenciar empresa');
 
 Route::resource('itemCardapio', ItensDoCardapioController::class);
+
+Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);

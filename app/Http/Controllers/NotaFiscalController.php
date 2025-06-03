@@ -39,6 +39,8 @@ class NotaFiscalController extends Controller
      */
     public function store(Request $request)
     {
+
+        dd($request->all());
         try{
             $request->validate([
                 'id' => 'required|integer',
