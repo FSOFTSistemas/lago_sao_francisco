@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\CategoriasDeItensCardapio;
+use App\Models\RefeicaoPrincipal;
+use App\Models\SecoesCardapio;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use View;
 
 class CategoriasDeItensCardapioController extends Controller
@@ -16,7 +19,9 @@ class CategoriasDeItensCardapioController extends Controller
     public function index()
     {
         $categorias = CategoriasDeItensCardapio::all();
-        return view('categoriaItensCardapio.index', compact('categorias'));
+        $secoes = SecoesCardapio::all();
+        $refeicoes = RefeicaoPrincipal::all();
+        return view('categoriaItensCardapio.index', compact('categorias', 'secoes', 'refeicoes'));
     }
 
     /**
@@ -33,6 +38,9 @@ class CategoriasDeItensCardapioController extends Controller
     public function store(Request $request)
     {
       try {
+             $request->merge([
+                'eh_grupo_escolha_exclusiva' => $request->has('eh_grupo_escolha_exclusiva')
+            ]);
             $validated = $request->validate([
                 'sessao_cardapio_id' => 'required|exists:secoes_cardapios,id',
                 'refeicao_principal_id' => 'required|exists:refeicao_principals,id',
@@ -40,13 +48,33 @@ class CategoriasDeItensCardapioController extends Controller
                 'numero_escolhas_permitidas' => 'required|integer',
                 'eh_grupo_escolha_exclusiva' => 'required|boolean',
                 'ordem_exibicao' => 'required|integer',
+            ], [
+                'sessao_cardapio_id.required' => 'O campo seção do cardápio é obrigatório.',
+                'sessao_cardapio_id.exists' => 'A seção do cardápio selecionada é inválida.',
+                'refeicao_principal_id.required' => 'O campo refeição principal é obrigatório.',
+                'refeicao_principal_id.exists' => 'A refeição principal selecionada é inválida.',
+                'nome_categoria_item.required' => 'O campo nome da categoria é obrigatório.',
+                'nome_categoria_item.string' => 'O nome da categoria deve ser um texto.',
+                'nome_categoria_item.max' => 'O nome da categoria não pode ter mais que 255 caracteres.',
+                'numero_escolhas_permitidas.required' => 'O campo número de escolhas permitidas é obrigatório.',
+                'numero_escolhas_permitidas.integer' => 'O número de escolhas permitidas deve ser um valor inteiro.',
+                'eh_grupo_escolha_exclusiva.required' => 'O campo grupo de escolha exclusiva é obrigatório.',
+                'eh_grupo_escolha_exclusiva.boolean' => 'O campo grupo de escolha exclusiva deve ser verdadeiro ou falso.',
+                'ordem_exibicao.required' => 'O campo ordem de exibição é obrigatório.',
+                'ordem_exibicao.integer' => 'A ordem de exibição deve ser um valor inteiro.',
             ]);
 
             $categoria = CategoriasDeItensCardapio::create($validated);
 
-            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio criado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria criada com sucesso');
+        } catch (ValidationException $e) {
+           return redirect()->route('categoriaItensCardapio.index')
+                ->with('error', "Erro ao criar nova categoria: {$e->getMessage()}");
+        } catch (ModelNotFoundException $e) {
+            return redirect()->back()->with('error', 'Registro não encontrado');
         } catch (Exception $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao criar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')
+                ->with('error', "Erro ao criar nova categoria: {$e->getMessage()}");
         }
     }
 
@@ -85,11 +113,11 @@ class CategoriasDeItensCardapioController extends Controller
 
             $categoria->update($validated);
 
-            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio atualizado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria atualizada com sucesso');
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria não encontrada');
         } catch (Exception $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao atualizar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao atualizar categoria');
         }
     }
 
@@ -102,11 +130,11 @@ class CategoriasDeItensCardapioController extends Controller
             $categoria = CategoriasDeItensCardapio::findOrFail($id);
             $categoria->delete();
 
-            return redirect()->route('categoriaItensCardapio.index')->with('sucess', 'Categoria de itens do cardapio deletado com sucesso');
+            return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria deletada com sucesso');
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria de itens do cardapio não existe');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria não foi encontrada');
         } catch (Exception $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao deletar categoria de itens do cardapio');
+            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao deletar categoria');
         }
     }
 }

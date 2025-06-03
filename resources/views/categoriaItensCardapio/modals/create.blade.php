@@ -1,27 +1,59 @@
-<div class="modal fade" id="createItemModal" tabindex="-1" role="dialog" aria-labelledby="createItemModalLabel" aria-hidden="true">
+<div class="modal fade" id="createCategoriaModal" tabindex="-1" role="dialog" aria-labelledby="createCategoriaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="createItemModalLabel">
-                    <i class="fas fa-utensils mr-2"></i>Novo Item do Cardápio
+            <div class="modal-header">
+                <h5 class="modal-title" id="createCategoriaModalLabel">
+                    <i class="fas fa-folder-plus mr-2"></i>Nova Categoria do Cardápio
                 </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             
-            <form id="createItemForm" action="{{ route('itemCardapio.store') }}" method="POST">
+            <form id="createCategoriaForm" action="{{ route('categoriaItensCardapio.store') }}" method="POST">
                 @csrf
                 
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-8">
+                        <div class="col-md-6">
                             <div class="form-group">
-                                <label for="nome_item" class="font-weight-bold">Nome do Item*</label>
-                                <input type="text" class="form-control @error('nome_item') is-invalid @enderror" 
-                                       id="nome_item" name="nome_item" value="{{ old('nome_item') }}" 
-                                       placeholder="Ex: Filé Mignon com Molho Madeira" required>
-                                @error('nome_item')
+                                <label for="nome_categoria_item" class="font-weight-bold">Nome da Categoria*</label>
+                                <input type="text" class="form-control @error('nome_categoria_item') is-invalid @enderror" 
+                                       id="nome_categoria_item" name="nome_categoria_item" value="{{ old('nome_categoria_item') }}" 
+                                       placeholder="Ex: Pratos Principais" required>
+                                @error('nome_categoria_item')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="sessao_cardapio_id" class="font-weight-bold">Seção do Cardápio*</label>
+                                <select class="form-control @error('sessao_cardapio_id') is-invalid @enderror" 
+                                        id="sessao_cardapio_id" name="sessao_cardapio_id" required>
+                                    <option value="">Selecione a seção...</option>
+                                    @foreach($secoes as $secao)
+                                        <option value="{{ $secao->id }}" {{ old('sessao_cardapio_id') == $secao->id ? 'selected' : '' }}>
+                                            {{ $secao->nome_secao_cardapio }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('sessao_cardapio_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="numero_escolhas_permitidas" class="font-weight-bold">Nº de Escolhas Permitidas*</label>
+                                <input type="number" class="form-control @error('numero_escolhas_permitidas') is-invalid @enderror" 
+                                       id="numero_escolhas_permitidas" name="numero_escolhas_permitidas" 
+                                       value="{{ old('numero_escolhas_permitidas', 1) }}" min="1" max="10" required>
+                                @error('numero_escolhas_permitidas')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -29,16 +61,44 @@
                         
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="tipo_item" class="font-weight-bold">Tipo*</label>
-                                <select class="form-control @error('tipo_item') is-invalid @enderror" 
-                                        id="tipo_item" name="tipo_item" required>
-                                    <option value="">Selecione...</option>
-                                    <option value="Entrada" {{ old('tipo_item') == 'Entrada' ? 'selected' : '' }}>Entrada</option>
-                                    <option value="Prato Principal" {{ old('tipo_item') == 'Prato Principal' ? 'selected' : '' }}>Prato Principal</option>
-                                    <option value="Sobremesa" {{ old('tipo_item') == 'Sobremesa' ? 'selected' : '' }}>Sobremesa</option>
-                                    <option value="Bebida" {{ old('tipo_item') == 'Bebida' ? 'selected' : '' }}>Bebida</option>
+                                <label for="ordem_exibicao" class="font-weight-bold">Ordem de Exibição*</label>
+                                <input type="number" class="form-control @error('ordem_exibicao') is-invalid @enderror" 
+                                       id="ordem_exibicao" name="ordem_exibicao" value="{{ old('ordem_exibicao', 1) }}" min="1" required>
+                                @error('ordem_exibicao')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="font-weight-bold">Escolha Exclusiva?</label>
+                                <div class="custom-control custom-switch mt-2">
+                                    <input type="checkbox" class="custom-control-input" id="eh_grupo_escolha_exclusiva" 
+                                           name="eh_grupo_escolha_exclusiva" value="1" {{ old('eh_grupo_escolha_exclusiva') ? 'checked' : '' }}>
+                                    <label class="custom-control-label" for="eh_grupo_escolha_exclusiva">Sim</label>
+                                </div>
+                                @error('eh_grupo_escolha_exclusiva')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="refeicao_principal_id">Refeição Principal Relacionada</label>
+                                <select class="form-control @error('refeicao_principal_id') is-invalid @enderror" 
+                                        id="refeicao_principal_id" name="refeicao_principal_id">
+                                    <option value="">Nenhuma</option>
+                                    @foreach($refeicoes as $refeicao)
+                                        <option value="{{ $refeicao->id }}" {{ old('refeicao_principal_id') == $refeicao->id ? 'selected' : '' }}>
+                                            {{ $refeicao->NomeOpcaoRefeicao }}
+                                        </option>
+                                    @endforeach
                                 </select>
-                                @error('tipo_item')
+                                @error('refeicao_principal_id')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -51,7 +111,7 @@
                         <i class="fas fa-times mr-1"></i> Cancelar
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save mr-1"></i> Salvar Item
+                        <i class="fas fa-save mr-1"></i> Salvar Categoria
                     </button>
                 </div>
             </form>
@@ -63,23 +123,41 @@
 <script>
 $(document).ready(function() {
     // Validação do formulário
-    $('#createItemForm').validate({
+    $('#createCategoriaForm').validate({
         rules: {
-            nome_item: {
+            nome_categoria_item: {
                 required: true,
                 minlength: 3
             },
-            tipo_item: {
+            sessao_cardapio_id: {
                 required: true
+            },
+            numero_escolhas_permitidas: {
+                required: true,
+                min: 1,
+                max: 10
+            },
+            ordem_exibicao: {
+                required: true,
+                min: 1
             }
         },
         messages: {
-            nome_item: {
-                required: "Por favor, informe o nome do item",
+            nome_categoria_item: {
+                required: "Por favor, informe o nome da categoria",
                 minlength: "O nome deve ter pelo menos 3 caracteres"
             },
-            tipo_item: {
-                required: "Por favor, selecione o tipo do item"
+            sessao_cardapio_id: {
+                required: "Por favor, selecione a seção do cardápio"
+            },
+            numero_escolhas_permitidas: {
+                required: "Informe o número de escolhas permitidas",
+                min: "Mínimo de 1 escolha",
+                max: "Máximo de 10 escolhas"
+            },
+            ordem_exibicao: {
+                required: "Informe a ordem de exibição",
+                min: "A ordem deve ser pelo menos 1"
             }
         },
         errorElement: 'span',
@@ -104,18 +182,18 @@ $(document).ready(function() {
                     $('.modal-footer').append('<span class="ml-2"><i class="fas fa-spinner fa-spin"></i> Salvando...</span>');
                 },
                 success: function(response) {
-                    toastr.success('Item cadastrado com sucesso!');
-                    $('#createItemModal').modal('hide');
+                    toastr.success('Categoria cadastrada com sucesso!');
+                    $('#createCategoriaModal').modal('hide');
                     
-                    // Recarrega a tabela ou adiciona o novo item dinamicamente
-                    if(typeof tableItens !== 'undefined') {
-                        tableItens.ajax.reload();
+                    // Recarrega a tabela ou adiciona a nova categoria dinamicamente
+                    if(typeof tableCategorias !== 'undefined') {
+                        tableCategorias.ajax.reload();
                     } else {
                         setTimeout(() => { location.reload(); }, 1500);
                     }
                 },
                 error: function(xhr) {
-                    toastr.error('Erro ao cadastrar item: ' + xhr.responseJSON.message);
+                    toastr.error('Erro ao cadastrar categoria: ' + (xhr.responseJSON?.message || 'Erro desconhecido'));
                     $('.modal-footer button').prop('disabled', false);
                     $('.modal-footer span').remove();
                 }
@@ -124,7 +202,7 @@ $(document).ready(function() {
     });
     
     // Limpa o formulário quando o modal é fechado
-    $('#createItemModal').on('hidden.bs.modal', function () {
+    $('#createCategoriaModal').on('hidden.bs.modal', function () {
         $(this).find('form')[0].reset();
         $(this).find('.is-invalid').removeClass('is-invalid');
         $(this).find('.invalid-feedback').remove();

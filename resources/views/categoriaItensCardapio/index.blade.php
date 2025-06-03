@@ -15,8 +15,8 @@
     </a>
   </div>
     <div class="col d-flex justify-content-end">
-        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#createItemModal">
-            <i class="fas fa-plus"></i> Novo Item
+        <button type="button" class="btn btn-success new" data-toggle="modal" data-target="#createCategoriaModal">
+            <i class="fas fa-plus"></i> Nova Categoria
         </button>
     </div>
 </div>
@@ -52,28 +52,29 @@
                 @foreach ($categorias as $categoria)
                     <tr>
                         <td>{{ $categoria->id }}</td>
-                        <td>{{ $categoria->secoes_cardapios }}</td>
-                        <td>{{ $categoria->sessao_cardapio}}</td>
-                        <td>{{ $categoria->refeicao_principal }}</td>
+                        <td>{{ $categoria->secaoCardapio->nome_secao_cardapio }}</td>
+                        <td>{{ $categoria->refeicaoPrincipal->NomeOpcaoRefeicao??'' }}</td>
                         <td>{{ $categoria->nome_categoria_item }}</td>
+                        <td>{{ $categoria->numero_escolhas_permitidas}}</td>
                         <td>{{ $categoria->ordem_exibicao }}</td>
                         <td>{{ $categoria->eh_grupo_escolha_exclusiva }}</td>
                         <td>
                             <button type="button" class="btn btn-warning btn-sm edit-item" 
-                                    data-toggle="modal" data-target="#editItemModal{{ $categoria->id }}">
+                                    data-toggle="modal" data-target="#editCategoriaModal{{ $categoria->id }}">
                                 <i class="fas fa-edit"></i>
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteItemModal{{ $categoria->id }}">
+                                data-target="#deleteCategoriaModal{{ $categoria->id }}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
 
         
-            @include('categoriaItensCardapio.modals.edit', ['item' => $item])
-            @include('categoriaItensCardapio.modals.delete', ['item' => $item])
+            @include('categoriaItensCardapio.modals.edit', ['categoria' => $categoria])
+            @include('categoriaItensCardapio.modals.delete', ['categoria' => $categoria])
+            @include('categoriaItensCardapio.modals.create')
                 @endforeach
             </tbody>
     @endcomponent

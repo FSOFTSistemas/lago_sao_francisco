@@ -17,11 +17,11 @@ class CategoriasDeItensCardapio extends Model
         'ordem_exibicao',   
     ];
 
-    public function secoesCardapio(){
+    public function secaoCardapio(){
         return $this->belongsTo(SecoesCardapio::class, 'sessao_cardapio_id');
     }
 
     public function refeicaoPrincipal(){
-        return $this->belongsTo(SecoesCardapio::class, 'refeicao_principal_id');
+        return $this->belongsTo(RefeicaoPrincipal::class, 'refeicao_principal_id');
     }
 }
