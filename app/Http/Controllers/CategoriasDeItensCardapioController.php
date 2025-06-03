@@ -29,7 +29,7 @@ class CategoriasDeItensCardapioController extends Controller
      */
     public function create()
     {
-        //
+        return view('categoriaItensCardapio._form');
     }
 
     /**

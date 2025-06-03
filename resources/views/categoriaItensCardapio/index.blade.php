@@ -15,9 +15,11 @@
     </a>
   </div>
     <div class="col d-flex justify-content-end">
-        <button type="button" class="btn btn-success new" data-toggle="modal" data-target="#createCategoriaModal">
+        <a href="{{ route('categoriaItensCardapio.create') }}">
+            <button type="button" class="btn btn-success new">
             <i class="fas fa-plus"></i> Nova Categoria
         </button>
+        </a>
     </div>
 </div>
 
