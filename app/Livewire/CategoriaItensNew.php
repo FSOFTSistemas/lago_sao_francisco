@@ -19,7 +19,7 @@ class CategoriaItensNew extends Component
     
     // Variáveis para itens
     public $selectedItem;
-    public $itensDaCategoria = [];
+    //public $itensDaCategoria = [];
     public $itensTemporarios = [];
     public $allItems;
     public $categoriaSalva = false;
@@ -76,11 +76,14 @@ class CategoriaItensNew extends Component
     protected function loadItensDaCategoria()
     {
         if ($this->categoriaSalva) {
-            $this->itensDaCategoria = CategoriasDeItensCardapio::find($this->categoriaID)
-                ->itens()
-                ->get();
+            $this->itensTemporarios = CategoriasDeItensCardapio::find($this->categoriaID)['itens']??[];
+            $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
+                return $item;
+            });
+            
+               
         } else {
-            $this->itensDaCategoria = collect($this->itensTemporarios)->map(function($item) {
+            $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
                 return $item;
             });
            
@@ -116,17 +119,12 @@ class CategoriaItensNew extends Component
         ]);
 
         $item = ItensDoCardapio::find($this->selectedItem);
-        if ($this->categoriaSalva) {
-            CategoriasDeItensCardapio::find($this->categoriaID)
-                ->itens();
-        } else {
-            $this->itensTemporarios[] = [
+        $this->itensTemporarios[] = [
                 'id' => $item->id,
                 'nome_item' => $item->nome_item,
                 'tipo_item' => $item->tipo_item
-            ];
-            
-        }
+        ];
+        
 
         $this->reset(['selectedItem']);
         $this->inputKey = now()->timestamp;

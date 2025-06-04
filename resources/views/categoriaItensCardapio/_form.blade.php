@@ -7,7 +7,7 @@
 @stop
 
 @section('content')
-    @livewire('CategoriaItensNew')
+    @livewire('CategoriaItensNew',['id'=>$id??null])
 @stop
 
 @section('css')

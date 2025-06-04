@@ -128,9 +128,9 @@ class CategoriasDeItensCardapioController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(CategoriasDeItensCardapio $categoriasDeItensCardapio)
+    public function edit($id)
     {
-        //
+        return view('categoriaItensCardapio._form', ['id' => $id]);
     }
 
     /**
