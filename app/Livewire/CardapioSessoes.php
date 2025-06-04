@@ -26,6 +26,7 @@ class CardapioSessoes extends Component
 
     public function mount($cardapioId)
     {
+        // dd($cardapioId);
         $this->cardapioId = $cardapioId;
         $this->loadSessoes();
     }

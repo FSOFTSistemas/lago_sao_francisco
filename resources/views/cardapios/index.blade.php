@@ -54,11 +54,11 @@
                     <td>
                         {{-- <a href="{{ route('cardapios.show', $cardapio->CardapioID) }}" class="btn btn-info btn-sm">👁️</a> --}}
                         <a href="{{ route('cardapios.edit', $cardapio->id) }}" class="btn btn-warning btn-sm">✏️</a>
-                        {{-- <form action="{{ route('cardapios.destroy', $cardapio->CardapioID) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este cardápio?')">
+                        <form action="{{ route('cardapios.destroy', $cardapio->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este cardápio?')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
-                        </form> --}}
+                        </form>
                     </td>
                 </tr>
             @endforeach
