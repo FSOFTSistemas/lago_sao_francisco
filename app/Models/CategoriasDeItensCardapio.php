@@ -24,4 +24,11 @@ class CategoriasDeItensCardapio extends Model
     public function refeicaoPrincipal(){
         return $this->belongsTo(RefeicaoPrincipal::class, 'refeicao_principal_id');
     }
+
+    public function itens()
+{
+    return $this->hasMany(DisponibilidadeItemCategoria::class, 'CategoriaItemID')
+        ->with('itemID');
+}
+
 }

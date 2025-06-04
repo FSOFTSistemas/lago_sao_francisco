@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DisponibilidadeItemCategoria extends Model
 {
-    protected $table = 'DisponibilidadeDeItemNaCategoria';
+    // protected $table = 'DisponibilidadeDeItemNaCategoria';
     protected $primaryKey = 'DisponibilidadeID';
 
     protected $fillable = [
@@ -29,4 +29,5 @@ class DisponibilidadeItemCategoria extends Model
     {
         return $this->belongsTo(ItensDoCardapio::class, 'ItemID');
     }
+
 }

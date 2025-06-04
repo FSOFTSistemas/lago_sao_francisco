@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cardapio;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -119,4 +120,17 @@ class CardapioController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
+        public function verPdf($id)
+    {
+
+        $cardapio = Cardapio::with([
+            'secoes.categorias.itens.item',
+            'opcoes.categorias.itens.item'
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('cardapios.pdf', compact('cardapio'));
+        return $pdf->stream("cardapio_{$cardapio->id}.pdf");
+    }
+
 }

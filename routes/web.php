@@ -154,3 +154,6 @@ Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->midd
 Route::resource('itemCardapio', ItensDoCardapioController::class);
 
 Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);
+
+//Rota para gerar PDF de cardapio
+Route::get('/cardapios/{id}/pdf', [\App\Http\Controllers\CardapioController::class, 'verPdf'])->name('cardapios.pdf');

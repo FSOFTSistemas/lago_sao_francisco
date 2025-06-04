@@ -22,4 +22,9 @@ class RefeicaoPrincipal extends Model
     {
         return $this->belongsTo(Cardapio::class, 'cardapio_id');
     }
+    public function categorias()
+{
+    return $this->hasMany(CategoriasDeItensCardapio::class, 'refeicao_principal_id');
+}
+
 }

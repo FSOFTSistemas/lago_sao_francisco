@@ -52,6 +52,9 @@
                     <td>R$ {{ number_format($cardapio->PrecoBasePorPessoa, 2, ',', '.') }}</td>
                     <td>{{ $cardapio->ValidadeOrcamentoDias }}</td>
                     <td>
+                        <a href="{{ route('cardapios.pdf', $cardapio->id) }}" target="_blank" class="btn btn-sm btn-primary">
+                            👁️
+                        </a>
                         {{-- <a href="{{ route('cardapios.show', $cardapio->CardapioID) }}" class="btn btn-info btn-sm">👁️</a> --}}
                         <a href="{{ route('cardapios.edit', $cardapio->id) }}" class="btn btn-warning btn-sm">✏️</a>
                         <form action="{{ route('cardapios.destroy', $cardapio->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este cardápio?')">

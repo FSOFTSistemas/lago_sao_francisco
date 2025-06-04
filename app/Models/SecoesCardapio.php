@@ -18,7 +18,9 @@ class SecoesCardapio extends Model
     public function cardapio(){
         return $this->belongsTo(Cardapio::class, 'cardapio_id');
     }
-    public function categorias(){
-        return $this->hasMany(CategoriasDeItensCardapio::class);
-    }
+    public function categorias()
+{
+    return $this->hasMany(CategoriasDeItensCardapio::class, 'sessao_cardapio_id');
+}
+
 }

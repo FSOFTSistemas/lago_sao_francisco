@@ -28,4 +28,15 @@ class Cardapio extends Model
         'PoliticaCriancaDescontoPercentual' => 'decimal:2',
         'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'boolean',
     ];
+
+    public function secoes()
+{
+    return $this->hasMany(SecoesCardapio::class, 'cardapio_id');
+}
+
+public function opcoes()
+{
+    return $this->hasMany(refeicaoPrincipal::class, 'Cardapio_id');
+}
+
 }
