@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\CategoriasDeItensCardapio;
+use App\Models\DisponibilidadeItemCategoria;
 use App\Models\RefeicaoPrincipal;
 use App\Models\SecoesCardapio;
 use Exception;
@@ -38,6 +40,7 @@ class CategoriasDeItensCardapioController extends Controller
     public function store(Request $request)
     {
       try {
+            DB::beginTransaction();
              $request->merge([
                 'eh_grupo_escolha_exclusiva' => $request->has('eh_grupo_escolha_exclusiva')
             ]);
@@ -48,6 +51,8 @@ class CategoriasDeItensCardapioController extends Controller
                 'numero_escolhas_permitidas' => 'required|integer',
                 'eh_grupo_escolha_exclusiva' => 'required|boolean',
                 'ordem_exibicao' => 'required|integer',
+                'itens' => 'sometimes|array', // 'sometimes' permite que seja opcional
+                
             ], [
                 'sessao_cardapio_id.required' => 'O campo seção do cardápio é obrigatório.',
                 'sessao_cardapio_id.exists' => 'A seção do cardápio selecionada é inválida.',
@@ -62,19 +67,53 @@ class CategoriasDeItensCardapioController extends Controller
                 'eh_grupo_escolha_exclusiva.boolean' => 'O campo grupo de escolha exclusiva deve ser verdadeiro ou falso.',
                 'ordem_exibicao.required' => 'O campo ordem de exibição é obrigatório.',
                 'ordem_exibicao.integer' => 'A ordem de exibição deve ser um valor inteiro.',
+                'itens.array' => 'Os itens devem ser enviados como uma lista.',    
             ]);
 
+            // Cria a categoria
             $categoria = CategoriasDeItensCardapio::create($validated);
+            
+            // Processa os itens
+            foreach($validated['itens'] as $index => $item) {
+                $dadosItem = [
+                    'ItemInclusoPadrao' => true,
+                    'OrdemExibicao' => $index + 1,
+                    'CategoriaItemID' => $categoria->id,
+                    'ItemID' => $item['id']
+                ];
 
+                // Verificação adicional
+                if (!is_numeric($item['id'])) {
+                    throw new Exception("ID do item inválido: " . $item['id']);
+                }
+                
+                DisponibilidadeItemCategoria::create($dadosItem);
+            }
+
+            DB::commit();
+            
             return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria criada com sucesso');
         } catch (ValidationException $e) {
-           return redirect()->route('categoriaItensCardapio.index')
-                ->with('error', "Erro ao criar nova categoria: {$e->getMessage()}");
+            DB::rollBack();
+            return redirect()
+                ->route('categoriaItensCardapio.index')
+                ->withErrors($e->validator)
+                ->withInput();
+                
         } catch (ModelNotFoundException $e) {
-            return redirect()->back()->with('error', 'Registro não encontrado');
+            DB::rollBack();
+            return redirect()
+                ->back()
+                ->with('error', 'Registro não encontrado')
+                ->withInput();
+                
         } catch (Exception $e) {
-            return redirect()->route('categoriaItensCardapio.index')
-                ->with('error', "Erro ao criar nova categoria: {$e->getMessage()}");
+            DB::rollBack();
+            \Log::error("Erro ao criar categoria: " . $e->getMessage());
+            return redirect()
+                ->route('categoriaItensCardapio.index')
+                ->with('error', "Erro ao processar: " . $e->getMessage())
+                ->withInput();
         }
     }
 

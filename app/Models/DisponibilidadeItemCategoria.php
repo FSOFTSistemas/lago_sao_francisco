@@ -6,27 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class DisponibilidadeItemCategoria extends Model
 {
-    protected $table = 'DisponibilidadeDeItemNaCategoria';
+    protected $table = 'disponibilidade_item_categorias';
     protected $primaryKey = 'DisponibilidadeID';
-
+    
+    public $timestamps = true;
+    
     protected $fillable = [
         'ItemInclusoPadrao',
         'OrdemExibicao',
         'CategoriaItemID',
-        'ItemID',
+        'ItemID'
     ];
 
     protected $casts = [
         'ItemInclusoPadrao' => 'boolean',
+        'OrdemExibicao' => 'integer'
     ];
 
     public function categoria()
     {
-        return $this->belongsTo(CategoriasDeItensCardapio::class, 'CategoriaItemID');
+        return $this->belongsTo(CategoriaItemCardapio::class, 'CategoriaItemID');
     }
 
     public function item()
     {
-        return $this->belongsTo(ItensDoCardapio::class, 'ItemID');
+        return $this->belongsTo(ItemCardapio::class, 'ItemID');
     }
 }

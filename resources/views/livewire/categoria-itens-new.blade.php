@@ -104,13 +104,15 @@
     <div class="mt-5">
         <div class="d-flex justify-content-between mb-3">
             <h5>Itens da Categoria</h5>
-            <button class="btn btn-primary" data-toggle="modal" data-target="#addItemModal">
+            <button class="btn btn-primary" wire:click="openModal">
                 <i class="fas fa-plus mr-1"></i> Adicionar Item
             </button>
         </div>
 
         <!-- Modal para adicionar item -->
-        <div class="modal fade" id="addItemModal" tabindex="-1" role="dialog" aria-labelledby="addItemModalLabel" aria-hidden="true" wire:ignore.self>
+        <div class="modal fade @if ($modalAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -122,7 +124,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Selecione o Item</label>
-                            <select wire:model="selectedItem" class="form-control">
+                            <select wire:model="selectedItem" class="form-control"wire:key="item-{{ $inputKey }}">
                                 <option value="">Selecione um item...</option>
                                 @foreach($allItems as $item)
                                     <option value="{{ $item->id }}">{{ $item->nome_item }}</option>
@@ -152,12 +154,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($itensDaCategoria as $item)
+                    @forelse($itensDaCategoria??[] as $item)
                         <tr>
-                            <td>{{ $item->nome_item }}</td>
-                            <td>{{ $item->tipo_item ?? '-' }}</td>
+                            <td>{{ $item['nome_item']}}</td>
+                            <td>{{ $item['tipo_item']}}</td>
                             <td>
-                                <button wire:click="removeItem({{ $item->id }})" class="btn btn-sm btn-danger">
+                                <button wire:click="removeItem({{ $item['id'] }})" class="btn btn-sm btn-danger">
                                     <i class="fas fa-trash"></i> Remover
                                 </button>
                             </td>
@@ -172,14 +174,3 @@
         </div>
     </div>
 </div>
-
-@push('scripts')
-<script>
-    document.addEventListener('livewire:load', function() {
-        // Fechar modal quando o item é adicionado
-        window.livewire.on('itemAdded', () => {
-            $('#addItemModal').modal('hide');
-        });
-    });
-</script>
-@endpush
