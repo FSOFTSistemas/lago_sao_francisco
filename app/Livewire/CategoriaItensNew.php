@@ -2,10 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Models\CategoriasDeItensCardapio;
 use App\Models\SecoesCardapio;
 use App\Models\RefeicaoPrincipal;
 use App\Models\ItensDoCardapio;
+use Illuminate\Http\Request;
 use Livewire\Component;
 
 class CategoriaItensNew extends Component
@@ -16,11 +18,15 @@ class CategoriaItensNew extends Component
     public $categoriaID;
     
     // Variáveis para itens
-    public $selectedItem, $tipoItem;
+    public $selectedItem;
     public $itensDaCategoria = [];
     public $itensTemporarios = [];
     public $allItems;
     public $categoriaSalva = false;
+
+    public $modalAberto = false;
+
+    public $inputKey;
 
     protected $rules = [
         'sessao_cardapio_id' => 'required|exists:secoes_cardapios,id',
@@ -47,8 +53,7 @@ class CategoriaItensNew extends Component
 
     public function mount($id = null)
     {
-        $this->allItems = ItensDoCardapio::all();
-        
+        $this->allItems = ItensDoCardapio::all(); 
         if ($id) {
             $this->categoriaID = $id;
             $this->loadCategoriaData($id);
@@ -76,59 +81,57 @@ class CategoriaItensNew extends Component
                 ->get();
         } else {
             $this->itensDaCategoria = collect($this->itensTemporarios)->map(function($item) {
-                dd($item);
                 return $item;
             });
+           
         }
     }
 
     public function save()
-    {
-        $this->validate();
+{
+    $this->validate();
 
-        if ($this->categoriaSalva) {
-            $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
-            $categoria->update($this->only(array_keys($this->rules)));
-        } else {
-            $categoria = CategoriasDeItensCardapio::create($this->only(array_keys($this->rules)));
-            $this->categoriaSalva = true;
-            $this->categoriaID = $categoria->id;
-            
-            // Salva os itens temporários
-            foreach ($this->itensTemporarios as $item) {
-                $categoria->itens()->attach($item['id'], ['tipo_item' => $item['tipo_item']]);
-            }
-            $this->itensTemporarios = [];
-        }
-
-        $this->loadItensDaCategoria();
-        session()->flash('success', 'Categoria ' . ($this->categoriaSalva ? 'atualizada' : 'criada') . ' com sucesso');
+    $dados = $this->only(array_keys($this->rules));
+    
+    if ($this->categoriaSalva) {
+        // // Atualização da categoria existente
+        // $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
+        // $categoria->update($dados);
+    } else {
+        $dados['itens']= $this->itensTemporarios;
+        $request = new Request($dados);
+        $controller = new CategoriasDeItensCardapioController();
+        return $controller->store($request);
+        
     }
+
+    $this->loadItensDaCategoria();
+    
+}
 
     public function addItem()
     {
         $this->validate([
             'selectedItem' => 'required|exists:itens_do_cardapios,id',
-            'tipoItem' => 'nullable|string|max:100'
         ]);
 
         $item = ItensDoCardapio::find($this->selectedItem);
-
         if ($this->categoriaSalva) {
             CategoriasDeItensCardapio::find($this->categoriaID)
-                ->itens()
-                ->attach($item->id, ['tipo_item' => $this->tipoItem]);
+                ->itens();
         } else {
             $this->itensTemporarios[] = [
                 'id' => $item->id,
                 'nome_item' => $item->nome_item,
-                'tipo_item' => $this->tipoItem
+                'tipo_item' => $item->tipo_item
             ];
+            
         }
 
-        $this->reset(['selectedItem', 'tipoItem']);
+        $this->reset(['selectedItem']);
+        $this->inputKey = now()->timestamp;
         $this->loadItensDaCategoria();
-        $this->dispatch('itemAdded');
+        $this->fecharModal();
     }
 
     public function removeItem($itemId)
@@ -138,8 +141,11 @@ class CategoriaItensNew extends Component
                 ->itens()
                 ->detach($itemId);
         } else {
-            $this->itensTemporarios = array_filter($this->itensTemporarios, 
-                fn($item) => $item['id'] != $itemId);
+             $this->itensTemporarios = array_filter($this->itensTemporarios, 
+                 fn($item) => $item['id'] != $itemId);
+            if (empty($this->itensTemporarios)) {
+                $this->itensTemporarios = [];
+            }
         }
 
         $this->loadItensDaCategoria();
@@ -152,5 +158,15 @@ class CategoriaItensNew extends Component
             'secoes' => SecoesCardapio::all(),
             'refeicoes' => RefeicaoPrincipal::all(),
         ]);
+    }
+
+        public function openModal()
+    {
+        $this->modalAberto = true;
+    }
+
+    public function fecharModal()
+    {
+        $this->modalAberto = false;
     }
 }
