@@ -1,14 +1,7 @@
 <div>
     <h5 class="mb-3">Opções de Refeição</h5>
-    <div class="row">
-        <div class="col d-flex justify-content-start">
-            <a href="#" class="btn btn-success new">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
         <div class="col d-flex justify-content-end">
-        <button class="btn btn-success new" wire:click="finalizar">Finalizar</button>
-    </div>
+        <button class="btn btn-success new" wire:click="finalizarCardapio">Finalizar</button>
     </div>
 
     <form wire:submit.prevent="addOpcao" class="mb-4">
@@ -82,6 +75,22 @@
             }).then((result) => {
             if (result.isConfirmed) {
                $wire.dispatch("deleteOpcao", { id: event.id})
+            }
+            });
+        })
+  
+        $wire.on("confirmarFinalizado", () => {
+            Swal.fire({
+            title: "Finalizar Cardapio?",
+            text: "Você tem certeza?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, finalizar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("finalizarConfirmado",)
             }
             });
         })

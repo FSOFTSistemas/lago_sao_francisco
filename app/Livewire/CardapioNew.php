@@ -30,19 +30,47 @@ class CardapioNew extends Component
         'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'boolean',
     ];
 
+    public function mount($id = null)
+    {
+        if($id){
+        $this->cardapioSalvo = true;
+        $cardapio = Cardapio::findOrFail($id);
+        $this->cardapioID = $cardapio->id;
+        $this->NomeCardapio = old('NomeCardapio', $cardapio->NomeCardapio);
+        $this->AnoCardapio = $cardapio->AnoCardapio;
+        $this->PrecoBasePorPessoa = old('PrecoBasePorPessoa', $cardapio->PrecoBasePorPessoa);
+        $this->ValidadeOrcamentoDias = old('ValidadeOrcamentoDias', $cardapio->ValidadeOrcamentoDias);
+        $this->PoliticaCriancaGratisLimiteIdade = old('PoliticaCriancaGratisLimiteIdade', $cardapio-> PoliticaCriancaGratisLimiteIdade);
+        $this->PoliticaCriancaDescontoIdadeInicio = old('PoliticaCriancaDescontoIdadeInicio', $cardapio->PoliticaCriancaDescontoIdadeInicio);
+        $this->PoliticaCriancaDescontoIdadeFim = old('PoliticaCriancaDescontoIdadeFim', $cardapio->PoliticaCriancaDescontoIdadeFim);
+        $this->PoliticaCriancaDescontoPercentual = old('PoliticaCriancaDescontoPercentual', $cardapio->PoliticaCriancaDescontoPercentual);
+        $this->PoliticaCriancaPrecoIntegralIdadeInicio = old('PoliticaCriancaPrecoIntegralIdadeInicio', $cardapio->PoliticaCriancaPrecoIntegralIdadeInicio);
+        $this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao = old('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', $cardapio->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
+        
+        } else {
+            $this->AnoCardapio = date('Y');
+            $this->PoliticaCriancaGratisLimiteIdade = 6;
+            $this->PoliticaCriancaDescontoIdadeInicio = 7;
+            $this->PoliticaCriancaDescontoIdadeFim = 12;
+            $this->PoliticaCriancaDescontoPercentual = 50;
+            $this->PoliticaCriancaPrecoIntegralIdadeInicio = 13;
+        }
+    }
+
+
+     #[On('avancou')]
     public function save()
     {
         $this->validate();
-
+        
         if($this->cardapioSalvo) {
             $cardapio = Cardapio::findOrFail($this->cardapioID);
             $cardapio->update($this->only(array_keys($this->rules)));
-            session()->flash('success', 'Cardápio atualizado com sucesso');
-            $this->proximo($this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
+            $this->proximoAba($this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
         } else {
             $cardapio = Cardapio::create($this->only(array_keys($this->rules)));
             $this->cardapioSalvo = true;
-            session()->flash('success', 'Cardápio criado com sucesso');
+            
         }
         $this->cardapioID = $cardapio->id;
         $this->abaAtual = 'sessoes';
@@ -59,8 +87,13 @@ class CardapioNew extends Component
         $this->abaAtual = $aba;
     }
 
-    public function proximo($opcaoRefeicao)
+    public function proximoAba($opcaoRefeicao)
     {
         $this->dispatch('atualizar', refeicao: $opcaoRefeicao);
+    }
+
+    public function avancar()
+    {
+        $this->dispatch("confirmed");
     }
 }

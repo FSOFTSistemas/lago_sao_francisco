@@ -1,27 +1,20 @@
 <div>
+
     <h5 class="mb-3">Seções do Cardápio</h5>
-    <div class="row">
-        <div class="col d-flex justify-content-start">
-            <a href="#" class="btn btn-success new">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
         <div class="col d-flex justify-content-end">
-            @dump($refeicao)
             @if($refeicao)
             <button class="btn btn-success new" wire:click="proximo">Próximo</button>
             @else
             <button class="btn btn-success new" wire:click="finalizar">Finalizar</button>
             @endif
         </div>
-    </div>
     <br>
 
     <form wire:submit.prevent="addSessao" class="mb-4">
         <div class="form-row">
             <div class="col-md-3">
                 <label>Nome da Seção</label>
-                <input type="text" wire:model="nomeSessao" class="form-control" required  wire:key="nomeSessao-{{ $inputKey }}">
+                <input type="text" wire:model="nomeSessao" class="form-control" required  wire:key="nomeSessao-{{ $inputKey }}" value= {{ old('nomeSessao', $this->cardapio->nomeSessao ?? '') }}>
                 @error('nomeSessao') <span class="text-danger">{{ $message }}</span> @enderror
 
             </div>
@@ -129,6 +122,38 @@
             }).then((result) => {
             if (result.isConfirmed) {
                $wire.dispatch("delete", { id: event.id})
+            }
+            });
+        })
+
+        $wire.on("confirmProximo", () => {
+            Swal.fire({
+            title: "Continuar para a próxima seção?",
+            text: "Você não poderá voltar.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, continuar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("proximoConfirmado")
+            }
+            });
+        })
+
+        $wire.on("confirmFinalizar", () => {
+            Swal.fire({
+            title: "Finalizar Cardápio?",
+            text: "Confira todos os campos antes de finalizar.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, finalizar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("finalizarConfirmado")
             }
             });
         })

@@ -1,5 +1,5 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" style="display: none">
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>
@@ -29,8 +29,6 @@
 
 
             <form wire:submit.prevent="save">
-               <input type="hidden" name="modo" value="{{ $cardapioID ? 'edit' : 'create' }}">
-
                <div class="row">
                    <div class="form-group col-md-3">
                        <label>Nome do Cardápio</label>
@@ -40,19 +38,20 @@
                        @enderror
                    </div>
                     <div class="form-group col-md-3">
-                        <label for="ano-cardapio">Ano do Cardápio</label>
-                        <input type="text"
-                            id="ano-cardapio"
-                            wire:model.defer="AnoCardapio"
-                            class="form-control"
-                            maxlength="4"
-                            pattern="\d{4}"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);"
-                            placeholder="Ex: 2025">
-                        @error('AnoCardapio')
-                            <span class="text-danger">{{ $message }}</span>
-                        @enderror
-                    </div>
+                    <label for="ano-cardapio">Ano do Cardápio</label>
+                    <select id="ano-cardapio" wire:model.defer="AnoCardapio" class="form-control">
+                        @php
+                            $anoAtual = date('Y');
+                            $anos = range($anoAtual - 3, $anoAtual + 3);
+                        @endphp
+                        @foreach ($anos as $ano)
+                            <option>{{ $ano }}</option>
+                        @endforeach
+                    </select>
+                    @error('AnoCardapio')
+                        <span class="text-danger">{{ $message }}</span>
+                    @enderror
+                </div>
                </div>
 
                 <div class="row">
@@ -148,32 +147,34 @@
 
                 <hr>
                 <div class="form-group row"
-                    x-data="{ ativo: @entangle('PossuiOpcaoEscolhaConteudoPrincipalRefeicao').live}">
-                    <label class="form-label d-block label-control">
-                        Permite escolher conteúdo principal da refeição?
-                    </label>
-                    <div class="form-check form-switch">
-                        <input
-                            class="form-check-input"
-                            type="checkbox"
-                            id="PossuiOpcaoSwitch"
-                            x-model="ativo"
-                            @change="$wire.set('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', ativo ? 1 : 0)"
-                        >
-                        <label class="form-check-label ms-2" for="PossuiOpcaoSwitch">
-                            <span x-text="ativo ? 'Sim' : 'Não'"></span>
-                        </label>
-                    </div>
+     x-data="{ possuiOp: false }"
+     x-init="possuiOp = @js((bool) $this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao)">
+    <label class="form-label d-block label-control">
+        Permite escolher conteúdo principal da refeição?
+    </label>
+    <div class="form-check form-switch">
+        <input
+            class="form-check-input"
+            type="checkbox"
+            id="PossuiOpcaoSwitch"
+            x-model="possuiOp"
+            @change="$wire.set('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', possuiOp ? 1 : 0)"
+        >
+        <label class="form-check-label ms-2" for="PossuiOpcaoSwitch">
+            <span x-text="possuiOp ? 'Sim' : 'Não'"></span>
+        </label>
+    </div>
 
-                    @error('PossuiOpcaoEscolhaConteudoPrincipalRefeicao')
-                        <span class="text-danger">{{ $message }}</span>
-                    @enderror
-                </div>
+    @error('PossuiOpcaoEscolhaConteudoPrincipalRefeicao')
+        <span class="text-danger">{{ $message }}</span>
+    @enderror
+</div>
+
 
 
 
                 <div class="col d-flex justify-content-end">
-                    <button class="btn btn-success mt-3 new">Seguinte</button>
+                    <button class="btn btn-success mt-3 new" wire:click.prevent= "avancar">Seguinte</button>
                 </div>
             </form>
         </div>
@@ -224,4 +225,24 @@
         }
     </style>
     @endsection
+
+        @script
+    <script>
+        $wire.on("confirmed", (event) => {
+            Swal.fire({
+            title: "Continuar para a próxima página?",
+            text: "Revise todos os campos",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, continuar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("avancou")
+            }
+            });
+        })
+    </script>
+    @endscript
 </div>
