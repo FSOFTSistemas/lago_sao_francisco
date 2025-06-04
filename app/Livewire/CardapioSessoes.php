@@ -98,12 +98,24 @@ class CardapioSessoes extends Component
         $sessao->delete();
         $this->loadSessoes();
     }
-
     public function proximo()
+    {
+        $this->dispatch("confirmProximo");
+    }
+
+    #[On('proximoConfirmado')]
+    public function proximoConfirmado()
     {
         $this->dispatch('mudarAba', aba: 'opcoes');
     }
+
     public function finalizar()
+    {
+        $this->dispatch("confirmFinalizar");
+    }
+
+    #[On('finalizarConfirmado')]
+    public function finalizarConfirmado()
     {
         return redirect()->route('cardapios.index')->with('success', 'Cardápio Finalizado com sucesso');
     }

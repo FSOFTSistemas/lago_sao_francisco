@@ -64,8 +64,9 @@ class CardapioOpcoesRefeicao extends Component
         $this->loadOpcoes();
     }
 
-    public function finalizar()
+     public function finalizarCardapio()
     {
-        return redirect()->route('cardapios.index')->with('success', 'Cardápio Finalizado com sucesso');
+        $this->dispatch("confirmarFinalizado");
     }
+
 }

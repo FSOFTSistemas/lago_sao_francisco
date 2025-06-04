@@ -12,8 +12,9 @@
 @stop
 
 @section('css')
-
+@livewireStyles
 @stop
 
 @section('js')
+@livewireScripts
 @stop

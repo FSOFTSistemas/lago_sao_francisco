@@ -25,8 +25,7 @@ class CardapioController extends Controller
 
     public function edit($id) 
     {
-        $cardapios = Cardapio::findOrFail($id);
-        return view('cardapios._form', compact('cardapios'));
+        return view('cardapios._form', ['id' => $id]);
     }
 
     public function show(Cardapio $cardapio)
