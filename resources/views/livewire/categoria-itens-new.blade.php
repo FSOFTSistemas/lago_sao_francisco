@@ -154,7 +154,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($itensDaCategoria??[] as $item)
+                    @forelse($itensTemporarios??[] as $item)
                         <tr>
                             <td>{{ $item['nome_item']}}</td>
                             <td>{{ $item['tipo_item']}}</td>

@@ -61,10 +61,11 @@
                         <td>{{ $categoria->ordem_exibicao }}</td>
                         <td>{{ $categoria->eh_grupo_escolha_exclusiva }}</td>
                         <td>
-                            <button type="button" class="btn btn-warning btn-sm edit-item" 
-                                    data-toggle="modal" data-target="#editCategoriaModal{{ $categoria->id }}">
-                                <i class="fas fa-edit"></i>
-                            </button>
+                             <a href="{{ route('categoriaItensCardapio.edit', $categoria->id) }}">
+                                <button type="button" class="btn btn-warning btn-sm edit-item">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </a>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                                 data-target="#deleteCategoriaModal{{ $categoria->id }}">
@@ -74,9 +75,7 @@
                     </tr>
 
         
-            @include('categoriaItensCardapio.modals.edit', ['categoria' => $categoria])
             @include('categoriaItensCardapio.modals.delete', ['categoria' => $categoria])
-            @include('categoriaItensCardapio.modals.create')
                 @endforeach
             </tbody>
     @endcomponent
