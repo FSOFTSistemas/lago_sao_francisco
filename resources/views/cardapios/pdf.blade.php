@@ -14,10 +14,7 @@
     </style>
 </head>
 <body>
-  @php
-  dd($cardapio->secoes)
-  @endphp
-    <h1>{{ $cardapio->NomeCardapio }}</h1>
+    <h1 style="color: #3e7222">{{ $cardapio->NomeCardapio }}</h1>
     <p><strong>Ano:</strong> {{ $cardapio->AnoCardapio }}</p>
     @if($cardapio->PrecoBasePorPessoa)
         <p><strong>Valor base por pessoa:</strong> R$ {{ number_format($cardapio->PrecoBasePorPessoa, 2, ',', '.') }}</p>
@@ -27,17 +24,18 @@
     @if($cardapio->secoes->count())
         <h2>Seções do Cardápio</h2>
         @foreach($cardapio->secoes as $secao)
-            <div class="section-title">{{ $secao->NomeSessao }}</div>
+            <div class="section-title">{{ $secao->nome_secao_cardapio }}</div>
 
             @foreach($secao->categorias as $categoria)
-                <div class="categoria">
+                <div class="categoria" style="text-decoration: underline">
                     {{ $categoria->nome_categoria_item }}
                     ({{ $categoria->numero_escolhas_permitidas }} escolha{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }} permitida{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }})
                 </div>
                
                 @foreach($categoria->itens as $disp)
-                    <div class="item">- {{ $disp->item->NomeItem }} @if($disp->item->TipoGenericoItem) ({{ $disp->item->TipoGenericoItem }}) @endif</div>
+                    <div class="item">- {{ $disp->item->nome_item }} @if($disp->item->tipo_item) ({{ $disp->item->tipo_item }}) @endif</div>
                 @endforeach
+                <br>
             @endforeach
         @endforeach
     @endif
@@ -58,12 +56,27 @@
                     ({{ $categoria->numero_escolhas_permitidas }} escolha{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }} permitida{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }})
                 </div>
 
-                @foreach($categoria->itens as $disp)
-                    <div class="item">- {{ $disp->item->NomeItem }} @if($disp->item->TipoGenericoItem) ({{ $disp->item->TipoGenericoItem }}) @endif</div>
+                @foreach($categoria->item as $disp)
+                    <div class="item">- {{ $disp->item->nome_item }} @if($disp->item->tipo_item) ({{ $disp->item->tipo_item }}) @endif</div>
                 @endforeach
             @endforeach
         @endforeach
     @endif
+    
+    <div class="info">
+      <h2>Informações Importantes</h2>
+      <ul>
+        <li>Crianças de 0 a {{$cardapio->PoliticaCriancaGratisLimiteIdade}} não paga.</li>
+        <li>Crianças de {{$cardapio->PoliticaCriancaDescontoIdadeInicio}} a {{$cardapio->PoliticaCriancaDescontoIdadeFim}} pagam {{intval($cardapio->PoliticaCriancaDescontoPercentual)}}% do valor da senha.</li>
+        <li>Orçamento válido por {{$cardapio->ValidadeOrcamentoDias}} dias a contar da data do envio do orçamento.</li>
+      </ul>
+    </div>
+
+    <div class="contato">
+      <h2>Relacionamento ao cliente.</h2>
+      <p>Contato WhatsApp (87) 98178-0808</p>
+      <p>E-mail: <span style="text-decoration: underline">gerencia@lagosaofrancisco.com</span></p>
+    </div>
 
 </body>
 </html>

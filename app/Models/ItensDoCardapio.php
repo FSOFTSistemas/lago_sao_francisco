@@ -14,6 +14,6 @@ class ItensDoCardapio extends Model
     ];
     public function disponibilidade()
     {
-        return $this->hasMany(DisponibilidadeItemCategoria::class);
+        return $this->hasMany(DisponibilidadeItemCategoria::class, 'ItemID');
     }
 }

@@ -25,12 +25,12 @@ class DisponibilidadeItemCategoria extends Model
 
     public function categoria()
     {
-        return $this->belongsTo(CategoriaItemCardapio::class, 'CategoriaItemID');
+        return $this->belongsTo(CategoriasDeItensCardapio::class, 'CategoriaItemID');
     }
 
     public function item()
     {
-        return $this->belongsTo(ItemCardapio::class, 'ItemID');
+        return $this->belongsTo(ItensDoCardapio::class, 'ItemID');
     }
 
 }

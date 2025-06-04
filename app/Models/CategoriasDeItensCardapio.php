@@ -28,7 +28,7 @@ class CategoriasDeItensCardapio extends Model
     public function itens()
 {
     return $this->hasMany(DisponibilidadeItemCategoria::class, 'CategoriaItemID')
-        ->with('itemID');
+        ->with('item');
 }
 
 }
