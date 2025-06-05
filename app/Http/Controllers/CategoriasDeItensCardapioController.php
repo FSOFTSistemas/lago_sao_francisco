@@ -45,8 +45,8 @@ class CategoriasDeItensCardapioController extends Controller
                 'eh_grupo_escolha_exclusiva' => $request->has('eh_grupo_escolha_exclusiva')
             ]);
             $validated = $request->validate([
-                'sessao_cardapio_id' => 'required|exists:secoes_cardapios,id',
-                'refeicao_principal_id' => 'required|exists:refeicao_principals,id',
+                'sessao_cardapio_id' => 'nullable',
+                'refeicao_principal_id' => 'nullable|exists:refeicao_principals,id',
                 'nome_categoria_item' => 'required|string|max:255',
                 'numero_escolhas_permitidas' => 'required|integer',
                 'eh_grupo_escolha_exclusiva' => 'required|boolean',
@@ -54,9 +54,6 @@ class CategoriasDeItensCardapioController extends Controller
                 'itens' => 'sometimes|array', // 'sometimes' permite que seja opcional
                 
             ], [
-                'sessao_cardapio_id.required' => 'O campo seção do cardápio é obrigatório.',
-                'sessao_cardapio_id.exists' => 'A seção do cardápio selecionada é inválida.',
-                'refeicao_principal_id.required' => 'O campo refeição principal é obrigatório.',
                 'refeicao_principal_id.exists' => 'A refeição principal selecionada é inválida.',
                 'nome_categoria_item.required' => 'O campo nome da categoria é obrigatório.',
                 'nome_categoria_item.string' => 'O nome da categoria deve ser um texto.',
@@ -96,9 +93,8 @@ class CategoriasDeItensCardapioController extends Controller
         } catch (ValidationException $e) {
             DB::rollBack();
             return redirect()
-                ->route('categoriaItensCardapio.index')
-                ->withErrors($e->validator)
-                ->withInput();
+                ->route('categoriaItensCardapio.index');
+
                 
         } catch (ModelNotFoundException $e) {
             DB::rollBack();

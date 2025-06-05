@@ -29,7 +29,7 @@ class CategoriaItensNew extends Component
     public $inputKey;
 
     protected $rules = [
-        'sessao_cardapio_id' => 'required|exists:secoes_cardapios,id',
+        'sessao_cardapio_id' => 'nullable',
         'refeicao_principal_id' => 'nullable|exists:refeicao_principals,id',
         'nome_categoria_item' => 'required|string|max:255',
         'numero_escolhas_permitidas' => 'required|integer|min:1|max:10',
@@ -38,8 +38,6 @@ class CategoriaItensNew extends Component
     ];
 
     protected $messages = [
-        'sessao_cardapio_id.required' => 'O campo seção do cardápio é obrigatório.',
-        'sessao_cardapio_id.exists' => 'A seção do cardápio selecionada é inválida.',
         'refeicao_principal_id.exists' => 'A refeição principal selecionada é inválida.',
         'nome_categoria_item.required' => 'O campo nome da categoria é obrigatório.',
         'nome_categoria_item.max' => 'O nome da categoria não pode ter mais que 255 caracteres.',
@@ -76,18 +74,16 @@ class CategoriaItensNew extends Component
     protected function loadItensDaCategoria()
     {
         if ($this->categoriaSalva) {
-                  $categoria = CategoriasDeItensCardapio::with('itens')->find($this->categoriaID);
+        $categoria = CategoriasDeItensCardapio::with('itens.item')->find($this->categoriaID);
 
-        $this->itensTemporarios = $categoria->itens->map(function ($item) {
+        $this->itensTemporarios = $categoria->itens->map(function ($disponibilidade) {
             return [
-                'id' => $item->id,
-                'nome_item' => $item->nome_item,
-                'tipo_item' => $item->tipo_item,
+                'id' => $disponibilidade->item->id ?? null,
+                'nome_item' => $disponibilidade->item->nome_item ?? '',
+                'tipo_item' => $disponibilidade->item->tipo_item ?? '',
             ];
-        })->toArray();
-            
-               
-        } else {
+        })->filter(fn($item) => $item['id'])->values()->toArray();
+    }else {
             $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
                 return $item;
             });
