@@ -1,7 +1,17 @@
-<div>
+<div  x-data="{
+    ehExclusiva: @entangle('eh_grupo_escolha_exclusiva'),
+    get valorEscolhas() {
+        return this.ehExclusiva ? 1 : @entangle('numero_escolhas_permitidas')
+    }
+}">
+<div class="alert alert-secondary">
+                        <strong>ATENÇÃO:</strong> Ao criar uma categoria nova, você deve selecionar OU uma seção OU uma Refeição. <br>
+                        <em>O campo Escolha exclusiva define o nº de escolhas para 1. ex: escolher entre Arroz Branco OU Arroz de Brócolis</em>
+                    </div>
     <h5 class="mb-3">{{ $categoriaSalva ? 'Editar' : 'Nova' }} Categoria do Cardápio</h5>
+    
 
-    <form wire:submit.prevent="save">
+    <form wire:submit.prevent="save" x-data="{ escolhaExclusiva: @entangle('eh_grupo_escolha_exclusiva') }">
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
@@ -13,38 +23,6 @@
                     @enderror
                 </div>
             </div>
-            
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="sessao_cardapio_id" class="font-weight-bold">Seção do Cardápio*</label>
-                    <select wire:model="sessao_cardapio_id" class="form-control @error('sessao_cardapio_id') is-invalid @enderror" 
-                            id="sessao_cardapio_id" required>
-                        <option value="">Selecione a seção...</option>
-                        @foreach($secoes as $secao)
-                            <option value="{{ $secao->id }}">
-                                {{ $secao->nome_secao_cardapio }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('sessao_cardapio_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-        </div>
-        
-        <div class="row mt-3">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="numero_escolhas_permitidas" class="font-weight-bold">Nº de Escolhas Permitidas*</label>
-                    <input type="number" wire:model="numero_escolhas_permitidas" class="form-control @error('numero_escolhas_permitidas') is-invalid @enderror" 
-                           id="numero_escolhas_permitidas" min="1" max="10">
-                    @error('numero_escolhas_permitidas')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-            
             <div class="col-md-4">
                 <div class="form-group">
                     <label for="ordem_exibicao" class="font-weight-bold">Ordem de Exibição*</label>
@@ -55,12 +33,35 @@
                     @enderror
                 </div>
             </div>
+        </div>
+
+        
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="numero_escolhas_permitidas" class="font-weight-bold">Nº de Escolhas Permitidas*</label>
+                        <input type="number"
+                        wire:model="numero_escolhas_permitidas"
+                        x-bind:readonly="ehExclusiva"
+                        x-bind:value="ehExclusiva ? 1 : $wire.numero_escolhas_permitidas"
+                        class="form-control @error('numero_escolhas_permitidas') is-invalid @enderror"
+                        id="numero_escolhas_permitidas" min="1" max="10">
+
+                    @error('numero_escolhas_permitidas')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
             
             <div class="col-md-4">
                 <div class="form-group">
                     <label class="font-weight-bold">Escolha Exclusiva?</label>
                     <div class="custom-control custom-switch mt-2">
-                        <input type="checkbox" wire:model="eh_grupo_escolha_exclusiva" class="custom-control-input" id="eh_grupo_escolha_exclusiva">
+                        <input type="checkbox"
+                        wire:model="eh_grupo_escolha_exclusiva"
+                        x-model="escolhaExclusiva"
+                        class="custom-control-input"
+                        id="eh_grupo_escolha_exclusiva">
                         <label class="custom-control-label" for="eh_grupo_escolha_exclusiva">Sim</label>
                     </div>
                     @error('eh_grupo_escolha_exclusiva')
@@ -73,9 +74,10 @@
         <div class="row mt-3">
             <div class="col-md-6">
                 <div class="form-group">
-                    <label for="refeicao_principal_id">Refeição Principal Relacionada</label>
-                    <select wire:model="refeicao_principal_id" class="form-control @error('refeicao_principal_id') is-invalid @enderror" 
-                            id="refeicao_principal_id">
+                    <label for="refeicao_principal_id">Refeição Principal</label>
+                    <select wire:model="refeicao_principal_id" wire:change="limparSessao"
+                    class="form-control @error('refeicao_principal_id') is-invalid @enderror"
+                    id="refeicao_principal_id">
                         <option value="">Nenhuma</option>
                         @foreach($refeicoes as $refeicao)
                             <option value="{{ $refeicao->id }}">
@@ -88,6 +90,26 @@
                     @enderror
                 </div>
             </div>
+
+                    <div class="col-md-6">
+            <div class="form-group">
+                <label for="sessao_cardapio_id" class="font-weight-bold">Seção do Cardápio</label>
+               <select wire:model="sessao_cardapio_id" wire:change="limparRefeicao"
+                class="form-control @error('sessao_cardapio_id') is-invalid @enderror"
+                id="sessao_cardapio_id">
+                    <option value="">Selecione a seção...</option>
+                    @foreach($secoes as $secao)
+                        <option value="{{ $secao->id }}">
+                            {{ $secao->nome_secao_cardapio }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('sessao_cardapio_id')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+        </div>
+
         </div>
 
         <div class="form-group mt-4">
@@ -154,7 +176,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($itensTemporarios??[] as $item)
+                    @dump($itensTemporarios)
+                    @forelse($itensTemporarios?? [] as $item)
                         <tr>
                             <td>{{ $item['nome_item']}}</td>
                             <td>{{ $item['tipo_item']}}</td>

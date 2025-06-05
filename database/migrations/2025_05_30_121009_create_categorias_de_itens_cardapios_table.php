@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('categorias_de_itens_cardapios', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('sessao_cardapio_id');
+            $table->unsignedBigInteger('sessao_cardapio_id')->nullable();
             $table->unsignedBigInteger('refeicao_principal_id')->nullable();
             $table->string('nome_categoria_item');
             $table->integer('numero_escolhas_permitidas');

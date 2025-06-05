@@ -76,10 +76,15 @@ class CategoriaItensNew extends Component
     protected function loadItensDaCategoria()
     {
         if ($this->categoriaSalva) {
-            $this->itensTemporarios = CategoriasDeItensCardapio::find($this->categoriaID)['itens']??[];
-            $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
-                return $item;
-            });
+                  $categoria = CategoriasDeItensCardapio::with('itens')->find($this->categoriaID);
+
+        $this->itensTemporarios = $categoria->itens->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'nome_item' => $item->nome_item,
+                'tipo_item' => $item->tipo_item,
+            ];
+        })->toArray();
             
                
         } else {
@@ -93,6 +98,25 @@ class CategoriaItensNew extends Component
     public function save()
 {
     $this->validate();
+
+    // Validação XOR
+    if ($this->sessao_cardapio_id && $this->refeicao_principal_id) {
+        $this->addError('sessao_cardapio_id', 'Você deve escolher apenas uma: Seção do Cardápio ou Refeição Principal.');
+        $this->addError('refeicao_principal_id', 'Você deve escolher apenas uma: Seção do Cardápio ou Refeição Principal.');
+        return;
+    }
+
+    if (!$this->sessao_cardapio_id && !$this->refeicao_principal_id) {
+        $this->addError('sessao_cardapio_id', 'Você deve preencher Seção do Cardápio ou Refeição Principal.');
+        $this->addError('refeicao_principal_id', 'Você deve preencher Seção do Cardápio ou Refeição Principal.');
+        return;
+    }
+
+    //validação para que escolha exclusiva seja 1 se true
+    if ($this->eh_grupo_escolha_exclusiva && $this->numero_escolhas_permitidas != 1) {
+        $this->addError('numero_escolhas_permitidas', 'Para grupos de escolha exclusiva, o número de escolhas deve ser 1.');
+        return;
+    }
 
     $dados = $this->only(array_keys($this->rules));
     
@@ -139,12 +163,11 @@ class CategoriaItensNew extends Component
                 ->itens()
                 ->detach($itemId);
         } else {
-             $this->itensTemporarios = array_filter($this->itensTemporarios, 
-                 fn($item) => $item['id'] != $itemId);
-            if (empty($this->itensTemporarios)) {
-                $this->itensTemporarios = [];
+             $this->itensTemporarios = collect($this->itensTemporarios)
+            ->filter(fn($item) => $item['id'] != $itemId)
+            ->values()
+            ->toArray();
             }
-        }
 
         $this->loadItensDaCategoria();
         session()->flash('success', 'Item removido com sucesso');
@@ -167,4 +190,15 @@ class CategoriaItensNew extends Component
     {
         $this->modalAberto = false;
     }
+
+    public function limparRefeicao()
+    {
+        $this->refeicao_principal_id = null;
+    }
+
+    public function limparSessao()
+    {
+        $this->sessao_cardapio_id = null;
+    }
+
 }
