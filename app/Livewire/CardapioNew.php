@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Cardapio;
+use App\Models\CategoriasDeItensCardapio;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
@@ -16,6 +17,7 @@ class CardapioNew extends Component
     public $cardapioID;
     public $abaAtual = 'geral';
     public $cardapioSalvo = false;
+    public $categorias = [];
 
     protected $rules = [
         'NomeCardapio' => 'required|string|max:255',
@@ -54,7 +56,7 @@ class CardapioNew extends Component
             $this->PoliticaCriancaDescontoIdadeFim = 12;
             $this->PoliticaCriancaDescontoPercentual = 50;
             $this->PoliticaCriancaPrecoIntegralIdadeInicio = 13;
-        }
+        }        
     }
 
 
@@ -74,6 +76,23 @@ class CardapioNew extends Component
         }
         $this->cardapioID = $cardapio->id;
         $this->abaAtual = 'sessoes';
+
+        $cardapioID = $this->cardapioID;
+
+       
+        $this->categorias = CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) use ($cardapioID) {
+            $query->where('cardapio_id', $cardapioID);
+        })->orWhereHas('refeicaoPrincipal', function ($query) use ($cardapioID) {
+            $query->where('cardapio_id', $cardapioID);
+        })->with(['secaoCardapio', 'refeicaoPrincipal']) // eager loading
+        ->get()->toArray();
+
+        // $this->categorias = CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) use ($cardapioID) {
+        // $query->where('sessao_cardapio_id', $cardapioID);
+        // })->orWhereHas('refeicaoPrincipal', function ($query) use ($cardapioID) {
+        //     $query->where('cardapio_id', $cardapioID);
+        // })->get()->toArray();
+
     }
 
     public function render()
@@ -96,4 +115,22 @@ class CardapioNew extends Component
     {
         $this->dispatch("confirmed");
     }
+
+    // #[On('categoriaObserver')]
+    // public function categoriaObserver ($categoria)
+    // {
+    //     $this->categorias = $categoria;
+    // }
+
+    public function getCategoriasProperty()
+{
+    return CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) {
+        $query->where('cardapio_id', $this->cardapioId);
+    })
+    ->orWhereHas('refeicaoPrincipal', function ($query) {
+        $query->where('cardapio_id', $this->cardapioId);
+    })
+    ->with(['secaoCardapio', 'refeicaoPrincipal'])
+    ->get()->toArray();
+}
 }

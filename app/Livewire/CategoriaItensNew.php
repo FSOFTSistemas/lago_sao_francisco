@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Models\CategoriasDeItensCardapio;
+use App\Models\DisponibilidadeItemCategoria;
 use App\Models\SecoesCardapio;
 use App\Models\RefeicaoPrincipal;
 use App\Models\ItensDoCardapio;
@@ -14,7 +15,7 @@ class CategoriaItensNew extends Component
 {
     public $sessao_cardapio_id, $refeicao_principal_id, $nome_categoria_item;
     public $numero_escolhas_permitidas = 1, $ordem_exibicao = 1;
-    public $eh_grupo_escolha_exclusiva = false;
+    public $eh_grupo_escolha_exclusiva = 0;
     public $categoriaID;
     
     // Variáveis para itens
@@ -33,7 +34,7 @@ class CategoriaItensNew extends Component
         'refeicao_principal_id' => 'nullable|exists:refeicao_principals,id',
         'nome_categoria_item' => 'required|string|max:255',
         'numero_escolhas_permitidas' => 'required|integer|min:1|max:10',
-        'eh_grupo_escolha_exclusiva' => 'required|boolean',
+        'eh_grupo_escolha_exclusiva' => 'boolean',
         'ordem_exibicao' => 'required|integer|min:1',
     ];
 
@@ -44,7 +45,6 @@ class CategoriaItensNew extends Component
         'numero_escolhas_permitidas.required' => 'O campo número de escolhas permitidas é obrigatório.',
         'numero_escolhas_permitidas.min' => 'O número mínimo de escolhas permitidas é 1.',
         'numero_escolhas_permitidas.max' => 'O número máximo de escolhas permitidas é 10.',
-        'eh_grupo_escolha_exclusiva.required' => 'O campo grupo de escolha exclusiva é obrigatório.',
         'ordem_exibicao.required' => 'O campo ordem de exibição é obrigatório.',
         'ordem_exibicao.min' => 'A ordem de exibição mínima é 1.',
     ];
@@ -118,8 +118,8 @@ class CategoriaItensNew extends Component
     
     if ($this->categoriaSalva) {
         // // Atualização da categoria existente
-        // $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
-        // $categoria->update($dados);
+        $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
+        $categoria->update($dados);
     } else {
         $dados['itens']= $this->itensTemporarios;
         $request = new Request($dados);
@@ -138,7 +138,22 @@ class CategoriaItensNew extends Component
             'selectedItem' => 'required|exists:itens_do_cardapios,id',
         ]);
 
+
         $item = ItensDoCardapio::find($this->selectedItem);
+        if ($this->categoriaSalva) {
+        // Evita duplicidade
+        $existe = DisponibilidadeItemCategoria::where('CategoriaItemID', $this->categoriaID)
+            ->where('ItemID', $item->id)
+            ->exists();
+
+        if (!$existe) {
+            DisponibilidadeItemCategoria::create([
+                'CategoriaItemID' => $this->categoriaID,
+                'ItemID' => $item->id,
+            ]);
+        }
+    }
+
         $this->itensTemporarios[] = [
                 'id' => $item->id,
                 'nome_item' => $item->nome_item,
@@ -155,9 +170,9 @@ class CategoriaItensNew extends Component
     public function removeItem($itemId)
     {
         if ($this->categoriaSalva) {
-            CategoriasDeItensCardapio::find($this->categoriaID)
-                ->itens()
-                ->detach($itemId);
+        DisponibilidadeItemCategoria::where('CategoriaItemID', $this->categoriaID)
+            ->where('itemID', $itemId)
+            ->delete();
         } else {
              $this->itensTemporarios = collect($this->itensTemporarios)
             ->filter(fn($item) => $item['id'] != $itemId)

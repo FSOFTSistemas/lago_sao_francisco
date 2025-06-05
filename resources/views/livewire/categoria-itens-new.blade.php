@@ -5,9 +5,9 @@
     }
 }">
 <div class="alert alert-secondary">
-                        <strong>ATENÇÃO:</strong> Ao criar uma categoria nova, você deve selecionar OU uma seção OU uma Refeição. <br>
-                        <em>O campo Escolha exclusiva define o nº de escolhas para 1. ex: escolher entre Arroz Branco OU Arroz de Brócolis</em>
-                    </div>
+    <strong>ATENÇÃO:</strong> Ao criar uma categoria nova, você deve selecionar OU uma seção OU uma Refeição. <br>
+    <em>O campo Escolha exclusiva define o nº de escolhas para 1. ex: escolher entre Arroz Branco OU Arroz de Brócolis</em>
+</div>
     <h5 class="mb-3">{{ $categoriaSalva ? 'Editar' : 'Nova' }} Categoria do Cardápio</h5>
     
 
@@ -176,7 +176,6 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @dump($itensTemporarios)
                     @forelse($itensTemporarios?? [] as $item)
                         <tr>
                             <td>{{ $item['nome_item']}}</td>

@@ -1,5 +1,5 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" style="display: none">
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>
@@ -16,6 +16,9 @@
                 </li>
             @endif
         @endif
+        <li class="nav-item">
+            <a href="#" class="nav-link {{ $abaAtual === 'categorias' ? 'active' : ''}}" id="categorias-tab" role="tab" wire:click.prevent="$set('abaAtual', 'categorias')">Categorias</a>
+        </li>
     </ul>
 
     <div class="tab-content mt-3" id="cardapioTabContent">
@@ -24,9 +27,8 @@
             <h5 class="mb-3">Novo Cardápio</h5>
             <div class="alert alert-secondary">
                         <strong>DICA:</strong> Campos referentes ao Cardápio. <br>
-                        <em>O preenchimento de todos os campos é obrigatório.</em>
-                    </div>
-
+                        <em>O preenchimento de todos os campos é obrigatório.</em>          
+            </div>
 
             <form wire:submit.prevent="save">
                <div class="row">
@@ -195,6 +197,15 @@
                 </div>
             @endif
         @endif
+            {{-- @php dd($categorias) @endphp --}}
+            @if($cardapioID ?? false)
+        <div class="tab-pane fade {{ $abaAtual === 'categorias' ? 'show active' : '' }}" id="categorias" role="tabpanel">
+           @include('categoriaItensCardapio.index', ['categorias' => $categorias]);
+        </div>
+        @endif
+        {{-- <div class="tab-pane fade {{ $abaAtual === 'categorias' ? 'show active' : '' }}" id="categorias" role="tabpanel">
+            @livewire('categoria-itens-new', ['cardapioId' => $cardapioID])
+        </div> --}}
     </div>
     @section('css')
      <style>

@@ -5,7 +5,7 @@
             @if($refeicao)
             <button class="btn btn-success new" wire:click="proximo">Próximo</button>
             @else
-            <button class="btn btn-success new" wire:click="finalizar">Finalizar</button>
+            <button class="btn btn-success new" wire:click="proximoCategoria">Próximo</button>
             @endif
         </div>
     <br>
@@ -142,18 +142,18 @@
             });
         })
 
-        $wire.on("confirmFinalizar", () => {
+        $wire.on("confirmProxAba", () => {
             Swal.fire({
-            title: "Finalizar Cardápio?",
-            text: "Confira todos os campos antes de finalizar.",
+            title: "Ir para a próxima página?",
+            text: "Confira todos os campos antes de prosseguir.",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
-            confirmButtonText: "Sim, finalizar!"
+            confirmButtonText: "Sim, prosseguir!"
             }).then((result) => {
             if (result.isConfirmed) {
-               $wire.dispatch("finalizarConfirmado")
+               $wire.dispatch("proxAbaConfirmado")
             }
             });
         })

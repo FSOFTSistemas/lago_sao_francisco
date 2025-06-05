@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\CategoriasDeItensCardapio;
 use App\Models\SecoesCardapio;
 use Livewire\Component;
 use Livewire\Attributes\On;
@@ -15,6 +16,7 @@ class CardapioSessoes extends Component
     public $ordemExibicaoError;
     public $sessaoIdToDelete;
     public $refeicao;
+    public $categorias = [];
 
 
 
@@ -26,7 +28,6 @@ class CardapioSessoes extends Component
 
     public function mount($cardapioId)
     {
-        // dd($cardapioId);
         $this->cardapioId = $cardapioId;
         $this->loadSessoes();
     }
@@ -47,12 +48,16 @@ class CardapioSessoes extends Component
                 return;
             }
 
-            SecoesCardapio::create([
+            $secao = SecoesCardapio::create([
                 'cardapio_id' => $this->cardapioId,
                 'nome_secao_cardapio' => $this->nomeSessao,
                 'opcao_conteudo_principal_refeicao' => $this->ehOpcaoPrincipal,
                 'ordem_exibicao' => $this->ordemExibicao,
             ]);
+
+            //  $this->categorias = CategoriasDeItensCardapio::where('sessao_cardapio_id', $secao->id);
+
+            //  $this->atualizarCategoria($this->categorias);
 
             $this->nomeSessao = '';
             $this->ordemExibicao = '';
@@ -110,15 +115,15 @@ class CardapioSessoes extends Component
         $this->dispatch('mudarAba', aba: 'opcoes');
     }
 
-    public function finalizar()
+    public function proximoCategoria()
     {
-        $this->dispatch("confirmFinalizar");
+        $this->dispatch("confirmProxAba");
     }
 
-    #[On('finalizarConfirmado')]
-    public function finalizarConfirmado()
+    #[On('proxAbaConfirmado')]
+    public function proxAbaConfirmado()
     {
-        return redirect()->route('cardapios.index')->with('success', 'Cardápio Finalizado com sucesso');
+        $this->dispatch('mudarAba', aba: 'categorias');
     }
 
 
@@ -127,4 +132,11 @@ class CardapioSessoes extends Component
     {
         $this->refeicao = $refeicao;
     }
+
+    // public function atualizarCategoria()
+    // {
+    //     $this->dispatch('categoriaObserver', categoria: '');
+    // }
+
+    
 }

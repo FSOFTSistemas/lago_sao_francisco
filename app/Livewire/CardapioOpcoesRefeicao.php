@@ -64,9 +64,10 @@ class CardapioOpcoesRefeicao extends Component
         $this->loadOpcoes();
     }
 
-     public function finalizarCardapio()
+    public function proximoCategoria()
     {
-        $this->dispatch("confirmarFinalizado");
+        $this->dispatch("confirmProxAba");
     }
+
 
 }
