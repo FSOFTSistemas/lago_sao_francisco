@@ -27,14 +27,14 @@
                 </div>
 
                 <div class="form-group row">
-                    <label class="col-md-3 label-control" for="cpf">* CPF:</label>
+                    <label class="col-md-3 label-control" for="cpf"> CPF:</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" id="cpf" name="cpf" required value="{{ $funcionario->cpf ?? '' }}">
+                        <input type="text" class="form-control" id="cpf" name="cpf" value="{{ $funcionario->cpf ?? '' }}">
                     </div>
                 
-                    <label class="col-md-1 label-control" for="salario">* Salário:</label>
+                    <label class="col-md-1 label-control" for="salario"> Salário:</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" id="salario" name="salario" required value="{{ $funcionario->salario ?? '' }}">
+                        <input type="text" class="form-control" id="salario" name="salario" value="{{ $funcionario->salario ?? '' }}">
                     </div>
                 </div>
 
@@ -92,7 +92,7 @@
                 </div>
 
                 <div class="form-group row">
-                    <label class="col-md-3 form-label d-block label-control">* Ativo?</label>
+                    <label class="col-md-3 form-label d-block label-control"> Ativo?</label>
                     <div class="form-check form-switch">
                         <input type="hidden" name="status" value="inativo">
                         <input

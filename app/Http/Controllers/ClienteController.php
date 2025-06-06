@@ -17,9 +17,9 @@ class ClienteController extends Controller
     {
         $user = Auth::user();
         $cliente= Cliente::all();
-        $endereco = Endereco::all();
+        $enderecos = Endereco::all();
         $empresa = Empresa::all();
-        return view('cliente.index', compact('cliente', 'endereco', 'empresa', 'user'));
+        return view('cliente.index', compact('cliente', 'enderecos', 'empresa', 'user'));
     }
 
     /**
@@ -27,9 +27,9 @@ class ClienteController extends Controller
      */
     public function create()
     {
-        $endereco = Endereco::all();
+        $enderecos = Endereco::all();
         $empresa = Empresa::all();
-        return view('cliente.create', compact('endereco', 'empresa'));
+        return view('cliente.create', compact('enderecos', 'empresa'));
     }
 
     /**
@@ -38,24 +38,35 @@ class ClienteController extends Controller
     public function store(Request $request)
     {
         try {
-            $request -> validate([
+            
+            $rules = [
                 'nome_razao_social' => 'required|string',
                 'apelido_nome_fantasia' => 'required|string',
                 'telefone' => 'nullable|string',
                 'whatsapp' => 'nullable|string',
                 'data_nascimento' => 'nullable|date',
                 'endereco_id' => 'nullable|exists:enderecos,id',
-                'cpf_cnpj' => 'required|string',
-                'rg_ie' => 'nullable|string',
                 'empresa_id' => 'nullable|exists:empresa,id',
-                'tipo' => 'required|in:PF, PJ'
-            ]);
+                'tipo' => 'required|in:PF,PJ'
+            ];
+
+            // Validação condicional para CPF/CNPJ
+            if ($request->tipo == 'PJ') {
+                $rules['cpf_cnpj'] = 'required|string'; // CNPJ obrigatório para PJ
+                $rules['rg_ie'] = 'nullable|string'; // IE opcional para PJ
+            } else {
+                $rules['cpf_cnpj'] = 'nullable|string'; // CPF opcional para PF
+                $rules['rg_ie'] = 'nullable|string'; // RG opcional para PF
+            }
+
+            $request->validate($rules);
+            
             $request['empresa_id'] = Auth::user()->empresa_id;
             Cliente::create($request->all());
+            
             return redirect()->route('cliente.index')->with('success', 'Cliente criado com sucesso!');
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', 'Erro ao validar dados');
+            return redirect()->back()->with('error', 'Erro ao validar dados: ' . $e->getMessage());
         }
     }
 
@@ -65,36 +76,46 @@ class ClienteController extends Controller
      */
     public function edit(Cliente $cliente)
     {
-        $endereco = Endereco::all();
+        $enderecos = Endereco::all();
         $cliente = Cliente::findOrFail($cliente->id);
-        return view('cliente.create', compact('cliente', 'endereco'));
+        return view('cliente.create', compact('cliente', 'enderecos'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Cliente $cliente)
-    {
-        try{
-            $cliente = Cliente::findOrFail($cliente->id);
-            $request->validate([
-            'nome_razao_social' => 'required|string',
-            'apelido_nome_fantasia' => 'required|string',
-            'telefone' => 'nullable|string',
-            'whatsapp' => 'nullable|string',
-            'data_nascimento' => 'nullable|date',
-            'endereco_id' => 'nullable|exists:enderecos,id',
-            'cpf_cnpj' => 'required|string',
-            'rg_ie' => 'nullable|string',
-            'tipo' => 'required|in:PF, PJ'
-            ]);
-            $cliente->update($request->all());
-            return redirect()->route('cliente.index')->with('success', 'Cliente atualizado com sucesso!'); 
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', 'Erro ao validar dados');
+        public function update(Request $request, Cliente $cliente)
+        {
+            try {
+                $cliente = Cliente::findOrFail($cliente->id);
+                
+                $rules = [
+                    'nome_razao_social' => 'required|string',
+                    'apelido_nome_fantasia' => 'required|string',
+                    'telefone' => 'nullable|string',
+                    'whatsapp' => 'nullable|string',
+                    'data_nascimento' => 'nullable|date',
+                    'endereco_id' => 'nullable|exists:enderecos,id',
+                    'tipo' => 'required|in:PF,PJ'
+                ];
+
+                // Validação condicional para CPF/CNPJ
+                if ($request->tipo == 'PJ') {
+                    $rules['cpf_cnpj'] = 'required|string'; // CNPJ obrigatório para PJ
+                    $rules['rg_ie'] = 'nullable|string'; // IE opcional para PJ
+                } else {
+                    $rules['cpf_cnpj'] = 'nullable|string'; // CPF opcional para PF
+                    $rules['rg_ie'] = 'nullable|string'; // RG opcional para PF
+                }
+
+                $request->validate($rules);
+                
+                $cliente->update($request->all());
+                return redirect()->route('cliente.index')->with('success', 'Cliente atualizado com sucesso!');
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', 'Erro ao validar dados: ' . $e->getMessage());
+            }
         }
-    }
 
     /**
      * Remove the specified resource from storage.

@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('whatsapp')->nullable();
             $table->date('data_nascimento')->nullable();
             $table->unsignedBigInteger('endereco_id')->nullable();
-            $table->string('cpf_cnpj')->unique();
-            $table->string('rg_ie')->unique();
+            $table->string('cpf_cnpj')->unique()->nullable();
+            $table->string('rg_ie')->unique()->nullable();
             $table->unsignedBigInteger('empresa_id');
             $table->enum('tipo', ['PF', 'PJ']);
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');

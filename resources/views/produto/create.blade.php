@@ -30,7 +30,7 @@
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="descricao">* Descrição:</label>
                         <div class="col-md-6">
-                            <input type="text" class="form-control" id="descricao" name="nome" required value="{{ $produto->descricao ?? '' }}">
+                            <input type="text" class="form-control" id="descricao" name="descricao" required value="{{ $produto->descricao ?? '' }}">
                         </div>
                     </div>
 
@@ -50,21 +50,24 @@
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="precoCusto">* Preço de Custo:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="precoCusto" name="preco_custo" required value="{{ $produto->preco_custo ?? '' }}">
+                            <input type="number" step="0.01" class="form-control" id="precoCusto" name="preco_custo" required 
+                                value="{{ isset($produto) ? number_format($produto->preco_custo, 2, '.', '') : '' }}">
                         </div>
                     </div>
-                   
+
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="precoVenda">* Preço de Venda:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="precoVenda" name="preco_venda" required value="{{ $produto->preco_venda ?? '' }}">
+                            <input type="number" step="0.01" class="form-control" id="precoVenda" name="preco_venda" required 
+                                value="{{ isset($produto) ? number_format($produto->preco_venda, 2, '.', '') : '' }}">
                         </div>
                     </div>
-                    
+
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="comissao">* Comissão (%):</label>
                         <div class="col-md-3">
-                            <input type="number" class="form-control" id="comissao" name="comissao" required value="{{ $produto->comissao ?? '' }}">
+                            <input type="number" step="0.01" min="0" max="100" class="form-control" id="comissao" name="comissao" required 
+                                value="{{ isset($produto->comissao) ? number_format($produto->comissao, 2, '.', '') : '0.00' }}">
                         </div>
                     </div>
 
