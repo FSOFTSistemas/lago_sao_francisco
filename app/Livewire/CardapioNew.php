@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Cardapio;
 use App\Models\CategoriasDeItensCardapio;
+use App\Services\CardapioService;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
@@ -18,6 +19,9 @@ class CardapioNew extends Component
     public $abaAtual = 'geral';
     public $cardapioSalvo = false;
     public $categorias = [];
+    public $categoriasSecao = [];
+    public $categoriasOpcao = [];
+    public $cardapio;
 
     protected $rules = [
         'NomeCardapio' => 'required|string|max:255',
@@ -34,21 +38,20 @@ class CardapioNew extends Component
 
     public function mount($id = null)
     {
-        if($id){
-        $this->cardapioSalvo = true;
-        $cardapio = Cardapio::findOrFail($id);
-        $this->cardapioID = $cardapio->id;
-        $this->NomeCardapio = old('NomeCardapio', $cardapio->NomeCardapio);
-        $this->AnoCardapio = $cardapio->AnoCardapio;
-        $this->PrecoBasePorPessoa = old('PrecoBasePorPessoa', $cardapio->PrecoBasePorPessoa);
-        $this->ValidadeOrcamentoDias = old('ValidadeOrcamentoDias', $cardapio->ValidadeOrcamentoDias);
-        $this->PoliticaCriancaGratisLimiteIdade = old('PoliticaCriancaGratisLimiteIdade', $cardapio-> PoliticaCriancaGratisLimiteIdade);
-        $this->PoliticaCriancaDescontoIdadeInicio = old('PoliticaCriancaDescontoIdadeInicio', $cardapio->PoliticaCriancaDescontoIdadeInicio);
-        $this->PoliticaCriancaDescontoIdadeFim = old('PoliticaCriancaDescontoIdadeFim', $cardapio->PoliticaCriancaDescontoIdadeFim);
-        $this->PoliticaCriancaDescontoPercentual = old('PoliticaCriancaDescontoPercentual', $cardapio->PoliticaCriancaDescontoPercentual);
-        $this->PoliticaCriancaPrecoIntegralIdadeInicio = old('PoliticaCriancaPrecoIntegralIdadeInicio', $cardapio->PoliticaCriancaPrecoIntegralIdadeInicio);
-        $this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao = old('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', $cardapio->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
-        
+        if ($id) {
+            $this->cardapioSalvo = true;
+            $cardapio = Cardapio::findOrFail($id);
+            $this->cardapioID = $cardapio->id;
+            $this->NomeCardapio = old('NomeCardapio', $cardapio->NomeCardapio);
+            $this->AnoCardapio = $cardapio->AnoCardapio;
+            $this->PrecoBasePorPessoa = old('PrecoBasePorPessoa', $cardapio->PrecoBasePorPessoa);
+            $this->ValidadeOrcamentoDias = old('ValidadeOrcamentoDias', $cardapio->ValidadeOrcamentoDias);
+            $this->PoliticaCriancaGratisLimiteIdade = old('PoliticaCriancaGratisLimiteIdade', $cardapio->PoliticaCriancaGratisLimiteIdade);
+            $this->PoliticaCriancaDescontoIdadeInicio = old('PoliticaCriancaDescontoIdadeInicio', $cardapio->PoliticaCriancaDescontoIdadeInicio);
+            $this->PoliticaCriancaDescontoIdadeFim = old('PoliticaCriancaDescontoIdadeFim', $cardapio->PoliticaCriancaDescontoIdadeFim);
+            $this->PoliticaCriancaDescontoPercentual = old('PoliticaCriancaDescontoPercentual', $cardapio->PoliticaCriancaDescontoPercentual);
+            $this->PoliticaCriancaPrecoIntegralIdadeInicio = old('PoliticaCriancaPrecoIntegralIdadeInicio', $cardapio->PoliticaCriancaPrecoIntegralIdadeInicio);
+            $this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao = old('PossuiOpcaoEscolhaConteudoPrincipalRefeicao', $cardapio->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
         } else {
             $this->AnoCardapio = date('Y');
             $this->PoliticaCriancaGratisLimiteIdade = 6;
@@ -56,51 +59,40 @@ class CardapioNew extends Component
             $this->PoliticaCriancaDescontoIdadeFim = 12;
             $this->PoliticaCriancaDescontoPercentual = 50;
             $this->PoliticaCriancaPrecoIntegralIdadeInicio = 13;
-        }        
+        }
     }
 
 
-     #[On('avancou')]
+    #[On('avancou')]
     public function save()
     {
         $this->validate();
-        
-        if($this->cardapioSalvo) {
+
+        if ($this->cardapioSalvo) {
             $cardapio = Cardapio::findOrFail($this->cardapioID);
             $cardapio->update($this->only(array_keys($this->rules)));
             $this->proximoAba($this->PossuiOpcaoEscolhaConteudoPrincipalRefeicao);
         } else {
             $cardapio = Cardapio::create($this->only(array_keys($this->rules)));
             $this->cardapioSalvo = true;
-            
         }
         $this->cardapioID = $cardapio->id;
         $this->abaAtual = 'sessoes';
-
-        $cardapioID = $this->cardapioID;
-
-       
-        $this->categorias = CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) use ($cardapioID) {
-            $query->where('cardapio_id', $cardapioID);
-        })->orWhereHas('refeicaoPrincipal', function ($query) use ($cardapioID) {
-            $query->where('cardapio_id', $cardapioID);
-        })->with(['secaoCardapio', 'refeicaoPrincipal']) // eager loading
-        ->get()->toArray();
-
-        // $this->categorias = CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) use ($cardapioID) {
-        // $query->where('sessao_cardapio_id', $cardapioID);
-        // })->orWhereHas('refeicaoPrincipal', function ($query) use ($cardapioID) {
-        //     $query->where('cardapio_id', $cardapioID);
-        // })->get()->toArray();
-
+        $this->setCardapio($this->cardapioID);
     }
+
+    public function setCardapio($id)
+    {
+        session(['cardapio_id' => $id]);
+    }
+
 
     public function render()
     {
         return view('livewire.cardapio-new');
     }
 
-     #[On('mudarAba')]
+    #[On('mudarAba')]
     public function atualizarAba($aba)
     {
         $this->abaAtual = $aba;
@@ -116,21 +108,20 @@ class CardapioNew extends Component
         $this->dispatch("confirmed");
     }
 
-    // #[On('categoriaObserver')]
-    // public function categoriaObserver ($categoria)
-    // {
-    //     $this->categorias = $categoria;
-    // }
+    #[On('criarCategoria')]
+    public function criarCategoria($aba)
+    {
+        $this->abaAtual = $aba;
+    }
 
-    public function getCategoriasProperty()
-{
-    return CategoriasDeItensCardapio::whereHas('secaoCardapio', function ($query) {
-        $query->where('cardapio_id', $this->cardapioId);
-    })
-    ->orWhereHas('refeicaoPrincipal', function ($query) {
-        $query->where('cardapio_id', $this->cardapioId);
-    })
-    ->with(['secaoCardapio', 'refeicaoPrincipal'])
-    ->get()->toArray();
-}
+    #[On('categoriaCriada')]
+    public function categoriaCriada($aba)
+    {
+        $this->abaAtual = $aba;
+    }
+
+    // public function setCardapioID($id)
+    // {
+    //     $this->dispatch('getCardapioID', id: $id);
+    // }
 }

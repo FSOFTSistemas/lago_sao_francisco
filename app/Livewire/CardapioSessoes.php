@@ -48,7 +48,7 @@ class CardapioSessoes extends Component
                 return;
             }
 
-            $secao = SecoesCardapio::create([
+            SecoesCardapio::create([
                 'cardapio_id' => $this->cardapioId,
                 'nome_secao_cardapio' => $this->nomeSessao,
                 'opcao_conteudo_principal_refeicao' => $this->ehOpcaoPrincipal,
@@ -115,15 +115,16 @@ class CardapioSessoes extends Component
         $this->dispatch('mudarAba', aba: 'opcoes');
     }
 
-    public function proximoCategoria()
+    public function proximoCategoria($cardapioId)
     {
-        $this->dispatch("confirmProxAba");
+        $this->dispatch("confirmProxAba", id: $cardapioId);
     }
 
     #[On('proxAbaConfirmado')]
-    public function proxAbaConfirmado()
+    public function proxAbaConfirmado($id)
     {
         $this->dispatch('mudarAba', aba: 'categorias');
+        $this->dispatch('categoriaObserver', id: $id );
     }
 
 
@@ -133,10 +134,10 @@ class CardapioSessoes extends Component
         $this->refeicao = $refeicao;
     }
 
-    // public function atualizarCategoria()
-    // {
-    //     $this->dispatch('categoriaObserver', categoria: '');
-    // }
+    public function atualizarCategoria($id)
+    {
+        $this->dispatch('categoriaObserver', id: $id);
+    }
 
     
 }

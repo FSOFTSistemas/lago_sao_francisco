@@ -8,8 +8,10 @@ use App\Models\DisponibilidadeItemCategoria;
 use App\Models\SecoesCardapio;
 use App\Models\RefeicaoPrincipal;
 use App\Models\ItensDoCardapio;
+use App\Services\CardapioService;
 use Illuminate\Http\Request;
 use Livewire\Component;
+use Livewire\Attributes\On;
 
 class CategoriaItensNew extends Component
 {
@@ -17,6 +19,7 @@ class CategoriaItensNew extends Component
     public $numero_escolhas_permitidas = 1, $ordem_exibicao = 1;
     public $eh_grupo_escolha_exclusiva = 0;
     public $categoriaID;
+    public $cardapioID;
     
     // Variáveis para itens
     public $selectedItem;
@@ -31,7 +34,7 @@ class CategoriaItensNew extends Component
 
     protected $rules = [
         'sessao_cardapio_id' => 'nullable',
-        'refeicao_principal_id' => 'nullable|exists:refeicao_principals,id',
+        'refeicao_principal_id' => 'nullable',
         'nome_categoria_item' => 'required|string|max:255',
         'numero_escolhas_permitidas' => 'required|integer|min:1|max:10',
         'eh_grupo_escolha_exclusiva' => 'boolean',
@@ -51,6 +54,7 @@ class CategoriaItensNew extends Component
 
     public function mount($id = null)
     {
+        $this->cardapioID = session('cardapio_id');
         $this->allItems = ItensDoCardapio::all(); 
         if ($id) {
             $this->categoriaID = $id;
@@ -124,7 +128,9 @@ class CategoriaItensNew extends Component
         $dados['itens']= $this->itensTemporarios;
         $request = new Request($dados);
         $controller = new CategoriasDeItensCardapioController();
-        return $controller->store($request);
+        $this->itensTemporarios = (array) $this->itensTemporarios;
+        $controller->store($request);
+        $this->concluido();
         
     }
 
@@ -159,8 +165,7 @@ class CategoriaItensNew extends Component
                 'nome_item' => $item->nome_item,
                 'tipo_item' => $item->tipo_item
         ];
-        
-
+    
         $this->reset(['selectedItem']);
         $this->inputKey = now()->timestamp;
         $this->loadItensDaCategoria();
@@ -210,6 +215,18 @@ class CategoriaItensNew extends Component
     public function limparSessao()
     {
         $this->sessao_cardapio_id = null;
+    }
+
+    public function concluido()
+    {
+        $this->dispatch('categoriaCriada', aba: 'categorias');
+        $this->dispatch('categoriaObserver', id: $this->cardapioID);
+    }
+
+    #[on('getCardapioID')]
+    public function getCardapioID($id)
+    {
+        $this->cardapioID = $id;
     }
 
 }

@@ -19,6 +19,9 @@
         <li class="nav-item">
             <a href="#" class="nav-link {{ $abaAtual === 'categorias' ? 'active' : ''}}" id="categorias-tab" role="tab" wire:click.prevent="$set('abaAtual', 'categorias')">Categorias</a>
         </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link {{ $abaAtual === 'categoriasCreate' ? 'active' : ''}}" id="categoriasCreate-tab" role="tab" wire:click.prevent="$set('abaAtual', 'categoriasCreate')">CategoriasCreate</a>
+        </li>
     </ul>
 
     <div class="tab-content mt-3" id="cardapioTabContent">
@@ -197,15 +200,18 @@
                 </div>
             @endif
         @endif
-            {{-- @php dd($categorias) @endphp --}}
-            @if($cardapioID ?? false)
-        <div class="tab-pane fade {{ $abaAtual === 'categorias' ? 'show active' : '' }}" id="categorias" role="tabpanel">
-           @include('categoriaItensCardapio.index', ['categorias' => $categorias]);
-        </div>
+
+        @if($cardapioID ?? false)
+            <div class="tab-pane fade {{ $abaAtual === 'categorias' ? 'show active' : '' }}" id="categorias" role="tabpanel">
+            @livewire('index-categoria')
+            </div>
         @endif
-        {{-- <div class="tab-pane fade {{ $abaAtual === 'categorias' ? 'show active' : '' }}" id="categorias" role="tabpanel">
-            @livewire('categoria-itens-new', ['cardapioId' => $cardapioID])
-        </div> --}}
+
+         @if($cardapioID ?? false)
+            <div class="tab-pane fade {{ $abaAtual === 'categoriasCreate' ? 'show active' : '' }}" id="categoriasCreate" role="tabpanel">
+            @livewire('categoria-itens-new')
+            </div>
+            @endif
     </div>
     @section('css')
      <style>

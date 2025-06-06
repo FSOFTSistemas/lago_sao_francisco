@@ -46,29 +46,27 @@ class CategoriasDeItensCardapioController extends Controller
             ]);
             $validated = $request->validate([
                 'sessao_cardapio_id' => 'nullable',
-                'refeicao_principal_id' => 'nullable|exists:refeicao_principals,id',
+                'refeicao_principal_id' => 'nullable',
                 'nome_categoria_item' => 'required|string|max:255',
                 'numero_escolhas_permitidas' => 'required|integer',
-                'eh_grupo_escolha_exclusiva' => 'required|boolean',
+                'eh_grupo_escolha_exclusiva' => 'boolean',
                 'ordem_exibicao' => 'required|integer',
-                'itens' => 'sometimes|array', // 'sometimes' permite que seja opcional
                 
             ], [
-                'refeicao_principal_id.exists' => 'A refeição principal selecionada é inválida.',
                 'nome_categoria_item.required' => 'O campo nome da categoria é obrigatório.',
                 'nome_categoria_item.string' => 'O nome da categoria deve ser um texto.',
                 'nome_categoria_item.max' => 'O nome da categoria não pode ter mais que 255 caracteres.',
                 'numero_escolhas_permitidas.required' => 'O campo número de escolhas permitidas é obrigatório.',
                 'numero_escolhas_permitidas.integer' => 'O número de escolhas permitidas deve ser um valor inteiro.',
-                'eh_grupo_escolha_exclusiva.required' => 'O campo grupo de escolha exclusiva é obrigatório.',
-                'eh_grupo_escolha_exclusiva.boolean' => 'O campo grupo de escolha exclusiva deve ser verdadeiro ou falso.',
                 'ordem_exibicao.required' => 'O campo ordem de exibição é obrigatório.',
                 'ordem_exibicao.integer' => 'A ordem de exibição deve ser um valor inteiro.',
                 'itens.array' => 'Os itens devem ser enviados como uma lista.',    
             ]);
+            
 
             // Cria a categoria
             $categoria = CategoriasDeItensCardapio::create($validated);
+
             
             // Processa os itens
             foreach($validated['itens'] as $index => $item) {
@@ -89,11 +87,10 @@ class CategoriasDeItensCardapioController extends Controller
 
             DB::commit();
             
-            return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria criada com sucesso');
+            return redirect()->back()->with('success', 'Categoria criada com sucesso');
         } catch (ValidationException $e) {
             DB::rollBack();
-            return redirect()
-                ->route('categoriaItensCardapio.index');
+            dd($e->getMessage());
 
                 
         } catch (ModelNotFoundException $e) {
@@ -107,7 +104,7 @@ class CategoriasDeItensCardapioController extends Controller
             DB::rollBack();
             \Log::error("Erro ao criar categoria: " . $e->getMessage());
             return redirect()
-                ->route('categoriaItensCardapio.index')
+                ->back()
                 ->with('error', "Erro ao processar: " . $e->getMessage())
                 ->withInput();
         }
