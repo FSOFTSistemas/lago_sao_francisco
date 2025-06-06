@@ -51,6 +51,7 @@
                 </tr>
             </thead>
             <tbody>
+                @php dd($categorias) @endphp
                 @foreach ($categorias as $categoria)
                     <tr>
                         <td>{{ $categoria->id }}</td>

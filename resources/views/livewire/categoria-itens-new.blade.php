@@ -116,9 +116,6 @@
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-save mr-1"></i> Salvar Categoria
             </button>
-            <a href="{{ route('categoriaItensCardapio.index') }}" class="btn btn-secondary ml-2">
-                <i class="fas fa-arrow-left mr-1"></i> Voltar
-            </a>
         </div>
     </form>
 
