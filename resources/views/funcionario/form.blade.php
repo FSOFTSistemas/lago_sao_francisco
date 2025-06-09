@@ -57,20 +57,31 @@
                     </div>
                 </div>
                   
-
                 <div class="form-group row">
                     <label class="col-md-3 label-control" for="setor">* Setor:</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" id="setor" name="setor" required value="{{ $funcionario->setor ?? '' }}">
+                        <select class="form-control" id="setor" name="setor" required>
+                            <option value="">Selecione</option>
+                            @foreach($setores as $setor)
+                                <option value="{{ $setor }}" {{ old('setor', $funcionario->setor ?? '') == $setor ? 'selected' : '' }}>
+                                    {{ $setor }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 
                     <label class="col-md-1 label-control" for="cargo">* Cargo:</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" id="cargo" name="cargo" required value="{{ $funcionario->cargo ?? '' }}">
+                        <select class="form-control" id="cargo" name="cargo" required>
+                            <option value="">Selecione</option>
+                            @foreach($cargos as $cargo)
+                                <option value="{{ $cargo }}" {{ old('cargo', $funcionario->cargo ?? '') == $cargo ? 'selected' : '' }}>
+                                    {{ $cargo }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
-
-                  
 
                 <!-- Endereço -->
                 <div class="form-group row">
@@ -188,8 +199,9 @@
                 width: '100%'
             });
         });
-    
     </script>
 @endsection
+
 @section('css')
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endsection

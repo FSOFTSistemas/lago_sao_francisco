@@ -67,10 +67,6 @@
     @endcomponent
 @stop
 
-@section('js')
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-@stop
-
 @section('css')
 <style>
     .new {
