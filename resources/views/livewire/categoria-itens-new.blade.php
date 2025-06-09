@@ -145,7 +145,7 @@
                             <label>Selecione o Item</label>
                             <select wire:model="selectedItem" class="form-control"wire:key="item-{{ $inputKey }}">
                                 <option value="">Selecione um item...</option>
-                                @foreach($allItems as $item)
+                                @foreach($allItems ?? [] as $item)
                                     <option value="{{ $item->id }}">{{ $item->nome_item }}</option>
                                 @endforeach
                             </select>
@@ -173,8 +173,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($itensTemporarios?? [] as $item)
-                        <tr>
+                    @forelse($itensTemporarios ?? [] as $item)
+                    <tr>
                             <td>{{ $item['nome_item']}}</td>
                             <td>{{ $item['tipo_item']}}</td>
                             <td>

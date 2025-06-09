@@ -1,7 +1,7 @@
 <div>
     <h5 class="mb-3">Opções de Refeição</h5>
         <div class="col d-flex justify-content-end">
-        <button class="btn btn-success new" wire:click="proximoCategoria">Próximo</button>
+        <button class="btn btn-success new" wire:click="proximoCategoria({{$cardapioId}})">Próximo</button>
     </div>
 
     <form wire:submit.prevent="addOpcao" class="mb-4">
@@ -79,7 +79,7 @@
             });
         })
   
-        $wire.on("confirmProxAba", () => {
+        $wire.on("confirmProxAba", (e) => {
             Swal.fire({
             title: "Ir para a próxima aba?",
             text: "Você tem certeza? Você será direcionado para a criação das categorias do cardapio e seus itens",
@@ -90,7 +90,7 @@
             confirmButtonText: "Sim, Prosseguir!"
             }).then((result) => {
             if (result.isConfirmed) {
-               $wire.dispatch("proxAbaConfirmado",)
+               $wire.dispatch("proxAbaConfirmadoref", {id: e.id})
             }
             });
         })

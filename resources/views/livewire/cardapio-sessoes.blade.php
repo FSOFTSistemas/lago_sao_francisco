@@ -14,7 +14,7 @@
         <div class="form-row">
             <div class="col-md-3">
                 <label>Nome da Seção</label>
-                <input type="text" wire:model="nomeSessao" class="form-control" required  wire:key="nomeSessao-{{ $inputKey }}" value= {{ old('nomeSessao', $this->cardapio->nomeSessao ?? '') }}>
+                <input type="text" wire:model="nomeSessao" class="form-control" wire:key="nomeSessao-{{ $inputKey }}" value= {{ old('nomeSessao', $this->cardapio->nomeSessao ?? '') }}>
                 @error('nomeSessao') <span class="text-danger">{{ $message }}</span> @enderror
 
             </div>
@@ -26,7 +26,7 @@
                     wire:keyup="verificarOrdemExibicao"
                     wire:key="ordemExibicao-{{ $inputKey }}"
                     class="form-control @if($ordemExibicaoError) is-invalid @enderror"
-                    required
+                    
                 >
 
                 @error('ordemExibicao')

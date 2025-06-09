@@ -69,6 +69,7 @@
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script>console.log('aqui')</script>
 @stop
 
 @section('css')

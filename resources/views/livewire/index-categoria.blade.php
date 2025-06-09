@@ -12,19 +12,28 @@
   </div>
 
   <h4>Categorias por Seções</h4>
-<ul>
+<ul wire:key="listaOpcoes-{{ $inputKey }}">
     @foreach($cardapio->secoes ?? [] as $secao)
-    <li>{{$secao->nome_secao_cardapio}}</li>
-    @dump($secao->categorias)
+    <li>{{$secao->nome_secao_cardapio}} (ID: {{ $secao->id }})</li>
         @foreach($secao->categorias as $categoria)
             <li>
-                {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
-                {{-- <a href="{{ route('categorias.edit', $categoria->id) }}" class="btn btn-sm btn-primary">Editar</a>
-                <form action="{{ route('categorias.destroy', $categoria->id) }}" method="POST" style="display:inline">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-sm btn-danger" onclick="return confirm('Deseja deletar?')">Deletar</button>
-                </form> --}}
+               * {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
+                <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    wire:click="editCat({{$categoria->id}})"
+                    title="Editar Categoria"
+                >
+                    ✏️
+                </button>
+                <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    wire:click="deletarCat({{$categoria->id}})"
+                    title="Excluir Opção"
+                >
+                    🗑️
+                </button>
             </li>
         @endforeach
     @endforeach
@@ -35,20 +44,65 @@
 <h4>Categorias por Refeições</h4>
 <ul>
     @foreach($cardapio->opcoes ?? [] as $refeicao)
-        @foreach($refeicao->categorias as $categoria)
+        <li>{{ $refeicao->NomeOpcaoRefeicao }} (ID: {{ $refeicao->id }})</li>
+            @foreach($refeicao->categorias as $categoria)
             <li>
-                {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
-                {{-- <a href="{{ route('categorias.edit', $categoria->id) }}" class="btn btn-sm btn-primary">Editar</a>
-                <form action="{{ route('categorias.destroy', $categoria->id) }}" method="POST" style="display:inline">
-                    @csrf
-                    @method('DELETE')
-                    <button class="btn btn-sm btn-danger" onclick="return confirm('Deseja deletar?')">Deletar</button>
-                </form> --}}
+               * {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
+                <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    wire:click="editCat({{$categoria->id}})"
+                    title="Editar Categoria"
+                >
+                    ✏️
+                </button>
+                <button 
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    wire:click="deletarCat({{$categoria->id}})"
+                    title="Excluir Opção"
+                >
+                    🗑️
+                </button>
             </li>
-        @endforeach
+            @endforeach
     @endforeach
 </ul>
 
+ @script
+    <script>
+        $wire.on("confirmCat", (event) => {
+            Swal.fire({
+            title: "Deletar Categoria?",
+            text: "Você não poderá desfazer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, deletar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("deleteCat", { id: event.id})
+            }
+            });
+        })
 
+        $wire.on("confirmFinalizarCardapio", () => {
+            Swal.fire({
+            title: "Deseja finalizar o cardápio?",
+            text: "Revise todos os campos antes de salvar!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sim, finalizar!"
+            }).then((result) => {
+            if (result.isConfirmed) {
+               $wire.dispatch("finalizadoCardapio")
+            }
+            });
+        })
+    </script>
+    @endscript
 
 </div>

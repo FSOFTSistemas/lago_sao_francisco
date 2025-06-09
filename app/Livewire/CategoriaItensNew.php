@@ -24,7 +24,7 @@ class CategoriaItensNew extends Component
     // Variáveis para itens
     public $selectedItem;
     //public $itensDaCategoria = [];
-    public $itensTemporarios = [];
+    public $itensTemporarios;
     public $allItems;
     public $categoriaSalva = false;
 
@@ -88,15 +88,17 @@ class CategoriaItensNew extends Component
             ];
         })->filter(fn($item) => $item['id'])->values()->toArray();
     }else {
-            $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
-                return $item;
-            });
+        $this->itensTemporarios = collect($this->itensTemporarios)->values()->toArray();
+            // $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
+            //     return $item;
+            // })->toArray();
            
         }
     }
 
     public function save()
-{
+    {
+    $this->itensTemporarios = (array) $this->itensTemporarios;
     $this->validate();
 
     // Validação XOR
@@ -126,9 +128,9 @@ class CategoriaItensNew extends Component
         $categoria->update($dados);
     } else {
         $dados['itens']= $this->itensTemporarios;
+        // dd($dados);
         $request = new Request($dados);
         $controller = new CategoriasDeItensCardapioController();
-        $this->itensTemporarios = (array) $this->itensTemporarios;
         $controller->store($request);
         $this->concluido();
         
@@ -165,7 +167,6 @@ class CategoriaItensNew extends Component
                 'nome_item' => $item->nome_item,
                 'tipo_item' => $item->tipo_item
         ];
-    
         $this->reset(['selectedItem']);
         $this->inputKey = now()->timestamp;
         $this->loadItensDaCategoria();
@@ -221,6 +222,9 @@ class CategoriaItensNew extends Component
     {
         $this->dispatch('categoriaCriada', aba: 'categorias');
         $this->dispatch('categoriaObserver', id: $this->cardapioID);
+        $this->resetExcept(['categoriaSalva', 'allItems', 'cardapioID']);
+
+        $this->loadItensDaCategoria();
     }
 
     #[on('getCardapioID')]
@@ -228,5 +232,15 @@ class CategoriaItensNew extends Component
     {
         $this->cardapioID = $id;
     }
+
+    public function editCategoria($id)
+    {
+        $this->categoriaID = $id;
+        $this->loadCategoriaData($id);
+        $this->categoriaSalva = true;
+        $this->loadItensDaCategoria();
+    }
+
+
 
 }
