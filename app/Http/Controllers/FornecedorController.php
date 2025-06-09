@@ -12,8 +12,8 @@ class FornecedorController extends Controller
      */
     public function index()
     {
-        $fornecedor = Fornecedor::all();
-        return view('fornecedor.index', compact('fornecedor'));
+        $fornecedores = Fornecedor::all();
+        return view('fornecedor.index', compact('fornecedores'));
     }
 
 
@@ -28,7 +28,7 @@ class FornecedorController extends Controller
                 'nome_fantasia' => 'nullable|string',
                 'cnpj' => 'nullable|string|max:14',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'required|string'
+                'inscricao_estadual' => 'nullable|string'
             ]);
             Fornecedor::create($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
@@ -51,7 +51,7 @@ class FornecedorController extends Controller
                 'nome_fantasia' => 'nullable|string',
                 'cnpj' => 'nullable|string|max:14',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'required|string'
+                'inscricao_estadual' => 'nullable|string'
             ]);
             $fornecedor->update($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');

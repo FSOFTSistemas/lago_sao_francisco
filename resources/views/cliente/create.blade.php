@@ -62,7 +62,7 @@
                         <div class="form-group row">
                             <label class="col-md-3 label-control" for="cnpj">* CNPJ:</label>
                             <div class="col-md-3">
-                                <input type="text" class="form-control" id="cnpj" name="cpf_cnpj"
+                                <input type="text" class="form-control cnpjteste" id="cnpj" name="cpf_cnpj"
                                     value="{{ $cliente->cpf_cnpj ?? '' }}">
                             </div>
                             <button class="btn btn-outline-primary" type="button" id="btnBuscarCnpj">
@@ -165,18 +165,10 @@
 @stop
 
 @section('js')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Máscaras iniciais
-    $('#whatsapp').mask('(00)00000-0000');
-    $('#telefone').mask('(00)0000-0000');
-    $('#cpf').mask('000.000.000-00', {reverse: true});
-    $('#cnpj').mask('00.000.000/0000-00', {reverse: true});
-    $('#rg').mask('00.000.000-0', {reverse: true});
-    
     // Select2
     $('.select2').select2({
         placeholder: "Selecione...",
@@ -196,35 +188,6 @@ $(document).ready(function() {
         }
     }
 
-    $('#btnBuscarCnpj').on('click', function () {
-        const cnpj = $('#cnpj').val().replace(/\D/g, '');
-        
-        if (cnpj.length !== 14) {
-            alert('CNPJ inválido. Deve conter 14 dígitos.');
-            return;
-        }
-
-        fetch(`https://open.cnpja.com/office/${cnpj}`)
-            .then(response => {
-                return response.json();
-            })
-            .then(data => {
-                console.log(data);
-                const razao = data.company?.name || 'Não encontrado';
-                $('#nomeRazaoSocial').val(razao);
-                const fantasia = data.alias || 'Não encontrado';
-                $('#apelidoNomeFantasia').val(fantasia);
-                const inscricaoEstadual = data.registrations[0]?.number || "Não encontrado";
-                $('#inscricaoEstadual').val(inscricaoEstadual);
-                const numero = data.phones[0] ? `(${data.phones[0].area}) ${data.phones[0].number}` : "Não encontrado";
-                $('#whatsapp').val(numero);
-                $('#telefone').val(numero);
-            })
-            .catch(error => {
-                console.error(error);
-                alert('Erro ao buscar CNPJ. Verifique o console.');
-            });
-    });
     
     // Controle dos campos condicionais
     function toggleCampos() {
@@ -273,4 +236,6 @@ $(document).ready(function() {
 });
 </script>
 <script src="{{ asset('js/endereco.js') }}"></script>
+<script src="{{ asset('js/buscarCnpj.js') }}"></script>
+<script src="{{ asset('js/masksCnpj.js') }}"></script>
 @stop

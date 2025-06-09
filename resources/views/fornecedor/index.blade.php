@@ -8,7 +8,7 @@
 @stop
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
+<div class="d-flex justify-content-end mb-3">
         <button class="btn btn-success new" data-toggle="modal" data-target="#createFornecedorModal">
             <i class="fas fa-plus"></i> Novo Fornecedor
         </button>
@@ -34,7 +34,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($fornecedor as $fornecedor)
+                @foreach ($fornecedores as $fornecedor)
                     <tr>
                         <td>{{ $fornecedor->id }}</td>
                         <td>{{ $fornecedor->razao_social }}</td>
@@ -63,13 +63,13 @@
                 @endforeach
             </tbody>
     @endcomponent
-
     @include('fornecedor.modals._create')
 @stop
 
-@section('js')
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-@stop
+@push('js')
+    <script src="{{ asset('js/masksCnpj.js') }}"></script> 
+    <script src="{{ asset('js/buscarCnpj.js') }}"></script>
+@endpush
 
 @section('css')
 <style>

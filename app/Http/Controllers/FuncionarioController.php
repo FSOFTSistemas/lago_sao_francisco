@@ -16,6 +16,11 @@ class FuncionarioController extends Controller
 {
     $empresas = Empresa::all();
     $enderecos = Endereco::all();
+    // In your controller
+    $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
+    $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+
+
 
     $empresaId = session('empresa_id');
 
@@ -25,7 +30,7 @@ class FuncionarioController extends Controller
         })
         ->get();
 
-    return view('funcionario.index', compact('funcionarios', 'empresas', 'enderecos'));
+    return view('funcionario.index', compact('funcionarios', 'empresas', 'enderecos', 'setores', 'cargos'));
 }
 
 
@@ -33,7 +38,9 @@ class FuncionarioController extends Controller
     {
         $empresas = Empresa::all();
         $enderecos = Endereco::all();
-        return view('funcionario.form', compact('empresas', 'enderecos'));
+        $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
+        $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+        return view('funcionario.form', compact('empresas', 'enderecos','setores', 'cargos'));
     }
 
     /**
@@ -125,7 +132,9 @@ class FuncionarioController extends Controller
         $funcionario = Funcionario::findOrFail($funcionario->id);
         $empresas = Empresa::all();
         $enderecos = Endereco::all();
-        return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos'));
+        $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
+        $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+        return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos', 'setores', 'cargos'));
     }
 
     /**
