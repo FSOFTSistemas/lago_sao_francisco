@@ -7,86 +7,58 @@ use Illuminate\Support\Facades\DB;
 
 class ItensCardapioSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $faker = \Faker\Factory::create('pt_BR');
 
-        // Arrays com nomes reais de itens de cardápio
-        $entradas = [
-            'Bruschetta de Tomate',
-            'Carpaccio de Carne',
-            'Salada Caprese',
-            'Bolinhos de Bacalhau',
-            'Creme de Abóbora',
-            'Tábua de Frios',
-            'Canapés Variados',
-            'Ceviche de Peixe',
-            'Pastel de Queijo',
-            'Coxinha de Frango'
+        // Define os itens organizados por categoria
+        $itensPorCategoria = [
+            'Salgadinhos' => ['Coxinha de Frango', 'Risoles de Queijo', 'Bolinha de Queijo', 'Kibe Frito'],
+            'Mini Sanduíches' => ['Mini Hambúrguer', 'Mini Sanduíche Natural', 'Mini Doguinho'],
+
+            'Pratos Infantis' => ['Macarrão com Queijo', 'Mini Hambúrguer com Batata', 'Nuggets com Arroz'],
+            'Massas' => ['Lasanha à Bolonhesa', 'Espaguete Carbonara', 'Penne ao Molho Pesto'],
+
+            'Doces' => ['Brigadeiro Gourmet', 'Beijinho', 'Mini Churros', 'Gelatina Colorida'],
+            'Bolo' => ['Bolo de Chocolate', 'Bolo de Cenoura com Cobertura'],
+
+            'Prato Principal' => ['Filé Mignon com Molho Madeira', 'Frango à Parmegiana', 'Bobó de Camarão'],
+            'Guarnições' => ['Arroz Branco', 'Purê de Batata', 'Farofa', 'Legumes no Vapor'],
+            'Molhos' => ['Molho Madeira', 'Molho Branco', 'Molho Pesto'],
+
+            'Saladas Verdes' => ['Alface com Rúcula', 'Mix de Folhas com Tomate Cereja'],
+            'Saladas Compostas' => ['Salada de Batata com Maionese', 'Salada de Grão de Bico'],
+
+            'Pratos Quentes' => ['Ratatouille', 'Escondidinho de Legumes'],
+            'Pratos Frios' => ['Tabule', 'Salada de Lentilha'],
+
+            'Sucos de Frutas' => ['Suco de Laranja Natural', 'Suco de Abacaxi com Hortelã'],
+
+            'Lanches Tradicionais' => ['Pão de Queijo', 'Mini Pizza', 'Empadinha de Frango'],
+            'Porções Individuais' => ['Mini Porção de Batata Frita', 'Mini Porção de Nuggets'],
+
+            'Sucos' => ['Suco de Uva Integral', 'Suco de Maçã'],
+            'Vitaminas' => ['Vitamina de Banana', 'Vitamina de Morango'],
+
+            'Vinhos' => ['Vinho Tinto Seco', 'Vinho Branco Suave'],
+            'Cervejas' => ['Cerveja Pilsen', 'Cerveja IPA'],
+
+            'Refrigerantes' => ['Coca-Cola', 'Guaraná'],
+            'Águas' => ['Água com Gás', 'Água sem Gás'],
+
+            'Coquetéis' => ['Caipirinha de Limão', 'Coquetel de Morango'],
+            'Drinks Sem Álcool' => ['Mocktail de Frutas', 'Chá Gelado de Pêssego'],
         ];
 
-        $pratosPrincipais = [
-            'Filé Mignon com Molho Madeira',
-            'Risoto de Cogumelos',
-            'Frango à Parmegiana',
-            'Peixe Grelhado com Legumes',
-            'Lasanha à Bolonhesa',
-            'Strogonoff de Carne',
-            'Penne ao Molho Pesto',
-            'Bife Ancho com Purê de Batata',
-            'Moqueca de Peixe',
-            'Frango com Quiabo',
-            'Feijoada Completa',
-            'Picanha na Chapa',
-            'Espaguete Carbonara',
-            'Bobó de Camarão',
-            'Ratatouille'
-        ];
-
-        $sobremesas = [
-            'Petit Gateau',
-            'Tiramisù',
-            'Cheesecake de Frutas Vermelhas',
-            'Mousse de Chocolate',
-            'Pudim de Leite',
-            'Sorvete Artesanal',
-            'Torta de Limão',
-            'Brigadeiro Gourmet',
-            'Creme Brulee',
-            'Panacota com Calda de Frutas'
-        ];
-
-        $bebidas = [
-            'Suco Natural de Laranja',
-            'Caipirinha de Limão',
-            'Vinho Tinto Seco',
-            'Cerveja Artesanal IPA',
-            'Água Mineral com Gás',
-            'Refrigerante Tradicional',
-            'Suco de Abacaxi com Hortelã',
-            'Coquetel de Morango',
-            'Café Expresso',
-            'Chá Gelado de Pêssego'
-        ];
-
-        // Gerar 20 itens aleatórios
-        for ($i = 0; $i < 20; $i++) {
-            $tipo = $faker->randomElement(['Entrada', 'Prato Principal', 'Sobremesa', 'Bebida']);
-            
-            DB::table('itens_do_cardapios')->insert([
-                'nome_item' => match($tipo) {
-                    'Entrada' => $faker->unique()->randomElement($entradas),
-                    'Prato Principal' => $faker->unique()->randomElement($pratosPrincipais),
-                    'Sobremesa' => $faker->unique()->randomElement($sobremesas),
-                    'Bebida' => $faker->unique()->randomElement($bebidas),
-                },
-                'tipo_item' => $tipo,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        foreach ($itensPorCategoria as $categoria => $itens) {
+            foreach ($itens as $item) {
+                DB::table('itens_do_cardapios')->insert([
+                    'nome_item' => $item,
+                    'tipo_item' => $categoria, // Aqui o tipo_item será o nome da categoria para facilitar o relacionamento depois
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         }
     }
 }
