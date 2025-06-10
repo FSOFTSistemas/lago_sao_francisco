@@ -40,7 +40,6 @@ class CardapioController extends Controller
             $validated = $request->validate([
                 'NomeCardapio' => 'required|string|max:255',
                 'AnoCardapio' => 'nullable|integer',
-                'PrecoBasePorPessoa' => 'nullable|numeric',
                 'ValidadeOrcamentoDias' => 'nullable|integer',
                 'PoliticaCriancaGratisLimiteIdade' => 'nullable|integer',
                 'PoliticaCriancaDescontoPercentual' => 'nullable|numeric',
@@ -53,7 +52,6 @@ class CardapioController extends Controller
                 'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
                 'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
                 'AnoCardapio.integer' => 'O campo Ano do Cardápio deve ser um número inteiro.',
-                'PrecoBasePorPessoa.numeric' => 'O campo Preço Base por Pessoa deve ser um valor numérico.',
                 'ValidadeOrcamentoDias.integer' => 'O campo Validade do Orçamento deve ser um número inteiro.',
                 'PoliticaCriancaGratisLimiteIdade.integer' => 'O campo Limite de Idade para Criança Grátis deve ser um número inteiro.',
                 'PoliticaCriancaDescontoPercentual.numeric' => 'O campo Percentual de Desconto para Criança deve ser um número.',
@@ -79,7 +77,6 @@ class CardapioController extends Controller
             $validated = $request->validate([
                 'NomeCardapio' => 'required|string|max:255',
                 'AnoCardapio' => 'nullable|integer',
-                'PrecoBasePorPessoa' => 'nullable|numeric',
                 'ValidadeOrcamentoDias' => 'nullable|integer',
                 'PoliticaCriancaGratisLimiteIdade' => 'nullable|integer',
                 'PoliticaCriancaDescontoPercentual' => 'nullable|numeric',
@@ -92,7 +89,6 @@ class CardapioController extends Controller
                 'NomeCardapio.string' => 'O campo Nome do Cardápio deve ser uma string.',
                 'NomeCardapio.max' => 'O campo Nome do Cardápio não pode exceder 255 caracteres.',
                 'AnoCardapio.integer' => 'O campo Ano do Cardápio deve ser um número inteiro.',
-                'PrecoBasePorPessoa.numeric' => 'O campo Preço Base por Pessoa deve ser um valor numérico.',
                 'ValidadeOrcamentoDias.integer' => 'O campo Validade do Orçamento deve ser um número inteiro.',
                 'PoliticaCriancaGratisLimiteIdade.integer' => 'O campo Limite de Idade para Criança Grátis deve ser um número inteiro.',
                 'PoliticaCriancaDescontoPercentual.numeric' => 'O campo Percentual de Desconto para Criança deve ser um número.',

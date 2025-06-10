@@ -16,9 +16,6 @@
 <body>
     <h1 style="color: #3e7222">{{ $cardapio->NomeCardapio }}</h1>
     <p><strong>Ano:</strong> {{ $cardapio->AnoCardapio }}</p>
-    @if($cardapio->PrecoBasePorPessoa)
-        <p><strong>Valor base por pessoa:</strong> R$ {{ number_format($cardapio->PrecoBasePorPessoa, 2, ',', '.') }}</p>
-    @endif
 
     {{-- SEÇÕES DO CARDÁPIO --}}
     @if($cardapio->secoes->count())
@@ -46,17 +43,20 @@
         <h2>Opções de Refeição Principal</h2>
 
         @foreach($cardapio->opcoes as $opcao)
+
+
             <div class="section-title">
-                {{ $opcao->NomeOpcaoRefeicao ?? 'Opção #' . $loop->iteration }}
+                {{ $opcao->NomeOpcaoRefeicao ?? 'Opção #' . $loop->iteration }} - R${{$opcao->PrecoPorPessoa}}
             </div>
 
             @foreach($opcao->categorias as $categoria)
+
                 <div class="categoria">
                     {{ $categoria->nome_categoria_item }}
                     ({{ $categoria->numero_escolhas_permitidas }} escolha{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }} permitida{{ $categoria->numero_escolhas_permitidas > 1 ? 's' : '' }})
                 </div>
-
-                @foreach($categoria->item as $disp)
+                
+                @foreach($categoria->itens ?? [] as $disp)
                     <div class="item">- {{ $disp->item->nome_item }} @if($disp->item->tipo_item) ({{ $disp->item->tipo_item }}) @endif</div>
                 @endforeach
             @endforeach

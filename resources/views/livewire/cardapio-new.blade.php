@@ -1,5 +1,5 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" style="display: none" >
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>
@@ -60,20 +60,6 @@
                </div>
 
                 <div class="row">
-                    <div class="form-group col-md-3">
-                        <label>Preço Base por Pessoa</label>
-                        <div class="input-group">
-                            <input type="text" wire:model.defer="PrecoBasePorPessoa" class="form-control">
-                            <i class="fas fa-info-circle info-icon"></i>
-                           <div class="info-tooltip">
-                                       <strong>Dica:</strong> Defina o valor base por pessoa.
-                                   </div>
-                        </div>
-                        @error('PrecoBasePorPessoa')
-                            <span class="text-danger">{{ $message }}</span>
-                        @enderror
-                    </div>
-
                     <div class="form-group col-md-3">
                         <label>Validade do Orçamento (dias)</label>
                         <div class="inpunt-group">

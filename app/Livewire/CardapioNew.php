@@ -10,7 +10,7 @@ use Livewire\Attributes\On;
 
 class CardapioNew extends Component
 {
-    public $NomeCardapio, $AnoCardapio, $PrecoBasePorPessoa, $ValidadeOrcamentoDias;
+    public $NomeCardapio, $AnoCardapio, $ValidadeOrcamentoDias;
     public $PoliticaCriancaGratisLimiteIdade, $PoliticaCriancaDescontoPercentual;
     public $PoliticaCriancaDescontoIdadeInicio, $PoliticaCriancaDescontoIdadeFim;
     public $PoliticaCriancaPrecoIntegralIdadeInicio;
@@ -27,7 +27,6 @@ class CardapioNew extends Component
     protected $rules = [
         'NomeCardapio' => 'required|string|max:255',
         'AnoCardapio' => 'required|integer|min:2000',
-        'PrecoBasePorPessoa' => 'required|numeric|min:0',
         'ValidadeOrcamentoDias' => 'required|integer|min:1',
         'PoliticaCriancaGratisLimiteIdade' => 'nullable|integer|min:0',
         'PoliticaCriancaDescontoPercentual' => 'nullable|numeric|min:0|max:100',
@@ -45,7 +44,6 @@ class CardapioNew extends Component
             $this->cardapioID = $cardapio->id;
             $this->NomeCardapio = old('NomeCardapio', $cardapio->NomeCardapio);
             $this->AnoCardapio = $cardapio->AnoCardapio;
-            $this->PrecoBasePorPessoa = old('PrecoBasePorPessoa', $cardapio->PrecoBasePorPessoa);
             $this->ValidadeOrcamentoDias = old('ValidadeOrcamentoDias', $cardapio->ValidadeOrcamentoDias);
             $this->PoliticaCriancaGratisLimiteIdade = old('PoliticaCriancaGratisLimiteIdade', $cardapio->PoliticaCriancaGratisLimiteIdade);
             $this->PoliticaCriancaDescontoIdadeInicio = old('PoliticaCriancaDescontoIdadeInicio', $cardapio->PoliticaCriancaDescontoIdadeInicio);

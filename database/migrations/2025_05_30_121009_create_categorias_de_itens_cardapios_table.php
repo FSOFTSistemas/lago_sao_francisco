@@ -21,8 +21,8 @@ return new class extends Migration
             $table->integer('ordem_exibicao');
             $table->timestamps();
 
-            $table->foreign('sessao_cardapio_id')->references('id')->on('secoes_cardapios');
-            $table->foreign('refeicao_principal_id')->references('id')->on('refeicao_principals');
+            $table->foreign('sessao_cardapio_id')->references('id')->on('secoes_cardapios')->onDelete('cascade');
+            $table->foreign('refeicao_principal_id')->references('id')->on('refeicao_principals')->onDelete('cascade');
         });
     }
 

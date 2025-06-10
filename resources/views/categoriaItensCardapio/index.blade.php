@@ -51,12 +51,11 @@
                 </tr>
             </thead>
             <tbody>
-                @php dd($categorias) @endphp
                 @foreach ($categorias as $categoria)
                     <tr>
                         <td>{{ $categoria->id }}</td>
-                        <td>{{ $categoria->secaoCardapio->nome_secao_cardapio }}</td>
-                        <td>{{ $categoria->refeicaoPrincipal->NomeOpcaoRefeicao??'' }}</td>
+                        <td>{{ $categoria->secaoCardapio->nome_secao_cardapio ?? '' }}</td>
+                        <td>{{ $categoria->refeicaoPrincipal->NomeOpcaoRefeicao ?? '' }}</td>
                         <td>{{ $categoria->nome_categoria_item }}</td>
                         <td>{{ $categoria->numero_escolhas_permitidas}}</td>
                         <td>{{ $categoria->ordem_exibicao }}</td>
