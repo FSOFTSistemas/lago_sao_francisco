@@ -13,6 +13,14 @@ use Livewire\Component;
 class NFeNew extends Component
 {
 
+    // Propriedade pública para o campo CFOP individual
+    public $cfop;
+    // Propriedades para controle do modal de CFOP
+    public $modalCfopAberto = false;
+    public $buscaCfop = '';
+    // Lista filtrada de CFOPs para exibir no modal
+    public $cfops = [];
+
     public $empresa = 'FSOFT SISTEMAS';
     public $numero;
     public $serie;
@@ -110,6 +118,7 @@ class NFeNew extends Component
             'valor_icms' => 0,
             'base_calculo' => 0,
         ];
+        $this->cfop = '';
     }
     public function atualizarTotaisItem()
     {
@@ -261,4 +270,47 @@ class NFeNew extends Component
         $controller = new NotaFiscalController();
         return $controller->store($request);
     }
+
+    
+    // Métodos para abrir e fechar o modal de CFOP
+    public function abrirModalCfop()
+    {
+        $this->modalCfopAberto = true;
+        $this->buscaCfop = '';
+        $this->filtrarCfops();
+    }
+
+    public function fecharModalCfop()
+    {
+        $this->modalCfopAberto = false;
+    }
+
+    public function filtrarCfops()
+    {
+        $todosCfops = [
+            ['codigo' => '5101', 'descricao' => 'Venda de produção do estabelecimento'],
+            ['codigo' => '5405', 'descricao' => 'Venda de mercadoria adquirida ou recebida de terceiros'],
+            ['codigo' => '6101', 'descricao' => 'Venda de produção do estabelecimento (fora do estado)'],
+            ['codigo' => '6108', 'descricao' => 'Venda de mercadoria recebida de terceiros (fora do estado)'],
+            ['codigo' => '5929', 'descricao' => 'Lançamento efetuado a título de simples faturamento decorrente de venda para entrega futura'],
+            // ...adicione outros conforme necessário
+        ];
+
+        $busca = strtolower($this->buscaCfop);
+        $this->cfops = array_filter($todosCfops, function ($cfop) use ($busca) {
+            return str_contains(strtolower($cfop['codigo']), $busca) || str_contains(strtolower($cfop['descricao']), $busca);
+        });
+    }
+
+    public function updatedBuscaCfop()
+    {
+        $this->filtrarCfops();
+    }
+
+    public function selecionarCfop($codigo)
+    {
+        $this->cfop = $codigo;
+        $this->fecharModalCfop();
+    }
 }
+

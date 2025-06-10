@@ -9,6 +9,7 @@ use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CategoriasCardapioController;
 use App\Http\Controllers\CategoriasDeItensCardapioController;
+use App\Http\Controllers\CfopController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
@@ -157,3 +158,5 @@ Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::c
 
 //Rota para gerar PDF de cardapio
 Route::get('/cardapios/{id}/pdf', [\App\Http\Controllers\CardapioController::class, 'verPdf'])->name('cardapios.pdf');
+
+Route::resource('cfop', CfopController::class);
