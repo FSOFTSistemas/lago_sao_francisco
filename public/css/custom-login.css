@@ -1,0 +1,61 @@
+.login-page {
+  background: url('../lago-login.jpg');
+  background-size: cover;
+  /* background-color: #679A4C; */
+  position: relative;
+  height: 100vh;
+}
+
+.login-box {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px); 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  padding: 30px;
+  border-radius: 10px;
+  width: 30rem;
+}
+
+.card, .login-card-body {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px); 
+}
+
+.btn-primary {
+  background-color: #679A4C;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+.btn-primary:hover {
+  background-color: #577E3E;
+}
+
+a {
+  color: #577E3E;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p, .auth_header, .form-control::placeholder {
+  color: #679A4C;
+}
+
+.input-group .form-control {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #679A4C;
+  border: 1px solid #679A4C;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.input-group-text {
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid #679A4C;
+  border-radius: 0 8px 8px 0;
+}

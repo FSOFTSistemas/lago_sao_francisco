@@ -13,8 +13,14 @@
     <link rel="dns-prefetch" href="//fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
 
+    <!--styles -->
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/plugins/bootstrap/css/bootstrap.min.css') }}">
+
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    <script src="{{ asset('js/endereco.js') }}"></script>
+
 </head>
 <body>
     <div id="app">
@@ -34,7 +40,17 @@
                     </ul>
 
                     <!-- Right Side Of Navbar -->
+                    
                     <ul class="navbar-nav ms-auto">
+                        <form class="form-inline">
+                            <select class="form-control me-2" id="navbarFilter">
+                                <option value="all">Mostrar Todos</option>
+                                <option value="hotel">Hotel</option>
+                                <option value="restaurant">Restaurante</option>
+                                <option value="lake">Lago</option>
+                            </select>
+                        </form>
+        
                         <!-- Authentication Links -->
                         @guest
                             @if (Route::has('login'))
@@ -76,5 +92,13 @@
             @yield('content')
         </main>
     </div>
+    <script src="{{ asset('js/endereco.js') }}"></script>
 </body>
 </html>
+@endsection
+@section('js')
+    <script src="{{ asset('vendor/adminlte/plugins/jquery/jquery.min.js') }}"></script>
+    <script src="{{ asset('vendor/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ asset('vendor/adminlte/dist/js/adminlte.min.js') }}"></script>
+    <script src="{{ asset('js/endereco.js') }}"></script>
+@endsection

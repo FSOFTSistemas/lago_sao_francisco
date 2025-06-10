@@ -69,6 +69,11 @@ body {
   background-color: #fff;
 }
 
+.sidebar-green{
+  background-color: #679A4C !important;
+    color: #ffffff;
+}
+
 [tabindex="-1"]:focus:not(:focus-visible) {
   outline: 0 !important;
 }
@@ -34966,7 +34971,7 @@ a.close.disabled, a.disabled.mailbox-attachment-close {
 
 .login-logo a,
 .register-logo a {
-  color: #495057;
+  color: #679A4C;
 }
 
 .login-page,
