@@ -11,7 +11,7 @@ class CreateProdutosTable extends Migration
         Schema::create('produtos', function (Blueprint $table) {
             $table->id();
             $table->string('descricao');
-            $table->string('categoria');
+            $table->unsignedBigInteger('categoria_produto_id');
             $table->boolean('ativo');
             $table->string('ean')->nullable();
             $table->decimal('preco_custo', 10, 2)->nullable();
@@ -28,6 +28,7 @@ class CreateProdutosTable extends Migration
             $table->timestamps();
 
             $table->foreign('empresa_id')->references('id')->on('empresas');
+            $table->foreign('categoria_produto_id')->references('id')->on('categoria_produtos');
         });
     }
 

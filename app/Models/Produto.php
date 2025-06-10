@@ -11,7 +11,7 @@ class Produto extends Model
     protected $fillable = [
         'id',
         'descricao',
-        'categoria',
+        'categoria_produto_id',
         'ativo',
         'ean',
         'preco_custo',
@@ -32,5 +32,10 @@ class Produto extends Model
     public function scopeDaEmpresa($query, $empresaId)
     {
         return $query->where('empresa_id', $empresaId);
+    }
+
+    public function categoria()
+    {
+        return $this->belongsTo(CategoriaProduto::class, 'categoria_produto_id');
     }
 }
