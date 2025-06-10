@@ -26,7 +26,7 @@ class FornecedorController extends Controller
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
-                'cnpj' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string'
             ]);
@@ -49,7 +49,7 @@ class FornecedorController extends Controller
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
-                'cnpj' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string'
             ]);

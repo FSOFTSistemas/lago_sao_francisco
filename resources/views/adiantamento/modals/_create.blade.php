@@ -30,7 +30,7 @@
                       </div>
                       <div class="mb-3">
                           <label for="valor">Valor:</label>
-                          <input type="text" class="form-control" id="valor" name="valor" required>
+                          <input type="number" class="form-control" id="valor" name="valor" required>
                       </div>
                       <div class="mb-3">
                           <label for="dataContratacao">Data do Adiantamento:</label>

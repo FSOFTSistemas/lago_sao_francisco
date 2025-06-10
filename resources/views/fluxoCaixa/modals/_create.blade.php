@@ -20,7 +20,7 @@
                       <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="valor">Valor:</label>
-                            <input type="text" class="form-control" id="valor" name="valor" required>
+                            <input type="number" class="form-control" id="valor" name="valor" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -61,7 +61,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="valorTotal">Valor Total:</label>
-                            <input type="text" class="form-control" id="valorTotal" name="valor_total" required>
+                            <input type="number" class="form-control" id="valorTotal" name="valor_total" required>
                         </div>
                     </div>
                     
@@ -79,7 +79,7 @@
                       
                       <div class="mb-3">
                         <label for="planoDeConta">Plano de conta:</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_conta_id">
+                        <select class="form-control" id="planoDeConta" name="plano_de_conta_id" required>
                           <option value="">Selecione</option>
                           @foreach ($planoDeContas as $planoDeConta)
                             <option value="{{$planoDeConta->id}}">{{$planoDeConta->descricao}}</option>

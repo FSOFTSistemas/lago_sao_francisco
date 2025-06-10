@@ -202,12 +202,16 @@ $(document).ready(function() {
             $('#dataNascimento, #cpf, #cnpj, #inscricaoEstadual, #rg').removeAttr('required');
             
             // Mostra os campos específicos conforme o tipo selecionado
+            $('#camposPF input, #camposPJ input').prop('disabled', true);
             if (tipo === 'PF') {
                 $('#camposPF').addClass('show');
                 $('#dataNascimento, #cpf').attr('required',);
+                $('#camposPF input').prop('disabled', false);
             } else if (tipo === 'PJ') {
                 $('#camposPJ').addClass('show');
                 $('#cnpj').attr('required', 'required');
+                $('#camposPJ input').prop('disabled', false);
+
             }
             
             // Atualiza os rótulos
