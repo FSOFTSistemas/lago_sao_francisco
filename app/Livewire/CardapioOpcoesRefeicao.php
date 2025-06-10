@@ -44,6 +44,7 @@ class CardapioOpcoesRefeicao extends Component
         $this->reset(['nomeOpcao', 'precoPorPessoa', 'descricaoOpcao']);
         $this->inputKey = now()->timestamp;
         $this->loadOpcoes();
+        $this->atualizarOpIndex();
     }
 
     public function render()
@@ -64,9 +65,21 @@ class CardapioOpcoesRefeicao extends Component
         $this->loadOpcoes();
     }
 
-    public function proximoCategoria()
+    public function proximoCategoria($id)
     {
-        $this->dispatch("confirmProxAba");
+        $this->dispatch("confirmProxAba", id: $id);
+    }
+
+    #[On('proxAbaConfirmadoref')]
+    public function proxAbaConfirmadoref($id)
+    {
+        $this->dispatch('mudarAba', aba: 'categorias');
+        $this->dispatch('categoriaObserver', id: $id );
+    }
+
+    public function atualizarOpIndex()
+    {
+        $this->dispatch('atualizarListaOp');
     }
 
 

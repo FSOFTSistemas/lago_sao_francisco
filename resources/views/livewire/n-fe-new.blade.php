@@ -31,14 +31,16 @@
             </div>
             <div class="col-md-2">
                 <label for="tipo_nota" class="form-label">Tipo de Nota</label>
-                <select id="tipo_nota" wire:model="tipo_nota" wire:init="$set('tipo_nota', 1)" class="form-select form-control">
+                <select id="tipo_nota" wire:model="tipo_nota" wire:init="$set('tipo_nota', 1)"
+                    class="form-select form-control">
                     <option value="0">Entrada</option>
                     <option value="1">Saída</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="finalidade" class="form-label">Finalidade da Nota</label>
-                <select id="finalidade" wire:model="finalidade" wire:init="$set('finalidade', 1)" class="form-select form-control">
+                <select id="finalidade" wire:model="finalidade" wire:init="$set('finalidade', 1)"
+                    class="form-select form-control">
                     <option value="1">NF-e normal</option>
                     <option value="2">NF-e complementar</option>
                     <option value="3">NF-e de ajuste</option>
@@ -47,10 +49,20 @@
             </div>
             <div class="col-md-3">
                 <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
-                <select id="forma_pagamento" wire:model="forma_pagamento" wire:init="$set('forma_pagamento', 0)" class="form-select form-control">
+                <select id="forma_pagamento" wire:model="forma_pagamento" wire:init="$set('forma_pagamento', 0)"
+                    class="form-select form-control">
                     <option value="0">Pagamento à Vista</option>
                     <option value="1">Pagamento a Prazo</option>
                 </select>
+            </div>
+            <div class="col-md-2">
+                <label for="cfop" class="form-label">CFOP</label>
+                <div class="input-group">
+                    <input type="text" id="cfop" class="form-control" wire:model="cfop" placeholder="Digite ou selecione o CFOP" />
+                    <button class="btn btn-outline-secondary" type="button" wire:click="abrirModalCfop">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -384,4 +396,39 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Modal para selecionar CFOP -->
+    <div class="modal fade @if ($modalCfopAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalCfopAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar CFOP</h5>
+                    <button type="button" class="btn-close" wire:click="fecharModalCfop"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" wire:model="buscaCfop" placeholder="Buscar CFOP ou descrição..."
+                        class="form-control mb-3" />
+
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @foreach ($cfops as $cfop)
+                            <div wire:click="selecionarCfop('{{ $cfop['codigo'] }}')" class="p-2 border-bottom"
+                                style="cursor:pointer;">
+                                <strong>{{ $cfop['codigo'] }}</strong> - {{ $cfop['descricao'] }}
+                            </div>
+                        @endforeach
+                        @if (count($cfops) === 0)
+                            <p>Nenhum CFOP encontrado.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" wire:click="fecharModalCfop" class="btn btn-secondary">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

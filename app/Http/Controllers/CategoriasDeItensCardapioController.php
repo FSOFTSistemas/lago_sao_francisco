@@ -12,6 +12,9 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use View;
+use Illuminate\Support\Facades\Log;
+
+
 
 class CategoriasDeItensCardapioController extends Controller
 {
@@ -51,6 +54,7 @@ class CategoriasDeItensCardapioController extends Controller
                 'numero_escolhas_permitidas' => 'required|integer',
                 'eh_grupo_escolha_exclusiva' => 'boolean',
                 'ordem_exibicao' => 'required|integer',
+                'itens' => 'required'
                 
             ], [
                 'nome_categoria_item.required' => 'O campo nome da categoria é obrigatório.',
@@ -102,7 +106,7 @@ class CategoriasDeItensCardapioController extends Controller
                 
         } catch (Exception $e) {
             DB::rollBack();
-            \Log::error("Erro ao criar categoria: " . $e->getMessage());
+            Log::error("Erro ao criar categoria: " . $e->getMessage());
             return redirect()
                 ->back()
                 ->with('error', "Erro ao processar: " . $e->getMessage())

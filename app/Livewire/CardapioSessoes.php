@@ -26,7 +26,7 @@ class CardapioSessoes extends Component
         'opcao_conteudo_principal_refeicao' => 'required|boolean',
     ];
 
-    public function mount($cardapioId)
+    public function mount($cardapioId = null)
     {
         $this->cardapioId = $cardapioId;
         $this->loadSessoes();

@@ -22,6 +22,7 @@ class CardapioNew extends Component
     public $categoriasSecao = [];
     public $categoriasOpcao = [];
     public $cardapio;
+    public $categoriaID;
 
     protected $rules = [
         'NomeCardapio' => 'required|string|max:255',
@@ -118,10 +119,13 @@ class CardapioNew extends Component
     public function categoriaCriada($aba)
     {
         $this->abaAtual = $aba;
+        
+    }
+    #[On('editCategoria')]
+    public function editCategoria($id)
+    {
+        $this->abaAtual = 'categoriasCreate';
+        session(['categoriaId' => $id]);
     }
 
-    // public function setCardapioID($id)
-    // {
-    //     $this->dispatch('getCardapioID', id: $id);
-    // }
 }

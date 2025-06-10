@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Cfop extends Model
 {
     use HasFactory;
+    
     protected $fillable = [
         'natureza',
         'cfop',

@@ -66,10 +66,17 @@
     @include('fornecedor.modals._create')
 @stop
 
+<<<<<<< HEAD
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script>console.log('aqui')</script>
+@stop
+=======
 @push('js')
     <script src="{{ asset('js/masksCnpj.js') }}"></script> 
     <script src="{{ asset('js/buscarCnpj.js') }}"></script>
 @endpush
+>>>>>>> e56f8c0b4b67a7285cce9ff65fd7898c19a7b6b0
 
 @section('css')
 <style>
