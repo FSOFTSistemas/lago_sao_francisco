@@ -9,30 +9,31 @@
             <div class="modal-body">
                 <div class="form-group row">
                     <div class="col-md-6">
-                        <input type="text" id="filtroCodigo" class="form-control"
-                            placeholder="Filtrar por código">
+                        <input type="text" id="filtroCodigo" class="form-control" placeholder="Filtrar por código">
                     </div>
                     <div class="col-md-6">
                         <input type="text" id="filtroDescricao" class="form-control"
                             placeholder="Filtrar por descrição">
                     </div>
                 </div>
-                <table class="table table-bordered table-hover" id="tabelaNCM">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Descrição</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($ncm as $item)
-                        <tr ondblclick="selecionarNCM('{{ $item->ncm }}')">
-                            <td>{{ $item->ncm }}</td>
-                            <td>{{ $item->descricao }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover" id="tabelaNCM">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($ncm as $item)
+                                <tr ondblclick="selecionarNCM('{{ $item->ncm }}')">
+                                    <td>{{ $item->ncm }}</td>
+                                    <td>{{ $item->descricao }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
