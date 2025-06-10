@@ -92,6 +92,9 @@ class DatabaseSeeder extends Seeder
         $itensCardapio = new ItensCardapioSeeder();
         $itensCardapio->run();
 
+        $ncm = new ncmSeeder();
+        $ncm->run();
+
     }
 
 }

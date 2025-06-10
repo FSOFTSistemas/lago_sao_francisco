@@ -22,7 +22,7 @@ return new class extends Migration
         });
 
         $path = Storage::path('public/cfops/cfops.txt');
-        $cfops = explode("\r\n", file_get_contents($path));
+        $cfops = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($cfops as $line) {
             if ($line) {
                 $cfop = (explode("  ", $line));
