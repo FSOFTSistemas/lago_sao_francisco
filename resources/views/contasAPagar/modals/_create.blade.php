@@ -20,12 +20,12 @@
                       <div class="row">
                           <div class="col-md-6 mb-3">
                               <label for="valor">Valor:</label>
-                              <input type="text" class="form-control" id="valor" name="valor">
+                              <input type="number" class="form-control" id="valor" name="valor">
                           </div>
 
                           <div class="col-md-6 mb-3">
                               <label for="valorPago">Valor Pago:</label>
-                              <input type="text" class="form-control" id="valorPago" name="valor_pago">
+                              <input type="number" class="form-control" id="valorPago" name="valor_pago">
                           </div>
                       </div>
 

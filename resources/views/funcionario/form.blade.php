@@ -135,47 +135,11 @@
 @section('js')
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function() {
-            $('#cnpj').mask('99.999.999/9999-99');
-
-            $('#search-cnpj').on('click', function() {
-                const cnpj = $('#cnpj').val().replace(/[^\d]/g, '');
-                if (cnpj.length !== 14) {
-                    alert('Por favor, insira um CNPJ válido com 14 dígitos.');
-                    return;
-                }
-                $.ajax({
-                    url: `https://open.cnpja.com/office/${cnpj}`,
-                    type: 'GET',
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('Authorization',
-                            'Bearer YOUR_API_TOKEN');
-                    },
-                    success: function(response) {
-                        if (response) {
-                            console.log(response);
-                            $('#razaoSocial').val(response.company.name || '');
-                            $('#nomeFantasia').val(response.alias || '');
-                            $('#ie').val(response.registrations[0].number || '');
-                            $('#logradouro').val(response.address.street);
-                            $('#cidade').val(response.address.city);
-                            $('#uf').val(response.address.state);
-                            $('#bairro').val(response.address.district);
-                            $('#cep').val(response.address.zip);
-                            $('#numero').val(response.address.number);
-                        } else {
-                            alert('Nenhum dado encontrado para o CNPJ fornecido.');
-                        }
-                    },
-                    error: function() {
-                        alert('Ocorreu um erro ao buscar o CNPJ. Por favor, tente novamente.');
-                    }
-                });
-            });
+            $('#cpf').mask('000.000.000-00');
         });
     </script>
     <script src="{{ asset('js/endereco.js') }}"></script>

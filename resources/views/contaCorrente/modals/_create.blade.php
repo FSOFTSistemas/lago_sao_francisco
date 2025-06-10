@@ -14,7 +14,7 @@
                       @csrf
                       <div class="mb-3">
                           <label for="numeroConta">Número da Conta:</label>
-                          <input type="text" class="form-control" id="numeroConta" name="numero_conta" required>
+                          <input type="number" class="form-control" id="numeroConta" name="numero_conta" required>
                       </div>
 
                       <div class="row">
@@ -26,7 +26,7 @@
                       </div>
                       <div class="mb-3">
                           <label for="saldo">Saldo:</label>
-                          <input type="text" class="form-control" id="saldo" name="saldo" required>
+                          <input type="number" class="form-control" id="saldo" name="saldo" required>
                       </div>
 
                       <div class="mb-3">

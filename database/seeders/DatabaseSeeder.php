@@ -66,7 +66,6 @@ class DatabaseSeeder extends Seeder
         $refeicao->cardapio2_id = $cardapio->cardapios[1];
         $refeicao->cardapio3_id = $cardapio->cardapios[2];
         $refeicao->cardapio4_id = $cardapio->cardapios[3];
-        $refeicao->cardapio5_id = $cardapio->cardapios[4];
         $refeicao->run();
 
         $categoriasCardapio = new CategoriaCardapioSeeder();
@@ -94,6 +93,15 @@ class DatabaseSeeder extends Seeder
 
         $disponibilidadeItem = new DisponibilidadeItemCategoriaSeeder();
         $disponibilidadeItem->run();
+
+        $espacosAluguel = new EspacosSeeder();
+        $espacosAluguel->run();
+
+        $planosDeContas = new PlanoDeContasSeeder();
+        $planosDeContas->run();
+
+        $funcionarios = new FuncionariosSeeder();
+        $funcionarios->run();
 
     }
 

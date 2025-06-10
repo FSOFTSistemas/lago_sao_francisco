@@ -8,7 +8,6 @@ use App\Models\Espaco;
 use App\Models\FormaPagamento;
 use App\Models\Adicional;
 use App\Models\AluguelCategoriaItem;
-use App\Models\BuffetItem;
 use App\Models\Cardapio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,11 +26,10 @@ class AluguelController extends Controller
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
         $itens = Adicional::all();
-        $buffetItens = BuffetItem::all();
         $cardapios = Cardapio::all();
 
         return view('aluguel.create', compact(
-            'clientes', 'espacos', 'formasPagamento', 'itens', 'buffetItens', 'cardapios'
+            'clientes', 'espacos', 'formasPagamento', 'itens', 'cardapios'
         ));
     }
 
@@ -70,15 +68,6 @@ class AluguelController extends Controller
         $aluguel->adicionais()->sync($request->input('itens', []));
     
         // Salvar os itens de buffet agrupados por categoria
-        foreach ($request->input('categorias', []) as $categoriaId => $dados) {
-            foreach ($dados['itens'] ?? [] as $itemId) {
-                AluguelCategoriaItem::create([
-                    'aluguel_id' => $aluguel->id,
-                    'cardapio_categoria_id' => $categoriaId,
-                    'buffet_item_id' => $itemId,
-                ]);
-            }
-        }
     
         return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
     } catch( \Exception $e) {
@@ -151,19 +140,7 @@ class AluguelController extends Controller
     $aluguel->adicionais()->sync($request->input('itens', []));
 
     // Limpar e recriar os itens do buffet por categoria
-    AluguelCategoriaItem::where('aluguel_id', $aluguel->id)->delete();
 
-    $categoriasSelecionadas = $request->input('categorias', []);
-
-    foreach ($categoriasSelecionadas as $categoriaId => $dados) {
-        foreach ($dados['itens'] ?? [] as $itemId) {
-            AluguelCategoriaItem::create([
-                'aluguel_id' => $aluguel->id,
-                'cardapio_categoria_id' => $categoriaId,
-                'buffet_item_id' => $itemId,
-            ]);
-        }
-    }
 
     // Atualizar a relação many-to-many (caso esteja usando também)
     $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
