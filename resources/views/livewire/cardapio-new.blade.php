@@ -1,5 +1,5 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" style="display: none" >
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>

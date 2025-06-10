@@ -3,7 +3,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- Cabeçalho do Modal -->
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header">
                 <h4 class="modal-title" id="deleteFuncionarioModalLabel{{ $funcionario->id }}">
                     <i class="fas fa-trash"></i> Confirmar Exclusão
                 </h4>

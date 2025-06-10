@@ -3,7 +3,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- Cabeçalho do Modal -->
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="deleteCaixaModalLabel{{ $caixa->id }}">
                     <i class="fas fa-trash"></i> Confirmar Exclusão
                 </h5>
@@ -13,7 +13,7 @@
             <!-- Corpo do Modal -->
             <div class="modal-body">
                 Tem certeza que deseja excluir o caixa do dia
-                <strong>{{ $caixa->data_abertura }}</strong>?
+                <strong>{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</strong>?
             </div>
 
             <!-- Rodapé do Modal -->

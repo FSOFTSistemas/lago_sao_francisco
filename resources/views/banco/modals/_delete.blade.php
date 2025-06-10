@@ -3,11 +3,11 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <!-- Cabeçalho do Modal -->
-            <div class="modal-header bg-danger text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="deleteBancoModalLabel{{ $banco->id }}">
                     <i class="fas fa-trash"></i> Confirmar Exclusão
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <!-- Corpo do Modal -->

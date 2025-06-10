@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cfop;
 use App\Models\Produto;
 use App\Models\Empresa;
+use App\Models\Ncm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,7 +25,9 @@ class ProdutoController extends Controller
     {
         $empresas = Empresa::all();
         $produtos = Produto::all();
-        return view('produto.create', compact('empresas', 'produtos'));
+        $cfop = Cfop::all();
+        $ncm = Ncm::all();
+        return view('produto.create', compact('empresas', 'produtos', 'cfop', 'ncm'));
     }
 
     /**
