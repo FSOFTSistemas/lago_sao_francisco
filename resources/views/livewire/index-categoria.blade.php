@@ -17,7 +17,7 @@
     <li>{{$secao->nome_secao_cardapio}} (ID: {{ $secao->id }})</li>
         @foreach($secao->categorias as $categoria)
             <li>
-               * {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
+               *------ {{ $categoria->nome_categoria_item }} (ID: {{ $categoria->id }})
                 <button 
                     type="button"
                     class="btn btn-sm btn-outline-danger"

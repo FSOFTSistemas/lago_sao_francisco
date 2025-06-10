@@ -33,6 +33,12 @@
                             <input type="text" class="form-control" id="descricao" name="descricao" required value="{{ $produto->descricao ?? '' }}">
                         </div>
                     </div>
+                    <div class="form-group row">
+                        <label class="col-md-3 label-control" for="ean"> EAN:</label>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="ean" name="ean" value="{{ $produto->ean ?? '' }}">
+                        </div>
+                    </div>
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="categoria">* Categoria:</label>
@@ -102,14 +108,14 @@
                 {{-- Aba 2: Produto por Dia da Semana --}}
                 <div class="tab-pane fade" id="dias" role="tabpanel">
                     <div class="alert alert-secondary">
-                        <strong>DICA:</strong> O valor que você deve inserir em cada diária abaixo refere-se à ocupação máxima do quarto. <br>
-                        <em>EX: Se você possui um quarto que a ocupação máxima é de 3 pessoas, você deve inserir o valor cobrado por estas 3 pessoas na diária.</em>
+                        <strong>DICA:</strong> Preencha os dados fiscais conforme a tributação do produto. Verifique NCM, CFOP e CST/CSOSN para evitar erros na emissão de notas fiscais. <br>
+                        <em>ATENÇÃO: dados incorretos como NCM ou CFOP podem causar rejeição da NF-e.</em>
                     </div>
 
                    <div class="form-group row">
                         <label class="col-md-3 label-control" for="ncm">* NCM:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="ncm" name="ncm" required value="{{ $produto->ncm ?? '' }}">
+                            <input type="number" class="form-control" id="ncm" name="ncm" required value="{{ $produto->ncm ?? '' }}">
                         </div>
                     </div>
 
@@ -117,35 +123,35 @@
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="cst">* CST:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="cst" name="cst" required value="{{ $produto->cst ?? '' }}">
+                            <input type="number" class="form-control" id="cst" name="cst" required value="{{ $produto->cst ?? '' }}">
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="cfopInterno">* CFOP Interno:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="cfopInterno" name="cfop_interno" required value="{{ $produto->cfop_interno ?? '' }}">
+                            <input type="number" class="form-control" id="cfopInterno" name="cfop_interno" required value="{{ $produto->cfop_interno ?? '' }}">
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="cfopExterno">* CFOP Externo:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="cfopExterno" name="cfop_externo" required value="{{ $produto->cfop_externo ?? '' }}">
+                            <input type="number" class="form-control" id="cfopExterno" name="cfop_externo" required value="{{ $produto->cfop_externo ?? '' }}">
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="aliquota">* Alíquota:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="aliquota" name="aliquota" required value="{{ $produto->aliquota ?? '' }}">
+                            <input type="number" class="form-control" id="aliquota" name="aliquota" required value="{{ $produto->aliquota ?? '' }}">
                         </div>
                     </div>
 
                     <div class="form-group row">
                         <label class="col-md-3 label-control" for="csosn">* CSOSN:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="csosn" name="csosn" required value="{{ $produto->csosn ?? '' }}">
+                            <input type="number" class="form-control" id="csosn" name="csosn" required value="{{ $produto->csosn ?? '' }}">
                         </div>
                     </div>
                 </div>
