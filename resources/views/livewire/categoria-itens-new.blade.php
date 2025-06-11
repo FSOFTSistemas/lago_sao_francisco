@@ -11,7 +11,7 @@
     <h5 class="mb-3">{{ $categoriaSalva ? 'Editar' : 'Nova' }} Categoria do Cardápio</h5>
     
 
-    <form wire:submit.prevent="save" x-data="{ escolhaExclusiva: @entangle('eh_grupo_escolha_exclusiva') }">
+    <form wire:submit.prevent="save">
         <div class="row">
             <div class="col-md-6">
                 <div class="form-group">
@@ -77,7 +77,7 @@
                     <label for="refeicao_principal_id">Refeição Principal</label>
                     <select wire:model="refeicao_principal_id" wire:change="limparSessao"
                     class="form-control @error('refeicao_principal_id') is-invalid @enderror"
-                    id="refeicao_principal_id">
+                    id="refeicao_principal_id" wire:key="refeicaoselect-{{ $inputKey }}">
                         <option value="">Nenhuma</option>
                         @foreach($refeicoes as $refeicao)
                             <option value="{{ $refeicao->id }}">
@@ -96,7 +96,7 @@
                 <label for="sessao_cardapio_id" class="font-weight-bold">Seção do Cardápio</label>
                <select wire:model="sessao_cardapio_id" wire:change="limparRefeicao"
                 class="form-control @error('sessao_cardapio_id') is-invalid @enderror"
-                id="sessao_cardapio_id">
+                id="sessao_cardapio_id" wire:key="secaoselect-{{ $inputKey }}">
                     <option value="">Selecione a seção...</option>
                     @foreach($secoes as $secao)
                         <option value="{{ $secao->id }}">
@@ -143,7 +143,7 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label>Selecione o Item</label>
-                            <select wire:model="selectedItem" class="form-control"wire:key="item-{{ $inputKey }}">
+                            <select wire:model="selectedItem" class="form-control" wire:key="item-{{ $inputKey }}">
                                 <option value="">Selecione um item...</option>
                                 @foreach($allItems ?? [] as $item)
                                     <option value="{{ $item->id }}">{{ $item->nome_item }}</option>

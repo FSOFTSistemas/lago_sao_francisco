@@ -136,6 +136,7 @@ class CategoriasDeItensCardapioController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            dd('ooooiiiii');
             $categoria = CategoriasDeItensCardapio::findOrFail($id);
 
             $validated = $request->validate([
@@ -149,11 +150,11 @@ class CategoriasDeItensCardapioController extends Controller
 
             $categoria->update($validated);
 
-            return redirect()->route('categoriaItensCardapio.index')->with('success', 'Categoria atualizada com sucesso');
+    
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Categoria não encontrada');
+           
         } catch (Exception $e) {
-            return redirect()->route('categoriaItensCardapio.index')->with('error', 'Erro ao atualizar categoria');
+           
         }
     }
 

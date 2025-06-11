@@ -7,6 +7,7 @@ use App\Models\CategoriasDeItensCardapio;
 use App\Services\CardapioService;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Livewire\Livewire;
 
 class CardapioNew extends Component
 {
@@ -111,6 +112,7 @@ class CardapioNew extends Component
     public function criarCategoria($aba)
     {
         $this->abaAtual = $aba;
+        $this->dispatch('carregarSelect');
     }
 
     #[On('categoriaCriada')]
@@ -119,11 +121,14 @@ class CardapioNew extends Component
         $this->abaAtual = $aba;
         
     }
+  
     #[On('editCategoria')]
     public function editCategoria($id)
     {
+
+        $this->dispatch('carregarCategoria', id: $id);
         $this->abaAtual = 'categoriasCreate';
-        session(['categoriaId' => $id]);
+
     }
 
 }
