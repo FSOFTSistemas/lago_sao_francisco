@@ -49,12 +49,12 @@
                         <td>{{ $categoria->ativo }}</td>
                         <td>
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editCadastroProdutoModal{{ $categoria->id }}">
+                                data-target="#editCategoriaProdutoModal{{ $categoria->id }}">
                                 ✏️
                             </button>
 
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deleteCadastroProdutoModal{{ $categoria->id }}">
+                            data-target="#deleteCategoriaProdutoModal{{ $categoria->id }}">
                             🗑️
                         </button>
                         </td>

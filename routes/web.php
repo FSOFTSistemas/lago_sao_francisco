@@ -164,3 +164,4 @@ Route::resource('cfop', CfopController::class);
 
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
+
