@@ -195,7 +195,7 @@
 
          @if($cardapioID ?? false)
             <div class="tab-pane fade {{ $abaAtual === 'categoriasCreate' ? 'show active' : '' }}" id="categoriasCreate" role="tabpanel">
-            @livewire('categoria-itens-new', ['id' => session('categoriaId')])
+            @livewire('categoria-itens-new')
             </div>
             @endif
     </div>

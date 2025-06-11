@@ -8,7 +8,6 @@ use App\Models\DisponibilidadeItemCategoria;
 use App\Models\SecoesCardapio;
 use App\Models\RefeicaoPrincipal;
 use App\Models\ItensDoCardapio;
-use App\Services\CardapioService;
 use Illuminate\Http\Request;
 use Livewire\Component;
 use Livewire\Attributes\On;
@@ -16,20 +15,17 @@ use Livewire\Attributes\On;
 class CategoriaItensNew extends Component
 {
     public $sessao_cardapio_id, $refeicao_principal_id, $nome_categoria_item;
-    public $numero_escolhas_permitidas = 1, $ordem_exibicao = 1;
-    public $eh_grupo_escolha_exclusiva = 0;
+    public $numero_escolhas_permitidas, $ordem_exibicao = 1;
+    public $eh_grupo_escolha_exclusiva;
     public $categoriaID;
     public $cardapioID;
     
     // Variáveis para itens
     public $selectedItem;
-    //public $itensDaCategoria = [];
     public $itensTemporarios;
     public $allItems;
     public $categoriaSalva = false;
-
     public $modalAberto = false;
-
     public $inputKey;
 
     protected $rules = [
@@ -52,16 +48,10 @@ class CategoriaItensNew extends Component
         'ordem_exibicao.min' => 'A ordem de exibição mínima é 1.',
     ];
 
-    public function mount($id = null)
+    public function mount()
     {
         $this->cardapioID = session('cardapio_id');
-        $this->allItems = ItensDoCardapio::all(); 
-        if ($id) {
-            $this->categoriaID = $id;
-            $this->loadCategoriaData($id);
-            $this->categoriaSalva = true;
-            $this->loadItensDaCategoria();
-        }
+        $this->allItems = ItensDoCardapio::all();
     }
 
     protected function loadCategoriaData($id)
@@ -89,9 +79,6 @@ class CategoriaItensNew extends Component
         })->filter(fn($item) => $item['id'])->values()->toArray();
     }else {
         $this->itensTemporarios = collect($this->itensTemporarios)->values()->toArray();
-            // $this->itensTemporarios = collect($this->itensTemporarios)->map(function($item) {
-            //     return $item;
-            // })->toArray();
            
         }
     }
@@ -126,19 +113,20 @@ class CategoriaItensNew extends Component
         // // Atualização da categoria existente
         $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
         $categoria->update($dados);
-        // $this->concluido();
+        $this->dispatch('categoriaCriada', aba: 'categorias');
+        $this->dispatch('categoriaObserver', id: $this->cardapioID);
+        $this->resetExcept(['categoriaSalva', 'allItems', 'cardapioID']);
     } else {
         $dados['itens']= $this->itensTemporarios;
-        // dd($dados);
         $request = new Request($dados);
         $controller = new CategoriasDeItensCardapioController();
         $controller->store($request);
         $this->concluido();
         
         
+        $this->loadItensDaCategoria();
     }
 
-    $this->loadItensDaCategoria();
     
 }
 
@@ -195,8 +183,8 @@ class CategoriaItensNew extends Component
     public function render()
     {
         return view('livewire.categoria-itens-new', [
-            'secoes' => SecoesCardapio::all(),
-            'refeicoes' => RefeicaoPrincipal::all(),
+           'secoes' => SecoesCardapio::where('cardapio_id', $this->cardapioID)->get(),
+            'refeicoes' => RefeicaoPrincipal::where('cardapio_id', $this->cardapioID)->get(),
         ]);
     }
 
@@ -235,14 +223,19 @@ class CategoriaItensNew extends Component
         $this->cardapioID = $id;
     }
 
-    public function editCategoria($id)
+    #[On('carregarCategoria')]
+    public function carregarCategoria($id)
     {
         $this->categoriaID = $id;
-        $this->loadCategoriaData($id);
         $this->categoriaSalva = true;
+        $this->loadCategoriaData($id);
         $this->loadItensDaCategoria();
     }
 
-
+    #[On('carregarSelect')]
+    public function carregarSelect()
+    {
+        $this->inputKey = now()->timestamp;
+    }
 
 }
