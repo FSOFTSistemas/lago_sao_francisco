@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\VendedorController;
 use App\Livewire\CardapioNew;
 
 Route::get('/', function () {
@@ -166,3 +167,5 @@ Route::resource('cfop', CfopController::class);
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
 Route::resource('adicionais', AdicionalController::class);
+
+Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar vendedor');
