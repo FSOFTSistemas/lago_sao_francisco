@@ -13,54 +13,61 @@ class AdicionalController extends Controller
      */
     public function index()
     {
-        //
+        $adicionais = Adicional::all();
+        return view('adicionais.index', compact('adicionais'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+ 
     public function store(Request $request)
     {
-        //
+        try{
+            $validated = $request->validate([
+                'descricao' => 'string|required',
+                'valor' => 'numeric|required',
+                'quantidade' => 'numeric|required'
+            ], [
+                'descricao.required' => 'O campo descricao é obrigatório',
+                'valor.required' => 'O campo valor é obrigatório',
+                'quantidade.required' => 'O campo quantidade é obrigatório'
+            ]);
+
+            Adicional::create($validated);
+            return redirect()->route('adicionais.index')->with('success', 'Adicional criado com sucesso!');
+        } catch(\Exception $e){
+            return redirect()->back()->with('error', 'Erro ao criar Adicional', $e);
+
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Adicional $adicional)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Adicional $adicional)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Adicional $adicional)
     {
-        //
+        try{
+            $adicional = Adicional::findOrFail($adicional->id);
+             $validated = $request->validate([
+                'descricao' => 'string|required',
+                'valor' => 'numeric|required',
+                'quantidade' => 'numeric|required'
+            ], [
+                'descricao.required' => 'O campo descricao é obrigatório',
+                'valor.required' => 'O campo valor é obrigatório',
+                'quantidade.required' => 'O campo quantidade é obrigatório'
+            ]);
+            $adicional->update($validated);
+            return redirect()->route('adicionais.index')->with('success', 'Adicional atualizado com sucesso!');
+        } catch(\Exception $e){
+            return redirect()->back()->with('error', 'Erro ao atualizar Adicional', $e);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Adicional $adicional)
+    public function destroy($id)
     {
-        //
+        try {
+            $adicional = Adicional::findOrFail($id);
+            $adicional->delete();
+            return redirect()->route('adicionais.index')->with('success', 'Adicional deletado com sucesso!');
+        } catch(\Exception)
+        {
+            return redirect()->back()->with('error', 'Erro ao deletar adicional');
+        }
     }
 }

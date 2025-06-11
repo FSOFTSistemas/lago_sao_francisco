@@ -12,6 +12,7 @@ class Adicional extends Model
     protected $fillable = [
         'descricao',
         'valor',
+        'quantidade'
     ];
 
     public function alugueis()
