@@ -414,7 +414,7 @@ return [
                     'text' => 'Vendedores',
                     'url'  => '/vendedor',
                     'icon' => 'fas fa-user-tie',
-                    'can'  => 'gerenciar financeiro',
+                    'can'  => 'gerenciar adiantamento',
                 ],
                 [
                     'text' => 'Banco',
