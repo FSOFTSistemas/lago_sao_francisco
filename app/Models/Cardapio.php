@@ -13,7 +13,6 @@ class Cardapio extends Model
     protected $fillable = [
         'NomeCardapio',
         'AnoCardapio',
-        'PrecoBasePorPessoa',
         'ValidadeOrcamentoDias',
         'PoliticaCriancaGratisLimiteIdade',
         'PoliticaCriancaDescontoPercentual',
@@ -24,7 +23,6 @@ class Cardapio extends Model
     ];
 
     protected $casts = [
-        'PrecoBasePorPessoa' => 'decimal:2',
         'PoliticaCriancaDescontoPercentual' => 'decimal:2',
         'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'boolean',
     ];
@@ -36,7 +34,7 @@ class Cardapio extends Model
 
 public function opcoes()
 {
-    return $this->hasMany(refeicaoPrincipal::class, 'Cardapio_id');
+    return $this->hasMany(RefeicaoPrincipal::class, 'cardapio_id');
 }
 
 }

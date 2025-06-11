@@ -15,7 +15,6 @@ class CardapioSeeder extends Seeder
             [
                 'NomeCardapio' => 'Cardápio Festa Infantil',
                 'AnoCardapio' => 2023,
-                'PrecoBasePorPessoa' => 89.90,
                 'ValidadeOrcamentoDias' => 7,
                 'PoliticaCriancaGratisLimiteIdade' => 5,
                 'PoliticaCriancaDescontoPercentual' => 50.00,
@@ -29,7 +28,6 @@ class CardapioSeeder extends Seeder
             [
                 'NomeCardapio' => 'Cardápio Casamento Premium',
                 'AnoCardapio' => 2023,
-                'PrecoBasePorPessoa' => 250.00,
                 'ValidadeOrcamentoDias' => 15,
                 'PoliticaCriancaGratisLimiteIdade' => null,
                 'PoliticaCriancaDescontoPercentual' => null,
@@ -43,7 +41,6 @@ class CardapioSeeder extends Seeder
             [
                 'NomeCardapio' => 'Cardápio Corporativo Standard',
                 'AnoCardapio' => 2023,
-                'PrecoBasePorPessoa' => 65.00,
                 'ValidadeOrcamentoDias' => 30,
                 'PoliticaCriancaGratisLimiteIdade' => null,
                 'PoliticaCriancaDescontoPercentual' => null,
@@ -57,7 +54,6 @@ class CardapioSeeder extends Seeder
             [
                 'NomeCardapio' => 'Cardápio Buffet Vegetariano',
                 'AnoCardapio' => 2024,
-                'PrecoBasePorPessoa' => 75.50,
                 'ValidadeOrcamentoDias' => 10,
                 'PoliticaCriancaGratisLimiteIdade' => 6,
                 'PoliticaCriancaDescontoPercentual' => 30.00,
@@ -71,7 +67,6 @@ class CardapioSeeder extends Seeder
             [
                 'NomeCardapio' => 'Cardápio Aniversário Econômico',
                 'AnoCardapio' => 2024,
-                'PrecoBasePorPessoa' => 45.00,
                 'ValidadeOrcamentoDias' => 5,
                 'PoliticaCriancaGratisLimiteIdade' => 3,
                 'PoliticaCriancaDescontoPercentual' => 40.00,

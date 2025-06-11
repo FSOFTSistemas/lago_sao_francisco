@@ -98,12 +98,12 @@ class CategoriaItensNew extends Component
 
     public function save()
     {
-    $this->itensTemporarios = (array) $this->itensTemporarios;
-    $this->validate();
-
-    // Validação XOR
-    if ($this->sessao_cardapio_id && $this->refeicao_principal_id) {
-        $this->addError('sessao_cardapio_id', 'Você deve escolher apenas uma: Seção do Cardápio ou Refeição Principal.');
+        $this->itensTemporarios = (array) $this->itensTemporarios;
+        $this->validate();
+        
+        // Validação XOR
+        if ($this->sessao_cardapio_id && $this->refeicao_principal_id) {
+            $this->addError('sessao_cardapio_id', 'Você deve escolher apenas uma: Seção do Cardápio ou Refeição Principal.');
         $this->addError('refeicao_principal_id', 'Você deve escolher apenas uma: Seção do Cardápio ou Refeição Principal.');
         return;
     }
@@ -119,13 +119,14 @@ class CategoriaItensNew extends Component
         $this->addError('numero_escolhas_permitidas', 'Para grupos de escolha exclusiva, o número de escolhas deve ser 1.');
         return;
     }
-
+    
     $dados = $this->only(array_keys($this->rules));
     
     if ($this->categoriaSalva) {
         // // Atualização da categoria existente
         $categoria = CategoriasDeItensCardapio::findOrFail($this->categoriaID);
         $categoria->update($dados);
+        // $this->concluido();
     } else {
         $dados['itens']= $this->itensTemporarios;
         // dd($dados);
@@ -133,6 +134,7 @@ class CategoriaItensNew extends Component
         $controller = new CategoriasDeItensCardapioController();
         $controller->store($request);
         $this->concluido();
+        
         
     }
 

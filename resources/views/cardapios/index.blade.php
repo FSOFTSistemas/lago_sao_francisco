@@ -38,7 +38,6 @@
                 <th>ID</th>
                 <th>Nome</th>
                 <th>Ano</th>
-                <th>Preço Base</th>
                 <th>Validade (dias)</th>
                 <th>Ações</th>
             </tr>
@@ -49,7 +48,6 @@
                     <td>{{ $cardapio->id }}</td>
                     <td>{{ $cardapio->NomeCardapio }}</td>
                     <td>{{ $cardapio->AnoCardapio }}</td>
-                    <td>R$ {{ number_format($cardapio->PrecoBasePorPessoa, 2, ',', '.') }}</td>
                     <td>{{ $cardapio->ValidadeOrcamentoDias }}</td>
                     <td>
                         <a href="{{ route('cardapios.pdf', $cardapio->id) }}" target="_blank" class="btn btn-sm btn-primary">

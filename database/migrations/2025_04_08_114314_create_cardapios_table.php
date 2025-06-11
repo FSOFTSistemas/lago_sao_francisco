@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->string('NomeCardapio');
             $table->year('AnoCardapio')->nullable();
-            $table->decimal('PrecoBasePorPessoa', 10, 2)->default(0);
             $table->integer('ValidadeOrcamentoDias')->nullable();
             $table->integer('PoliticaCriancaGratisLimiteIdade')->nullable();
             $table->decimal('PoliticaCriancaDescontoPercentual', 5, 2)->nullable();

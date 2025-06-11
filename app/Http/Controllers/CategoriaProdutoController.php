@@ -24,7 +24,7 @@ class CategoriaProdutoController extends Controller
      */
     public function index()
     {
-        $categorias = CategoriaProduto::with('produtos');
+        $categorias = CategoriaProduto::with('produtos')->get();
         return view('categoriaProduto.index', compact('categorias'));
     }
 
@@ -115,9 +115,10 @@ class CategoriaProdutoController extends Controller
                 'descricao.min'      => 'A descrição deve ter pelo menos 3 caracteres.',
                 'ativo.boolean'      => 'O campo ativo deve ser verdadeiro ou falso.',
             ]);
-
-
+            $ativo = $request->has('ativo') ? true : false;
+            $validated['ativo'] = $ativo;
             $categoria->update($validated);
+
 
             return redirect()->route('categoriaProduto.index')->with('success', 'Categoria atualizada com sucesso');
         } catch (ModelNotFoundException $e) {
