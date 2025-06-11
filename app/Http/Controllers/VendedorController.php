@@ -14,9 +14,10 @@ class VendedorController extends Controller
     {
         try {
             $vendedores = Vendedor::all();
-            return response()->json($vendedores);
+
+            return view('vendedor.index', compact('vendedores'));
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro ao listar vendedores.'], 500);
+            return redirect()->back()->with('error', 'Erro ao abrir vendedores'.$e->getMessage());
         }
     }
 
@@ -25,7 +26,7 @@ class VendedorController extends Controller
      */
     public function create()
     {
-        //
+        return view('vendedor.create');
     }
 
     /**
@@ -57,11 +58,11 @@ class VendedorController extends Controller
 
             Vendedor::create($validated);
 
-            return redirect()->route('vendedores.index')->with('success', 'Vendedor criado com sucesso.');
+            return redirect()->route('vendedor.index')->with('success', 'Vendedor criado com sucesso.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->route('vendedores.index')->with('error', 'Erro de validação ao criar vendedor.');
+            return redirect()->route('vendedor.index')->with('error', 'Erro de validação ao criar vendedor.');
         } catch (\Exception $e) {
-            return redirect()->route('vendedores.index')->with('error', 'Erro ao criar vendedor.');
+            return redirect()->route('vendedor.index')->with('error', 'Erro ao criar vendedor.');
         }
     }
 
@@ -82,7 +83,8 @@ class VendedorController extends Controller
      */
     public function edit(Vendedor $vendedor)
     {
-        //
+
+        return view('vendedor.create', compact('vendedor'));
     }
 
     /**
@@ -114,11 +116,11 @@ class VendedorController extends Controller
 
             $vendedor->update($validated);
 
-            return redirect()->route('vendedores.index')->with('success', 'Vendedor atualizado com sucesso.');
+            return redirect()->route('vendedor.index')->with('success', 'Vendedor atualizado com sucesso.');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return redirect()->route('vendedores.index')->with('error', 'Erro de validação ao atualizar vendedor.');
+            return redirect()->route('vendedor.index')->with('error', 'Erro de validação ao atualizar vendedor.');
         } catch (\Exception $e) {
-            return redirect()->route('vendedores.index')->with('error', 'Erro ao atualizar vendedor.');
+            return redirect()->route('vendedor.index')->with('error', 'Erro ao atualizar vendedor.');
         }
     }
 
@@ -129,9 +131,9 @@ class VendedorController extends Controller
     {
         try {
             $vendedor->delete();
-            return redirect()->route('vendedores.index')->with('success', 'Vendedor excluído com sucesso.');
+            return redirect()->route('vendedor.index')->with('success', 'Vendedor excluído com sucesso.');
         } catch (\Exception $e) {
-            return redirect()->route('vendedores.index')->with('error', 'Erro ao excluir vendedor.');
+            return redirect()->route('vendedor.index')->with('error', 'Erro ao excluir vendedor.');
         }
     }
 }

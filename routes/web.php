@@ -168,7 +168,7 @@ Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
 Route::resource('adicionais', AdicionalController::class);
 
-Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar vendedor');
+Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
 
 
 
