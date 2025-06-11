@@ -1,5 +1,5 @@
 <div>
-    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" >
+    <ul class="nav nav-tabs" id="cardapioTab" role="tablist" style="display: none">
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'geral' ? 'active' : '' }}" id="geral-tab" href="#" role="tab"
                 wire:click.prevent="$set('abaAtual', 'geral')">Informações Gerais</a>
@@ -195,7 +195,7 @@
 
          @if($cardapioID ?? false)
             <div class="tab-pane fade {{ $abaAtual === 'categoriasCreate' ? 'show active' : '' }}" id="categoriasCreate" role="tabpanel">
-            @livewire('categoria-itens-new', ['id' => session('categoriaId')])
+            @livewire('categoria-itens-new')
             </div>
             @endif
     </div>

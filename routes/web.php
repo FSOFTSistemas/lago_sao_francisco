@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdiantamentoController;
+use App\Http\Controllers\AdicionalController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\BuffetItemController;
@@ -164,4 +165,8 @@ Route::resource('cfop', CfopController::class);
 
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
+<<<<<<< HEAD
 
+=======
+Route::resource('adicionais', AdicionalController::class);
+>>>>>>> fd303bb368e5d07eea8b5d3bede245de152e176f
