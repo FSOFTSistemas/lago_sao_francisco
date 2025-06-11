@@ -84,6 +84,11 @@
                 </div>
             </a>
         </div>
+    </div>
+     <br>
+    <h5>Configurações Gerais / Cadastro</h5>
+    <br>
+    <div class="row">
         <div class="col-md-3">
             <a href="{{ route('categoriaProduto.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
