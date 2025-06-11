@@ -13,7 +13,8 @@ class DayUseController extends Controller
      */
     public function index()
     {
-        //
+        $dayuses = DayUse::all();
+        return view('dayuse.index', compact('dayuses'));
     }
 
     /**
@@ -21,7 +22,7 @@ class DayUseController extends Controller
      */
     public function create()
     {
-        //
+         return view('dayuse._form');
     }
 
     /**

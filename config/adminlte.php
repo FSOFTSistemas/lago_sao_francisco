@@ -322,7 +322,7 @@ return [
                 [
                     'text' => 'Day use / Passaporte',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/diaria',
+                    'url'  => '/dayuse',
                 ],
                 [
                     'text' => 'Aluguel de Espaços',
