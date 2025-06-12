@@ -55,7 +55,7 @@ class CategoriaProdutoController extends Controller
             // Cria a categoria
             $categoria = CategoriaProduto::create($validated);
             
-            return redirect()->backwithinput()->with('success', 'Categoria de produto criada com sucesso');
+            return redirect()->back()->with('success', 'Categoria de produto criada com sucesso');
         } catch (ValidationException $e) {
             Log::error("Erro ao criar categoria: " . $e->getMessage());
             return redirect()

@@ -132,7 +132,16 @@
                             <div class="form-group row">
                                 <label class="col-md-3 label-control" for="ncm">* NCM:</label>
                                 <div class="col-md-3">
-                                    <input type="number" class="form-control" id="ncm" name="ncm" required value="{{ $produto->ncm ?? '' }}">
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="ncm" name="ncm" required
+                                            value="{{ $produto->ncm ?? '' }}">
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal"
+                                                data-bs-target="#modalNCM">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -179,10 +188,112 @@
             <button type="submit" class="btn btn-primary">Salvar</button>
         </div>
     </form>
+     @include('produto.modals._ncm')
     @include('categoriaProduto.modals._create')
 @endsection
 
+@section('css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-switch {
+            padding-left: 3em;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .form-switch .form-check-input {
+            width: 3.5rem;
+            height: 1.75rem;
+            background-color: #dee2e6;
+            border-radius: 1.75rem;
+            position: relative;
+            transition: background-color 0.3s ease-in-out;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
+        .form-switch .form-check-input:checked {
+            background-color: #0d6efd;
+        }
+
+        .form-switch .form-check-input::before {
+            content: "";
+            position: absolute;
+            width: 1.5rem;
+            height: 1.5rem;
+            top: 0.125rem;
+            left: 0.125rem;
+            border-radius: 50%;
+            background-color: white;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .form-switch .form-check-input:checked::before {
+            transform: translateX(1.75rem);
+        }
+
+        .label-control {
+            text-align: right
+        }
+
+        .card-footer {
+            text-align: right
+        }
+    </style>
+    <style>
+        @media (max-width: 768px) {
+            .label-control {
+                text-align: start
+            }
+        }
+    </style>
+@endsection
+
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchInput = document.getElementById('ativoSwitch');
+            const label = document.getElementById('ativoLabel');
+
+            switchInput.addEventListener('change', function() {
+                label.textContent = this.checked ? 'Ativo' : 'Inativo';
+            });
+        });
+    </script>
+
+    <script>
+        function selecionarNCM(codigo) {
+            const inputNcm = document.getElementById('ncm');
+            if (inputNcm) {
+                inputNcm.value = codigo;
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNCM'));
+                if (modal) modal.hide();
+            } else {
+                console.error('Campo NCM não encontrado!');
+            }
+        }
+
+        $(document).ready(function() {
+            $('#filtroCodigo, #filtroDescricao').on('keyup', function() {
+                const filtroCod = $('#filtroCodigo').val().toLowerCase();
+                const filtroDesc = $('#filtroDescricao').val().toLowerCase();
+
+                $('#tabelaNCM tbody tr').filter(function() {
+                    const textoCod = $(this).find('td:eq(0)').text().toLowerCase();
+                    const textoDesc = $(this).find('td:eq(1)').text().toLowerCase();
+                    $(this).toggle(
+                        textoCod.includes(filtroCod) && textoDesc.includes(filtroDesc)
+                    );
+                });
+            });
+        });
+    </script>
     <script>
         function toggleCampos() {
             const categoria = document.getElementById('categoria');
