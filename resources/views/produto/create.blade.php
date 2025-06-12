@@ -117,15 +117,41 @@
 
                             <div class="form-group row">
                                 <label class="col-md-3 label-control" for="cst">* CST:</label>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <select class="form-control select2" id="cst" name="cst" required>
                                         <option value="">Selecione uma opção</option>
-                                        <option value="00" {{ old('cst', $produto->cst ?? '') == '00' ? 'selected' : '' }}>00 - Tributada integralmente</option>
-                                        <option value="10" {{ old('cst', $produto->cst ?? '') == '10' ? 'selected' : '' }}>10 - ICMS ST</option>
-                                        <option value="20" {{ old('cst', $produto->cst ?? '') == '20' ? 'selected' : '' }}>20 - Redução BC</option>
-                                        <option value="40" {{ old('cst', $produto->cst ?? '') == '40' ? 'selected' : '' }}>40 - Isenta</option>
-                                        <option value="90" {{ old('cst', $produto->cst ?? '') == '90' ? 'selected' : '' }}>90 - Outras</option>
+                                        <!-- Tributação normal -->
+                                        <optgroup label="Tributação Normal">
+                                            <option value="00" {{ old('cst', $produto->cst ?? '') == '00' ? 'selected' : '' }}>00 - Tributada integralmente</option>
+                                            <option value="10" {{ old('cst', $produto->cst ?? '') == '10' ? 'selected' : '' }}>10 - Tributada e com cobrança do ICMS por ST</option>
+                                            <option value="20" {{ old('cst', $produto->cst ?? '') == '20' ? 'selected' : '' }}>20 - Com redução de base de cálculo</option>
+                                            <option value="30" {{ old('cst', $produto->cst ?? '') == '30' ? 'selected' : '' }}>30 - Isenta / Não tributada e com cobrança do ICMS por ST</option>
+                                            <option value="40" {{ old('cst', $produto->cst ?? '') == '40' ? 'selected' : '' }}>40 - Isenta</option>
+                                            <option value="41" {{ old('cst', $produto->cst ?? '') == '41' ? 'selected' : '' }}>41 - Não tributada</option>
+                                            <option value="50" {{ old('cst', $produto->cst ?? '') == '50' ? 'selected' : '' }}>50 - Suspensão</option>
+                                            <option value="51" {{ old('cst', $produto->cst ?? '') == '51' ? 'selected' : '' }}>51 - Diferimento</option>
+                                            <option value="60" {{ old('cst', $produto->cst ?? '') == '60' ? 'selected' : '' }}>60 - ICMS cobrado anteriormente por substituição tributária</option>
+                                            <option value="70" {{ old('cst', $produto->cst ?? '') == '70' ? 'selected' : '' }}>70 - Com redução de base de cálculo e cobrança do ICMS por ST</option>
+                                            <option value="90" {{ old('cst', $produto->cst ?? '') == '90' ? 'selected' : '' }}>90 - Outras</option>
+                                        </optgroup>
+                                        
+                                        <!-- Simples Nacional -->
+                                        <optgroup label="Simples Nacional (CSOSN)">
+                                            <option value="101" {{ old('cst', $produto->cst ?? '') == '101' ? 'selected' : '' }}>101 - Tributada pelo Simples Nacional com permissão de crédito</option>
+                                            <option value="102" {{ old('cst', $produto->cst ?? '') == '102' ? 'selected' : '' }}>102 - Tributada pelo Simples Nacional sem permissão de crédito</option>
+                                            <option value="103" {{ old('cst', $produto->cst ?? '') == '103' ? 'selected' : '' }}>103 - Isenção do ICMS no Simples Nacional para faixa de receita bruta</option>
+                                            <option value="201" {{ old('cst', $produto->cst ?? '') == '201' ? 'selected' : '' }}>201 - Tributada pelo Simples Nacional com permissão de crédito e com cobrança do ICMS por ST</option>
+                                            <option value="202" {{ old('cst', $produto->cst ?? '') == '202' ? 'selected' : '' }}>202 - Tributada pelo Simples Nacional sem permissão de crédito e com cobrança do ICMS por ST</option>
+                                            <option value="203" {{ old('cst', $produto->cst ?? '') == '203' ? 'selected' : '' }}>203 - Isenção do ICMS no Simples Nacional para faixa de receita bruta e com cobrança do ICMS por ST</option>
+                                            <option value="300" {{ old('cst', $produto->cst ?? '') == '300' ? 'selected' : '' }}>300 - Imune</option>
+                                            <option value="400" {{ old('cst', $produto->cst ?? '') == '400' ? 'selected' : '' }}>400 - Não tributada pelo Simples Nacional</option>
+                                            <option value="500" {{ old('cst', $produto->cst ?? '') == '500' ? 'selected' : '' }}>500 - ICMS cobrado anteriormente por substituição tributária (substituído) ou por antecipação</option>
+                                            <option value="900" {{ old('cst', $produto->cst ?? '') == '900' ? 'selected' : '' }}>900 - Outros</option>
+                                        </optgroup>
                                     </select>
+                                    <small class="form-text text-muted">
+                                        CST - Código de Situação Tributária conforme tabela da SEFAZ
+                                    </small>
                                 </div>
                             </div>
 
@@ -166,19 +192,29 @@
                                 </div>
                             </div>
 
-                            <div class="form-group row">
-                                <label class="col-md-3 label-control" for="csosn">* CSOSN:</label>
-                                <div class="col-md-3">
-                                    <select class="form-control select2" id="csosn" name="csosn" required>
-                                        <option value="">Selecione uma opção</option>
-                                        <option value="101" {{ old('csosn', $produto->csosn ?? '') == '101' ? 'selected' : '' }}>101 - Com crédito</option>
-                                        <option value="102" {{ old('csosn', $produto->csosn ?? '') == '102' ? 'selected' : '' }}>102 - Sem crédito</option>
-                                        <option value="103" {{ old('csosn', $produto->csosn ?? '') == '103' ? 'selected' : '' }}>103 - Isento</option>
-                                        <option value="500" {{ old('csosn', $produto->csosn ?? '') == '500' ? 'selected' : '' }}>500 - ICMS ST</option>
-                                        <option value="900" {{ old('csosn', $produto->csosn ?? '') == '900' ? 'selected' : '' }}>900 - Outros</option>
-                                    </select>
+                                <div class="form-group row">
+                                    <label class="col-md-3 label-control" for="csosn">* CSOSN:</label>
+                                    <div class="col-md-6">
+                                        <select class="form-control select2" id="csosn" name="csosn" required>
+                                            <option value="">Selecione uma opção</option>
+                                            <optgroup label="Simples Nacional">
+                                                <option value="101" {{ old('csosn', $produto->csosn ?? '') == '101' ? 'selected' : '' }}>101 - Tributada pelo Simples Nacional com permissão de crédito</option>
+                                                <option value="102" {{ old('csosn', $produto->csosn ?? '') == '102' ? 'selected' : '' }}>102 - Tributada pelo Simples Nacional sem permissão de crédito</option>
+                                                <option value="103" {{ old('csosn', $produto->csosn ?? '') == '103' ? 'selected' : '' }}>103 - Isenção do ICMS no Simples Nacional para faixa de receita bruta</option>
+                                                <option value="201" {{ old('csosn', $produto->csosn ?? '') == '201' ? 'selected' : '' }}>201 - Tributada pelo Simples Nacional com permissão de crédito e com cobrança do ICMS por ST</option>
+                                                <option value="202" {{ old('csosn', $produto->csosn ?? '') == '202' ? 'selected' : '' }}>202 - Tributada pelo Simples Nacional sem permissão de crédito e com cobrança do ICMS por ST</option>
+                                                <option value="203" {{ old('csosn', $produto->csosn ?? '') == '203' ? 'selected' : '' }}>203 - Isenção do ICMS no Simples Nacional para faixa de receita bruta e com cobrança do ICMS por ST</option>
+                                                <option value="300" {{ old('csosn', $produto->csosn ?? '') == '300' ? 'selected' : '' }}>300 - Imune</option>
+                                                <option value="400" {{ old('csosn', $produto->csosn ?? '') == '400' ? 'selected' : '' }}>400 - Não tributada pelo Simples Nacional</option>
+                                                <option value="500" {{ old('csosn', $produto->csosn ?? '') == '500' ? 'selected' : '' }}>500 - ICMS cobrado anteriormente por substituição tributária (substituído) ou por antecipação</option>
+                                                <option value="900" {{ old('csosn', $produto->csosn ?? '') == '900' ? 'selected' : '' }}>900 - Outros</option>
+                                            </optgroup>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            CSOSN - Código de Situação da Operação no Simples Nacional
+                                        </small>
+                                    </div>
                                 </div>
-                            </div>
                         </div>
                     </div>
                 </div> <!-- fim camposExtra -->
