@@ -11,15 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('diarias', function (Blueprint $table) {
+        Schema::create('day_uses', function (Blueprint $table) {
             $table->id();
-            $table->enum('tipo', ['day_use', 'passaporte']);
-            $table->string('valor');
+            $table->date('data');
+            $table->decimal('total', 10, 2);
             $table->unsignedBigInteger('cliente_id');
-            $table->foreign('cliente_id')->references('id')->on('clientes');
-            $table->unsignedBigInteger('produto_id')->nullable();
-            $table->foreign('produto_id')->references('id')->on('produtos');
-            $table->string('quantidade');
+            $table->unsignedBigInteger('vendedor_id');
+            $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
+            $table->foreign('vendedor_id')->references('id')->on('vendedors')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('diarias');
+        Schema::dropIfExists('day_uses');
     }
 };

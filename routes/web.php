@@ -4,19 +4,17 @@ use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\AdicionalController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
-use App\Http\Controllers\BuffetItemController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CategoriaProdutoController;
-use App\Http\Controllers\CategoriasCardapioController;
 use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Http\Controllers\CfopController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
-use App\Http\Controllers\DiariaController;
+use App\Http\Controllers\DayUseController;
 use App\Http\Controllers\EmpresaContadorController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EmpresaPreferenciaController;
@@ -46,7 +44,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
-use App\Livewire\CardapioNew;
+use App\Http\Controllers\VendedorController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -100,8 +98,6 @@ Route::resource('formaPagamento', FormaPagamentoController::class);
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
 
 Route::resource('espaco', EspacoController::class); //->middleware('permission:gerenciar espaco')
-
-Route::resource('diaria', DiariaController::class); //->middleware('permission:gerenciar diaria')
 
 Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')
 
@@ -166,4 +162,8 @@ Route::resource('cfop', CfopController::class);
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
 Route::resource('adicionais', AdicionalController::class);
+
+Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
+
+Route::resource('dayuse', DayUseController::class);
 

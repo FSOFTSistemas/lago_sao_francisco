@@ -322,7 +322,7 @@ return [
                 [
                     'text' => 'Day use / Passaporte',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/diaria',
+                    'url'  => '/dayuse',
                 ],
                 [
                     'text' => 'Aluguel de Espaços',
@@ -403,10 +403,17 @@ return [
             'icon'    => 'fas fa-money-check-alt',
             'can'     => 'gerenciar financeiro',
             'submenu' => [
+                
                 [
                     'text' => 'Adiantamentos',
                     'url'  => '/adiantamento',
                     'icon' => 'fas fa-cash-register',
+                    'can'  => 'gerenciar adiantamento',
+                ],
+                [
+                    'text' => 'Vendedores',
+                    'url'  => '/vendedor',
+                    'icon' => 'fas fa-user-tie',
                     'can'  => 'gerenciar adiantamento',
                 ],
                 [

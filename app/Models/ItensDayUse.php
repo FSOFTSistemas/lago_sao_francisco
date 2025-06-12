@@ -5,18 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Diaria extends Model
+class ItensDayUse extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'tipo',
+        'descricao',
         'valor',
-        'cliente_id',
-        'produto_id',
-        'quantidade',
+        'passeio'
     ];
-    public function cliente()
+
+    public function movimentacao()
     {
-        return $this->belongsTo(Cliente::class, 'cliente_id');
+        return $this->hasMany(MovDayUse::class, 'item_dayuse_id');
     }
 }
