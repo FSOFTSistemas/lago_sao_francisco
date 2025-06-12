@@ -27,7 +27,7 @@ class ItensDayuseSeeder extends Seeder
                 'passeio' => false
             ],
             [
-                'descricao' => 'Meia',
+                'descricao' => 'Meia Entrada',
                 'valor' => '17.5',
                 'passeio' => false
             ],

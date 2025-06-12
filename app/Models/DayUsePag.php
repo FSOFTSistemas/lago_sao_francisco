@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class DayUsePag extends Model
 {
     use HasFactory;
-    protected $table = 'dayuse_pag';
     protected $fillable = [
         'forma_pagamento_id',
         'dayuse_id',

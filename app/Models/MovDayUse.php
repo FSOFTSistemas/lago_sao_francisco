@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class MovDayUse extends Model
 {
     use HasFactory;
-    protected $table = 'mov_dayuse';
     protected $fillable = [
         'dayuse_id',
         'item_dayuse_id',

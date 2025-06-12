@@ -40,11 +40,10 @@
             @foreach ($dayuses as $dayuse)
                 <tr>
                     <td>{{ $dayuse->id }}</td>
-                    <td>{{ $dayuse->date }}</td>
-                    <td>{{ $dayuse->cliente_id }}</td>
-                    <td>{{ $dayuse->vendedor_id }}</td>
+                    <td>{{ \Illuminate\Support\Carbon::parse($dayuse->data)->format('d/m/Y') }}</td>
+                    <td>{{ $dayuse->cliente->apelido_nome_fantasia }}</td>
+                    <td>{{ $dayuse->vendedor->nome }}</td>
                     <td>
-                        <a href="{{ route('dayuse.edit', $dayuse->id) }}" class="btn btn-warning btn-sm">✏️</a>
                         <form action="{{ route('dayuse.destroy', $dayuse->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este Day use?')">
                             @csrf
                             @method('DELETE')

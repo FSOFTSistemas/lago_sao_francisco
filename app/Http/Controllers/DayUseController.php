@@ -60,8 +60,14 @@ class DayUseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DayUse $dayUse)
+    public function destroy($id)
     {
-        //
+        try{
+            $dayuse = DayUse::findOrFail($id);
+            $dayuse->delete();
+            return redirect()->route('dayuse.index')->with('success', 'Day Use deletado com sucesso!');
+        } catch(\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao deletar Day Use!', $e);
+        }
     }
 }

@@ -12,7 +12,9 @@ class DayUse extends Model
         'cliente_id',
         'data',
         'vendedor_id',
-        'total'
+        'total', //subtotal
+        'acrescimo',
+        'desconto'
     ];
 
     public function itens()
@@ -27,11 +29,11 @@ class DayUse extends Model
 
     public function cliente()
     {
-        $this->belongsTo(Cliente::class, 'cliente_id');
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
     public function vendedor()
     {
-        $this->belongsTo(Vendedor::class, 'vendedor_id');
+        return $this->belongsTo(Vendedor::class, 'vendedor_id');
     }
 }

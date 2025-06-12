@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->date('data');
             $table->decimal('total', 10, 2);
+            $table->decimal('acrescimo', 10, 2)->default(0);
+            $table->decimal('desconto', 10, 2)->default(0);
             $table->unsignedBigInteger('cliente_id');
             $table->unsignedBigInteger('vendedor_id');
             $table->foreign('cliente_id')->references('id')->on('clientes')->onDelete('cascade');
