@@ -17,20 +17,20 @@ class DayUsePagamento extends Component
     public $finalPagamentoTotal = 0; 
 
     public $formaPagamento; 
-    public $selectedPaymentMethodId; 
+    public $metodoSelecionadoID; 
     public $pagamentoValor; 
-    public $currentPayments = []; // Array para armazenar os pagamentos adicionados na tela
-    public $remainingToPay = 0; // Valor restante a ser pago
+    public $pagamentosAtuais = []; // Array para armazenar os pagamentos adicionados na tela
+    public $restante = 0; // Valor restante a ser pago
 
     protected $rules = [
         'acrescimo' => 'numeric|min:0',
         'desconto' => 'numeric|min:0',
-        'selectedPaymentMethodId' => 'required|exists:forma_pagamentos,id',
+        'metodoSelecionadoID' => 'required|exists:forma_pagamentos,id',
         'pagamentoValor' => 'required|numeric|min:0.01',
     ];
 
     protected $messages = [
-        'selectedPaymentMethodId.required' => 'Selecione um método de pagamento.',
+        'metodoSelecionadoID.required' => 'Selecione um método de pagamento.',
         'pagamentoValor.required' => 'Informe o valor do pagamento.',
         'pagamentoValor.numeric' => 'O valor do pagamento deve ser um número.',
         'pagamentoValor.min' => 'O valor do pagamento deve ser maior que zero.',
@@ -51,7 +51,7 @@ class DayUsePagamento extends Component
                 $this->desconto = $dayUse->desconto ?? 0;
 
                 foreach ($dayUse->formaPag as $dayUsePagEntry) {
-                    $this->currentPayments[] = [
+                    $this->pagamentosAtuais[] = [
                         'id' => $dayUsePagEntry->pagamento_id,
                         'descricao' => $dayUsePagEntry->pagamento->descricao, // Assume que Pagamento tem 'descricao'
                         'valor' => $dayUsePagEntry->valor,
@@ -87,34 +87,34 @@ class DayUsePagamento extends Component
     public function addPayment()
     {
         $this->validate([
-            'selectedPaymentMethodId' => 'required|exists:forma_pagamentos,id',
+            'metodoSelecionadoID' => 'required|exists:forma_pagamentos,id',
             'pagamentoValor' => 'required|numeric|min:0.01',
         ]);
 
-        $method = $this->formaPagamento->find($this->selectedPaymentMethodId);
+        $method = $this->formaPagamento->find($this->metodoSelecionadoID);
 
-        $this->currentPayments[] = [
-            'pagamento_id' => $this->selectedPaymentMethodId,
+        $this->pagamentosAtuais[] = [
+            'pagamento_id' => $this->metodoSelecionadoID,
             'descricao' => $method->descricao,
             'valor' => (float) $this->pagamentoValor,
         ];
 
-        $this->selectedPaymentMethodId = null;
+        $this->metodoSelecionadoID = null;
         $this->pagamentoValor = null;
         $this->calculateRemainingToPay();
     }
 
     public function removePayment($index)
     {
-        unset($this->currentPayments[$index]);
-        $this->currentPayments = array_values($this->currentPayments); // Reindexa o array
+        unset($this->pagamentosAtuais[$index]);
+        $this->pagamentosAtuais = array_values($this->pagamentosAtuais); // Reindexa o array
         $this->calculateRemainingToPay();
     }
 
     public function calculateRemainingToPay()
     {
-        $paidAmount = array_sum(array_column($this->currentPayments, 'valor'));
-        $this->remainingToPay = $this->finalPagamentoTotal - $paidAmount;
+        $paidAmount = array_sum(array_column($this->pagamentosAtuais, 'valor'));
+        $this->restante = $this->finalPagamentoTotal - $paidAmount;
     }
 
     public function savePayments()
@@ -123,12 +123,12 @@ class DayUsePagamento extends Component
             'acrescimo' => 'numeric|min:0',
             'desconto' => 'numeric|min:0',
             'finalPagamentoTotal' => 'numeric|min:0',
-            'currentPayments' => 'array',
+            'pagamentosAtuais' => 'array',
         ]);
 
         // Validação final: o valor restante deve ser zero (ou muito próximo de zero para evitar problemas de float)
-        if (abs($this->remainingToPay) > 0.01) { // Tolerância de 1 centavo
-            $this->addError('remainingToPay', 'O valor restante a pagar deve ser zero.');
+        if (abs($this->restante) > 0.01) { // Tolerância de 1 centavo
+            $this->addError('restante', 'O valor restante a pagar deve ser zero.');
             return;
         }
 
@@ -146,7 +146,7 @@ class DayUsePagamento extends Component
 
         // Salva os pagamentos na tabela DayUsePag
         $dayUse->formaPag()->delete(); // Remove pagamentos antigos
-        foreach ($this->currentPayments as $payment) {
+        foreach ($this->pagamentosAtuais as $payment) {
             DayUsePag::create([
                 'dayuse_id' => $this->dayUseId,
                 'forma_pagamento_id' => $payment['pagamento_id'],
@@ -154,10 +154,7 @@ class DayUsePagamento extends Component
             ]);
         }
 
-        session()->flash('message', 'DayUse e Pagamentos salvos com sucesso!');
-        // Opcional: Redirecionar ou emitir um evento para o componente pai
-        // $this->dispatch('dayUseFinalized');
-        return redirect()->route('dayuse.index'); // Exemplo de redirecionamento
+        return redirect()->route('dayuse.index')->with('success', 'Cadastro Day Use realizado com sucesso!'); 
     }
 
     public function render()
