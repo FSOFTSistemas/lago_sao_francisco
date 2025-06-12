@@ -42,6 +42,7 @@ use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\VendedorController;
@@ -167,3 +168,4 @@ Route::resource('vendedor', VendedorController::class)->middleware('permission:g
 
 Route::resource('dayuse', DayUseController::class);
 
+Route::resource('itemDayuse', ItensDayUseController::class);

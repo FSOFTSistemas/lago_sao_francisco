@@ -13,54 +13,61 @@ class ItensDayUseController extends Controller
      */
     public function index()
     {
-        //
+        $itens = ItensDayUse::all();
+        return view('itensDayuse.index', compact('itens'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        try{
+            $validated = $request->validate([
+                'descricao' => 'string|required',
+                'valor' => 'numeric|required',
+                'passeio' => 'boolean'
+            ], [
+                'descricao.required' => 'O campo descrição é obrigatório.',
+                'valor.required' => 'O campo valor é obrigatório.',
+                'valor.numeric' => 'O campo valor deve ser um número.',
+                
+            ]);
+            ItensDayUse::create($validated);
+            return redirect()->route('itemDayuse.index')->with('success', 'Entrada/Passeio criado com sucesso!');
+        } catch(\Exception $e){
+            return redirect()->back()->with('error', 'Erro ao criar Entrada/Passeio', $e);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(ItensDayUse $itensDayUse)
-    {
-        //
-    }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ItensDayUse $itensDayUse)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, ItensDayUse $itensDayUse)
     {
-        //
+        try{
+            $itens = ItensDayUse::findOrFail($itensDayUse->id);
+            $request->validate([
+                'descricao' => 'string|required',
+                'valor' => 'numeric|required',
+                'passeio' => 'boolean'
+            ], [
+                'descricao.required' => 'O campo descrição é obrigatório.',
+                'valor.required' => 'O campo valor é obrigatório.',
+                'valor.numeric' => 'O campo valor deve ser um número.',
+                
+            ]);
+            $itens->update($request->all());
+            return redirect()->route('itemDayuse.index')->with('success', 'Entrada/Passeio atualizado com sucesso!');
+        } catch(\Exception $e){
+            return redirect()->back()->with('error', 'Erro ao atualizar Entrada/Passeio', $e);
+        }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ItensDayUse $itensDayUse)
+    public function destroy($id)
     {
-        //
+        try{
+            $itens = ItensDayUse::findOrFail($id);
+            $itens->delete();
+            return redirect()->route('itemDayuse.index')->with('success', 'Entrada/Passeio deletado com sucesso!');
+        } catch(\Exception $e){
+            return redirect()->back()->with('error', 'Erro ao deletar Entrada/Passeio', $e);
+        }
     }
 }
