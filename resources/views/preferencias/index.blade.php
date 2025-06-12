@@ -10,15 +10,7 @@
 @section('content')
 <h5>Configurações de Hotel / Cadastro</h5>
     <div class="row">
-        <!-- Formas de Pagamento -->
-        <div class="col-md-3">
-            <a href="{{ route('formaPagamento.index') }}" class="card card-opcao text-center">
-                <div class="card-body">
-                    <i class="fas fa-credit-card fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Formas de Pagamento</h5>
-                </div>
-            </a>
-        </div>
+       
         <!-- Tarifas Hotel -->
         <div class="col-md-3">
             <a href="{{ route('tarifa.index')}}" class="card card-opcao text-center">
@@ -102,6 +94,28 @@
                 <div class="card-body">
                     <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Categorias dos Produtos</h5>
+                </div>
+            </a>
+        </div>
+         <!-- Formas de Pagamento -->
+        <div class="col-md-3">
+            <a href="{{ route('formaPagamento.index') }}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-credit-card fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Formas de Pagamento</h5>
+                </div>
+            </a>
+        </div>
+    </div>
+     <br>
+    <h5>Configurações Day Use / Cadastro</h5>
+    <br>
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{{ route('itemDayuse.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-ticket-alt fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Entrada/Passeios</h5>
                 </div>
             </a>
         </div>

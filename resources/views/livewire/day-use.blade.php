@@ -6,7 +6,7 @@
         </li>
         <li class="nav-item">
             <a class="nav-link {{ $abaAtual === 'pagamento' ? 'active' : '' }}" id="pagamento-tab" href="#"
-                role="tab" wire:click.prevent="$set('abaAtual', 'pagamento')" >Seções</a>
+                role="tab" wire:click.prevent="$set('abaAtual', 'pagamento')" >Pagamento</a>
         </li>
     </ul>
 

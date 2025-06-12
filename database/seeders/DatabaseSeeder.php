@@ -107,6 +107,9 @@ class DatabaseSeeder extends Seeder
         $funcionarios = new FuncionariosSeeder();
         $funcionarios->run();
 
+        $itensDayuse = new ItensDayuseSeeder();
+        $itensDayuse->run();
+
     }
 
 }
