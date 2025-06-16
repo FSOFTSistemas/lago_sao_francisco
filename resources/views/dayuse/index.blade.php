@@ -41,7 +41,7 @@
                 <tr>
                     <td>{{ $dayuse->id }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($dayuse->data)->format('d/m/Y') }}</td>
-                    <td>{{ $dayuse->cliente->apelido_nome_fantasia }}</td>
+                    <td>{{ $dayuse->cliente->tipo == 'PJ' ? $dayuse->cliente->apelido_nome_fantasia : $dayuse->cliente->nome_razao_social }}</td>
                     <td>{{ $dayuse->vendedor->nome }}</td>
                     <td>
                         <form action="{{ route('dayuse.destroy', $dayuse->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este Day use?')">

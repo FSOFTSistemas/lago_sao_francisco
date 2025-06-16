@@ -314,12 +314,19 @@ return [
             'text'    => 'Lago',
             'icon'    => 'fas fa-place-of-worship',
             'submenu' => [
+                ['header' => 'Day Use'],
               
                 [
-                    'text' => 'Day use / Passaporte',
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/dayuse',
+                    'url'  => '/dayuse/create',
                 ],
+                [
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
+                    'url'  => '/dayuse'
+                ],
+                ['header' => 'Espaços'],
                 [
                     'text' => 'Aluguel de Espaços',
                     'icon' => 'fas fa-campground',

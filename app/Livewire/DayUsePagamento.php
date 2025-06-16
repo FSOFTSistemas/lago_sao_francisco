@@ -21,6 +21,7 @@ class DayUsePagamento extends Component
     public $pagamentoValor; 
     public $pagamentosAtuais = []; // Array para armazenar os pagamentos adicionados na tela
     public $restante = 0; // Valor restante a ser pago
+    public $inputKey;
 
     protected $rules = [
         'acrescimo' => 'numeric|min:0',
@@ -59,7 +60,7 @@ class DayUsePagamento extends Component
                 }
             }
         }
-
+        
         $this->calculateFinalPaymentTotal(); // Calcula o total final do pagamento
     }
 
@@ -86,22 +87,27 @@ class DayUsePagamento extends Component
 
     public function addPayment()
     {
-        $this->validate([
-            'metodoSelecionadoID' => 'required|exists:forma_pagamentos,id',
-            'pagamentoValor' => 'required|numeric|min:0.01',
-        ]);
-
-        $method = $this->formaPagamento->find($this->metodoSelecionadoID);
-
-        $this->pagamentosAtuais[] = [
-            'pagamento_id' => $this->metodoSelecionadoID,
-            'descricao' => $method->descricao,
-            'valor' => (float) $this->pagamentoValor,
-        ];
-
-        $this->metodoSelecionadoID = null;
-        $this->pagamentoValor = null;
-        $this->calculateRemainingToPay();
+        if(floatval($this->pagamentoValor) > floatval($this->restante)){
+             $this->addError('pagamentoValor', 'O valor não pode ser maior que o restante.');
+        } else {
+            $this->validate([
+                'metodoSelecionadoID' => 'required|exists:forma_pagamentos,id',
+                'pagamentoValor' => 'required|numeric|min:0.01',
+            ]);
+    
+            $method = $this->formaPagamento->find($this->metodoSelecionadoID);
+    
+            $this->pagamentosAtuais[] = [
+                'pagamento_id' => $this->metodoSelecionadoID,
+                'descricao' => $method->descricao,
+                'valor' => (float) $this->pagamentoValor,
+            ];
+    
+            $this->metodoSelecionadoID = null;
+            $this->pagamentoValor = $this->restante;
+            $this->inputKey = now()->timestamp;
+            $this->calculateRemainingToPay();
+        }
     }
 
     public function removePayment($index)
@@ -115,6 +121,11 @@ class DayUsePagamento extends Component
     {
         $paidAmount = array_sum(array_column($this->pagamentosAtuais, 'valor'));
         $this->restante = $this->finalPagamentoTotal - $paidAmount;
+        if(floatval($this->restante) > 0){
+        $this->pagamentoValor = $this->restante;
+        } else {
+            $this->pagamentoValor = null;
+        }
     }
 
     public function savePayments()
@@ -154,7 +165,7 @@ class DayUsePagamento extends Component
             ]);
         }
 
-        return redirect()->route('dayuse.index')->with('success', 'Cadastro Day Use realizado com sucesso!'); 
+        return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!'); 
     }
 
     public function render()

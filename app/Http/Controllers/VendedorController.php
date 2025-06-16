@@ -136,4 +136,13 @@ class VendedorController extends Controller
             return redirect()->route('vendedor.index')->with('error', 'Erro ao excluir vendedor.');
         }
     }
+
+     public function search(Request $request)
+{
+    $term = $request->get('q');
+
+    return Vendedor::where('nome', 'like', "%{$term}%")
+        ->limit(20)
+        ->get(['id', 'nome']);
+}
 }

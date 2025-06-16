@@ -8,6 +8,7 @@ use App\Models\Cliente;
 use App\Models\Vendedor; 
 use App\Models\ItensDayUse as Item; 
 use App\Models\MovDayUse;
+use Illuminate\Support\Facades\Auth;
 
 class DayUse extends Component
 {
@@ -22,8 +23,13 @@ class DayUse extends Component
     public $items; // Coleção de todos os itens disponíveis
     public $quantidade = []; // Array para armazenar as quantidades de cada item, ex: ['item_id' => quantidade]
     public $total = 0; // O total calculado dos itens
-    public $selectedClientId; // ID do cliente selecionado
+    public $selectedClientId = null; // ID do cliente selecionado
     public $selectedVendorId; // ID do vendedor selecionado
+    public $modalAberto = false;
+    public $nome_razao_social;
+    public $apelido_nome_fantasia;
+    public $data_nascimento;
+    public $tipo;
 
     // Listeners para eventos Livewire
     protected $listeners = [
@@ -64,16 +70,6 @@ class DayUse extends Component
         $this->calculateTotal(); // Calcula o total inicial com base nas quantidades carregadas/iniciais
     }
 
-    // Métodos para reagir a mudanças nos seletores de cliente e vendedor (opcional, para reatividade)
-    public function updatedSelectedClientId($value)
-    {
-        // Não precisa de lógica complexa aqui, a reatividade do Livewire já atualiza a propriedade
-    }
-
-    public function updatedSelectedVendorId($value)
-    {
-        // Não precisa de lógica complexa aqui
-    }
 
     public function incrementQuantity($itemId)
     {
@@ -155,5 +151,47 @@ class DayUse extends Component
     public function render()
     {
         return view('livewire.day-use');
+    }
+
+    public function openModal()
+    {
+        $this->modalAberto = true;
+    }
+
+    public function fecharModal()
+    {
+        $this->modalAberto = false;
+    }
+
+    public function saveCliente()
+    {
+        $this->tipo = 'PF';
+        $this->validate([
+            'nome_razao_social' => 'string|required',
+            'tipo' => 'required|string',
+            'data_nascimento' => 'date|required',
+            'apelido_nome_fantasia' =>'string|required'
+        ], [
+            'nome_razao_social.required' => 'O campo nome é obrigatório.',
+            'nome_razao_social.string' => 'O campo nome deve ser uma string.',
+            'tipo.required' => 'O campo tipo é obrigatório.',
+            'tipo.string' => 'O campo tipo deve ser uma string.',
+            'data_nascimento.required' => 'O campo data de nascimento é obrigatório.',
+            'data_nascimento.date' => 'O campo data de nascimento deve ser uma data válida.', 
+            'apelido_nome_fantasia.required' => 'O campo apelido é obrigatório.',
+            'apelido_nome_fantasia.string' => 'O campo apelido deve ser uma string.',
+        ]);
+
+        Cliente::create([
+            'nome_razao_social' => $this->nome_razao_social,
+            'tipo' => $this->tipo,
+            'data_nascimento' => $this->data_nascimento,
+            'apelido_nome_fantasia' => $this->apelido_nome_fantasia,
+            'empresa_id' =>  Auth::user()->empresa_id
+        ]);
+        $this->nome_razao_social = '';
+        $this->apelido_nome_fantasia = '';
+        $this->data_nascimento = '';
+        $this->fecharModal();
     }
 }

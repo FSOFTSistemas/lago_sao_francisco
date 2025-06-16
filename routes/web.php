@@ -169,3 +169,7 @@ Route::resource('vendedor', VendedorController::class)->middleware('permission:g
 Route::resource('dayuse', DayUseController::class);
 
 Route::resource('itemDayuse', ItensDayUseController::class);
+
+Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clientes.search');
+
+Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('vendedors.search');

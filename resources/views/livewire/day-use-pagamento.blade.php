@@ -1,24 +1,29 @@
 <form wire:submit.prevent="savePayments">
-    <div class="row mb-3">
+    <div class="form-group row">
+        <label for="subtotalItems" class="col-md-3 label-control">Subtotal (Itens)</label>
         <div class="col-md-6">
-            <label for="subtotalItems" class="form-label">Subtotal (Itens)</label>
             <input type="text" id="subtotalItems" class="form-control" value="R$ {{ number_format($itemSubtotal, 2, ',', '.') }}" readonly>
         </div>
+    </div>
+
+    <div class="form-group row">
+        <label for="acrescimo" class="label-control col-md-3">Acréscimo</label>
         <div class="col-md-6">
-            <label for="acrescimo" class="form-label">Acréscimo</label>
             <input type="number" step="0.01" class="form-control" id="acrescimo" wire:model.live.debounce.1000ms="acrescimo" min="0">
             @error('acrescimo') <span class="text-danger">{{ $message }}</span> @enderror
         </div>
     </div>
-
-    <div class="row mb-3">
+    
+    <div class="form-group row">
+        <label for="desconto" class="label-control col-md-3">Desconto</label>
         <div class="col-md-6">
-            <label for="desconto" class="form-label">Desconto</label>
             <input type="number" step="0.01" class="form-control" id="desconto" wire:model.live.debounce.1000ms="desconto" min="0">
             @error('desconto') <span class="text-danger">{{ $message }}</span> @enderror
         </div>
+    </div>
+    <div class="form-group row">
+        <label for="finalTotal" class="label-control col-md-3">Total a Pagar</label>
         <div class="col-md-6">
-            <label for="finalTotal" class="form-label">Total a Pagar</label>
             <input type="text" id="finalTotal" class="form-control form-control-lg text-success fw-bold" value="R$ {{ number_format($finalPagamentoTotal, 2, ',', '.') }}" readonly>
         </div>
     </div>
@@ -27,10 +32,11 @@
 
     {{-- Adicionar Pagamento --}}
     <h5 class="mt-4">Adicionar Pagamento</h5>
-    <div class="row mb-3">
+    <br>
+    <div class="row form-group mb-3 ">
         <div class="col-md-6">
             <label for="formaDePagamento" class="form-label">Método de Pagamento</label>
-            <select id="formaDePagamento" class="form-select" wire:model="metodoSelecionadoID">
+            <select id="formaDePagamento" class="form-select form-control" wire:model="metodoSelecionadoID">
                 <option value="">Selecione</option>
                 @foreach($formaPagamento as $metodo)
                     <option value="{{ $metodo->id }}">{{ $metodo->descricao }}</option>
@@ -40,10 +46,13 @@
         </div>
         <div class="col-md-4">
             <label for="pagamentoValor" class="form-label">Valor</label>
-            <input type="number" step="0.01" class="form-control" id="pagamentoValor" wire:model="pagamentoValor" min="0.01">
-            @error('pagamentoValor') <span class="text-danger">{{ $message }}</span> @enderror
+            <input type="number" step="0.01" class="form-control" id="pagamentoValor" wire:model.live="pagamentoValor" min="0.01"  {{ $restante == 0 ? 'readonly' : '' }}>
+            <div class="text-danger" style="min-height: 20px;">
+                @error('pagamentoValor') <span class="text-danger">{{ $message }}</span> @enderror
+            </div>
         </div>
-        <div class="col-md-2 d-flex align-items-end">
+        <div class="col-md-2">
+             <label style="visibility: hidden" class="form-label">.</label>
             <button type="button" class="btn btn-success w-100" wire:click="addPayment">Adicionar</button>
         </div>
     </div>
