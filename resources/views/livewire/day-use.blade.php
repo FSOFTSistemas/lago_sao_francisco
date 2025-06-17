@@ -139,21 +139,21 @@
                     <div class="modal-body">
                             <form>
                             <div class="form-group row">
-                                <label class="col-md-2 label-control"  for="nome">* Nome completo:</label>
+                                <label class="col-md-3 label-control"  for="nome">* Nome completo:</label>
                                 <div class="col-md-6">
                                 <div><input class="form-control" required="required" type="text" wire:model='nome_razao_social' id="nome" autocomplete="off"></div>
                                 </div>
                             </div>
 
                             <div class="form-group row">
-                                <label class="col-md-2 label-control"  for="apelido">* Apelido:</label>
+                                <label class="col-md-3 label-control"  for="apelido">* Apelido:</label>
                                 <div class="col-md-6">
                                 <div><input class="form-control" required="required" type="text" wire:model='apelido_nome_fantasia' id="apelido" autocomplete="off"></div>
                                 </div>
                             </div>
           
                         <div class="form-group row">
-                            <label class="col-md-2 label-control"  for="data_nascimento">Data de Nascimento:</label>
+                            <label class="col-md-3 label-control"  for="data_nascimento">Data de Nascimento:</label>
                             <div class="col-md-6">
                               <div><input class="form-control" type="date" wire:model='data_nascimento' id="data_nascimento"></div>
                             </div>
@@ -236,7 +236,7 @@
         $(document).ready(function () {
         $('#vendedorSelect').select2({
             placeholder: 'Selecione um Vendedor',
-            minimumInputLength: 3,
+            // minimumInputLength: 3, ativar caso queira buscar digitando
             ajax: {
                 url: '{{ route('vendedors.search') }}',
                 dataType: 'json',

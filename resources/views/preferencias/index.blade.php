@@ -84,6 +84,14 @@
                 </div>
             </a>
         </div>
+        <div class="col-md-3">
+            <a href="{{ route('parceiros.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-handshake fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Parceiros</h5>
+                </div>
+            </a>
+        </div>
     </div>
      <br>
     <h5>Configurações Gerais / Cadastro</h5>

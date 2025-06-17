@@ -55,7 +55,7 @@ class EspacosSeeder extends Seeder
         $this->espaco1 = Espaco::create($espacos[0]);
         $this->espaco2 = Espaco::create($espacos[1]);
         $this->espaco3 = Espaco::create($espacos[2]);
-        $this->espaco3 = Espaco::create($espacos[2]);
-        $this->espaco3 = Espaco::create($espacos[2]);
+        $this->espaco4 = Espaco::create($espacos[3]);
+        $this->espaco5 = Espaco::create($espacos[4]);
     }
 }

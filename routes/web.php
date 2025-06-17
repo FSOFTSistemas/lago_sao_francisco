@@ -45,6 +45,7 @@ use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\VendedorController;
 
 Route::get('/', function () {
@@ -173,3 +174,5 @@ Route::resource('itemDayuse', ItensDayUseController::class);
 Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clientes.search');
 
 Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('vendedors.search');
+
+Route::resource('parceiros', ParceiroController::class);

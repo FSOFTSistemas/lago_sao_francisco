@@ -3,7 +3,7 @@
 @section('title', 'Adicionais')
 
 @section('content_header')
-    <h5>Cadastro de adicionais (Mobília)</h5>
+    <h5>Cadastro de Parceiros</h5>
     <hr>
 @stop
 
@@ -18,9 +18,9 @@
 
         <div class="col">
             <!-- Botão para abrir o modal de criação -->
-            <button class="btn btn-success new float-end" data-bs-toggle="modal" data-bs-target="#createAdicionalModal">
+            <button class="btn btn-success new float-end" data-bs-toggle="modal" data-bs-target="#createParceiroModal">
                 <i class="fas fa-plus"></i>
-                Nova Mobília
+                Novo Parceiro
             </button>
         </div>
     </div>
@@ -39,42 +39,42 @@
         <thead class="table-primary">
             <tr>
                 <th>Descrição</th>
-                <th>Valor (unitário)</th>
-                <th>Quantidade Disponível</th>
+                <th>Valor</th>
+                <th>Categoria</th>
                 <th>Ações</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($adicionais as $adicional)
+            @foreach ($parceiros as $parceiro)
                 <tr>
-                    <td>{{ $adicional->descricao }}</td>
-                    <td>R${{ $adicional->valor }}</td>
-                    <td>{{ intval($adicional->quantidade) }} unidades</td>
+                    <td>{{ $parceiro->descricao }}</td>
+                    <td>R${{ $parceiro->valor }}</td>
+                    <td>{{ $parceiro->categoria }}</td>
                     <td>
                         <!-- Botão Editar -->
                         <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#editAdicionalModal{{ $adicional->id }}">
+                            data-bs-target="#editParceiroModal{{ $parceiro->id }}">
                             ✏️
                         </button>
                         <!-- Botão Excluir -->
                         <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#deleteAdicionalModal{{ $adicional->id }}">
+                            data-bs-target="#deleteParceiroModal{{ $parceiro->id }}">
                             🗑️
                         </button>
                     </td>
                 </tr>
 
                 <!-- Modal Editar -->
-                <div class="modal fade" id="editAdicionalModal{{ $adicional->id }}" tabindex="-1"
-                    aria-labelledby="editAdicionalModalLabel{{ $adicional->id }}" aria-hidden="true">
+                <div class="modal fade" id="editParceiroModal{{ $parceiro->id }}" tabindex="-1"
+                    aria-labelledby="editParceiroModalLabel{{ $parceiro->id }}" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
-                            <form action="{{ route('adicionais.update', $adicional->id) }}" method="POST">
+                            <form action="{{ route('parceiros.update', $parceiro->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="modal-header bg-warning text-dark">
                                     <h5 class="modal-title">
-                                        <i class="fas fa-edit"></i> Editar Adicional
+                                        <i class="fas fa-edit"></i> Editar Parceiro
                                     </h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"
                                         aria-label="Close"></button>
@@ -83,17 +83,17 @@
                                     <div class="form-group">
                                         <label for="descricao">Descrição</label>
                                         <input type="text" name="descricao" id="descricao" class="form-control"
-                                            value="{{ $adicional->descricao }}" required>
+                                            value="{{ $parceiro->descricao }}" required>
                                     </div>
                                     <div class="form-group">
                                         <label for="valor">Valor</label>
                                         <input type="number" name="valor" id="valor" class="form-control"
-                                            value="{{ $adicional->valor }}" required>
+                                            value="{{ $parceiro->valor }}" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="quantidade">Quantidade Disponível</label>
-                                        <input type="number" name="quantidade" id="quantidade" class="form-control"
-                                            value="{{ $adicional->quantidade }}" required>
+                                        <label for="categoria">Categoria</label>
+                                        <input type="text" name="categoria" id="categoria" class="form-control"
+                                            value="{{ $parceiro->categoria }}" required>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -106,11 +106,11 @@
                 </div>
 
                 <!-- Modal Excluir -->
-                <div class="modal fade" id="deleteAdicionalModal{{ $adicional->id }}" tabindex="-1"
-                    aria-labelledby="deleteAdicionalModalLabel{{ $adicional->id }}" aria-hidden="true">
+                <div class="modal fade" id="deleteParceiroModal{{ $parceiro->id }}" tabindex="-1"
+                    aria-labelledby="deleteParceiroModalLabel{{ $parceiro->id }}" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
-                            <form action="{{ route('adicionais.destroy', $adicional->id) }}" method="POST">
+                            <form action="{{ route('parceiros.destroy', $parceiro->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <div class="modal-header">
@@ -121,8 +121,8 @@
                                         aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    Tem certeza que deseja excluir
-                                    <strong>{{ $adicional->descricao }}</strong>?
+                                    Tem certeza que deseja excluir o parceiro 
+                                    <strong>{{ $parceiro->descricao }}</strong>?
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -137,7 +137,7 @@
     @endcomponent
 
     <!-- Modal Criar -->
-    <div class="modal fade" id="createAdicionalModal" tabindex="-1" aria-labelledby="createAdicionalModalLabel"
+    <div class="modal fade" id="createParceiroModal" tabindex="-1" aria-labelledby="createParceiroModalLabel"
         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -145,7 +145,7 @@
                     @csrf
                     <div class="modal-header text-white">
                         <h5 class="modal-title">
-                            <i class="fas fa-cogs"></i> Adicionar Novo Adicional
+                            <i class="fas fa-cogs"></i> Adicionar Novo Parceiro
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -159,8 +159,8 @@
                             <input type="number" name="valor" id="valor" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label for="quantidade">Quantidade Disponível</label>
-                            <input type="number" name="quantidade" id="quantidade" class="form-control" required>
+                            <label for="categoria">Categoria</label>
+                            <input type="categoria" name="categoria" id="categoria" class="form-control" required>
                         </div>
                     </div>
                     <div class="modal-footer">

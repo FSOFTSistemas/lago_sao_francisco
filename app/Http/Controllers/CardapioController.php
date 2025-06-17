@@ -129,4 +129,22 @@ class CardapioController extends Controller
         return $pdf->stream("cardapio_{$cardapio->id}.pdf");
     }
 
+     public function dados($cardapioId)
+{
+     try {
+            $cardapio = Cardapio::with([
+                'secoes.categorias.itens.item',
+                'opcoes.categorias.itens.item'
+            ])->findOrFail($cardapioId);
+            
+            return response()->json([
+                'secoes' => $cardapio->secoes,
+                'opcoes' => $cardapio->opcoes
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Cardápio não encontrado'], 404);
+        }
+}
+
 }

@@ -44,7 +44,7 @@
                     @php
                         $clienteSelecionado = old('cliente_id', $aluguel->cliente_id ?? '');
                     @endphp
-                
+                    {{-- @dump($clienteSelecionado) --}}
                     @if ($clienteSelecionado)
                         <select class="form-control select2" name="cliente_id_disabled" id="cliente_id" disabled>
                             <option value="">Selecione um cliente</option>
@@ -63,7 +63,7 @@
                                 <option value="{{ $cliente->id }}" 
                                     {{ old('cliente_id') == $cliente->id ? 'selected' : '' }}>
                                     {{ $cliente->nome_razao_social }}
-                                </option>
+                                </option>   
                             @endforeach
                         </select>
                     @endif
@@ -168,14 +168,25 @@
                             <select name="cardapio_id" id="cardapio_id" class="form-control">
                                 <option value="">Selecione um cardápio</option>
                                 @foreach ($cardapios as $cardapio)
-                                    <option value="{{ $cardapio->id }}">{{ $cardapio->nome }}</option>
+                                    <option value="{{ $cardapio->id }}">{{ $cardapio->NomeCardapio }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
 
-                    <div id="buffet-categorias-itens">
-                        <!-- As categorias e itens serão carregados aqui via JavaScript -->
+                    <!-- Container principal do buffet com responsividade melhorada -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div id="categoriasContainer" class="buffet-container">
+                                <!-- As categorias e itens serão carregados aqui via JavaScript -->
+                            </div>
+        
+                            <hr>
+        
+                            <div id="opcoesContainer" class="buffet-container">
+                                <!-- As opções de jantar e itens serão carregados aqui via JavaScript -->
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group row">
@@ -184,6 +195,10 @@
                             <input type="text" id="total_buffet" class="form-control" readonly>
                         </div>
                     </div>
+
+                    <!-- Campos hidden para armazenar as escolhas do buffet -->
+                    <input type="hidden" id="buffet_categorias_escolhidas" name="buffet_categorias_escolhidas" value="">
+                    <input type="hidden" id="buffet_opcao_escolhida" name="buffet_opcao_escolhida" value="">
                 </div>
                 
                 {{--Aba 3: Parceiros--}}
@@ -285,8 +300,9 @@
 @endsection
 
 @section('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{{ asset('js/reservation_map.js') }}"></script>
-<script>
+<script> // script para o checkbox buffet
     document.addEventListener('DOMContentLoaded', function () {
         const switchInput = document.getElementById('ativoSwitch');
         const label = document.getElementById('ativoLabel');
@@ -297,7 +313,7 @@
     });
 </script>
 
-<script>
+<script> //habilita a aba buffet pelo checkbox
     document.addEventListener("DOMContentLoaded", function () {
     const checkbox = document.getElementById("ativoSwitch");
     const abaBuffet = document.getElementById("buffetAba");
@@ -309,7 +325,6 @@
             abaBuffet.style.display = "none"; 
         }
     }
-
     // Atualiza o estilo ao carregar a página
     atualizarEstilo();
 
@@ -319,56 +334,56 @@
 </script>
 
 <script>
-    function calcularBuffet() {
-        const numeroPessoas = parseInt(document.getElementById('numero_pessoas_buffet').value) || 0;
-        let total = 0;
-        document.querySelectorAll('.buffet-item:checked').forEach(item => {
-            const valor = parseFloat(item.dataset.valor);
-            total += valor * numeroPessoas;
-        });
-        document.getElementById('total_buffet').value = "R$ " + total.toFixed(2).replace('.', ',');
-    }
+document.addEventListener('DOMContentLoaded', function () {
+    const cardapioSelect = document.getElementById('cardapio_id');
+    const categoriasContainer = document.getElementById('categoriasContainer');
+    const opcoesContainer = document.getElementById('opcoesContainer');
+    const numeroPessoasInput = document.getElementById('numero_pessoas_buffet');
+    const totalFinalInput = document.getElementById('total_buffet');
+    
+    // Campos hidden para armazenar as escolhas
+    const buffetCategoriasEscolhidas = document.getElementById('buffet_categorias_escolhidas');
+    const buffetOpcaoEscolhida = document.getElementById('buffet_opcao_escolhida');
 
-    document.getElementById('numero_pessoas_buffet').addEventListener('input', calcularBuffet);
-    document.querySelectorAll('.buffet-item').forEach(item => item.addEventListener('change', calcularBuffet));
+    let opcoesData = [];
 
-    window.addEventListener('DOMContentLoaded', calcularBuffet);
-</script>
+    cardapioSelect.addEventListener('change', function () {
+        const cardapioId = this.value;
+        categoriasContainer.innerHTML = '';
+        opcoesContainer.innerHTML = '';
+        totalFinalInput.value = '';
+        
+        // Limpar campos hidden
+        buffetCategoriasEscolhidas.value = '';
+        buffetOpcaoEscolhida.value = '';
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const cardapioSelect = document.getElementById('cardapio_id');
-        const categoriasContainer = document.getElementById('buffet-categorias-itens');
+        if (cardapioId) {
+            fetch(`/cardapios/${cardapioId}/dados`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    opcoesData = data.opcoes;  // Armazena para uso no cálculo depois
 
-        cardapioSelect.addEventListener('change', function () {
-            const cardapioId = this.value;
-            categoriasContainer.innerHTML = '';
-
-            if (cardapioId) {
-                fetch(`/cardapios/${cardapioId}/dados`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data)
-                        data.forEach(categoria => {
+                    // ---- CATEGORIAS DAS SEÇÕES ----
+                    data.secoes.forEach(secao => {
+                        secao.categorias.forEach(categoria => {
                             const categoriaDiv = document.createElement('div');
                             categoriaDiv.classList.add('card', 'mb-3', 'border');
 
-                            const categoriaCardHeader = document.createElement('div');
-                            categoriaCardHeader.classList.add('card-header', 'green', 'pb-0');
-                            
-                            const label = document.createElement('label');
-                            label.classList.add('label-control');
-                            label.textContent = `${categoria.nome} (Selecione até ${categoria.quantidade_itens})`;
-                            
-                            const categoriaCardBody = document.createElement('div');
-                            categoriaCardBody.classList.add('card-body');
+                            const header = document.createElement('div');
+                            header.classList.add('card-header', 'green', 'pb-0');
+                            header.innerHTML = `<strong>${categoria.nome_categoria_item}</strong> (${secao.nome_secao_cardapio})<br><small>Máximo de ${categoria.numero_escolhas_permitidas} escolha(s)</small>`;
 
+                            const body = document.createElement('div');
+                            body.classList.add('card-body');
                             const itensDiv = document.createElement('div');
-                            itensDiv.classList.add('col-md-6');
+                            itensDiv.classList.add('row');
 
-                            categoria.itens.forEach(item => {
+                            
+                            categoria.itens.forEach(disp => {
+                                const item = disp.item;
                                 const checkboxDiv = document.createElement('div');
-                                checkboxDiv.classList.add('form-check');
+                                checkboxDiv.classList.add('form-check', 'col-md-6', 'col-lg-4', 'mb-2');
 
                                 const checkbox = document.createElement('input');
                                 checkbox.type = 'checkbox';
@@ -376,47 +391,208 @@
                                 checkbox.value = item.id;
                                 checkbox.classList.add('form-check-input');
                                 checkbox.dataset.categoriaId = categoria.id;
+                                checkbox.id = `checkbox-${categoria.id}-${item.id}`;
 
-                                const itemLabel = document.createElement('label');
-                                itemLabel.classList.add('form-check-label');
-                                itemLabel.textContent = item.nome;
+                                const label = document.createElement('label');
+                                label.classList.add('form-check-label', 'ms-1');
+                                label.textContent = item.nome_item;
+                                label.setAttribute('for', checkbox.id);
 
                                 checkboxDiv.appendChild(checkbox);
-                                checkboxDiv.appendChild(itemLabel);
+                                checkboxDiv.appendChild(label);
                                 itensDiv.appendChild(checkboxDiv);
                             });
 
-                            categoriaDiv.appendChild(categoriaCardHeader)
-                            categoriaCardHeader.appendChild(label);
-                            categoriaDiv.appendChild(categoriaCardBody);
-                            categoriaCardBody.appendChild(itensDiv);
+                            body.appendChild(itensDiv);
+                            categoriaDiv.appendChild(header);
+                            categoriaDiv.appendChild(body);
                             categoriasContainer.appendChild(categoriaDiv);
                         });
+                    });
 
-                        // Adiciona a lógica para limitar a seleção de itens por categoria
-                        const checkboxes = categoriasContainer.querySelectorAll('input[type="checkbox"]');
-                        checkboxes.forEach(checkbox => {
-                            checkbox.addEventListener('change', function () {
-                                const categoriaId = this.dataset.categoriaId;
-                                const categoriaCheckboxes = categoriasContainer.querySelectorAll(`input[data-categoria-id="${categoriaId}"]`);
-                                const categoria = data.find(cat => cat.id == categoriaId);
-                                const selecionados = Array.from(categoriaCheckboxes).filter(cb => cb.checked);
-
-                                if (selecionados.length > categoria.quantidade_itens) {
-                                    this.checked = false;
-                                    Swal.fire({
-                                        icon: "error",
-                                        title: "Oops...",
-                                        text: `Você pode selecionar no máximo ${categoria.quantidade_itens} itens para a categoria ${categoria.nome}.`,
-                                        });
+                    // Limitar número de seleções por categoria e atualizar campos hidden
+                    const checkboxes = categoriasContainer.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.addEventListener('change', function () {
+                            const categoriaId = this.dataset.categoriaId;
+                            const categoriaCheckboxes = categoriasContainer.querySelectorAll(`input[data-categoria-id="${categoriaId}"]`);
+                            
+                            // Buscar dados da categoria na estrutura aninhada
+                            let categoriaData = null;
+                            data.secoes.forEach(secao => {
+                                const categoria = secao.categorias.find(cat => cat.id == categoriaId);
+                                if (categoria) {
+                                    categoriaData = categoria;
                                 }
                             });
+                            
+                            const selecionados = Array.from(categoriaCheckboxes).filter(cb => cb.checked);
+
+                            if (categoriaData && selecionados.length > categoriaData.numero_escolhas_permitidas) {
+                                this.checked = false;
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Limite excedido",
+                                    text: `Você só pode escolher até ${categoriaData.numero_escolhas_permitidas} item(ns) para a categoria "${categoriaData.nome_categoria_item}".`,
+                                });
+                            } else {
+                                // Atualizar campo hidden com as escolhas das categorias
+                                atualizarCategoriasEscolhidas();
+                            }
                         });
-                    })
-                    .catch(error => {
-                        console.error('Erro ao carregar dados do cardápio:', error);
                     });
+
+                    // ---- OPÇÕES DE REFEIÇÃO (COM ITENS INTERNOS) ----
+                    if (data.opcoes.length > 0) {
+                        const opcoesTitle = document.createElement('h5');
+                        opcoesTitle.textContent = "Escolha uma Opção de Refeição:";
+                        opcoesContainer.appendChild(opcoesTitle);
+
+                        data.opcoes.forEach(opcao => {
+                        const card = document.createElement('div');
+                        card.classList.add('card', 'mb-3');
+
+                        const cardHeader = document.createElement('div');
+                        cardHeader.classList.add('card-header', 'green', 'pb-0');
+
+                        const inputRadio = document.createElement('input');
+                        inputRadio.classList.add('form-check-input');
+                        inputRadio.type = 'radio';
+                        inputRadio.name = 'opcao_escolhida';
+                        inputRadio.value = opcao.id;
+                        inputRadio.dataset.preco = opcao.PrecoPorPessoa;
+                        inputRadio.id = `radio-${opcao.id}`; // ID único
+
+                        const label = document.createElement('label');
+                        label.classList.add('form-check-label');
+                        label.setAttribute('for', inputRadio.id); // Vinculando ao input
+                        label.textContent = `${opcao.NomeOpcaoRefeicao} - R$ ${parseFloat(opcao.PrecoPorPessoa).toFixed(2)}`;
+
+                        // Criando a div do form-check e adicionando os elementos
+                        const formCheckDiv = document.createElement('div');
+                        formCheckDiv.classList.add('form-check');
+                        formCheckDiv.appendChild(inputRadio);
+                        formCheckDiv.appendChild(label);
+
+                        cardHeader.appendChild(formCheckDiv);
+                        card.appendChild(cardHeader);
+
+                        const cardBody = document.createElement('div');
+                        cardBody.classList.add('card-body', 'p-2', 'h6');
+
+                        opcao.categorias.forEach(categoria => {
+                            const catTitle = document.createElement('strong');
+                            catTitle.textContent = categoria.nome_categoria_item
+;
+                            cardBody.appendChild(catTitle);
+
+                            categoria.itens.forEach(disp => {
+                                const item = disp.item
+                                const itemDiv = document.createElement('div');
+                                itemDiv.classList.add('ms-3');
+                                itemDiv.textContent = `- ${item.nome_item}`;
+                                cardBody.appendChild(itemDiv);
+                            });
+
+                            cardBody.appendChild(document.createElement('hr'));
+                        });
+
+                        card.appendChild(cardBody);
+                        opcoesContainer.appendChild(card);
+                    });
+
+                        // Evento de mudança para recalcular valor ao escolher uma opção
+                        opcoesContainer.querySelectorAll('input[name="opcao_escolhida"]').forEach(radio => {
+                            radio.addEventListener('change', function() {
+                                calcularValorFinal();
+                                // Atualizar campo hidden com a opção escolhida
+                                buffetOpcaoEscolhida.value = this.value;
+                            });
+                        });
+                    }
+
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados do cardápio:', error);
+                });
+        }
+    });
+
+    // Função para atualizar o campo hidden com as categorias escolhidas
+    function atualizarCategoriasEscolhidas() {
+        const categoriasEscolhidas = {};
+        const checkboxes = categoriasContainer.querySelectorAll('input[type="checkbox"]:checked');
+        
+        checkboxes.forEach(checkbox => {
+            const categoriaId = checkbox.dataset.categoriaId;
+            const itemId = checkbox.value;
+            
+            if (!categoriasEscolhidas[categoriaId]) {
+                categoriasEscolhidas[categoriaId] = [];
             }
+            categoriasEscolhidas[categoriaId].push(itemId);
+        });
+        
+        buffetCategoriasEscolhidas.value = JSON.stringify(categoriasEscolhidas);
+    }
+
+    // Calcular Total Buffet (Baseado no número de pessoas e na opção selecionada)
+    function calcularValorFinal() {
+        const numeroPessoas = parseInt(numeroPessoasInput.value) || 0;
+        const opcaoSelecionada = document.querySelector('input[name="opcao_escolhida"]:checked');
+        let total = 0;
+
+        if (opcaoSelecionada) {
+            const precoPorPessoa = parseFloat(opcaoSelecionada.dataset.preco);
+            total = numeroPessoas * precoPorPessoa;
+        }
+
+        totalFinalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
+    }
+
+    numeroPessoasInput.addEventListener('input', calcularValorFinal);
+});
+</script>
+
+<script>
+            $(document).ready(function () {
+        $('#cliente_id').select2({
+            placeholder: 'Selecione um Cliente',
+            minimumInputLength: 3,
+            ajax: {
+                url: '{{ route('clientes.search') }}', // rota pra fazer busca
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term // o que o usuário digitou
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.map(function(cliente) {
+                            return { id: cliente.id, text: cliente.nome_razao_social };
+                        })
+                    };
+                },
+                cache: true
+            },
+            width: '100%',
+             language: {
+        noResults: function() {
+            return "Nenhum resultado encontrado";
+        },
+        searching: function() {
+            return "Buscando...";
+        },
+        inputTooShort: function (args) {
+        var remainingChars = args.minimum - args.input.length;
+        return 'Digite mais ' + remainingChars + ' caractere' + (remainingChars !== 1 ? 's' : '') + ' para buscar';
+    },
+        loadingMore: function() {
+            return "Carregando mais resultados...";
+        }
+    }
         });
     });
 </script>
@@ -432,6 +608,7 @@
     padding-bottom: 10px; /* Espaço para a barra de rolagem não cobrir conteúdo */
     border: 1px solid #dee2e6; /* Borda sutil no container */
     border-radius: 0.25rem; /* Cantos arredondados */
+    max-width: 100%; /* Garante que não ultrapasse o container pai */
 }
 
 /* Estilos básicos para a tabela do mapa */
@@ -540,6 +717,41 @@
     min-height: 1.5em; /* Evita que o layout salte quando a mensagem aparece/desaparece */
 }
 
+/* Estilos para o container do buffet */
+.buffet-container {
+    max-width: 100%;
+    overflow-x: hidden; /* Evita overflow horizontal */
+}
+
+/* Melhorias para os cards do buffet */
+.buffet-container .card {
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.buffet-container .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 0.75rem 1rem;
+}
+
+.buffet-container .card-body {
+    padding: 1rem;
+}
+
+/* Responsividade para os checkboxes do buffet */
+.buffet-container .form-check {
+    margin-bottom: 0.5rem;
+    word-wrap: break-word;
+}
+
+.buffet-container .form-check-label {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-left: 0.25rem;
+}
 
 /* --- Media Queries para Responsividade --- */
 
@@ -561,6 +773,11 @@
     }
      .date-cell {
         min-width: 35px;
+    }
+    
+    /* Ajustes para o buffet em tablets */
+    .buffet-container .form-check {
+        margin-bottom: 0.75rem;
     }
 }
 
@@ -589,6 +806,24 @@
      .date-cell {
         min-width: 30px; /* Células de data mais estreitas */
     }
+    
+    /* Ajustes para o buffet em celulares */
+    .buffet-container .card-header {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .buffet-container .card-body {
+        padding: 0.75rem;
+    }
+    
+    .buffet-container .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    .buffet-container .form-check-label {
+        font-size: 0.85rem;
+    }
+    
     /* Opcional: Esconder o texto 'X' e usar só fundo em telas muito pequenas */
     /*
     .date-cell.booked span {
@@ -616,6 +851,21 @@
          height: 30px;
          padding: 0.3rem 0.1rem;
      }
+     
+     /* Ajustes para o buffet em telas muito pequenas */
+     .buffet-container .card-header {
+         padding: 0.5rem;
+     }
+     
+     .buffet-container .card-body {
+         padding: 0.5rem;
+     }
+     
+     .buffet-container .form-check-label {
+         font-size: 0.8rem;
+     }
 }
 
 </style>
+@endsection
+
