@@ -23,9 +23,6 @@
                 <li class="nav-item" id="buffetAba" style="display: none">
                     <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-buffet" role="tab">Buffet</a>
                 </li>
-                <li class="nav-item" id="parceiroTab">
-                    <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-parceiro" role="tab">Parceiros</a>
-                </li>
                 <li class="nav-item" id="pagamentoTab">
                     <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-pagamento" role="tab">Pagamento</a>
                 </li>
@@ -44,7 +41,6 @@
                     @php
                         $clienteSelecionado = old('cliente_id', $aluguel->cliente_id ?? '');
                     @endphp
-                    {{-- @dump($clienteSelecionado) --}}
                     @if ($clienteSelecionado)
                         <select class="form-control select2" name="cliente_id_disabled" id="cliente_id" disabled>
                             <option value="">Selecione um cliente</option>
@@ -129,6 +125,9 @@
                                <input type="hidden" id="data_fim" name="data_fim" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
                                {{-- Adicione um campo hidden para espaco_id se necessário --}}
                                 <input type="hidden" id="espaco_id_hidden" name="espaco_id" value="{{ old("espaco_id", $aluguel->espaco_id ?? "") }}">
+
+                                <input type="text" id="valor_total" name="valor_total" readonly>
+
     
                            </div>
                            <!-- /.card-body -->
@@ -201,11 +200,10 @@
                     <input type="hidden" id="buffet_opcao_escolhida" name="buffet_opcao_escolhida" value="">
                 </div>
                 
-                {{--Aba 3: Parceiros--}}
-                <div class="tab-pane fade" id="tab-parceiro">
-                </div>
-                {{--Aba 4: Pagamento--}}
+              
+                {{--Aba 3: Pagamento--}}
                 <div class="tab-pane fade" id="tab-pagamento">
+
                 </div>
             </div>
         </div>
@@ -552,6 +550,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
     numeroPessoasInput.addEventListener('input', calcularValorFinal);
 });
+</script>
+
+
+<script> // calcula o valor total do espaço
+document.addEventListener('DOMContentLoaded', function () {
+    const espacoSelect = document.getElementById('espaco_id_hidden');
+    const dataInicio = document.getElementById('data_inicio');
+    const dataFim = document.getElementById('data_fim');
+    const valorTotal = document.getElementById('valor_total');
+
+    function calcularValor() {
+        const inicio = dataInicio.value;
+        const fim = dataFim.value;
+        const espaco = espacoSelect.value;
+        console.log(inicio, fim, espaco);
+
+        if (!inicio || !fim || !espaco) return;
+
+        const valorSemana = espaco.getAttribute('data-valor-semana');
+        const valorFim = espaco.getAttribute('data-valor-fim');
+
+       fetch('/calcular-valor', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                data_inicio: inicio,
+                data_fim: fim,
+                espaco_id: espaco
+            })
+        })
+
+    
+        .then(response => response.json())
+        .then(data => {
+            valorTotal.value = `R$ ${parseFloat(data.total).toFixed(2).replace('.', ',')}`;
+        });
+    }
+
+    espacoSelect.addEventListener('change', calcularValor);
+    dataInicio.addEventListener('change', calcularValor);
+    dataFim.addEventListener('change', calcularValor);
+});
+
+
 </script>
 
 <script>

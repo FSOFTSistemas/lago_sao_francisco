@@ -11,7 +11,8 @@ class Espaco extends Model
     protected $fillable = [
         'nome',
         'status',
-        'valor',
+        'valor_semana',
+        'valor_fim',
         'empresa_id'
     ];
     public function empresa()

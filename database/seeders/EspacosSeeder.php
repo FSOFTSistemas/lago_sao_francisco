@@ -20,31 +20,36 @@ class EspacosSeeder extends Seeder
             [
                 'nome' => 'Salão Bubu Princes',
                 'status' => 'disponivel',
-                'valor' => 3000,
+                'valor_semana' => 3000,
+                'valor_fim' => 4200,
                 'empresa_id' => 1
             ],
             [
                 'nome' => 'Salão Lady Laura',
                 'status' => 'disponivel',
-                'valor' => 3700,
+                'valor_semana' => 3700,
+                'valor_fim' => 4500,
                 'empresa_id' => 1
             ],
             [
                 'nome' => 'Salão Rainha Sophia',
                 'status' => 'disponivel',
-                'valor' => 2500,
+                'valor_semana' => 2500,
+                'valor_fim' => 3400,
                 'empresa_id' => 1
             ],
             [
                 'nome' => 'Salão Charmosa Estrela',
                 'status' => 'disponivel',
-                'valor' => 4000,
+                'valor_semana' => 4000,
+                'valor_fim' => 5700,
                 'empresa_id' => 1
             ],
             [
                 'nome' => 'Salão Bella Vitória',
                 'status' => 'disponivel',
-                'valor' => 2800,
+                'valor_semana' => 2800,
+                'valor_fim' => 4000,
                 'empresa_id' => 1
             ],
            

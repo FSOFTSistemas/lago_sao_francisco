@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nome');
             $table->enum('status', ['disponivel', 'alugado'])->nullable();
-            $table->string('valor');
+            $table->decimal('valor_semana', 10, 2);
+            $table->decimal('valor_fim', 10, 2);
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->timestamps();

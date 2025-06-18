@@ -179,3 +179,5 @@ Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('ve
 Route::resource('parceiros', ParceiroController::class);
 
 Route::resource('categoriasParceiro', CategoriaParceiroController::class);
+
+Route::post('/calcular-valor', [AluguelController::class, 'calcularValor']);

@@ -268,13 +268,32 @@ function resetSelection() {
 }
 
 // **ATUALIZADO: Função para atualizar os campos hidden (inclui spaceId)**
+// function updateHiddenFields(startDate, endDate, spaceId) {
+//     document.getElementById('data_inicio').value = startDate;
+//     document.getElementById('data_fim').value = endDate;
+//     // Atualiza o campo hidden do espaço
+//     const spaceIdInput = document.getElementById('espaco_id_hidden');
+//     if (spaceIdInput) {
+//         spaceIdInput.value = spaceId !== null ? spaceId : ''; // Define como string vazia se null
+//     }
+// }
 function updateHiddenFields(startDate, endDate, spaceId) {
-    document.getElementById('data_inicio').value = startDate;
-    document.getElementById('data_fim').value = endDate;
-    // Atualiza o campo hidden do espaço
+    const dataInicio = document.getElementById('data_inicio');
+    const dataFim = document.getElementById('data_fim');
     const spaceIdInput = document.getElementById('espaco_id_hidden');
+
+    dataInicio.value = startDate;
+    dataFim.value = endDate;
+
     if (spaceIdInput) {
-        spaceIdInput.value = spaceId !== null ? spaceId : ''; // Define como string vazia se null
+        spaceIdInput.value = spaceId !== null ? spaceId : '';
+    }
+
+    // Dispara os eventos para acionar o cálculo
+    dataInicio.dispatchEvent(new Event('change'));
+    dataFim.dispatchEvent(new Event('change'));
+    if (spaceIdInput) {
+        spaceIdInput.dispatchEvent(new Event('change'));
     }
 }
 
@@ -322,9 +341,9 @@ async function initMap() {
     document.addEventListener('click', (event) => {
         const mapContainer = document.getElementById('reservation_map_container');
         if (!mapContainer.contains(event.target) && !event.target.closest('#filter_button')) {
-            // if (isSelecting) {
-            //     resetSelection(); // Descomentar se quiser resetar ao clicar fora durante a seleção
-            // }
+            if (isSelecting) {
+                resetSelection(); // Descomentar se quiser resetar ao clicar fora durante a seleção
+            }
         }
     });
 }

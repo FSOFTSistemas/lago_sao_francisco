@@ -15,8 +15,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="valor">Valor:</label>
-                        <input type="text" class="form-control" id="valor" name="valor" value="{{$espaco->valor}}" required>
+                        <label for="valor_semana">Valor na Semana (Seg a Qui):</label>
+                        <input type="text" class="form-control" id="valor_semana" name="valor_semana" value="{{$espaco->valor_semana}}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="valor_fim">Valor no Fim de Semana (Sex a Dom):</label>
+                        <input type="text" class="form-control" id="valor_fim" name="valor_fim" value="{{$espaco->valor_fim}}" required>
                     </div>
                     
                     <div class="mb-3">

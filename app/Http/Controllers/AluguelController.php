@@ -7,9 +7,11 @@ use App\Models\Cliente;
 use App\Models\Espaco;
 use App\Models\FormaPagamento;
 use App\Models\Adicional;
-use App\Models\AluguelCategoriaItem;
 use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
+use App\Models\Parceiro;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -252,30 +254,7 @@ class AluguelController extends Controller
     }
 
     /**
-     * Salva categorias usando o sistema antigo (compatibilidade)
-     */
-    // private function salvarCategoriasAntigas(Aluguel $aluguel, Request $request)
-    // {
-    //     $categorias = $request->input('categorias', []);
-        
-    //     foreach ($categorias as $categoriaId => $categoria) {
-    //         if (isset($categoria['itens']) && is_array($categoria['itens'])) {
-    //             foreach ($categoria['itens'] as $itemId) {
-                    
-    //                 BuffetEscolha::create([
-    //                     'aluguel_id' => $aluguel->id,
-    //                     'tipo' => 'categoria_item',
-    //                     'categoria_id' => $categoriaId,
-    //                     'item_id' => $itemId,
-    //                     'opcao_refeicao_id' => null,
-    //                 ]);
-    //             }
-    //         }
-    //     }
-    // }
-
-    /**
-     * Método para buscar dados do cardápio via AJAX (se necessário)
+     * Método para buscar dados do cardápio via AJAX
      */
     public function getCardapioData($cardapioId)
     {
@@ -294,5 +273,41 @@ class AluguelController extends Controller
             return response()->json(['error' => 'Cardápio não encontrado'], 404);
         }
     }
+
+        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim)
+    {
+        $inicio = \Carbon\Carbon::parse($data_inicio);
+        $fim = \Carbon\Carbon::parse($data_fim);
+        $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
+        $total = 0;
+
+        foreach ($periodo as $data) {
+            $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+        }
+
+        return $total;
+    }
+
+
+
+
+
+
+        public function calcularValor(Request $request)
+    {
+        $espaco = Espaco::findOrFail($request->espaco_id);
+
+        $total = $this->calcularValorAluguel(
+            $request->data_inicio,
+            $request->data_fim,
+            $espaco->valor_semana,
+            $espaco->valor_fim
+        );
+
+        return response()->json(['total' => $total]);
+    }
+
+
+
 }
 
