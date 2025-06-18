@@ -9,9 +9,8 @@ use App\Models\FormaPagamento;
 use App\Models\Adicional;
 use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
-use App\Models\Parceiro;
+use App\Models\AluguelPagamento;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +59,8 @@ class AluguelController extends Controller
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
-                
+                // Campos de pagamento
+                'pagamentos_json' => 'nullable|string',
             ]);
         
             $validated['empresa_id'] = Auth::user()->empresa_id;
@@ -79,11 +79,11 @@ class AluguelController extends Controller
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
                 }
-                
-                // Compatibilidade com sistema antigo de categorias
-                // if ($request->filled('categorias')) {
-                //     $this->salvarCategoriasAntigas($aluguel, $request);
-                // }
+
+                // Salvar pagamentos se existirem
+                if ($request->filled('pagamentos_json')) {
+                    $this->salvarPagamentos($aluguel, $request);
+                }
                 
                 DB::commit();
                 
@@ -153,6 +153,8 @@ class AluguelController extends Controller
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
+                // Campos de pagamento
+                'pagamentos_json' => 'nullable|string',
             ]);
 
             $validated['empresa_id'] = Auth::user()->empresa_id;
@@ -173,7 +175,12 @@ class AluguelController extends Controller
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
                 }
-                
+
+                // Remover pagamentos antigos e salvar novos
+                AluguelPagamento::where('aluguel_id', $aluguel->id)->delete();
+                if ($request->filled('pagamentos_json')) {
+                    $this->salvarPagamentos($aluguel, $request);
+                }
 
                 // Atualizar a relação many-to-many (caso esteja usando também)
                 if ($request->filled('buffet_itens')) {
@@ -202,6 +209,9 @@ class AluguelController extends Controller
             
             // Remover escolhas do buffet
             BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
+            
+            // Remover pagamentos
+            AluguelPagamento::where('aluguel_id', $aluguel->id)->delete();
             
             // Remover outras relações se necessário
             if (method_exists($aluguel, 'aluguelCategoriaItems')) {
@@ -254,6 +264,23 @@ class AluguelController extends Controller
     }
 
     /**
+     * Salva os pagamentos vindos do JavaScript
+     */
+    private function salvarPagamentos(Aluguel $aluguel, Request $request)
+    {
+        $pagamentosJson = json_decode($request->pagamentos_json, true) ?? [];
+        
+        foreach ($pagamentosJson as $pagamento) {
+            AluguelPagamento::create([
+                'aluguel_id' => $aluguel->id,
+                'forma_pagamento_id' => $pagamento['forma_pagamento_id'],
+                'valor' => $pagamento['valor'],
+                'observacoes' => null,
+            ]);
+        }
+    }
+
+    /**
      * Método para buscar dados do cardápio via AJAX
      */
     public function getCardapioData($cardapioId)
@@ -287,11 +314,6 @@ class AluguelController extends Controller
 
         return $total;
     }
-
-
-
-
-
 
         public function calcularValor(Request $request)
     {

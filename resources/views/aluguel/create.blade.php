@@ -123,7 +123,7 @@
     
                                <input type="hidden" id="data_inicio" name="data_inicio" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
                                <input type="hidden" id="data_fim" name="data_fim" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
-                               {{-- Adicione um campo hidden para espaco_id se necessário --}}
+                               
                                 <input type="hidden" id="espaco_id_hidden" name="espaco_id" value="{{ old("espaco_id", $aluguel->espaco_id ?? "") }}">
 
                                 <input type="text" id="valor_total" name="valor_total" readonly>
@@ -203,7 +203,145 @@
               
                 {{--Aba 3: Pagamento--}}
                 <div class="tab-pane fade" id="tab-pagamento">
+                    <!-- Resumo Financeiro -->
+                    <div class="card card-info card-outline mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Resumo Financeiro</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Valor do Aluguel:</label>
+                                        <input type="text" id="valor_aluguel_display" class="form-control" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Valor do Buffet:</label>
+                                        <input type="text" id="valor_buffet_display" class="form-control" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Subtotal:</label>
+                                        <input type="text" id="subtotal_display" class="form-control" readonly>
+                                        <input type="hidden" id="subtotal" name="subtotal">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Acréscimo (R$):</label>
+                                        <input type="number" id="acrescimo" name="acrescimo" class="form-control" step="0.01" min="0" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Desconto (R$):</label>
+                                        <input type="number" id="desconto" name="desconto" class="form-control" step="0.01" min="0" value="0">
+                                        <div class="input-group">
+    <input type="text" id="desconto" class="form-control" placeholder="Desconto">
+    <button type="button" id="toggleTipoDesconto" class="btn btn-outline-secondary">%</button>
+</div>
 
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><strong>Valor Total:</strong></label>
+                                        <input type="text" id="valor_total_display" class="form-control font-weight-bold" readonly>
+                                        <input type="hidden" id="total" name="total">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><strong>Valor Restante:</strong></label>
+                                        <input type="text" id="valor_restante_display" class="form-control font-weight-bold text-danger" readonly>
+                                        <input type="hidden" id="valor_restante">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formas de Pagamento -->
+                    <div class="card card-success card-outline mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">Formas de Pagamento</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Forma de Pagamento:</label>
+                                        <select id="forma_pagamento_select" class="form-control">
+                                            <option value="">Selecione uma forma</option>
+                                            @foreach($formasPagamento as $forma)
+                                                <option value="{{ $forma->id }}">{{ $forma->descricao }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Valor (R$):</label>
+                                        <input type="number" id="valor_pagamento" class="form-control" step="0.01" min="0.01">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 align-self-end">
+                                    <div class="form-group">
+                                        <button type="button" id="adicionar_pagamento" class="btn btn-success">
+                                            <i class="fas fa-plus"></i> Adicionar
+                                        </button>
+                                        <button type="button" id="pagar_restante" class="btn btn-info">
+                                            <i class="fas fa-money-bill"></i> Pagar Restante
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Pagamentos Adicionados -->
+                            <div class="mt-4">
+                                <h5>Pagamentos Adicionados:</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="tabela_pagamentos">
+                                        <thead>
+                                            <tr>
+                                                <th>Forma de Pagamento</th>
+                                                <th>Valor</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lista_pagamentos">
+                                            <!-- Pagamentos serão adicionados aqui via JavaScript -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-info">
+                                                <th>Total Pago:</th>
+                                                <th id="total_pago_display">R$ 0,00</th>
+                                                <th></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Campo hidden para armazenar os pagamentos -->
+                            <input type="hidden" id="pagamentos_json" name="pagamentos_json" value="">
+                        </div>
+                    </div>
+
+                    <!-- Alertas de Validação -->
+                    <div id="alerta_pagamento" class="alert alert-warning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="mensagem_alerta"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -300,6 +438,306 @@
 @section('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="{{ asset('js/reservation_map.js') }}"></script>
+
+<script> // Sistema de Pagamento
+document.addEventListener('DOMContentLoaded', function () {
+    // Variáveis globais para o sistema de pagamento
+    let pagamentosAdicionados = [];
+    let valorTotalCalculado = 0;
+    let valorRestante = 0;
+
+    // Elementos do DOM
+    
+    const valorAluguelDisplay = document.getElementById('valor_aluguel_display');
+    const valorBuffetDisplay = document.getElementById('valor_buffet_display');
+    const subtotalDisplay = document.getElementById('subtotal_display');
+    const subtotalHidden = document.getElementById('subtotal');
+    const acrescimoInput = document.getElementById('acrescimo');
+    const descontoInput = document.getElementById('desconto');
+    const valorTotalDisplay = document.getElementById('valor_total_display');
+    const totalHidden = document.getElementById('total');
+    const valorRestanteDisplay = document.getElementById('valor_restante_display');
+    const valorRestanteHidden = document.getElementById('valor_restante');
+    
+    const formaPagamentoSelect = document.getElementById('forma_pagamento_select');
+    const valorPagamentoInput = document.getElementById('valor_pagamento');
+    const adicionarPagamentoBtn = document.getElementById('adicionar_pagamento');
+    const pagarRestanteBtn = document.getElementById('pagar_restante');
+    const listaPagamentos = document.getElementById('lista_pagamentos');
+    const totalPagoDisplay = document.getElementById('total_pago_display');
+    const pagamentosJsonInput = document.getElementById('pagamentos_json');
+    const alertaPagamento = document.getElementById('alerta_pagamento');
+    const mensagemAlerta = document.getElementById('mensagem_alerta');
+
+    // Função para formatar valor em moeda brasileira
+    function formatarMoeda(valor) {
+        return new Intl.NumberFormat('pt-BR', {
+            style: 'currency',
+            currency: 'BRL'
+        }).format(valor);
+    }
+
+    // Função para calcular subtotal
+    function calcularSubtotal() {
+        const valorAluguel = parseFloat(document.getElementById('valor_total').value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+        const valorBuffet = parseFloat(document.getElementById('total_buffet').value.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+
+        console.log('mudei')
+        console.log(valorAluguel)
+        console.log(valorBuffet)
+
+        valorAluguelDisplay.value = formatarMoeda(valorAluguel);
+        valorBuffetDisplay.value = formatarMoeda(valorBuffet);
+        
+        const subtotal = valorAluguel + valorBuffet;
+        subtotalDisplay.value = formatarMoeda(subtotal);
+        subtotalHidden.value = subtotal.toFixed(2);
+        
+        calcularValorTotal();
+    }
+
+    // Função para calcular valor total
+    function calcularValorTotal() {
+    const subtotal = parseFloat(subtotalHidden.value) || 0;
+    let acrescimo = parseFloat(acrescimoInput.value) || 0;
+    let desconto = parseFloat(descontoInput.value.replace(',', '.')) || 0;
+
+    // Impedir valores negativos no acrescimo
+    if (acrescimo < 0) {
+        acrescimo = 0;
+        acrescimoInput.value = '0';
+        mostrarAlerta('O acréscimo não pode ser negativo.', 'warning');
+    }
+
+    // Se estiver no modo percentual, converte
+    if (descontoEmPercentual) {
+        if (desconto < 0) {
+            desconto = 0;
+            descontoInput.value = '0';
+            mostrarAlerta('O desconto percentual não pode ser negativo.', 'warning');
+        }
+
+        if (desconto > 100) {
+            desconto = 100;
+            descontoInput.value = '100';
+            mostrarAlerta('O desconto percentual não pode passar de 100%.', 'warning');
+        }
+
+        desconto = (subtotal * desconto) / 100;
+    } else {
+        // Modo valor fixo: impedir negativos
+        if (desconto < 0) {
+            desconto = 0;
+            descontoInput.value = '0';
+            mostrarAlerta('O desconto não pode ser negativo.', 'warning');
+        }
+    }
+
+    const totalParcial = subtotal + acrescimo;
+
+        if (desconto > totalParcial) {
+            desconto = totalParcial;
+            descontoInput.value = desconto.toFixed(2);
+            mostrarAlerta('O desconto não pode ser maior que o total.', 'warning');
+        }
+
+        valorTotalCalculado = totalParcial - desconto;
+
+        valorTotalDisplay.value = formatarMoeda(valorTotalCalculado);
+        totalHidden.value = valorTotalCalculado.toFixed(2);
+
+        calcularValorRestante();
+    }
+
+    // Função para calcular valor restante
+    function calcularValorRestante() {
+        const totalPago = pagamentosAdicionados.reduce((sum, pagamento) => sum + pagamento.valor, 0);
+        valorRestante = valorTotalCalculado - totalPago;
+        
+        valorRestanteDisplay.value = formatarMoeda(valorRestante);
+        valorRestanteHidden.value = valorRestante.toFixed(2);
+        
+        // Atualizar cor do campo restante
+        if (valorRestante > 0) {
+            valorRestanteDisplay.classList.remove('text-success');
+            valorRestanteDisplay.classList.add('text-danger');
+        } else {
+            valorRestanteDisplay.classList.remove('text-danger');
+            valorRestanteDisplay.classList.add('text-success');
+        }
+        
+        atualizarTotalPago();
+    }
+
+    // Função para atualizar total pago
+    function atualizarTotalPago() {
+        const totalPago = pagamentosAdicionados.reduce((sum, pagamento) => sum + pagamento.valor, 0);
+        totalPagoDisplay.textContent = formatarMoeda(totalPago);
+    }
+
+    // Função para mostrar alerta
+    function mostrarAlerta(mensagem, tipo = 'warning') {
+        mensagemAlerta.textContent = mensagem;
+        alertaPagamento.className = `alert alert-${tipo}`;
+        alertaPagamento.style.display = 'block';
+        
+        setTimeout(() => {
+            alertaPagamento.style.display = 'none';
+        }, 5000);
+    }
+
+    // Função para adicionar pagamento
+    function adicionarPagamento() {
+        const formaPagamentoId = formaPagamentoSelect.value;
+        const formaPagamentoNome = formaPagamentoSelect.options[formaPagamentoSelect.selectedIndex].text;
+        const valor = parseFloat(valorPagamentoInput.value);
+
+        // Validações
+        if (!formaPagamentoId) {
+            mostrarAlerta('Selecione uma forma de pagamento.');
+            return;
+        }
+
+        if (!valor || valor <= 0) {
+            mostrarAlerta('Informe um valor válido para o pagamento.');
+            return;
+        }
+
+        if (valor > valorRestante) {
+            mostrarAlerta('O valor do pagamento não pode ser maior que o valor restante.');
+            return;
+        }
+
+        // Adicionar pagamento à lista
+        const pagamento = {
+            id: Date.now(), // ID único baseado em timestamp
+            forma_pagamento_id: formaPagamentoId,
+            forma_pagamento_nome: formaPagamentoNome,
+            valor: valor
+        };
+
+        pagamentosAdicionados.push(pagamento);
+        atualizarListaPagamentos();
+        calcularValorRestante();
+
+        // Limpar campos
+        formaPagamentoSelect.value = '';
+        valorPagamentoInput.value = '';
+    }
+
+    // Função para pagar valor restante
+    function pagarRestante() {
+        if (valorRestante <= 0) {
+            mostrarAlerta('Não há valor restante para pagar.', 'info');
+            return;
+        }
+
+        if (!formaPagamentoSelect.value) {
+            mostrarAlerta('Selecione uma forma de pagamento.');
+            return;
+        }
+
+        valorPagamentoInput.value = valorRestante.toFixed(2);
+    }
+
+    // Função para atualizar lista de pagamentos
+    function atualizarListaPagamentos() {
+        listaPagamentos.innerHTML = '';
+
+        pagamentosAdicionados.forEach(pagamento => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${pagamento.forma_pagamento_nome}</td>
+                <td>${formatarMoeda(pagamento.valor)}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removerPagamento(${pagamento.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            listaPagamentos.appendChild(row);
+        });
+
+        // Atualizar campo hidden com JSON dos pagamentos
+        pagamentosJsonInput.value = JSON.stringify(pagamentosAdicionados);
+    }
+
+    // Função global para remover pagamento (chamada pelo onclick)
+    window.removerPagamento = function(id) {
+        pagamentosAdicionados = pagamentosAdicionados.filter(pagamento => pagamento.id !== id);
+        atualizarListaPagamentos();
+        calcularValorRestante();
+    };
+
+    // Event listeners
+    acrescimoInput.addEventListener('input', calcularValorTotal);
+    descontoInput.addEventListener('input', calcularValorTotal);
+    adicionarPagamentoBtn.addEventListener('click', adicionarPagamento);
+    pagarRestanteBtn.addEventListener('click', pagarRestante);
+
+    // Converter desconto percentual para valor real ao sair do campo
+    descontoInput.addEventListener('blur', function() {
+        const subtotal = parseFloat(subtotalHidden.value) || 0;
+        let descontoPercentual = parseFloat(descontoInput.value.replace(',', '.')) || 0;
+
+        if (descontoPercentual < 0) {
+            descontoPercentual = 0;
+            mostrarAlerta('O desconto não pode ser negativo.', 'warning');
+        }
+
+        if (descontoPercentual > 100) {
+            descontoPercentual = 100;
+            mostrarAlerta('O desconto não pode passar de 100%.', 'warning');
+        }
+
+        const descontoCalculado = (subtotal * descontoPercentual) / 100;
+
+        descontoInput.value = descontoCalculado.toFixed(2); // Campo passa a mostrar o valor em reais
+        calcularValorTotal();
+    });
+    //botão pra mudar o tipo de desconto (teste)
+
+    let descontoEmPercentual = false;
+
+    document.getElementById('toggleTipoDesconto').addEventListener('click', function() {
+        descontoEmPercentual = !descontoEmPercentual;
+
+        const btn = document.getElementById('toggleTipoDesconto');
+        btn.textContent = descontoEmPercentual ? '%' : 'R$';
+
+        calcularValorTotal(); // Atualiza pra refletir o modo
+    });
+
+
+    // Monitorar mudanças nos valores de aluguel e buffet
+    let ultimoValorAluguel = '';
+    let ultimoValorBuffet = '';
+
+    setInterval(() => {
+        const valorAluguelAtual = document.getElementById('valor_total')?.value || '';
+        const valorBuffetAtual = document.getElementById('total_buffet')?.value || '';
+
+        if (valorAluguelAtual !== ultimoValorAluguel || valorBuffetAtual !== ultimoValorBuffet) {
+            ultimoValorAluguel = valorAluguelAtual;
+            ultimoValorBuffet = valorBuffetAtual;
+            calcularSubtotal();
+        }
+    }, 500); // verifica a cada meio segundo
+
+    // Calcular subtotal inicial
+    calcularSubtotal();
+
+    // Validação antes do envio do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (valorRestante > 0) {
+            e.preventDefault();
+            mostrarAlerta('O pagamento deve ser quitado completamente antes de finalizar o aluguel.', 'danger');
+            return false;
+        }
+    });
+});
+</script>
+
 <script> // script para o checkbox buffet
     document.addEventListener('DOMContentLoaded', function () {
         const switchInput = document.getElementById('ativoSwitch');
@@ -567,9 +1005,6 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log(inicio, fim, espaco);
 
         if (!inicio || !fim || !espaco) return;
-
-        const valorSemana = espaco.getAttribute('data-valor-semana');
-        const valorFim = espaco.getAttribute('data-valor-fim');
 
        fetch('/calcular-valor', {
             method: 'POST',
