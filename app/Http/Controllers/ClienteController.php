@@ -131,4 +131,16 @@ class ClienteController extends Controller
             return redirect()->back()->with('error', 'Erro ao deletar cliente');
         }
     }
+
+    public function search(Request $request)
+{
+    $term = $request->get('q');
+
+    return Cliente::where('nome_razao_social', 'like', "%{$term}%")
+        ->limit(20)
+        ->get(['id', 'nome_razao_social']);
+}
+
+
+
 }

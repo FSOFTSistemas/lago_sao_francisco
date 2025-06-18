@@ -38,7 +38,8 @@
                 <tr>
                     <th>ID</th>
                     <th>Nome</th>
-                    <th>Valor</th>
+                    <th>Valor na Semana</th>
+                    <th>Valor no Final de semana</th>
                     {{-- <th>Situação</th> --}}
                     <th>Ações</th>
                 </tr>
@@ -48,7 +49,8 @@
                     <tr>
                         <td>{{ $espaco->id }}</td>
                         <td>{{ $espaco->nome }}</td>
-                        <td>R${{ $espaco->valor }}</td>
+                        <td>R${{ $espaco->valor_semana }}</td>
+                        <td>R${{ $espaco->valor_fim }}</td>
                         {{-- <td>
                             @if($espaco->status == "disponivel")
                             <p>Disponível <i class="fa-regular fa-circle-check"></i></p>

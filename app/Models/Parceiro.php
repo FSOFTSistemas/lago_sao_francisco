@@ -12,6 +12,11 @@ class Parceiro extends Model
     protected $fillable = [
         'descricao',
         'valor',
-        'categoria'
+        'categoria_id'
     ];
+
+    public function categoria()
+    {
+       return $this->belongsTo(CategoriaParceiro::class, 'categoria_id');
+    }
 }

@@ -18,8 +18,12 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="valor">Valor:</label>
-                            <input type="text" class="form-control" id="valor" name="valor" required>
+                            <label for="valor_semana">Valor na semana (Seg a Qui):</label>
+                            <input type="text" class="form-control" id="valor_semana" name="valor_semana" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="valor_fim">Valor no Fim de semana (Sex a Dom):</label>
+                            <input type="text" class="form-control" id="valor_fim" name="valor_fim" required>
                         </div>
                         
                         <div class="mb-3">

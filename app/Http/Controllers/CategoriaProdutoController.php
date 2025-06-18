@@ -103,11 +103,11 @@ class CategoriaProdutoController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            
             $categoria = CategoriaProduto::findOrFail($id);
-
             $validated = $request->validate([
                 'descricao' => 'required|string|max:50|min:3',
-                'ativo' => 'boolean',
+                'ativo' => 'nullable|boolean',
             ], [
                 'descricao.required' => 'A descrição é obrigatória.',
                 'descricao.string'   => 'A descrição deve ser um texto.',
@@ -115,8 +115,9 @@ class CategoriaProdutoController extends Controller
                 'descricao.min'      => 'A descrição deve ter pelo menos 3 caracteres.',
                 'ativo.boolean'      => 'O campo ativo deve ser verdadeiro ou falso.',
             ]);
-            $ativo = $request->has('ativo') ? true : false;
+            $ativo = $request->has('ativo') ? 1 : 0;
             $validated['ativo'] = $ativo;
+            //dd($validated);
             $categoria->update($validated);
 
 

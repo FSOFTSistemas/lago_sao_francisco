@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CategoriaProduto;
 use App\Models\Cfop;
 use App\Models\Produto;
 use App\Models\Empresa;
@@ -23,11 +24,12 @@ class ProdutoController extends Controller
 
     public function create()
     {
+        $categorias = CategoriaProduto::where('ativo', 1)->get();
         $empresas = Empresa::all();
         $produtos = Produto::all();
         $cfop = Cfop::all();
         $ncm = Ncm::all();
-        return view('produto.create', compact('empresas', 'produtos', 'cfop', 'ncm'));
+        return view('produto.create', compact('empresas', 'produtos', 'cfop', 'ncm', 'categorias'));
     }
 
     /**

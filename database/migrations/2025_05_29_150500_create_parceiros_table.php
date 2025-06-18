@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('descricao');
             $table->decimal('valor', 10, 2);
-            $table->string('categoria');
+            $table->unsignedBigInteger('categoria_id');
+            $table->foreign('categoria_id')->references('id')->on('categoria_parceiros')->onDelete('cascade');
             $table->timestamps();
         });
     }

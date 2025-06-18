@@ -7,10 +7,14 @@ use App\Models\Cliente;
 use App\Models\Espaco;
 use App\Models\FormaPagamento;
 use App\Models\Adicional;
-use App\Models\AluguelCategoriaItem;
 use App\Models\Cardapio;
+use App\Models\BuffetEscolha;
+use App\Models\Parceiro;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class AluguelController extends Controller
 {
@@ -33,132 +37,277 @@ class AluguelController extends Controller
         ));
     }
 
-  public function store(Request $request)
-{
-    try {
-
-        $validated = $request->validate([
-            'data_inicio' => 'required|date',
-            'data_fim' => 'required|date|after_or_equal:data_inicio',
-            'cliente_id' => 'required|exists:clientes,id',
-            'espaco_id' => 'required|exists:espacos,id',
-            'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
-            'observacoes' => 'nullable|string',
-            'subtotal' => 'nullable|numeric',
-            'total' => 'nullable|numeric',
-            'acrescimo' => 'nullable|numeric',
-            'desconto' => 'nullable|numeric',
-            'parcelas' => 'nullable|integer',
-            'vencimento' => 'nullable|date',
-            'contrato' => 'nullable|string',
-            'status' => 'nullable|string',
-            'numero_pessoas_buffet' => 'nullable|integer|min:1',
-            'cardapio_id' => 'nullable|exists:cardapios,id',
-            'categorias' => 'nullable|array',
-            'categorias.*.itens' => 'nullable|array',
-            'categorias.*.itens.*' => 'exists:buffet_items,id',
-        ]);
-    
-        $validated['empresa_id'] = Auth::user()->empresa_id;
-    
-        // Criação do aluguel
-        $aluguel = Aluguel::create($validated);
-    
-        // Relacionar itens adicionais
-        $aluguel->adicionais()->sync($request->input('itens', []));
-    
-        // Salvar os itens de buffet agrupados por categoria
-    
-        return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
-    } catch( \Exception $e) {
-        return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel');
-        dd($e->getMessage());
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'data_inicio' => 'required|date',
+                'data_fim' => 'required|date|after_or_equal:data_inicio',
+                'cliente_id' => 'required|exists:clientes,id',
+                'espaco_id' => 'required|exists:espacos,id',
+                'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
+                'observacoes' => 'nullable|string',
+                'subtotal' => 'nullable|numeric',
+                'total' => 'nullable|numeric',
+                'acrescimo' => 'nullable|numeric',
+                'desconto' => 'nullable|numeric',
+                'parcelas' => 'nullable|integer',
+                'vencimento' => 'nullable|date',
+                'contrato' => 'nullable|string',
+                'status' => 'nullable|string',
+                'numero_pessoas_buffet' => 'nullable|integer|min:1',
+                'cardapio_id' => 'nullable|exists:cardapios,id',
+                // Campos do buffet vindos do JavaScript
+                'buffet_categorias_escolhidas' => 'nullable|string',
+                'buffet_opcao_escolhida' => 'nullable|integer',
+                
+            ]);
+        
+            $validated['empresa_id'] = Auth::user()->empresa_id;
+        
+            // Usar transação para garantir consistência
+            DB::beginTransaction();
+            
+            try {
+                // Criação do aluguel
+                $aluguel = Aluguel::create($validated);
+            
+                // Relacionar itens adicionais
+                $aluguel->adicionais()->sync($request->input('itens', []));
+            
+                // Salvar escolhas do buffet se existirem
+                if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
+                    $this->salvarEscolhasBuffet($aluguel, $request);
+                }
+                
+                // Compatibilidade com sistema antigo de categorias
+                // if ($request->filled('categorias')) {
+                //     $this->salvarCategoriasAntigas($aluguel, $request);
+                // }
+                
+                DB::commit();
+                
+                return redirect()->route('aluguel.create')->with('success', 'Aluguel criado com sucesso!');
+                
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+            
+        } catch(\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel: ' . $e->getMessage());
+        }
     }
-}
 
+    public function edit(Aluguel $aluguel)
+    {
+        // Carregar relações necessárias para o formulário
+        $aluguel->load([
+            'cliente',
+            'espaco',
+            'adicionais',
+            'cardapio.secoes.categorias.itens',
+            'cardapio.opcoes.categorias.itens',
+            'formaPagamento',
+            'buffetEscolhas.categoria',
+            'buffetEscolhas.item',
+            'buffetEscolhas.opcaoRefeicao'
+        ]);
 
-   public function edit(Aluguel $aluguel)
-{
-    // Carregar relações necessárias para o formulário
-    $aluguel->load([
-        'cliente',
-        'espaco',
-        'adicionais',
-        'cardapio.categorias.itens',
-        'formaPagamento',
-        'buffetItens',
-        'aluguelCategoriaItems.buffetItem'
-    ]);
+        $clientes = Cliente::all();
+        $espacos = Espaco::all();
+        $itens = Adicional::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
+        $cardapios = Cardapio::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
+        $formasPagamento = FormaPagamento::all();
 
-    $clientes = Cliente::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome_razao_social')->get();
-    $espacos = Espaco::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-    $itens = Adicional::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-    $cardapios = Cardapio::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-    $formasPagamento = FormaPagamento::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-
-    return view('aluguel.edit', compact(
-        'aluguel',
-        'clientes',
-        'espacos',
-        'itens',
-        'cardapios',
-        'formasPagamento'
-    ));
-}
-
+        return view('aluguel.edit', compact(
+            'aluguel',
+            'clientes',
+            'espacos',
+            'itens',
+            'cardapios',
+            'formasPagamento'
+        ));
+    }
 
     public function update(Request $request, Aluguel $aluguel)
-{
-    try {
-    $validated = $request->validate([
-        'data_inicio' => 'required|date',
-        'data_fim' => 'required|date|after_or_equal:data_inicio',
-        'cliente_id' => 'required|exists:clientes,id',
-        'espaco_id' => 'required|exists:espacos,id',
-        'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
-        'observacoes' => 'nullable|string',
-        'subtotal' => 'nullable|numeric',
-        'total' => 'nullable|numeric',
-        'acrescimo' => 'nullable|numeric',
-        'desconto' => 'nullable|numeric',
-        'parcelas' => 'nullable|integer',
-        'vencimento' => 'nullable|date',
-        'contrato' => 'nullable|string',
-        'status' => 'nullable|string',
-        'numero_pessoas_buffet' => 'nullable|integer|min:1',
-        'cardapio_id' => 'nullable|exists:cardapios,id',
-        'categorias' => 'nullable|array',
-        'categorias.*.itens' => 'nullable|array',
-        'categorias.*.itens.*' => 'exists:buffet_items,id',
-    ]);
+    {
+        try {
+            $validated = $request->validate([
+                'data_inicio' => 'required|date',
+                'data_fim' => 'required|date|after_or_equal:data_inicio',
+                'cliente_id' => 'required|exists:clientes,id',
+                'espaco_id' => 'required|exists:espacos,id',
+                'forma_pagamento_id' => 'nullable|exists:forma_pagamentos,id',
+                'observacoes' => 'nullable|string',
+                'subtotal' => 'nullable|numeric',
+                'total' => 'nullable|numeric',
+                'acrescimo' => 'nullable|numeric',
+                'desconto' => 'nullable|numeric',
+                'parcelas' => 'nullable|integer',
+                'vencimento' => 'nullable|date',
+                'contrato' => 'nullable|string',
+                'status' => 'nullable|string',
+                'numero_pessoas_buffet' => 'nullable|integer|min:1',
+                'cardapio_id' => 'nullable|exists:cardapios,id',
+                // Campos do buffet vindos do JavaScript
+                'buffet_categorias_escolhidas' => 'nullable|string',
+                'buffet_opcao_escolhida' => 'nullable|integer',
+            ]);
 
-    $validated['empresa_id'] = Auth::user()->empresa_id;
+            $validated['empresa_id'] = Auth::user()->empresa_id;
 
-    $aluguel->update($validated);
+            // Usar transação para garantir consistência
+            DB::beginTransaction();
+            
+            try {
+                $aluguel->update($validated);
 
-    // Atualizar itens adicionais
-    $aluguel->adicionais()->sync($request->input('itens', []));
+                // Atualizar itens adicionais
+                $aluguel->adicionais()->sync($request->input('itens', []));
 
-    // Limpar e recriar os itens do buffet por categoria
+                // Remover escolhas antigas do buffet
+                BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
 
+                // Salvar novas escolhas do buffet se existirem
+                if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
+                    $this->salvarEscolhasBuffet($aluguel, $request);
+                }
+                
 
-    // Atualizar a relação many-to-many (caso esteja usando também)
-    $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
+                // Atualizar a relação many-to-many (caso esteja usando também)
+                if ($request->filled('buffet_itens')) {
+                    $aluguel->buffetItens()->sync($request->input('buffet_itens', []));
+                }
 
-    return redirect()->route('aluguel.index')->with('success', 'Aluguel atualizado com sucesso!');
-    } catch(\Exception $e) {
-        return redirect()->back()->with('error', 'Erro ao Atualizar Aluguel');
+                DB::commit();
+                
+                return redirect()->route('aluguel.index')->with('success', 'Aluguel atualizado com sucesso!');
+                
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+            
+        } catch(\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao atualizar Aluguel: ' . $e->getMessage());
+        }
     }
-}
-
 
     public function destroy(Aluguel $aluguel)
     {
-        try{
-        $aluguel->delete();
-        return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
+        try {
+            // Usar transação para garantir que todas as relações sejam removidas
+            DB::beginTransaction();
+            
+            // Remover escolhas do buffet
+            BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
+            
+            // Remover outras relações se necessário
+            if (method_exists($aluguel, 'aluguelCategoriaItems')) {
+                $aluguel->aluguelCategoriaItems()->delete();
+            }
+            
+            $aluguel->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
+            
         } catch(\Exception $e) {
-            return redirect()->back()->with('error', 'erro ao Deletar Aluguel');
+            DB::rollback();
+            return redirect()->back()->with('error', 'Erro ao deletar Aluguel: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Salva as escolhas do buffet vindas do JavaScript
+     */
+    private function salvarEscolhasBuffet(Aluguel $aluguel, Request $request)
+    {
+        // Decodificar as categorias escolhidas (JSON)
+        $categoriasEscolhidas = json_decode($request->buffet_categorias_escolhidas, true) ?? [];
+        
+        // Salvar itens das categorias escolhidas
+        foreach ($categoriasEscolhidas as $categoriaId => $itensIds) {
+            foreach ($itensIds as $itemId) {
+                BuffetEscolha::create([
+                    'aluguel_id' => $aluguel->id,
+                    'tipo' => 'categoria_item',
+                    'categoria_id' => $categoriaId,
+                    'item_id' => $itemId,
+                    'opcao_refeicao_id' => null,
+                ]);
+            }
+        }
+
+        // Salvar opção de refeição escolhida
+        if ($request->filled('buffet_opcao_escolhida')) {
+            BuffetEscolha::create([
+                'aluguel_id' => $aluguel->id,
+                'tipo' => 'opcao_refeicao',
+                'categoria_id' => null,
+                'item_id' => null,
+                'opcao_refeicao_id' => $request->buffet_opcao_escolhida,
+            ]);
+        }
+    }
+
+    /**
+     * Método para buscar dados do cardápio via AJAX
+     */
+    public function getCardapioData($cardapioId)
+    {
+        try {
+            $cardapio = Cardapio::with([
+                'secoes.categorias.itens',
+                'opcoes.categorias.itens'
+            ])->findOrFail($cardapioId);
+            
+            return response()->json([
+                'secoes' => $cardapio->secoes,
+                'opcoes' => $cardapio->opcoes
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Cardápio não encontrado'], 404);
+        }
+    }
+
+        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim)
+    {
+        $inicio = \Carbon\Carbon::parse($data_inicio);
+        $fim = \Carbon\Carbon::parse($data_fim);
+        $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
+        $total = 0;
+
+        foreach ($periodo as $data) {
+            $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+        }
+
+        return $total;
+    }
+
+
+
+
+
+
+        public function calcularValor(Request $request)
+    {
+        $espaco = Espaco::findOrFail($request->espaco_id);
+
+        $total = $this->calcularValorAluguel(
+            $request->data_inicio,
+            $request->data_fim,
+            $espaco->valor_semana,
+            $espaco->valor_fim
+        );
+
+        return response()->json(['total' => $total]);
+    }
+
+
+
 }
+

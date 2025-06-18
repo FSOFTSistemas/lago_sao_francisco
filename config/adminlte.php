@@ -314,21 +314,29 @@ return [
             'text'    => 'Lago',
             'icon'    => 'fas fa-place-of-worship',
             'submenu' => [
-                // [
-                //     'text' => 'Espaços',
-                //     'icon' => 'fas fa-campground',
-                //     'url'  => '/espaco',
-                // ],
+                ['header' => 'Day Use'],
+              
                 [
-                    'text' => 'Day use / Passaporte',
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/diaria',
+                    'url'  => '/dayuse/create',
                 ],
                 [
-                    'text' => 'Aluguel de Espaços',
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
+                    'url'  => '/dayuse'
+                ],
+                ['header' => 'Aluguel de Espaços'],
+                [
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-campground',
+                    'url'  => '/aluguel/create',
+                ],
+                [
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',
-                ]
+                ],
             ],
         ],
         [
@@ -403,10 +411,17 @@ return [
             'icon'    => 'fas fa-money-check-alt',
             'can'     => 'gerenciar financeiro',
             'submenu' => [
+                
                 [
                     'text' => 'Adiantamentos',
                     'url'  => '/adiantamento',
                     'icon' => 'fas fa-cash-register',
+                    'can'  => 'gerenciar adiantamento',
+                ],
+                [
+                    'text' => 'Vendedores',
+                    'url'  => '/vendedor',
+                    'icon' => 'fas fa-user-tie',
                     'can'  => 'gerenciar adiantamento',
                 ],
                 [
