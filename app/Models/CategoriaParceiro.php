@@ -5,18 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Parceiro extends Model
+class CategoriaParceiro extends Model
 {
     use HasFactory;
-
     protected $fillable = [
-        'descricao',
-        'valor',
-        'categoria_id'
+        'descricao'
     ];
 
-    public function categoria()
+    public function parceiros()
     {
-       return $this->belongsTo(CategoriaParceiro::class, 'categoria_id');
+       return $this->hasMany(Parceiro::class, 'categoria_id');
     }
 }

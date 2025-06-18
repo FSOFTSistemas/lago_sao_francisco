@@ -85,7 +85,7 @@ class AluguelController extends Controller
                 
                 DB::commit();
                 
-                return redirect()->route('aluguel.index')->with('success', 'Aluguel criado com sucesso!');
+                return redirect()->route('aluguel.create')->with('success', 'Aluguel criado com sucesso!');
                 
             } catch (\Exception $e) {
                 DB::rollback();
@@ -172,14 +172,6 @@ class AluguelController extends Controller
                     $this->salvarEscolhasBuffet($aluguel, $request);
                 }
                 
-                // Compatibilidade com sistema antigo de categorias
-                // if ($request->filled('categorias')) {
-                //     // Limpar registros antigos se existirem
-                //     if (method_exists($aluguel, 'aluguelCategoriaItems')) {
-                //         $aluguel->aluguelCategoriaItems()->delete();
-                //     }
-                //     $this->salvarCategoriasAntigas($aluguel, $request);
-                // }
 
                 // Atualizar a relação many-to-many (caso esteja usando também)
                 if ($request->filled('buffet_itens')) {

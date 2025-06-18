@@ -7,6 +7,7 @@ use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
+use App\Http\Controllers\CategoriaParceiroController;
 use App\Http\Controllers\CategoriaProdutoController;
 use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Http\Controllers\CfopController;
@@ -176,3 +177,5 @@ Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clie
 Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('vendedors.search');
 
 Route::resource('parceiros', ParceiroController::class);
+
+Route::resource('categoriasParceiro', CategoriaParceiroController::class);

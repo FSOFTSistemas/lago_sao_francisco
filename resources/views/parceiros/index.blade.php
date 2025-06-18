@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Adicionais')
+@section('title', 'Parceiros')
 
 @section('content_header')
     <h5>Cadastro de Parceiros</h5>
@@ -49,7 +49,7 @@
                 <tr>
                     <td>{{ $parceiro->descricao }}</td>
                     <td>R${{ $parceiro->valor }}</td>
-                    <td>{{ $parceiro->categoria }}</td>
+                    <td>{{ $parceiro->categoria->descricao }}</td>
                     <td>
                         <!-- Botão Editar -->
                         <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
@@ -90,10 +90,18 @@
                                         <input type="number" name="valor" id="valor" class="form-control"
                                             value="{{ $parceiro->valor }}" required>
                                     </div>
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <label for="categoria">Categoria</label>
-                                        <input type="text" name="categoria" id="categoria" class="form-control"
-                                            value="{{ $parceiro->categoria }}" required>
+                                        <select class="form-control" id="categoria" name="categoria_id">
+                                            <option value="">Selecione</option>
+                                            
+                                            @foreach ($categorias as $categoria)
+                                                <option value="{{ $categoria->id }}" 
+                                                    {{ old('categoria_id', $parceiro->categoria_id) == $categoria->id ? 'selected' : '' }}>
+                                                    {{ $categoria->descricao }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -141,7 +149,7 @@
         aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form action="{{ route('adicionais.store') }}" method="POST">
+                <form action="{{ route('parceiros.store') }}" method="POST">
                     @csrf
                     <div class="modal-header text-white">
                         <h5 class="modal-title">
@@ -158,9 +166,15 @@
                             <label for="valor">Valor</label>
                             <input type="number" name="valor" id="valor" class="form-control" required>
                         </div>
-                        <div class="form-group">
+
+                        <div class="mb-3">
                             <label for="categoria">Categoria</label>
-                            <input type="categoria" name="categoria" id="categoria" class="form-control" required>
+                            <select class="form-control" id="categoria" name="categoria_id">
+                                <option value="">Selecione</option>
+                                @foreach ($categorias as $categoria)
+                                    <option value="{{ $categoria->id }}">{{ $categoria->descricao }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">

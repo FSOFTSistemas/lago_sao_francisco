@@ -326,12 +326,17 @@ return [
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/dayuse'
                 ],
-                ['header' => 'Espaços'],
+                ['header' => 'Aluguel de Espaços'],
                 [
-                    'text' => 'Aluguel de Espaços',
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-campground',
+                    'url'  => '/aluguel/create',
+                ],
+                [
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',
-                ]
+                ],
             ],
         ],
         [
