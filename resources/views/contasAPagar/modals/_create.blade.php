@@ -18,17 +18,39 @@
                       </div>
 
                       <div class="row">
-                          <div class="col-md-6 mb-3">
-                              <label for="valor">Valor:</label>
-                              <input type="number" class="form-control" id="valor" name="valor">
-                          </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="valor">Valor:</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="valor" 
+                                    name="valor"
+                                    step="0.01"
+                                    min="0.01"
+                                    required
+                                    oninput="validarValor(this)"
+                                >
+                                <div class="invalid-feedback">
+                                    Por favor, insira um valor válido (mínimo R$ 0,01).
+                                </div>
+                            </div>
 
-                          <div class="col-md-6 mb-3">
-                              <label for="valorPago">Valor Pago:</label>
-                              <input type="number" class="form-control" id="valorPago" name="valor_pago">
-                          </div>
-                      </div>
-
+                            <div class="col-md-6 mb-3">
+                                <label for="valorPago">Valor Pago:</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="valorPago" 
+                                    name="valor_pago"
+                                    step="0.01"
+                                    min="0"
+                                    oninput="validarValorPago(this)"
+                                >
+                                <div class="invalid-feedback">
+                                    O valor pago não pode ser maior que o valor da conta.
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                               <label for="dataVencimento">Data de Vencimento:</label>
