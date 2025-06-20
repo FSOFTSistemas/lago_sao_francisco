@@ -96,21 +96,57 @@ function renderMap(data) {
         });
 
         dates.forEach(dateStr => {
-            const status = bookingsMap.get(dateStr) || 'available';
-            let cellClass = `date-cell ${status}`;
-            let dataAttributes = `data-date="${dateStr}" data-space-id="${space.id}"`;
-            tableHTML += `<td class="${cellClass}" ${dataAttributes}>`;
-            if (status === 'booked') {
-                tableHTML += `<span>X</span>`;
-            }
-            tableHTML += `</td>`;
-        });
+    const status = bookingsMap.get(dateStr) || 'available';
+    let cellClass = `date-cell ${status}`;
+    let dataAttributes = `data-date="${dateStr}" data-space-id="${space.id}"`;
+
+    // Se a data for "booked", adicione o reserva-id
+    if (status === 'booked') {
+        const reservaId = space.bookings.find(b => {
+            const bookingStart = new Date(b.start + 'T00:00:00');
+            const bookingEnd = new Date(b.end + 'T00:00:00');
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            return dateObj >= bookingStart && dateObj <= bookingEnd;
+        })?.id;
+
+        if (reservaId) {
+            dataAttributes += ` data-reserva-id="${reservaId}"`;
+        }
+    }
+
+    tableHTML += `<td class="${cellClass}" ${dataAttributes}>`;
+    if (status === 'booked') {
+        tableHTML += `<span>X</span>`;
+    }
+    tableHTML += `</td>`;
+});
+
         tableHTML += '</tr>';
     });
 
     tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
     addCellListeners();
+
+    // Se for uma edição de reserva, pré-seleciona as datas
+    const dataInicioAtual = document.getElementById('data_inicio_atual')?.value;
+    const dataFimAtual = document.getElementById('data_fim_atual')?.value;
+    const espacoIdAtual = document.getElementById('espaco_id_atual')?.value;
+
+    if (dataInicioAtual && dataFimAtual && espacoIdAtual) {
+        selectedStartDate = dataInicioAtual;
+        selectedEndDate = dataFimAtual;
+        selectedSpaceId = espacoIdAtual;
+        isSelecting = false;
+
+        updateCellStyles();
+
+        // Atualiza o feedback visual
+        const spaceRow = document.querySelector(`tr[data-space-id="${espacoIdAtual}"]`);
+        const spaceName = spaceRow ? spaceRow.dataset.spaceName : `Espaço ID ${espacoIdAtual}`;
+        updateSelectionFeedback(`Período selecionado: ${formatDateBR(dataInicioAtual)} a ${formatDateBR(dataFimAtual)} para ${spaceName}.`);
+    }
+
 }
 
 // Função para adicionar listeners às células de data
@@ -192,9 +228,18 @@ function isRangeBooked(start, end, spaceId) {
     while (currentCheckDate <= endDateObj) {
         const dateStr = currentCheckDate.toISOString().split('T')[0];
         const cell = document.querySelector(`.date-cell[data-date="${dateStr}"][data-space-id="${spaceId}"]`);
-        if (cell && cell.classList.contains('booked')) {
+       if (cell && cell.classList.contains('booked')) {
+            // Se for a própria reserva, ignora
+            const reservaIdAtual = document.getElementById('reserva_id_atual')?.value;
+            const cellReservaId = cell.getAttribute('data-reserva-id');
+
+            if (reservaIdAtual && cellReservaId == reservaIdAtual) {
+                return false; // Permite a seleção sobre a própria reserva
+            }
+
             return true;
         }
+
         currentCheckDate.setDate(currentCheckDate.getDate() + 1);
     }
     return false;
@@ -256,6 +301,8 @@ function highlightRange(start, end, spaceId, isHover) {
 
 // Função para resetar a seleção
 function resetSelection() {
+    const valorTotal = document.getElementById('valor_total')
+    valorTotal.value = ''
     selectedStartDate = null;
     selectedEndDate = null;
     selectedSpaceId = null;
@@ -267,16 +314,6 @@ function resetSelection() {
     console.log("Seleção resetada.");
 }
 
-// **ATUALIZADO: Função para atualizar os campos hidden (inclui spaceId)**
-// function updateHiddenFields(startDate, endDate, spaceId) {
-//     document.getElementById('data_inicio').value = startDate;
-//     document.getElementById('data_fim').value = endDate;
-//     // Atualiza o campo hidden do espaço
-//     const spaceIdInput = document.getElementById('espaco_id_hidden');
-//     if (spaceIdInput) {
-//         spaceIdInput.value = spaceId !== null ? spaceId : ''; // Define como string vazia se null
-//     }
-// }
 function updateHiddenFields(startDate, endDate, spaceId) {
     const dataInicio = document.getElementById('data_inicio');
     const dataFim = document.getElementById('data_fim');
@@ -341,11 +378,21 @@ async function initMap() {
     document.addEventListener('click', (event) => {
         const mapContainer = document.getElementById('reservation_map_container');
         if (!mapContainer.contains(event.target) && !event.target.closest('#filter_button')) {
+            // reseta ao clicar fora durante a seleção
             if (isSelecting) {
-                resetSelection(); // Descomentar se quiser resetar ao clicar fora durante a seleção
+                resetSelection(); 
             }
         }
     });
+
+
+    const dataInicio = document.getElementById('data_inicio')?.value;
+    const dataFim = document.getElementById('data_fim')?.value;
+    const spaceId = document.getElementById('espaco_id_hidden')?.value;
+
+    if (dataInicio && dataFim && spaceId) {
+        updateHiddenFields(dataInicio, dataFim, spaceId);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initMap);

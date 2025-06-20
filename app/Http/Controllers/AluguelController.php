@@ -101,34 +101,35 @@ class AluguelController extends Controller
 
     public function edit(Aluguel $aluguel)
     {
-        // Carregar relações necessárias para o formulário
         $aluguel->load([
             'cliente',
             'espaco',
-            'adicionais',
+            'formaPagamento',
             'cardapio.secoes.categorias.itens',
             'cardapio.opcoes.categorias.itens',
-            'formaPagamento',
             'buffetEscolhas.categoria',
             'buffetEscolhas.item',
-            'buffetEscolhas.opcaoRefeicao'
+            'buffetEscolhas.opcaoRefeicao',
+            'pagamentos.formaPagamento',
         ]);
-
+        // dd($aluguel);
+        // Dados de apoio para selects
         $clientes = Cliente::all();
         $espacos = Espaco::all();
-        $itens = Adicional::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-        $cardapios = Cardapio::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
+        $cardapios = Cardapio::all();
         $formasPagamento = FormaPagamento::all();
+        $adicionais = Adicional::all();
 
-        return view('aluguel.edit', compact(
+        return view('aluguel.create', compact(
             'aluguel',
-            'clientes',
             'espacos',
-            'itens',
+            'formasPagamento',
+            'clientes',
             'cardapios',
-            'formasPagamento'
+            'adicionais',
         ));
     }
+
 
     public function update(Request $request, Aluguel $aluguel)
     {
