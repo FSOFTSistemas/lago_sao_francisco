@@ -41,7 +41,7 @@
                             <button type="button" id="btnProximo" class="btn btn-primary w-25">Próximo</button>
                         </div>
 
-                        {{--Busca do cliente--}}
+                        {{-- Busca do cliente --}}
                         @php
                             $clienteSelecionadoId = old('cliente_id', $aluguel->cliente_id ?? '');
                             $clienteSelecionadoNome = '';
@@ -79,9 +79,10 @@
                             <div class="form-check form-switch">
                                 <input type="hidden" name="ativo" value="0">
                                 <input class="form-check-input" type="checkbox" id="ativoSwitch" name="ativo"
-                                    value="1" {{ old('ativo', $tarifa->ativo ?? false) ? 'checked' : '' }}>
+                                    value="1" {{ old('ativo', isset($aluguel->cardapio_id) ? 1 : 0) ? 'checked' : '' }}>
                                 <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
-                                    {{ old('ativo', $tarifa->ativo ?? false) ? 'Sim' : 'Não' }}
+                                    {{ old('ativo', isset($aluguel->cardapio_id) ? 1 : 0) ? 'Sim' : 'Não' }}
+
                                 </label>
                             </div>
                         </div>
@@ -140,7 +141,7 @@
                                 <input type="hidden" id="data_fim_atual" value="{{ $aluguel->data_fim ?? '' }}">
                                 <input type="hidden" id="espaco_id_atual" value="{{ $aluguel->espaco_id ?? '' }}">
                                 <input type="hidden" id="reserva_id_atual" value="{{ $aluguel->id ?? '' }}">
-                                
+
 
                                 <div class="d-flex align-items-center justify-content-end gap-2">
                                     <label for="valor_total" class="mb-0 mr-2">Valor Total:</label>
@@ -475,11 +476,11 @@
             </form>
         </div>
     </div>
-    @if(isset($aluguel) && $aluguel->pagamentos)
-    <script>
-        window.pagamentosExistentes = @json($aluguel->pagamentos);
-    </script>
-@endif
+    @if (isset($aluguel) && $aluguel->pagamentos)
+        <script>
+            window.pagamentosExistentes = @json($aluguel->pagamentos);
+        </script>
+    @endif
 
 @endsection
 
@@ -499,7 +500,7 @@
             let valorRestante = 0;
 
             // Elementos do DOM
-            
+
             const valorAluguelDisplay = document.getElementById('valor_aluguel_display');
             const valorBuffetDisplay = document.getElementById('valor_buffet_display');
             const subtotalDisplay = document.getElementById('subtotal_display');
@@ -520,14 +521,16 @@
             const pagamentosJsonInput = document.getElementById('pagamentos_json');
             const alertaPagamento = document.getElementById('alerta_pagamento');
             const mensagemAlerta = document.getElementById('mensagem_alerta');
-            
+
             // Se tiver pagamentos existentes vindos do Laravel
             if (window.pagamentosExistentes) {
                 window.pagamentosExistentes.forEach(function(pag) {
                     pagamentosAdicionados.push({
-                        id: pag.id,  // Importante manter o ID real para permitir edição/exclusão depois
+                        id: pag
+                        .id, // Importante manter o ID real para permitir edição/exclusão depois
                         forma_pagamento_id: pag.forma_pagamento_id,
-                        forma_pagamento_nome: pag.forma_pagamento ? pag.forma_pagamento.descricao : '',
+                        forma_pagamento_nome: pag.forma_pagamento ? pag.forma_pagamento.descricao :
+                            '',
                         valor: parseFloat(pag.valor)
                     });
                 });
@@ -808,7 +811,7 @@
             // Validação antes do envio do formulário
             document.getElementById('aluguelform').addEventListener('submit', function(e) {
                 const valorRestanteValue = parseFloat(valorRestanteHidden.value) || 0;
-                 const clienteSelect = document.getElementById('cliente_id');
+                const clienteSelect = document.getElementById('cliente_id');
                 const clienteSelecionado = clienteSelect && clienteSelect.value;
 
                 if (!clienteSelecionado) {
@@ -875,16 +878,22 @@
     </script>
 
     <script>
-        // script para o checkbox buffet
         document.addEventListener('DOMContentLoaded', function() {
             const switchInput = document.getElementById('ativoSwitch');
             const label = document.getElementById('ativoLabel');
 
-            switchInput.addEventListener('change', function() {
-                label.textContent = this.checked ? 'Sim' : 'Não';
-            });
+            function updateLabel() {
+                label.textContent = switchInput.checked ? 'Sim' : 'Não';
+            }
+
+            // Atualiza ao carregar a página (caso o browser recarregue com checked vindo do servidor)
+            updateLabel();
+
+            // Atualiza sempre que o usuário mudar o switch
+            switchInput.addEventListener('change', updateLabel);
         });
     </script>
+
 
     <script>
         //habilita a aba buffet pelo checkbox
@@ -906,6 +915,15 @@
             checkbox.addEventListener("change", atualizarEstilo);
         });
     </script>
+    <script>
+       const teste12 = window.itensSelecionadosBuffet = {!! json_encode($itensSelecionados ?? []) !!};
+       const teste13 = window.opcaoSelecionadaBuffet = {{ $opcaoSelecionada ?? 'null' }};
+       console.log('inicio')
+       console.log(teste12)
+       console.log(teste13)
+       console.log('fim')
+    </script>
+
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1111,12 +1129,39 @@
                                     });
                             }
 
+                            // Marcar itens já selecionados (se vieram do backend)
+                            if (window.itensSelecionadosBuffet.length > 0) {
+                                window.itensSelecionadosBuffet.forEach(itemId => {
+                                    const checkbox = categoriasContainer.querySelector(`input[type="checkbox"][value="${itemId}"]`);
+                                    if (checkbox) {
+                                        checkbox.checked = true;
+                                    }
+                                });
+                                // Atualiza os campos hidden também
+                                atualizarCategoriasEscolhidas();
+                            }
+
+                            // Marcar opção de refeição já escolhida
+                            if (window.opcaoSelecionadaBuffet !== null) {
+                                const radio = opcoesContainer.querySelector(`input[name="opcao_escolhida"][value="${window.opcaoSelecionadaBuffet}"]`);
+                                if (radio) {
+                                    radio.checked = true;
+                                    calcularValorFinal();
+                                    buffetOpcaoEscolhida.value = radio.value;
+                                }
+                            }
+
                         })
                         .catch(error => {
                             console.error('Erro ao carregar dados do cardápio:', error);
                         });
                 }
+                
             });
+
+            if (cardapioSelect.value) {
+                cardapioSelect.dispatchEvent(new Event('change'));
+            }
 
             // Função para atualizar o campo hidden com as categorias escolhidas
             function atualizarCategoriasEscolhidas() {
@@ -1547,10 +1592,10 @@
 
             /* Opcional: Esconder o texto 'X' e usar só fundo em telas muito pequenas */
             /*
-                .date-cell.booked span {
-                    display: none;
-                }
-                */
+                    .date-cell.booked span {
+                        display: none;
+                    }
+                    */
         }
 
         /* Ajustes finos para telas muito pequenas (opcional) */

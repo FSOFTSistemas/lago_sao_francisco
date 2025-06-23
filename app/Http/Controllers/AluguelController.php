@@ -120,6 +120,18 @@ class AluguelController extends Controller
         $formasPagamento = FormaPagamento::all();
         $adicionais = Adicional::all();
 
+        // Itens das categorias que foram selecionados
+        $itensSelecionados = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'categoria_item')
+            ->pluck('item_id')
+            ->toArray();
+
+        // Opção de refeição escolhida (se tiver)
+        $opcaoSelecionada = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'opcao_refeicao')
+            ->value('opcao_refeicao_id');
+
+
         return view('aluguel.create', compact(
             'aluguel',
             'espacos',
@@ -127,6 +139,8 @@ class AluguelController extends Controller
             'clientes',
             'cardapios',
             'adicionais',
+            'itensSelecionados',
+            'opcaoSelecionada'
         ));
     }
 

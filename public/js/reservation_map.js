@@ -7,9 +7,11 @@ let isSelecting = false; // Indica se o usuário está no processo de selecionar
 // Função auxiliar para formatar data (YYYY-MM-DD -> DD/MM/YYYY)
 function formatDateBR(dateString) {
     if (!dateString) return '';
-    const [year, month, day] = dateString.split('-');
+    const cleanDate = dateString.split(' ')[0]; // Pega só a parte da data antes do espaço
+    const [year, month, day] = cleanDate.split('-');
     return `${day}/${month}/${year}`;
 }
+
 
 // Função para exibir/limpar feedback visual
 function updateSelectionFeedback(message = '') {
@@ -53,6 +55,19 @@ async function fetchAvailability(startDate, endDate) {
         return null;
     }
 }
+
+
+function addCellListeners() {
+    const cells = document.querySelectorAll('.date-cell.available');
+    cells.forEach(cell => {
+        cell.addEventListener('click', handleDateClick);
+        cell.addEventListener('mouseover', handleDateHover);
+        cell.addEventListener('mouseout', handleDateHoverOut);
+    });
+}
+
+
+
 
 // Função para renderizar o mapa de reservas
 function renderMap(data) {
@@ -101,18 +116,26 @@ function renderMap(data) {
     let dataAttributes = `data-date="${dateStr}" data-space-id="${space.id}"`;
 
     // Se a data for "booked", adicione o reserva-id
+     const reservaIdAtual = document.getElementById('reserva_id_atual')?.value;
     if (status === 'booked') {
-        const reservaId = space.bookings.find(b => {
-            const bookingStart = new Date(b.start + 'T00:00:00');
-            const bookingEnd = new Date(b.end + 'T00:00:00');
-            const dateObj = new Date(dateStr + 'T00:00:00');
-            return dateObj >= bookingStart && dateObj <= bookingEnd;
-        })?.id;
+    const reservaId = space.bookings.find(b => {
+        const bookingStart = new Date(b.start + 'T00:00:00');
+        const bookingEnd = new Date(b.end + 'T00:00:00');
+        const dateObj = new Date(dateStr + 'T00:00:00');
+        return dateObj >= bookingStart && dateObj <= bookingEnd;
+    })?.aluguel_id;
 
-        if (reservaId) {
+    console.log(reservaId)
+    if (reservaId) {
+        // Só aplica class "booked" se NÃO for da reserva atual
+        if (reservaId != reservaIdAtual) {
             dataAttributes += ` data-reserva-id="${reservaId}"`;
+        } else {
+            // Se for a própria reserva, marca como disponível (libera)
+            cellClass = 'date-cell available';
         }
     }
+}
 
     tableHTML += `<td class="${cellClass}" ${dataAttributes}>`;
     if (status === 'booked') {
@@ -127,18 +150,43 @@ function renderMap(data) {
     tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
     addCellListeners();
-
-    // Se for uma edição de reserva, pré-seleciona as datas
-    const dataInicioAtual = document.getElementById('data_inicio_atual')?.value;
+    
+   // Se for uma edição de reserva, pré-seleciona as datas
+   const dataInicioAtual = document.getElementById('data_inicio_atual')?.value;
     const dataFimAtual = document.getElementById('data_fim_atual')?.value;
     const espacoIdAtual = document.getElementById('espaco_id_atual')?.value;
-
+    const reservaIdAtual = document.getElementById('reserva_id_atual')?.value;
+    
+    console.log(`data inicio: ${dataInicioAtual}
+        data fim = ${dataFimAtual}
+        espaço atual = ${espacoIdAtual}
+        reserva atual = ${reservaIdAtual}`);
+        console.log('eu aqui')
+        
     if (dataInicioAtual && dataFimAtual && espacoIdAtual) {
+        // Liberar as datas da própria reserva (remover classe booked)
+        console.log(reservaIdAtual)
+        if (reservaIdAtual) {
+            document.querySelectorAll(`.date-cell.booked[data-reserva-id="${reservaIdAtual}"]`).forEach(cell => {
+                cell.classList.remove('booked');
+                cell.classList.add('available');
+            });
+            addCellListeners();
+        }
+
+        // Marcar as datas da reserva atual como selecionadas
+        document.querySelectorAll(`.date-cell[data-space-id="${espacoIdAtual}"]`).forEach(cell => {
+            const cellDate = cell.getAttribute('data-date');
+            if (cellDate >= dataInicioAtual && cellDate <= dataFimAtual) {
+                cell.classList.add('selected');
+            }
+        });
+
+        // Atualiza variáveis globais
         selectedStartDate = dataInicioAtual;
         selectedEndDate = dataFimAtual;
         selectedSpaceId = espacoIdAtual;
         isSelecting = false;
-
         updateCellStyles();
 
         // Atualiza o feedback visual
@@ -147,16 +195,6 @@ function renderMap(data) {
         updateSelectionFeedback(`Período selecionado: ${formatDateBR(dataInicioAtual)} a ${formatDateBR(dataFimAtual)} para ${spaceName}.`);
     }
 
-}
-
-// Função para adicionar listeners às células de data
-function addCellListeners() {
-    const cells = document.querySelectorAll('.date-cell.available');
-    cells.forEach(cell => {
-        cell.addEventListener('click', handleDateClick);
-        cell.addEventListener('mouseover', handleDateHover);
-        cell.addEventListener('mouseout', handleDateHoverOut);
-    });
 }
 
 // Função para lidar com o clique na célula de data
