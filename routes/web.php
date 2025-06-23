@@ -48,6 +48,7 @@ use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\VendedorController;
+use App\Livewire\Dayuse\ShowDayuse;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -181,3 +182,4 @@ Route::resource('parceiros', ParceiroController::class);
 Route::resource('categoriasParceiro', CategoriaParceiroController::class);
 
 Route::post('/calcular-valor', [AluguelController::class, 'calcularValor']);
+

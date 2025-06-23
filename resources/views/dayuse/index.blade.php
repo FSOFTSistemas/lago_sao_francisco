@@ -44,10 +44,21 @@
                     <td>{{ $dayuse->cliente->tipo == 'PJ' ? $dayuse->cliente->apelido_nome_fantasia : $dayuse->cliente->nome_razao_social }}</td>
                     <td>{{ $dayuse->vendedor->nome }}</td>
                     <td>
+                    
+                        <form action="{{ route('dayuse.show', $dayuse->id) }}" method="GET" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-info btn-sm" title="Visualizar">
+                                👁️
+                            </button>
+                        </form>
+
+                        
                         <form action="{{ route('dayuse.destroy', $dayuse->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este Day use?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-sm">🗑️</button>
+                            <button type="submit" class="btn btn-danger btn-sm" title="Excluir">
+                                🗑️
+                            </button>
                         </form>
                     </td>
                 </tr>

@@ -27,7 +27,7 @@ class DayUse extends Component
     public $selectedVendorId; // ID do vendedor selecionado
     public $modalAberto = false;
     public $nome_razao_social;
-    public $apelido_nome_fantasia;
+    public $telefone;
     public $data_nascimento;
     public $tipo;
 
@@ -69,7 +69,6 @@ class DayUse extends Component
 
         $this->calculateTotal(); // Calcula o total inicial com base nas quantidades carregadas/iniciais
     }
-
 
     public function incrementQuantity($itemId)
     {
@@ -165,12 +164,32 @@ class DayUse extends Component
 
     public function saveCliente()
     {
+        
         $this->tipo = 'PF';
         $this->validate([
             'nome_razao_social' => 'string|required',
             'tipo' => 'required|string',
             'data_nascimento' => 'date|required',
-            'apelido_nome_fantasia' =>'string|required'
+            'telefone' => [
+                'required',
+                'string',
+                'max:20',
+                function ($attribute, $value, $fail) {
+                    // Remove todos os caracteres não numéricos
+                    $cleanNumber = preg_replace('/[^0-9]/', '', $value);
+                    
+                    // Validação para telefone brasileiro
+                    if (strlen($cleanNumber) < 10 || strlen($cleanNumber) > 11) {
+                        $fail('O número de telefone deve conter 10 ou 11 dígitos (DDD + número).');
+                    }
+                    
+                    // Valida DDD válido (11 a 99)
+                    $ddd = substr($cleanNumber, 0, 2);
+                    if ($ddd < 11 || $ddd > 99) {
+                        $fail('O DDD do telefone é inválido.');
+                    }
+                },
+            ],
         ], [
             'nome_razao_social.required' => 'O campo nome é obrigatório.',
             'nome_razao_social.string' => 'O campo nome deve ser uma string.',
@@ -178,19 +197,19 @@ class DayUse extends Component
             'tipo.string' => 'O campo tipo deve ser uma string.',
             'data_nascimento.required' => 'O campo data de nascimento é obrigatório.',
             'data_nascimento.date' => 'O campo data de nascimento deve ser uma data válida.', 
-            'apelido_nome_fantasia.required' => 'O campo apelido é obrigatório.',
-            'apelido_nome_fantasia.string' => 'O campo apelido deve ser uma string.',
+            'telefone.required' => 'O campo telefone é obrigatório.',
+            'telefone.max' => 'O telefone não pode ter mais que 20 caracteres.',
         ]);
 
         Cliente::create([
             'nome_razao_social' => $this->nome_razao_social,
             'tipo' => $this->tipo,
             'data_nascimento' => $this->data_nascimento,
-            'apelido_nome_fantasia' => $this->apelido_nome_fantasia,
+            'telefone' => $this->telefone,
             'empresa_id' =>  Auth::user()->empresa_id
         ]);
         $this->nome_razao_social = '';
-        $this->apelido_nome_fantasia = '';
+        $this->telefone = '';
         $this->data_nascimento = '';
         $this->fecharModal();
     }
