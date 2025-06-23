@@ -101,34 +101,49 @@ class AluguelController extends Controller
 
     public function edit(Aluguel $aluguel)
     {
-        // Carregar relações necessárias para o formulário
         $aluguel->load([
             'cliente',
             'espaco',
-            'adicionais',
+            'formaPagamento',
             'cardapio.secoes.categorias.itens',
             'cardapio.opcoes.categorias.itens',
-            'formaPagamento',
             'buffetEscolhas.categoria',
             'buffetEscolhas.item',
-            'buffetEscolhas.opcaoRefeicao'
+            'buffetEscolhas.opcaoRefeicao',
+            'pagamentos.formaPagamento',
         ]);
-
+        // dd($aluguel);
+        // Dados de apoio para selects
         $clientes = Cliente::all();
         $espacos = Espaco::all();
-        $itens = Adicional::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-        $cardapios = Cardapio::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
+        $cardapios = Cardapio::all();
         $formasPagamento = FormaPagamento::all();
+        $adicionais = Adicional::all();
 
-        return view('aluguel.edit', compact(
+        // Itens das categorias que foram selecionados
+        $itensSelecionados = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'categoria_item')
+            ->pluck('item_id')
+            ->toArray();
+
+        // Opção de refeição escolhida (se tiver)
+        $opcaoSelecionada = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'opcao_refeicao')
+            ->value('opcao_refeicao_id');
+
+
+        return view('aluguel.create', compact(
             'aluguel',
-            'clientes',
             'espacos',
-            'itens',
+            'formasPagamento',
+            'clientes',
             'cardapios',
-            'formasPagamento'
+            'adicionais',
+            'itensSelecionados',
+            'opcaoSelecionada'
         ));
     }
+
 
     public function update(Request $request, Aluguel $aluguel)
     {
