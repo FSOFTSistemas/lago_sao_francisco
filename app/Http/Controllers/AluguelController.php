@@ -28,11 +28,13 @@ class AluguelController extends Controller
         $clientes = Cliente::all();
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
-        $itens = Adicional::all();
+        $adicionais = Adicional::all();
         $cardapios = Cardapio::all();
+        $adicionaisSelecionados = collect();
+
 
         return view('aluguel.create', compact(
-            'clientes', 'espacos', 'formasPagamento', 'itens', 'cardapios'
+            'clientes', 'espacos', 'formasPagamento', 'adicionais', 'cardapios', 'adicionaisSelecionados'
         ));
     }
 
@@ -73,7 +75,8 @@ class AluguelController extends Controller
                 $aluguel = Aluguel::create($validated);
             
                 // Relacionar itens adicionais
-                $aluguel->adicionais()->sync($request->input('itens', []));
+                $this->salvarAdicionais($aluguel, $request);
+
             
                 // Salvar escolhas do buffet se existirem
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
@@ -112,25 +115,27 @@ class AluguelController extends Controller
             'buffetEscolhas.opcaoRefeicao',
             'pagamentos.formaPagamento',
         ]);
-        // dd($aluguel);
-        // Dados de apoio para selects
+
+        // Dados de apoio para os selects
         $clientes = Cliente::all();
         $espacos = Espaco::all();
         $cardapios = Cardapio::all();
         $formasPagamento = FormaPagamento::all();
         $adicionais = Adicional::all();
 
-        // Itens das categorias que foram selecionados
+        // Itens das categorias que foram selecionados (Buffet)
         $itensSelecionados = BuffetEscolha::where('aluguel_id', $aluguel->id)
             ->where('tipo', 'categoria_item')
             ->pluck('item_id')
             ->toArray();
 
-        // Opção de refeição escolhida (se tiver)
+        // Opção de refeição escolhida (Buffet)
         $opcaoSelecionada = BuffetEscolha::where('aluguel_id', $aluguel->id)
             ->where('tipo', 'opcao_refeicao')
             ->value('opcao_refeicao_id');
 
+        // Adicionais já escolhidos para o aluguel (com quantidade, observação e valor total)
+        $adicionaisSelecionados = $aluguel->adicionaisAluguel()->with('adicional')->get();
 
         return view('aluguel.create', compact(
             'aluguel',
@@ -140,9 +145,11 @@ class AluguelController extends Controller
             'cardapios',
             'adicionais',
             'itensSelecionados',
-            'opcaoSelecionada'
+            'opcaoSelecionada',
+            'adicionaisSelecionados'
         ));
     }
+
 
 
     public function update(Request $request, Aluguel $aluguel)
@@ -342,6 +349,38 @@ class AluguelController extends Controller
         );
 
         return response()->json(['total' => $total]);
+    }
+
+
+    /**
+ * Salva os adicionais escolhidos no aluguel
+ */
+        private function salvarAdicionais(Aluguel $aluguel, Request $request)
+    {
+        // Limpa os anteriores
+        DB::table('adicionais_aluguel')->where('aluguel_id', $aluguel->id)->delete();
+
+        if ($request->has('adicionais')) {
+            foreach ($request->adicionais as $adicionalId => $dados) {
+                $quantidade = intval($dados['quantidade'] ?? 0);
+                $observacao = $dados['observacao'] ?? '';
+
+                if ($quantidade > 0) {
+                    $adicional = Adicional::find($adicionalId);
+                    $valorTotal = $quantidade * $adicional->valor;
+
+                    DB::table('adicionais_aluguel')->insert([
+                        'aluguel_id' => $aluguel->id,
+                        'adicional_id' => $adicionalId,
+                        'quantidade' => $quantidade,
+                        'valor_total' => $valorTotal,
+                        'observacao' => $observacao,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
     }
 
 

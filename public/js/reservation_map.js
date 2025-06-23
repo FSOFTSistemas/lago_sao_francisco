@@ -125,7 +125,6 @@ function renderMap(data) {
         return dateObj >= bookingStart && dateObj <= bookingEnd;
     })?.aluguel_id;
 
-    console.log(reservaId)
     if (reservaId) {
         // Só aplica class "booked" se NÃO for da reserva atual
         if (reservaId != reservaIdAtual) {
@@ -156,16 +155,9 @@ function renderMap(data) {
     const dataFimAtual = document.getElementById('data_fim_atual')?.value;
     const espacoIdAtual = document.getElementById('espaco_id_atual')?.value;
     const reservaIdAtual = document.getElementById('reserva_id_atual')?.value;
-    
-    console.log(`data inicio: ${dataInicioAtual}
-        data fim = ${dataFimAtual}
-        espaço atual = ${espacoIdAtual}
-        reserva atual = ${reservaIdAtual}`);
-        console.log('eu aqui')
         
     if (dataInicioAtual && dataFimAtual && espacoIdAtual) {
         // Liberar as datas da própria reserva (remover classe booked)
-        console.log(reservaIdAtual)
         if (reservaIdAtual) {
             document.querySelectorAll(`.date-cell.booked[data-reserva-id="${reservaIdAtual}"]`).forEach(cell => {
                 cell.classList.remove('booked');
