@@ -62,13 +62,6 @@ class Aluguel extends Model
         return $this->belongsTo(Cardapio::class);
     }
 
-    // === Relacionamentos Many-to-Many ===
-
-    public function adicionais()
-    {
-        return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
-    }
-
     // === Relacionamentos do Buffet ===
 
     /**
@@ -77,6 +70,13 @@ class Aluguel extends Model
     public function buffetEscolhas()
     {
         return $this->hasMany(BuffetEscolha::class);
+    }
+
+    // === Relacionamentos do Adicional ===
+
+    public function adicionaisAluguel()
+    {
+        return $this->hasMany(AdicionalAluguel::class);
     }
 
       // === Relacionamentos de Pagamento ===

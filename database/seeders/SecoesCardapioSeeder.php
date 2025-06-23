@@ -26,7 +26,7 @@ class SecoesCardapioSeeder extends Seeder
 
         // Agora as seções de cardápio para 5 cardápios
         $secoes = [
-            // Cardápio 1 (Cardápio Festa Infantil)
+            // Cardápio 1 (Cardápio Bubu Princes)
             [
                 'nome_secao_cardapio' => 'Entradas',
                 'opcao_conteudo_principal_refeicao' => false,

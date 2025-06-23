@@ -26,6 +26,10 @@
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-buffet"
                             role="tab">Buffet</a>
                     </li>
+                    <li class="nav-item" id="adicionalAba" >
+                        <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-adicional"
+                            role="tab">Mobília</a>
+                    </li>
                     <li class="nav-item" id="pagamentoTab">
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-pagamento"
                             role="tab">Pagamento</a>
@@ -226,8 +230,75 @@
                         <input type="hidden" id="buffet_opcao_escolhida" name="buffet_opcao_escolhida" value="">
                     </div>
 
+                    {{-- Aba 3: Adicionais --}}
+                    {{-- @php dd($adicionais) @endphp --}}
+                    <div class="tab-pane fade" id="tab-adicional">
+                        @php
+                            $adicionaisSelecionadosArray = collect($adicionaisSelecionados)->keyBy('adicional_id');
+                        @endphp
 
-                    {{-- Aba 3: Pagamento --}}
+                       <div class="card mt-4">
+                            <div class="card-header bg-success text-white">
+                                <strong>Adicionais</strong>
+                            </div>
+                            <div class="card-body">
+                                @foreach ($adicionais as $adicional)
+                                    @php
+                                        $selecionado = $adicionaisSelecionadosArray->get($adicional->id);
+                                        $quantidade = $selecionado->quantidade ?? 0;
+                                        $observacao = $selecionado->observacao ?? '';
+                                        $valorTotal = $selecionado->valor_total ?? 0;
+                                    @endphp
+                                    <div class="row mb-3 align-items-center border-bottom pb-2">
+                                        <div class="col-md-4">
+                                            <strong>{{ $adicional->descricao }}</strong><br>
+                                            <small>Valor unitário: R$ {{ number_format($adicional->valor, 2, ',', '.') }}</small>
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Quantidade:</label>
+                                            <input type="number" min="0" 
+                                                class="form-control adicional-quantidade"
+                                                data-valor="{{ $adicional->valor }}"
+                                                name="adicionais[{{ $adicional->id }}][quantidade]"
+                                                value="{{ $quantidade }}">
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <label>Observação:</label>
+                                            <input type="text" class="form-control" 
+                                                name="adicionais[{{ $adicional->id }}][observacao]"
+                                                value="{{ $observacao }}">
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label>Total:</label>
+                                            <input type="text" readonly class="form-control adicional-total"
+                                                value="{{ $quantidade > 0 ? 'R$ '.number_format($valorTotal, 2, ',', '.') : '' }}">
+                                        </div>
+                                    </div>
+                                @endforeach
+
+                                {{-- <div class="mt-3 text-end me-3">
+                                    <strong>Total dos Adicionais:</strong> 
+                                    <input type="text" id="totalAdicionais">R$ 0,00</input>
+                                </div> --}}
+
+
+                                <div class="form-group row">
+                                    <label class="col-md-3 label-control">Total dos Adicionais Estimado:</label>
+                                    <div class="col-md-3">
+                                        <input type="text" id="totalAdicionais" class="form-control" readonly>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    {{-- Aba 4: Pagamento --}}
                     <div class="tab-pane fade" id="tab-pagamento">
                         <!-- Resumo Financeiro -->
                         <div class="card card-info card-outline mb-4">
@@ -247,6 +318,13 @@
                                         <div class="form-group">
                                             <label>Valor do Buffet:</label>
                                             <input type="text" id="valor_buffet_display" class="form-control"
+                                                readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Valor da Mobília:</label>
+                                            <input type="text" id="valor_adicional_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
@@ -503,6 +581,7 @@
 
             const valorAluguelDisplay = document.getElementById('valor_aluguel_display');
             const valorBuffetDisplay = document.getElementById('valor_buffet_display');
+            const valorAdicionalDisplay = document.getElementById('valor_adicional_display');
             const subtotalDisplay = document.getElementById('subtotal_display');
             const subtotalHidden = document.getElementById('subtotal');
             const acrescimoInput = document.getElementById('acrescimo');
@@ -555,9 +634,11 @@
                     .replace(',', '.')) || 0;
                 const valorBuffet = parseFloat(document.getElementById('total_buffet').value.replace(/[^\d,]/g, '')
                     .replace(',', '.')) || 0;
+                const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(/[^\d,]/g), '')
 
                 valorAluguelDisplay.value = formatarMoeda(valorAluguel);
                 valorBuffetDisplay.value = formatarMoeda(valorBuffet);
+                valorAdicionalDisplay.value = formatarMoeda(valorAdicional);
 
                 const subtotal = valorAluguel + valorBuffet;
                 subtotalDisplay.value = formatarMoeda(subtotal);
@@ -894,7 +975,6 @@
         });
     </script>
 
-
     <script>
         //habilita a aba buffet pelo checkbox
         document.addEventListener("DOMContentLoaded", function() {
@@ -918,10 +998,6 @@
     <script>
        const teste12 = window.itensSelecionadosBuffet = {!! json_encode($itensSelecionados ?? []) !!};
        const teste13 = window.opcaoSelecionadaBuffet = {{ $opcaoSelecionada ?? 'null' }};
-       console.log('inicio')
-       console.log(teste12)
-       console.log(teste13)
-       console.log('fim')
     </script>
 
 
@@ -1265,6 +1341,7 @@
             }
         });
     </script>
+
     <script>
         $(document).ready(function() {
             $('#cliente_id').select2({
@@ -1311,6 +1388,56 @@
             });
         });
     </script>
+
+
+    <script> // função pra calcular o total da mobilia (liha)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.adicional-quantidade').forEach(input => {
+            input.addEventListener('input', function() {
+                const valorUnitario = parseFloat(this.dataset.valor);
+                const quantidade = parseInt(this.value) || 0;
+                const total = valorUnitario * quantidade;
+
+                const totalInput = this.closest('.row').querySelector('.adicional-total');
+                totalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
+            });
+        });
+    });
+    </script>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function () {
+    function calcularTotalAdicionais() {
+        let totalGeral = 0;
+
+        document.querySelectorAll('.adicional-quantidade').forEach(input => {
+            const quantidade = parseFloat(input.value.replace(',', '.')) || 0;
+            const valorUnitario = parseFloat(input.dataset.valor) || 0;
+            const totalItem = quantidade * valorUnitario;
+
+            const totalField = input.closest('.row').querySelector('.adicional-total');
+            totalField.value = totalItem > 0 ? totalItem.toFixed(2) : '';
+
+            totalGeral += totalItem;
+        });
+
+        const totalInput = document.getElementById('totalAdicionais');
+        console.log(totalGeral.toFixed(2))
+        if (totalInput) {
+            totalInput.value = totalGeral.toFixed(2);  
+        }
+    }
+
+    // Atualiza ao alterar qualquer quantidade
+    document.querySelectorAll('.adicional-quantidade').forEach(input => {
+        input.addEventListener('input', calcularTotalAdicionais);
+    });
+
+    // Cálculo inicial
+    calcularTotalAdicionais();
+});
+</script>
+
 
 
 
