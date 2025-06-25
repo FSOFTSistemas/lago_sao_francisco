@@ -307,21 +307,21 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Valor do Aluguel:</label>
                                             <input type="text" id="valor_aluguel_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Valor do Buffet:</label>
                                             <input type="text" id="valor_buffet_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label>Valor da Mobília:</label>
                                             <input type="text" id="valor_adicional_display" class="form-control"
@@ -634,13 +634,14 @@
                     .replace(',', '.')) || 0;
                 const valorBuffet = parseFloat(document.getElementById('total_buffet').value.replace(/[^\d,]/g, '')
                     .replace(',', '.')) || 0;
-                const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(/[^\d,]/g), '')
-
+                const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(/[^\d,]/g, '')
+                    .replace(',', '.')) || 0;
+            
                 valorAluguelDisplay.value = formatarMoeda(valorAluguel);
                 valorBuffetDisplay.value = formatarMoeda(valorBuffet);
                 valorAdicionalDisplay.value = formatarMoeda(valorAdicional);
 
-                const subtotal = valorAluguel + valorBuffet;
+                const subtotal = valorAluguel + valorBuffet + valorAdicional;
                 subtotalDisplay.value = formatarMoeda(subtotal);
                 subtotalHidden.value = subtotal.toFixed(2);
 
@@ -886,6 +887,41 @@
                 }
             }, 500); // verifica a cada meio segundo
 
+
+
+              function calcularTotalAdicionais() {
+        let totalGeral = 0;
+
+        document.querySelectorAll('.adicional-quantidade').forEach(input => {
+            const quantidade = parseFloat(input.value.replace(',', '.')) || 0;
+            const valorUnitario = parseFloat(input.dataset.valor) || 0;
+            const totalItem = quantidade * valorUnitario;
+
+            const totalField = input.closest('.row').querySelector('.adicional-total');
+            totalField.value = totalItem > 0 ? totalItem.toFixed(2) : '';
+
+            totalGeral += totalItem;
+        });
+
+        const totalInput = document.getElementById('totalAdicionais');
+
+        if (totalInput) {
+            totalInput.value = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;  
+        }
+        calcularSubtotal()
+    }
+
+    // Atualiza ao alterar qualquer quantidade
+    document.querySelectorAll('.adicional-quantidade').forEach(input => {
+        input.addEventListener('input', calcularTotalAdicionais);
+    });
+
+    // Cálculo inicial
+    calcularTotalAdicionais();
+            
+
+
+
             // Calcular subtotal inicial
             calcularSubtotal();
 
@@ -897,7 +933,6 @@
 
                 if (!clienteSelecionado) {
                     e.preventDefault();
-                    console.log('to dentro do clienteselecionado')
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             icon: 'warning',
@@ -1029,7 +1064,6 @@
                     fetch(`/cardapios/${cardapioId}/dados`)
                         .then(response => response.json())
                         .then(data => {
-                            console.log(data)
                             opcoesData = data.opcoes; // Armazena para uso no cálculo depois
 
                             // ---- CATEGORIAS DAS SEÇÕES ----
@@ -1288,7 +1322,6 @@
                 const inicio = dataInicio.value;
                 const fim = dataFim.value;
                 const espaco = espacoSelect.value;
-                console.log(inicio, fim, espaco);
 
                 if (!inicio || !fim || !espaco) return;
 
@@ -1390,57 +1423,28 @@
     </script>
 
 
-    <script> // função pra calcular o total da mobilia (liha)
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.adicional-quantidade').forEach(input => {
-            input.addEventListener('input', function() {
-                const valorUnitario = parseFloat(this.dataset.valor);
-                const quantidade = parseInt(this.value) || 0;
-                const total = valorUnitario * quantidade;
-
-                const totalInput = this.closest('.row').querySelector('.adicional-total');
-                totalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
-            });
-        });
-    });
-    </script>
-
-    <script>
+<script> //calcula o total do custo daquela mobília (linha)
 document.addEventListener('DOMContentLoaded', function () {
-    function calcularTotalAdicionais() {
-        let totalGeral = 0;
-
-        document.querySelectorAll('.adicional-quantidade').forEach(input => {
-            const quantidade = parseFloat(input.value.replace(',', '.')) || 0;
-            const valorUnitario = parseFloat(input.dataset.valor) || 0;
-            const totalItem = quantidade * valorUnitario;
-
-            const totalField = input.closest('.row').querySelector('.adicional-total');
-            totalField.value = totalItem > 0 ? totalItem.toFixed(2) : '';
-
-            totalGeral += totalItem;
+    function atualizarTotais() {
+        document.querySelectorAll('.row').forEach(row => {
+            const input = row.querySelector('.adicional-quantidade');
+            const totalInput = row.querySelector('.adicional-total');
+            if (input && totalInput && input.dataset.valor) {
+                const valorUnitario = parseFloat(input.dataset.valor);
+                const quantidade = parseInt(input.value) || 0;
+                const total = valorUnitario * quantidade;
+                totalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
+            }
         });
-
-        const totalInput = document.getElementById('totalAdicionais');
-        console.log(totalGeral.toFixed(2))
-        if (totalInput) {
-            totalInput.value = totalGeral.toFixed(2);  
-        }
     }
 
-    // Atualiza ao alterar qualquer quantidade
     document.querySelectorAll('.adicional-quantidade').forEach(input => {
-        input.addEventListener('input', calcularTotalAdicionais);
+        input.addEventListener('input', atualizarTotais);
     });
 
-    // Cálculo inicial
-    calcularTotalAdicionais();
+    atualizarTotais();
 });
 </script>
-
-
-
-
 @endsection
 
 @section('css')
