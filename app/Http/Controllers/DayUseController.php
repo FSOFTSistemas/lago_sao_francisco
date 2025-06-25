@@ -36,20 +36,10 @@ class DayUseController extends Controller
     /**
      * Display the specified resource.
      */
-public function show(DayUse $dayUse)
+public function show($id)
 {
-    // Carrega todos os relacionamentos necessários
-    $dayUse->load([
-        'cliente',
-        'vendedor',
-        'itens.item', // Assumindo que MovDayUse tem relacionamento 'item'
-        'formaPag.formaPagamento' // Assumindo que DayUsePag tem relacionamento 'forma'
-    ]);
-    
     return view('dayuse.show', [
-        'dayuse' => $dayUse,
-        'valorPago' => $dayUse->formaPag->sum('valor'),
-        'valorLiquido' => $dayUse->total + $dayUse->acrescimo - $dayUse->desconto
+        'id' => $id,    
     ]);
 }
 
