@@ -94,36 +94,41 @@
                 <div class="form-group row">
                     <label for="" class="col-md-3 label-control">Função:</label>
                     <div class="col-md-4">
-                        <label for="vendedor{{ $funcionario->id }}" class="form-label label-control col-md-2">Vendedor</label>
+                        <label for="vendedor{{ $funcionario->id ?? '' }}"
+                            class="form-label label-control col-md-2">Vendedor</label>
 
                         <label class="switch-slide mb-0">
                             <input type="hidden" name="vendedor" value="0">
-                            <input type="checkbox" id="vendedor{{ $funcionario->id }}" value="1" name="vendedor" @checked(old('vendedor', $funcionario->vendedor))>
+                            <input type="checkbox" id="vendedor{{ $funcionario->id ?? '' }}" value="1" name="vendedor"
+                                @checked(old('vendedor', isset($funcionario) ? $funcionario->vendedor : false))>
                             <span class="slider-slide"></span>
                         </label>
 
-                        <label for="caixa{{ $funcionario->id }}" class="form-label label-control col-md-2">Caixa</label>
+                        <label for="caixa{{ $funcionario->id ?? '' }}"
+                            class="form-label label-control col-md-2">Caixa</label>
 
                         <label class="switch-slide mb-0">
                             <input type="hidden" name="caixa" value="0">
-                            <input type="checkbox" id="caixa{{ $funcionario->id }}" value="1" name="caixa" @checked(old('caixa', $funcionario->caixa))>
+                            <input type="checkbox" id="caixa{{ $funcionario->id ?? '' }}" value="1" name="caixa"
+                                @checked(old('caixa', isset($funcionario) ? $funcionario->caixa : false))>
                             <span class="slider-slide"></span>
                         </label>
                     </div>
-
-                        
                 </div>
 
 
-                <div class="form-group row" id="senha" >
+
+                <div class="form-group row" id="senha">
                     <label for="senha_supervisor" class="col-md-3 label-control">Senha de Supervisor</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" name="senha_supervisor" id="senha_supervisor" placeholder="{{isset($funcionario) &&$funcionario->senha_supervisor ? 'Deixe em branco para manter a senha' : 'Criar Senha'}}">
+                        <input type="text" class="form-control" name="senha_supervisor" id="senha_supervisor"
+                            placeholder="{{ isset($funcionario) && $funcionario->senha_supervisor ? 'Deixe em branco para manter a senha' : 'Criar Senha' }}">
                         <span id="erro-senha" class="text-danger d-none">As senhas não coincidem.</span>
                     </div>
                     <label for="senha_supervisor_confirm" class="col-md-1 label-control">Confirme a Senha</label>
                     <div class="col-md-3">
-                        <input type="text" class="form-control" name="senha_supervisor_confirm" id="senha_supervisor_confirm" placeholder="Confirme sua senha">
+                        <input type="text" class="form-control" name="senha_supervisor_confirm"
+                            id="senha_supervisor_confirm" placeholder="Confirme sua senha">
                         <span id="erro-senha" class="text-danger d-none">As senhas não coincidem.</span>
                     </div>
                 </div>
@@ -195,7 +200,6 @@
                 this.value = this.checked ? 'ativo' : 'inativo';
             });
         });
-
     </script>
     <script>
         $(document).ready(function() {
@@ -220,9 +224,9 @@
 
         });
 
-        function mostrarCampo(){
+        function mostrarCampo() {
             let setor = $('#setor').val()
-            if(setor == 'Gerência'){
+            if (setor == 'Gerência') {
                 $('#senha').show();
             } else {
                 $('#senha').hide();
@@ -232,9 +236,8 @@
         mostrarCampo()
 
         $('#setor').change(function() {
-        mostrarCampo();
-    });
-
+            mostrarCampo();
+        });
     </script>
 
 @endsection
@@ -242,46 +245,49 @@
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-.switch-slide {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 26px;
-}
+        .switch-slide {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
 
-.switch-slide input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+        .switch-slide input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
-.slider-slide {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 34px;
-}
+        .slider-slide {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
 
-.slider-slide:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
+        .slider-slide:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
 
-.switch-slide input:checked + .slider-slide {
-  background-color: var(--green-1);
-}
+        .switch-slide input:checked+.slider-slide {
+            background-color: var(--green-1);
+        }
 
-.switch-slide input:checked + .slider-slide:before {
-  transform: translateX(24px);
-}
-</style>
+        .switch-slide input:checked+.slider-slide:before {
+            transform: translateX(24px);
+        }
+    </style>
 @endsection
