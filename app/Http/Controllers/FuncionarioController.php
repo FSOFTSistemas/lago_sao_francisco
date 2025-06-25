@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 
 class FuncionarioController extends Controller
 {
+    public $cargos = ['Auxiliar de Manutenção', 'Eletricista', 'Jardineiro', 'Serviços Gerais', 'Vigia', 'Assistente Administrativo', 'Porteiro', 'Tratadpr de Animais', 'Cozinheiro Geral', 'Assistente de Vendas', 'Camareira de Hotel', 'Recepcionista em Geral', 'Garçom', 'Lavadeira em Geral', 'Chefe de Portaria', 'Coordenador Administrativo', 'Gerente Administrativo', 'Analista Financeiro'];
+
+    public $setores = ['Administrativo', 'Produção', 'Manutenção', 'Gerência'];
     /**
      * Display a listing of the resource.
      */
@@ -17,8 +20,8 @@ class FuncionarioController extends Controller
     $empresas = Empresa::all();
     $enderecos = Endereco::all();
     // In your controller
-    $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
-    $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+    $setores = $this->setores;
+    $cargos = $this->cargos;
 
 
 
@@ -38,8 +41,8 @@ class FuncionarioController extends Controller
     {
         $empresas = Empresa::all();
         $enderecos = Endereco::all();
-        $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
-        $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+        $setores = $this->setores;
+        $cargos = $this->cargos;
         return view('funcionario.form', compact('empresas', 'enderecos','setores', 'cargos'));
     }
 
@@ -58,7 +61,10 @@ class FuncionarioController extends Controller
             'status' => 'required|in:ativo,inativo',
             'setor' => 'required|string|max:100',
             'cargo' => 'required|string|max:100',
-            'empresa_id' => 'required|exists:empresas,id'
+            'empresa_id' => 'required|exists:empresas,id',
+            'vendedor' => 'boolean',
+            'caixa' => 'boolean',
+            'senha_supervisor' =>  'nullable|string|min:6'
         ], [
             
             'nome.required' => 'O campo nome é obrigatório.',
@@ -86,12 +92,18 @@ class FuncionarioController extends Controller
             'cargo.max' => 'O cargo não pode ter mais que 100 caracteres.',
             
             'empresa_id.required' => 'A empresa é obrigatória.',
-            'empresa_id.exists' => 'A empresa selecionada é inválida.'
+            'empresa_id.exists' => 'A empresa selecionada é inválida.',
+
+            'senha_supervisor.string' => 'A senha deve ser um texto.',
+            'senha_supervisor.min' => 'A senha deve ter no mínimo 6 caracteres.',
         ]);
 
         // Formatar CPF antes de salvar (remover máscara)
         if($validatedData['cpf']){
             $validatedData['cpf'] = preg_replace('/[^0-9]/', '', $validatedData['cpf']);
+        }
+        if($validatedData['senha_supervisor']){
+            $validatedData['senha_supervisor'] = bcrypt($validatedData['senha_supervisor']);
         }
         Funcionario::create($validatedData);
         
@@ -117,9 +129,26 @@ class FuncionarioController extends Controller
                 'status' => 'required|in:ativo,inativo',
                 'setor' => 'required|string',
                 'cargo' => 'required|string',
-                'empresa_id' => 'required|exists:empresas,id'
+                'empresa_id' => 'required|exists:empresas,id',
+                'vendedor' => 'boolean',
+                'caixa' => 'boolean',
+                'senha_supervisor' => 'nullable|string|min:6',
             ]);
-            $funcionario->update($request->all());
+            $dados = $request->all();
+             if ($request->input('setor') === 'Gerência') {
+                if (filled($request->input('senha_supervisor'))) {
+                    // Mantém 'senha_supervisor' nos dados
+                    $dados['senha_supervisor'] = $request->input('senha_supervisor');
+                } else {
+                    // Remove para não atualizar com null
+                    unset($dados['senha_supervisor']);
+                }
+            } else {
+                // Em qualquer outro setor, sempre ignora
+                unset($dados['senha_supervisor']);
+            }
+
+            $funcionario->update($dados);
             return redirect()->route('funcionario.index')->with('success', 'Funcionário atualizado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
@@ -132,8 +161,8 @@ class FuncionarioController extends Controller
         $funcionario = Funcionario::findOrFail($funcionario->id);
         $empresas = Empresa::all();
         $enderecos = Endereco::all();
-        $setores = ['Administrativo', 'Financeiro', 'RH', 'TI', 'Produção', 'Vendas', 'Marketing'];
-        $cargos = ['Analista', 'Gerente', 'Diretor', 'Assistente', 'Coordenador', 'Supervisor'];
+        $setores = $this->setores;
+        $cargos = $this->cargos;
         return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos', 'setores', 'cargos'));
     }
 
