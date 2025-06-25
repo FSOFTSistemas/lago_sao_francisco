@@ -58,6 +58,7 @@ class AluguelController extends Controller
                 'status' => 'nullable|string',
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
+                'tipo' => 'string|required',
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
@@ -170,6 +171,7 @@ class AluguelController extends Controller
                 'vencimento' => 'nullable|date',
                 'contrato' => 'nullable|string',
                 'status' => 'nullable|string',
+                'tipo' => 'string|required',
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
                 // Campos do buffet vindos do JavaScript
@@ -188,7 +190,7 @@ class AluguelController extends Controller
                 $aluguel->update($validated);
 
                 // Atualizar itens adicionais
-                $aluguel->adicionais()->sync($request->input('itens', []));
+                $this->salvarAdicionais($aluguel, $request);
 
                 // Remover escolhas antigas do buffet
                 BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
@@ -323,16 +325,29 @@ class AluguelController extends Controller
         }
     }
 
-        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim)
+        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim, $capela, $tipo_evento)
     {
         $inicio = \Carbon\Carbon::parse($data_inicio);
         $fim = \Carbon\Carbon::parse($data_fim);
         $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
         $total = 0;
 
-        foreach ($periodo as $data) {
-            $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+        if($capela){
+            if($tipo_evento == 'casamento'){
+                foreach($periodo as $data) {
+                    $total += $valor_fim;
+                }
+            } else  if($tipo_evento == 'batizado'){
+                foreach($periodo as $data) {
+                    $total += $valor_semana;
+                }
+            }
+        } else {
+            foreach ($periodo as $data) {
+                $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+            }
         }
+
 
         return $total;
     }
@@ -345,7 +360,9 @@ class AluguelController extends Controller
             $request->data_inicio,
             $request->data_fim,
             $espaco->valor_semana,
-            $espaco->valor_fim
+            $espaco->valor_fim,
+            $espaco->capela,
+            $request->tipo_evento
         );
 
         return response()->json(['total' => $total]);

@@ -91,6 +91,20 @@
                             </div>
                         </div>
 
+                        <div class="form-group row">
+                            <label for="tipo_evento" class="form-label col-md-3 label-control">* Tipo de Evento:</label>
+                            <div class="col-md-3">
+                                <select name="tipo" id="tipo_evento" class="form-control" required>
+                                    <option value="" disabled {{ old('tipo', $aluguel->tipo ?? '') == '' ? 'selected' : '' }}>Selecione o tipo</option>
+                                    <option value="casamento" {{ old('tipo', $aluguel->tipo ?? '') == 'casamento' ? 'selected' : '' }}>Casamento</option>
+                                    <option value="aniversario" {{ old('tipo', $aluguel->tipo ?? '') == 'aniversario' ? 'selected' : '' }}>Aniversário</option>
+                                    <option value="batizado" {{ old('tipo', $aluguel->tipo ?? '') == 'batizado' ? 'selected' : '' }}>Batizado</option>
+                                    <option value="confraternizacao" {{ old('tipo', $aluguel->tipo ?? '') == 'confraternizacao' ? 'selected' : '' }}>Confraternização</option>
+                                </select>
+                            </div>
+                        </div>
+
+
 
 
 
@@ -98,6 +112,7 @@
                         <div class="alert alert-secondary">
                             <strong>DICA:</strong> Para selecionar a data da reserva/aluguel, basta clicar na data referente
                             ao espaço desejado. <br>
+                            <strong>ATENÇÃO:</strong> <u>Ao selecionar a capela, escolher o tipo <strong>Casamento</strong> ou <strong>Batizado</strong>! <br></u>
                             <em>Para selecionar apenas 1 dia, basta clicar na data escolhida 2 vezes.</em>
                         </div>
                         <hr>
@@ -278,11 +293,6 @@
                                         </div>
                                     </div>
                                 @endforeach
-
-                                {{-- <div class="mt-3 text-end me-3">
-                                    <strong>Total dos Adicionais:</strong> 
-                                    <input type="text" id="totalAdicionais">R$ 0,00</input>
-                                </div> --}}
 
 
                                 <div class="form-group row">
@@ -566,8 +576,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="{{ asset('js/reservation_map.js') }}"></script>
-
-    </script>
 
     <script>
         // Sistema de Pagamento
@@ -1317,11 +1325,14 @@
             const dataInicio = document.getElementById('data_inicio');
             const dataFim = document.getElementById('data_fim');
             const valorTotal = document.getElementById('valor_total');
+            const tipoEvento = document.getElementById('tipo_evento')
 
             function calcularValor() {
+                console.log('mudouuuuuu')
                 const inicio = dataInicio.value;
                 const fim = dataFim.value;
                 const espaco = espacoSelect.value;
+                const evento = tipoEvento.value;
 
                 if (!inicio || !fim || !espaco) return;
 
@@ -1335,13 +1346,15 @@
                         body: JSON.stringify({
                             data_inicio: inicio,
                             data_fim: fim,
-                            espaco_id: espaco
+                            espaco_id: espaco,
+                            tipo_evento: evento
                         })
                     })
 
 
                     .then(response => response.json())
                     .then(data => {
+                        console.log(data.total)
                         valorTotal.value = `R$ ${parseFloat(data.total).toFixed(2).replace('.', ',')}`;
                     });
             }
@@ -1349,6 +1362,9 @@
             espacoSelect.addEventListener('change', calcularValor);
             dataInicio.addEventListener('change', calcularValor);
             dataFim.addEventListener('change', calcularValor);
+            $('#tipo_evento').on('change', function () {
+                calcularValor();
+            });
         });
     </script>
 
@@ -1419,6 +1435,10 @@
                     }
                 }
             });
+            $('#tipo_evento').select2({
+                    placeholder: 'Selecione um tipo',
+                    width: '100%'
+                });
         });
     </script>
 

@@ -24,7 +24,7 @@ function updateSelectionFeedback(message = '') {
 // Função para buscar dados de disponibilidade do backend
 async function fetchAvailability(startDate, endDate) {
     // Substitua pela URL correta do seu endpoint Laravel (sem /api/ se estiver em web.php)
-    const apiUrl = `/espacos/disponibilidade?start_date=${startDate}&end_date=${endDate}`; // Ajustado para remover /api/
+    const apiUrl = `/espacos/disponibilidade?start_date=${startDate}&end_date=${endDate}`; 
     try {
         const response = await fetch(apiUrl, {
             method: 'GET',

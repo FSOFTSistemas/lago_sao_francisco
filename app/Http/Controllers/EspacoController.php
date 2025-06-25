@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Espaco;
 use App\Http\Controllers\Controller;
-use App\Models\Empresa;
 use Illuminate\Http\Request;
 
 class EspacoController extends Controller
@@ -12,8 +11,7 @@ class EspacoController extends Controller
     public function index()
     {
         $espacos = Espaco::all();
-        $empresas = Empresa::all();
-        return view('espacos.index', compact('espacos', 'empresas'));
+        return view('espacos.index', compact('espacos'));
     }
 
     /**
@@ -24,10 +22,11 @@ class EspacoController extends Controller
         try {
             $request->validate([
                 'nome' => 'required',
-                'status' => 'nullable|in:disponivel,alugado',
-                'valor' => 'required',
-                'empresa_id' => 'required|exists:empresas,id',
+                'valor_semana' => 'required',
+                'valor_fim' => 'required',
+                'capela' => 'boolean'
             ]);
+            $request['empresa_id'] = 1;
             Espaco::create($request->all());
             return redirect()->route('espaco.index')->with('success', 'Espaço criado com sucesso');
         } catch (\Exception $e) {
@@ -45,9 +44,9 @@ class EspacoController extends Controller
             $espaco = Espaco::findOrFail($espaco->id);
             $request->validate([
                 'nome' => 'required',
-                'status' => 'nullable|in:disponivel,alugado',
-                'valor' => 'required',
-                'empresa_id' => 'required|exists:empresas,id',
+                'valor_semana' => 'required',
+                'valor_fim' => 'required',
+                'capela' => 'boolean'
             ]);
             $espaco->update($request->all());
             return redirect()->route('espaco.index')->with('success', 'Espaço atualizado com sucesso');

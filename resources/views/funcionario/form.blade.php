@@ -83,6 +83,18 @@
                     </div>
                 </div>
 
+                <div class="form-group row">
+                    <label for="funcao" class="col-md-3 label-control">* Função</label>
+                    <div class="col-md-3">
+                        <select class="form-control" name="funcao" id="funcao" required>
+                            <option value="" disabled>Selecione o Tipo...</option>
+                            <option value="vendedor" {{ old('funcao', $funcionario->funcao ?? '') == 'vendedor' ? 'selected' : '' }}>Vendedor</option>
+                            <option value="caixa" {{ old('funcao', $funcionario->funcao ?? '') == 'Caixa' ? 'selected' : '' }}>Caixa</option>
+                        </select>
+                    </div>
+
+                </div>
+
                 <!-- Endereço -->
                 <div class="form-group row">
                     <label class="col-md-3 label-control" for="endereco_id">Endereço:</label>

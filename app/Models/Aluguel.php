@@ -27,7 +27,8 @@ class Aluguel extends Model
         'empresa_id',
         'forma_pagamento_id',
         'numero_pessoas_buffet',
-        'cardapio_id'
+        'cardapio_id',
+        'tipo'
     ];
 
     protected $casts = [
