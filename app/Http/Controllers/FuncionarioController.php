@@ -180,4 +180,14 @@ class FuncionarioController extends Controller
             return redirect()->back()->with('error', 'Erro ao deletar funcionário');
         }
     }
+
+    public function search(Request $request)
+    {
+        $term = $request->get('q');
+
+        return Funcionario::where('vendedor', true)
+            ->where('nome', 'like', "%{$term}%")
+            ->limit(20)
+            ->get(['id', 'nome']);
+    }
 }

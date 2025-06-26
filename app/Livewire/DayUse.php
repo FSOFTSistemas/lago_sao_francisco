@@ -4,7 +4,8 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\DayUse as DayUseModel;
-use App\Models\Cliente; 
+use App\Models\Cliente;
+use App\Models\Funcionario;
 use App\Models\Vendedor; 
 use App\Models\ItensDayUse as Item; 
 use App\Models\MovDayUse;
@@ -39,7 +40,9 @@ class DayUse extends Component
     public function mount($dayUseId = null)
     {
         $this->clientes = Cliente::all();
-        $this->vendedores = Vendedor::all();
+        $this->vendedores = Funcionario::where('vendedor', true)->get();
+
+
         $this->items = Item::all();
 
         // Inicializa as quantidades de todos os itens para 0
@@ -105,7 +108,7 @@ class DayUse extends Component
         $this->validate([
             'data' => 'required|date',
             'selectedClientId' => 'required|exists:clientes,id',
-            'selectedVendorId' => 'required|exists:vendedors,id',
+            'selectedVendorId' => 'required|exists:funcionarios,id',
             'quantidade' => 'required|array',
             'total' => 'required|numeric|min:0',
         ], [

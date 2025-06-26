@@ -175,7 +175,7 @@ Route::resource('itemDayuse', ItensDayUseController::class);
 
 Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clientes.search');
 
-Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('vendedors.search');
+Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
 
 Route::resource('parceiros', ParceiroController::class);
 
