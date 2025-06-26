@@ -98,6 +98,8 @@ class PermisssoesUsuariosSeeder extends Seeder
             'recebimento-cheque',
             'sangria',
             'suprimento',
+            'abertura de caixa',
+            'fechamento de caixa'
         ];
 
         foreach ($movimentos as $descricao) {

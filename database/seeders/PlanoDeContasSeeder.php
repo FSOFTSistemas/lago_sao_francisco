@@ -48,6 +48,12 @@ class PlanoDeContasSeeder extends Seeder
                 'tipo' => 'receita',
                 'plano_de_conta_pai' => null,
                 'empresa_id' => 1
+            ],
+            [
+                'descricao' => 'Abertura/Fechamento de caixa',
+                'tipo' => 'receita',
+                'plano_de_conta_pai' => null,
+                'empresa_id' => 1
             ]
         ];
 

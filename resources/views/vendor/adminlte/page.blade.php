@@ -207,6 +207,20 @@
 </script>
 @endif
 
+@if (session('sweet_error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Atenção!',
+                text: '{{ session('sweet_error') }}',
+                confirmButtonColor: '#d33'
+            });
+        });
+    </script>
+@endif
+
+
     @stack('js')
     @yield('js')
 @stop
