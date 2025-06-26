@@ -3,25 +3,35 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Models\DayUse; 
+use App\Models\DayUse;
 use App\Models\DayUsePag;
 use App\Models\FormaPagamento;
+use App\Services\CaixaService;
+use App\Models\Caixa;
+use Illuminate\Support\Facades\Auth;
 
 class DayUsePagamento extends Component
 {
     public $dayUseId;
-    public $itemSubtotal; 
+    public $itemSubtotal;
 
     public $acrescimo = 0;
     public $desconto = 0;
-    public $finalPagamentoTotal = 0; 
+    public $finalPagamentoTotal = 0;
 
-    public $formaPagamento; 
-    public $metodoSelecionadoID; 
-    public $pagamentoValor; 
+    public $formaPagamento;
+    public $metodoSelecionadoID;
+    public $pagamentoValor;
     public $pagamentosAtuais = []; // Array para armazenar os pagamentos adicionados na tela
     public $restante = 0; // Valor restante a ser pago
     public $inputKey;
+
+       protected CaixaService $caixaService;
+
+    public function __construct()
+    {
+        $this->caixaService = app(CaixaService::class);
+    }
 
     protected $rules = [
         'acrescimo' => 'numeric|min:0',
@@ -39,12 +49,13 @@ class DayUsePagamento extends Component
 
     public function mount($dayUseId, $itemSubtotal)
     {
+        $this->caixaService = app(CaixaService::class); // ou resolve(CaixaService::class)
+
         $this->dayUseId = $dayUseId;
-        $this->itemSubtotal = $itemSubtotal; // Subtotal dos itens
+        $this->itemSubtotal = $itemSubtotal;
 
         $this->formaPagamento = FormaPagamento::all();
 
-        // Carrega dados de pagamento existentes se for um DayUse já salvo
         if ($this->dayUseId) {
             $dayUse = DayUse::find($this->dayUseId);
             if ($dayUse) {
@@ -54,14 +65,14 @@ class DayUsePagamento extends Component
                 foreach ($dayUse->formaPag as $dayUsePagEntry) {
                     $this->pagamentosAtuais[] = [
                         'id' => $dayUsePagEntry->pagamento_id,
-                        'descricao' => $dayUsePagEntry->pagamento->descricao, // Assume que Pagamento tem 'descricao'
+                        'descricao' => $dayUsePagEntry->pagamento->descricao,
                         'valor' => $dayUsePagEntry->valor,
                     ];
                 }
             }
         }
-        
-        $this->calculateFinalPaymentTotal(); // Calcula o total final do pagamento
+
+        $this->calculateFinalPaymentTotal();
     }
 
     public function updatedAcrescimo()
@@ -87,22 +98,22 @@ class DayUsePagamento extends Component
 
     public function addPayment()
     {
-        if(floatval($this->pagamentoValor) > floatval($this->restante)){
-             $this->addError('pagamentoValor', 'O valor não pode ser maior que o restante.');
+        if (floatval($this->pagamentoValor) > floatval($this->restante)) {
+            $this->addError('pagamentoValor', 'O valor não pode ser maior que o restante.');
         } else {
             $this->validate([
                 'metodoSelecionadoID' => 'required|exists:forma_pagamentos,id',
                 'pagamentoValor' => 'required|numeric|min:0.01',
             ]);
-    
+
             $method = $this->formaPagamento->find($this->metodoSelecionadoID);
-    
+
             $this->pagamentosAtuais[] = [
                 'pagamento_id' => $this->metodoSelecionadoID,
                 'descricao' => $method->descricao,
                 'valor' => (float) $this->pagamentoValor,
             ];
-    
+
             $this->metodoSelecionadoID = null;
             $this->pagamentoValor = $this->restante;
             $this->inputKey = now()->timestamp;
@@ -121,8 +132,8 @@ class DayUsePagamento extends Component
     {
         $paidAmount = array_sum(array_column($this->pagamentosAtuais, 'valor'));
         $this->restante = $this->finalPagamentoTotal - $paidAmount;
-        if(floatval($this->restante) > 0){
-        $this->pagamentoValor = $this->restante;
+        if (floatval($this->restante) > 0) {
+            $this->pagamentoValor = $this->restante;
         } else {
             $this->pagamentoValor = null;
         }
@@ -165,7 +176,42 @@ class DayUsePagamento extends Component
             ]);
         }
 
-        return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!'); 
+
+        $empresaId = Auth::user()->empresa_id;
+
+        $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+            ->where('status', 'aberto')
+            ->where('empresa_id', $empresaId)
+            ->first();
+
+        if (!$caixa) {
+            session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+            return;
+        }
+
+        // Criar movimentações no Fluxo de Caixa
+        foreach ($this->pagamentosAtuais as $payment) {
+            $formaPagamento = FormaPagamento::find($payment['pagamento_id']);
+
+            // Verifica tipo com base no nome da forma de pagamento
+            $tipoMov = 'venda-' . strtolower(str_replace(' ', '-', $formaPagamento->descricao));
+            $movimentoId = \App\Models\Movimento::where('descricao', $tipoMov)->value('id');
+            if (!$movimentoId) {
+                continue; // Pula se não tiver mapeado corretamente
+            }
+
+            $this->caixaService->inserirMovimentacao($caixa, [
+                'descricao' => 'DayUse #' . $dayUse->id,
+                'valor' => $payment['valor'],
+                'tipo' => 'entrada',
+                'movimento_id' => $movimentoId,
+                'valor_total' => $payment['valor'],
+                'plano_de_conta_id' => 1,
+            ]);
+        }
+
+
+        return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }
 
     public function render()
