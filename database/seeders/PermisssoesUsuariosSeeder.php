@@ -37,7 +37,14 @@ class PermisssoesUsuariosSeeder extends Seeder
             'gerenciar fornecedor',
             'gerenciar plano de conta',
             'gerenciar produto',
-            'gerenciar cardapio'
+            'gerenciar cardapio',
+            'gerenciar preferencias',
+            'gerenciar dayuse',
+            'vender dayuse',
+            'cadastrar aluguel',
+            'gerenciar aluguel',
+            'hotel',
+            'gerenciar NFe'
         ];
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);

@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->date('data');
-            $table->enum('tipo', ['entrada', 'saida']);
+            $table->enum('tipo', ['entrada', 'saida', 'abertura', 'fechamento']);
             $table->unsignedBigInteger('movimento_id');
             $table->unsignedBigInteger('caixa_id');
             $table->unsignedBigInteger('usuario_id');

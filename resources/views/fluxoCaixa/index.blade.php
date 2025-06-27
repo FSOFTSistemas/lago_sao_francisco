@@ -35,13 +35,14 @@
             </div>
         </div>
         <hr>
-        <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-outline-secondary mb-3" type="button" data-toggle="collapse"
+        <div class="d-flex justify-content-end">
+            <button id="btnToggleTotais" class="btn btn-outline-secondary mb-3" type="button" data-toggle="collapse"
                 data-target="#totaisMovimentosCollapse" aria-expanded="false" aria-controls="totaisMovimentosCollapse">
                 <i class="fas fa-filter"></i> Mostrar Totais por Movimento
             </button>
         </div>
         <div class="collapse" id="totaisMovimentosCollapse">
+            <br>
             <div class="card card-body">
                 <div class="row mb-4">
                     @foreach ($totaisPorMovimento as $item)
@@ -86,7 +87,7 @@
 
                             $dados = $mapa[$descricao] ?? [
                                 'cor' => 'secondary',
-                                'icone' => 'fas fa-question',
+                                'icone' => 'fas fa-cash-register',
                                 'nome' => ucfirst(str_replace('-', ' ', $descricao)),
                             ];
                         @endphp
@@ -215,8 +216,23 @@
             });
         </script>
     @endif
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#btnToggleTotais').click(function() {
+                let $btn = $(this);
+                let $collapse = $('#totaisMovimentosCollapse');
+                if ($collapse.hasClass('show')) {
+                    $btn.html('<i class="fas fa-filter"></i> Mostrar Totais por Movimento');
+                } else {
+                    $btn.html('<i class="fas fa-filter"></i> Esconder Totais por Movimento');
+                }
+            });
+        });
+    </script>
 @stop
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
 @stop

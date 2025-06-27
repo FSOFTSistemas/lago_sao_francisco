@@ -110,6 +110,12 @@ class DatabaseSeeder extends Seeder
         $itensDayuse = new ItensDayuseSeeder();
         $itensDayuse->run();
 
+        $banco = new BancoSeeder();
+        $banco->run();
+
+        $caixa = new CaixaSeeder();
+        $caixa->run();
+
     }
 
 }

@@ -13,6 +13,7 @@ class PlanoDeContasSeeder extends Seeder
     public $plano3;
     public $plano4;
     public $plano5;
+    public $plano6;
     /**
      * Run the database seeds.
      */
@@ -60,7 +61,8 @@ class PlanoDeContasSeeder extends Seeder
         $this->plano1 = PlanoDeConta::create($planos[0]);
         $this->plano2 = PlanoDeConta::create($planos[1]);
         $this->plano3 = PlanoDeConta::create($planos[2]);
-        $this->plano3 = PlanoDeConta::create($planos[2]);
-        $this->plano3 = PlanoDeConta::create($planos[2]);
+        $this->plano4 = PlanoDeConta::create($planos[3]);
+        $this->plano5 = PlanoDeConta::create($planos[4]);
+        $this->plano6 = PlanoDeConta::create($planos[5]);
     }
 }
