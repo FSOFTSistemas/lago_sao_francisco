@@ -61,7 +61,27 @@ class FluxoCaixaController extends Controller
     $caixa = Caixa::all();
     $planoDeContas = PlanoDeConta::all();
 
-    return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa'));
+    // Totais por forma de pagamento
+$totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
+    ->with('movimento')
+    ->when(!Auth::user()->hasRole('Master'), function ($q) {
+        $q->where('empresa_id', Auth::user()->empresa_id);
+    })
+    ->when($request->filled('tipo'), function ($q) use ($request) {
+        $q->where('tipo', $request->tipo);
+    })
+    ->when($request->filled('data_inicio') && $request->filled('data_fim'), function ($q) use ($request) {
+        $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+    }, function ($q) {
+        $q->whereDate('data', \Carbon\Carbon::today());
+    })
+    ->groupBy('movimento_id')
+    ->get();
+
+// Total geral
+$totalGeral = $totaisPorMovimento->sum('total');
+
+    return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa', 'totalGeral', 'totaisPorMovimento'));
 }
 
 
