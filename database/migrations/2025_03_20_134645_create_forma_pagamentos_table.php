@@ -11,8 +11,6 @@ class CreateFormaPagamentosTable extends Migration
         Schema::create('forma_pagamentos', function (Blueprint $table) {
             $table->id();
             $table->string('descricao');
-            $table->unsignedBigInteger('empresa_id');
-            $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->timestamps();
         });
     }

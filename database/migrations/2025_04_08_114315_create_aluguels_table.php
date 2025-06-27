@@ -24,6 +24,7 @@ return new class extends Migration
             $table->date('vencimento')->nullable();
             $table->string('contrato')->nullable();
             $table->enum('status', ['pendente', 'pago', 'cancelado'])->default('pendente');
+            $table->string('tipo')->nullable();
 
             $table->unsignedBigInteger('espaco_id');
             $table->unsignedBigInteger('cliente_id');

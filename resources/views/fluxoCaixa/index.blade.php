@@ -8,15 +8,23 @@
 @stop
 
 @section('content')
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-outline-danger mb-3" data-toggle="modal" data-target="#pdfResumoModal">
+            <i class="fas fa-file-pdf"></i> Gerar PDF Resumo
+        </button>
+
+    </div>
     <form method="GET" action="{{ route('fluxoCaixa.index') }}" class="mb-4">
         <div class="row">
             <div class="col-md-3">
                 <label for="data_inicio">Data Início</label>
-                <input type="date" class="form-control" name="data_inicio" id="data_inicio" value="{{ request('data_inicio', now()->toDateString()) }}">
+                <input type="date" class="form-control" name="data_inicio" id="data_inicio"
+                    value="{{ request('data_inicio', now()->toDateString()) }}">
             </div>
             <div class="col-md-3">
                 <label for="data_fim">Data Fim</label>
-                <input type="date" class="form-control" name="data_fim" id="data_fim" value="{{ request('data_fim', now()->toDateString()) }}">
+                <input type="date" class="form-control" name="data_fim" id="data_fim"
+                    value="{{ request('data_fim', now()->toDateString()) }}">
             </div>
             <div class="col-md-3">
                 <label for="tipo">Tipo</label>
@@ -32,6 +40,100 @@
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </div>
+        <hr>
+        <div class="d-flex justify-content-end">
+            <button id="btnToggleTotais" class="btn btn-outline-secondary mb-3" type="button" data-toggle="collapse"
+                data-target="#totaisMovimentosCollapse" aria-expanded="false" aria-controls="totaisMovimentosCollapse">
+                <i class="fas fa-filter"></i> Mostrar Totais por Movimento
+            </button>
+        </div>
+        <div class="collapse" id="totaisMovimentosCollapse">
+            <br>
+            <div class="card card-body">
+                <div class="row mb-4">
+                    @foreach ($totaisPorMovimento as $item)
+                        @php
+                            $descricao = $item->movimento->descricao ?? 'outros';
+
+                            // Mapas de cor e ícone
+                            $mapa = [
+                                'venda-dinheiro' => [
+                                    'cor' => 'success',
+                                    'icone' => 'fas fa-money-bill-wave',
+                                    'nome' => 'Dinheiro',
+                                ],
+                                'venda-cartão-crédito' => [
+                                    'cor' => 'primary',
+                                    'icone' => 'fas fa-credit-card',
+                                    'nome' => 'Cartão Crédito',
+                                ],
+                                'venda-cartão-débito' => [
+                                    'cor' => 'info',
+                                    'icone' => 'fas fa-credit-card',
+                                    'nome' => 'Cartão Débito',
+                                ],
+                                'venda-pix' => ['cor' => 'success', 'icone' => 'fas fa-qrcode', 'nome' => 'Pix'],
+                                'venda-transferência-bancária' => [
+                                    'cor' => 'warning',
+                                    'icone' => 'fas fa-university',
+                                    'nome' => 'Transferência',
+                                ],
+                                'venda-boleto-bancário' => [
+                                    'cor' => 'secondary',
+                                    'icone' => 'fas fa-barcode',
+                                    'nome' => 'Boleto',
+                                ],
+                                'venda-carteira' => ['cor' => 'dark', 'icone' => 'fas fa-wallet', 'nome' => 'Carteira'],
+                                'venda-cheque' => [
+                                    'cor' => 'danger',
+                                    'icone' => 'fas fa-file-invoice-dollar',
+                                    'nome' => 'Cheque',
+                                ],
+                            ];
+
+                            $dados = $mapa[$descricao] ?? [
+                                'cor' => 'secondary',
+                                'icone' => 'fas fa-cash-register',
+                                'nome' => ucfirst(str_replace('-', ' ', $descricao)),
+                            ];
+                        @endphp
+
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-left-{{ $dados['cor'] }} shadow h-100 py-2">
+                                <div class="card-body d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 class="text-{{ $dados['cor'] }} font-weight-bold text-uppercase mb-1">
+                                            {{ $dados['nome'] }}
+                                        </h6>
+                                        <span class="text-dark">R$ {{ number_format($item->total, 2, ',', '.') }}</span>
+                                    </div>
+                                    <div class="icon text-{{ $dados['cor'] }} ml-3">
+                                        <i class="{{ $dados['icone'] }} fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    <div class="col-md-3 mb-3">
+                        <div class="card border-left-dark shadow h-100 py-2">
+                            <div class="card-body d-flex align-items-center justify-content-between">
+                                <div>
+                                    <h6 class="text-dark font-weight-bold text-uppercase mb-1">Total Geral</h6>
+                                    <span class="text-dark">R$ {{ number_format($totalGeral, 2, ',', '.') }}</span>
+                                </div>
+                                <div class="icon text-dark ml-3">
+                                    <i class="fas fa-calculator fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
     </form>
 
     <div class="d-flex justify-content-end mb-3">
@@ -70,8 +172,16 @@
                     <td>{{ $fluxoCaixa->descricao }}</td>
                     <td>R${{ $fluxoCaixa->valor }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->data)->format('d/m/Y') }}</td>
-                    <td style="color: {{ $fluxoCaixa->tipo === 'entrada' ? 'green' : 'red' }};">
-                        {{ $fluxoCaixa->tipo }}
+                    <td
+                        style="color:
+                        @switch($fluxoCaixa->tipo)
+                            @case('entrada') green @break
+                            @case('saida') red @break
+                            @case('abertura') maroon @break
+                            @case('fechamento') maroon @break
+                            @default black
+                        @endswitch;">
+                        {{ ucfirst($fluxoCaixa->tipo) }}
                     </td>
                     <td>{{ $fluxoCaixa->movimento->descricao }}</td>
                     <td>
@@ -100,6 +210,74 @@
     @endcomponent
 
     @include('fluxoCaixa.modals._create')
+    <div class="modal fade" id="pdfResumoModal" tabindex="-1" role="dialog" aria-labelledby="pdfResumoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="{{ route('fluxoCaixa.pdf') }}" method="GET" target="_blank">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pdfResumoModalLabel">Gerar Relatório de Fluxo de Caixa</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body row">
+                        <div class="form-group col-md-6">
+                            <label for="data_inicio">Data Início</label>
+                            <input type="date" class="form-control" name="data_inicio" required>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="data_fim">Data Fim</label>
+                            <input type="date" class="form-control" name="data_fim" required>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="movimento_id">Forma de Pagamento (Movimento)</label>
+                            <select class="form-control" name="movimento_id">
+                                <option value="">Todos</option>
+                                @foreach ($movimento as $item)
+                                    <option value="{{ $item->id }}">{{ $item->descricao }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="caixa_id">Caixa</label>
+                            <select class="form-control" name="caixa_id">
+                                <option value="">Todos</option>
+                                @foreach ($caixa as $cx)
+                                    <option value="{{ $cx->id }}">{{ $cx->descricao ?? 'Caixa #' . $cx->id }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if (Auth::user()->hasRole('master'))
+                            <div class="form-group col-md-12">
+                                <label for="empresa_id">Empresa</label>
+                                <select class="form-control" name="empresa_id">
+                                    <option value="">Todas</option>
+                                    @foreach ($empresa as $emp)
+                                        <option value="{{ $emp->id }}">{{ $emp->nome }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Gerar PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if (session('sweet_error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -112,8 +290,23 @@
             });
         </script>
     @endif
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#btnToggleTotais').click(function() {
+                let $btn = $(this);
+                let $collapse = $('#totaisMovimentosCollapse');
+                if ($collapse.hasClass('show')) {
+                    $btn.html('<i class="fas fa-filter"></i> Mostrar Totais por Movimento');
+                } else {
+                    $btn.html('<i class="fas fa-filter"></i> Esconder Totais por Movimento');
+                }
+            });
+        });
+    </script>
 @stop
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+
 @stop

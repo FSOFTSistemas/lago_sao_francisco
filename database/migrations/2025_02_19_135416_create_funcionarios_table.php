@@ -21,6 +21,9 @@ return new class extends Migration
             $table->enum('status', ['ativo', 'inativo']);
             $table->string('setor');
             $table->string('cargo');
+            $table->boolean('vendedor')->default(false);
+            $table->boolean('caixa')->default(false);
+            $table->string('senha_supervisor')->nullable();
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->foreign('endereco_id')->references('id')->on('enderecos')->onDelete('cascade');

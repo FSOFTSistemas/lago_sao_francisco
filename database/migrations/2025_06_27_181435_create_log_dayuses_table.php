@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('adicionais_aluguel', function (Blueprint $table) {
-            $table->integer('quantidade')->default(1);
-            $table->decimal('valor_total', 10, 2)->default(0);
+        Schema::create('log_dayuses', function (Blueprint $table) {
+            $table->id();
+            $table->string('usuario');
+            $table->string('supervisor');
+            $table->string('acao');
+            $table->timestamp('data_hora');
             $table->text('observacao')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -23,8 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('adicionais_aluguel', function (Blueprint $table) {
-            $table->dropColumn(['quantidade', 'valor_total', 'observacao']);
-        });
+        Schema::dropIfExists('log_dayuses');
     }
 };

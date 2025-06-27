@@ -8,6 +8,8 @@ use App\Models\FluxoCaixa;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use App\Services\CaixaService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,45 +26,65 @@ class FluxoCaixaController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-{
-    $query = FluxoCaixa::with('movimento');
+    {
+        $query = FluxoCaixa::with('movimento');
 
-    $empresaSelecionada = session('empresa_id');
-    $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        $usuario = Auth::user();
 
-    // Filtro de empresa: se não for Master, sempre aplica o filtro
-    if ($usuario->hasRole('Master')) {
-        if ($empresaSelecionada) {
-            $query->where('empresa_id', $empresaSelecionada);
+        // Filtro de empresa: se não for Master, sempre aplica o filtro
+        if ($usuario->hasRole('Master')) {
+            if ($empresaSelecionada) {
+                $query->where('empresa_id', $empresaSelecionada);
+            }
+            // senão mostra tudo
+        } else {
+            $query->where('empresa_id', $usuario->empresa_id);
         }
-        // senão mostra tudo
-    } else {
-        $query->where('empresa_id', $usuario->empresa_id);
+
+        // Filtro por tipo (entrada/saida)
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+
+        // Filtro por data ou intervalo de datas
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+        } else {
+            // Exibir do dia atual por padrão
+            $hoje = \Carbon\Carbon::today();
+            $query->whereDate('data', $hoje);
+        }
+
+        $fluxoCaixas = $query->orderBy('data', 'desc')->get();
+        $users = $usuario;
+        $movimento = Movimento::all();
+        $empresa = Empresa::all();
+        $caixa = Caixa::all();
+        $planoDeContas = PlanoDeConta::all();
+
+        // Totais por forma de pagamento
+        $totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
+            ->with('movimento')
+            ->when(!Auth::user()->hasRole('Master'), function ($q) {
+                $q->where('empresa_id', Auth::user()->empresa_id);
+            })
+            ->when($request->filled('tipo'), function ($q) use ($request) {
+                $q->where('tipo', $request->tipo);
+            })
+            ->when($request->filled('data_inicio') && $request->filled('data_fim'), function ($q) use ($request) {
+                $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+            }, function ($q) {
+                $q->whereDate('data', \Carbon\Carbon::today());
+            })
+            ->groupBy('movimento_id')
+            ->get();
+
+        // Total geral
+        $totalGeral = $totaisPorMovimento->sum('total');
+
+        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa', 'totalGeral', 'totaisPorMovimento'));
     }
-
-    // Filtro por tipo (entrada/saida)
-    if ($request->filled('tipo')) {
-        $query->where('tipo', $request->tipo);
-    }
-
-    // Filtro por data ou intervalo de datas
-    if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-        $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
-    } else {
-        // Exibir do dia atual por padrão
-        $hoje = \Carbon\Carbon::today();
-        $query->whereDate('data', $hoje);
-    }
-
-    $fluxoCaixas = $query->orderBy('data', 'desc')->get();
-    $users = $usuario;
-    $movimento = Movimento::all();
-    $empresa = Empresa::all();
-    $caixa = Caixa::all();
-    $planoDeContas = PlanoDeConta::all();
-
-    return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa'));
-}
 
 
     /**
@@ -156,5 +178,63 @@ class FluxoCaixaController extends Controller
         $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
         $fluxoCaixa->delete();
         return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa excluído com sucesso!');
+    }
+
+    public function exportResumoPDF(Request $request)
+    {
+        $query = FluxoCaixa::with('movimento');
+
+        // Filtros
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            $dataInicio = Carbon::parse($request->data_inicio)->startOfDay();
+            $dataFim = Carbon::parse($request->data_fim)->endOfDay();
+            $query->whereBetween('data', [$dataInicio, $dataFim]);
+        } else {
+            $dataInicio = Carbon::today()->startOfDay();
+            $dataFim = Carbon::today()->endOfDay();
+            $query->whereDate('data', Carbon::today());
+        }
+
+        if ($request->filled('movimento_id')) {
+            $query->where('movimento_id', $request->movimento_id);
+        }
+
+        if ($request->filled('caixa_id')) {
+            $query->where('caixa_id', $request->caixa_id);
+        }
+
+        if (Auth::user()->hasRole('master')) {
+            if ($request->filled('empresa_id')) {
+                $query->where('empresa_id', $request->empresa_id);
+            }
+        } else {
+            $query->where('empresa_id', session('empresa_id') ?? Auth::user()->empresa_id);
+        }
+
+        $caixaSelecionado = null;
+        if ($request->filled('caixa_id')) {
+            $caixaSelecionado = Caixa::find($request->caixa_id);
+        }
+
+        $fluxos = $query->get();
+
+        // Agrupa e soma os valores por movimento
+        $resumo = $fluxos->groupBy('movimento.descricao')->map(function ($grupo) {
+            return $grupo->sum('valor');
+        });
+
+        $empresa = Empresa::find($request->empresa_id) ?? Auth::user()->empresa;
+        $periodo = $dataInicio->format('d/m/Y') . ' a ' . $dataFim->format('d/m/Y');
+        $dataEmissao = now()->format('d/m/Y H:i');
+
+        $pdf = Pdf::loadView('fluxoCaixa.pdf_resumo', compact(
+            'resumo',
+            'empresa',
+            'periodo',
+            'dataEmissao',
+            'caixaSelecionado'
+        ));
+
+        return $pdf->stream('Resumo_Fluxo_Caixa.pdf');
     }
 }

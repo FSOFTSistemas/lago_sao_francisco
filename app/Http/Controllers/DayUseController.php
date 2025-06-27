@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\DayUse;
 use App\Http\Controllers\Controller;
+use App\Models\Funcionario;
+use App\Models\LogDayuse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class DayUseController extends Controller
 {
@@ -72,4 +77,34 @@ public function show($id)
             return redirect()->back()->with('error', 'Erro ao deletar Day Use!', $e);
         }
     }
+
+   public function verificaSupervisor(Request $request)
+{
+    $request->validate([
+        'dayuse_id' => 'required|exists:day_uses,id',
+        'senha' => 'required|string',
+    ]);
+
+    $funcionarios = Funcionario::whereNotNull('senha_supervisor')->get();
+    foreach ($funcionarios as $func) {
+        if (Hash::check($request->senha, $func->senha_supervisor)) {
+            $dayUse = DayUse::findOrFail($request->dayuse_id);
+
+            LogDayuse::create([
+                'usuario' => Auth::user()->name,
+                'supervisor' => $func->nome,
+                'acao' => 'Exclusão de DayUse',
+                'data_hora' => now(),
+                'observacao' => 'DayUse #' . $dayUse->id . ' excluído.',
+            ]);
+
+            $dayUse->delete();
+
+            return response()->json(['message' => 'DayUse excluído com sucesso!']);
+        }
+    }
+
+    return response()->json(['message' => 'Senha de supervisor inválida.'], 403);
+}
+
 }

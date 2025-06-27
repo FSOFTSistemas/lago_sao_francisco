@@ -16,6 +16,9 @@ return new class extends Migration
         $table->id();
         $table->foreignId('aluguel_id')->constrained()->onDelete('cascade');
         $table->foreignId('adicional_id')->constrained()->onDelete('cascade');
+        $table->integer('quantidade')->default(1);
+        $table->decimal('valor_total', 10, 2)->default(0);
+        $table->text('observacao')->nullable();
         $table->timestamps();
     });
 

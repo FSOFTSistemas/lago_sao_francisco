@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('espacos', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->enum('status', ['disponivel', 'alugado'])->nullable();
             $table->decimal('valor_semana', 10, 2);
             $table->decimal('valor_fim', 10, 2);
+            $table->boolean('capela')->default(false);
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->timestamps();

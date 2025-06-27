@@ -39,10 +39,10 @@ class ItensDayUseController extends Controller
     }
 
 
-    public function update(Request $request, ItensDayUse $itensDayUse)
+    public function update(Request $request, $id)
     {
         try{
-            $itens = ItensDayUse::findOrFail($itensDayUse->id);
+            $itens = ItensDayUse::findOrFail($id);
             $request->validate([
                 'descricao' => 'string|required',
                 'valor' => 'numeric|required',

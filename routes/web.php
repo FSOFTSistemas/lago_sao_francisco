@@ -46,6 +46,7 @@ use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\LogDayuseController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\VendedorController;
 use App\Livewire\Dayuse\ShowDayuse;
@@ -154,7 +155,7 @@ Route::resource('itemCardapio', ItensDoCardapioController::class);
 Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);
 
 //Rota para gerar PDF de cardapio
-Route::get('/cardapios/{id}/pdf', [\App\Http\Controllers\CardapioController::class, 'verPdf'])->name('cardapios.pdf');
+Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('cardapios.pdf');
 
 Route::resource('cfop', CfopController::class);
 
@@ -183,3 +184,10 @@ Route::post('/caixas/{id}/abrir', [CaixaController::class, 'abrir'])->name('caix
 Route::post('/caixas/{id}/fechar', [CaixaController::class, 'fechar'])->name('caixas.fechar');
 
 Route::get('/caixas/{caixa}/resumo', [CaixaController::class, 'getResumoFechamento']);
+
+Route::post('/dayuse/verifica-supervisor', [DayUseController::class, 'verificaSupervisor'])->name('dayuse.verificaSupervisor');
+
+Route::resource('logsdayuse', LogDayuseController::class);
+
+Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])->name('fluxoCaixa.pdf');
+
