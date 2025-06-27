@@ -155,7 +155,7 @@ Route::resource('itemCardapio', ItensDoCardapioController::class);
 Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);
 
 //Rota para gerar PDF de cardapio
-Route::get('/cardapios/{id}/pdf', [\App\Http\Controllers\CardapioController::class, 'verPdf'])->name('cardapios.pdf');
+Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('cardapios.pdf');
 
 Route::resource('cfop', CfopController::class);
 
@@ -188,3 +188,6 @@ Route::get('/caixas/{caixa}/resumo', [CaixaController::class, 'getResumoFechamen
 Route::post('/dayuse/verifica-supervisor', [DayUseController::class, 'verificaSupervisor'])->name('dayuse.verificaSupervisor');
 
 Route::resource('logsdayuse', LogDayuseController::class);
+
+Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])->name('fluxoCaixa.pdf');
+

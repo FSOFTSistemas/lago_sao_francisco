@@ -8,6 +8,12 @@
 @stop
 
 @section('content')
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-outline-danger mb-3" data-toggle="modal" data-target="#pdfResumoModal">
+            <i class="fas fa-file-pdf"></i> Gerar PDF Resumo
+        </button>
+
+    </div>
     <form method="GET" action="{{ route('fluxoCaixa.index') }}" class="mb-4">
         <div class="row">
             <div class="col-md-3">
@@ -204,6 +210,74 @@
     @endcomponent
 
     @include('fluxoCaixa.modals._create')
+    <div class="modal fade" id="pdfResumoModal" tabindex="-1" role="dialog" aria-labelledby="pdfResumoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <form action="{{ route('fluxoCaixa.pdf') }}" method="GET" target="_blank">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="pdfResumoModalLabel">Gerar Relatório de Fluxo de Caixa</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body row">
+                        <div class="form-group col-md-6">
+                            <label for="data_inicio">Data Início</label>
+                            <input type="date" class="form-control" name="data_inicio" required>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="data_fim">Data Fim</label>
+                            <input type="date" class="form-control" name="data_fim" required>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="movimento_id">Forma de Pagamento (Movimento)</label>
+                            <select class="form-control" name="movimento_id">
+                                <option value="">Todos</option>
+                                @foreach ($movimento as $item)
+                                    <option value="{{ $item->id }}">{{ $item->descricao }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="caixa_id">Caixa</label>
+                            <select class="form-control" name="caixa_id">
+                                <option value="">Todos</option>
+                                @foreach ($caixa as $cx)
+                                    <option value="{{ $cx->id }}">{{ $cx->descricao ?? 'Caixa #' . $cx->id }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        @if (Auth::user()->hasRole('master'))
+                            <div class="form-group col-md-12">
+                                <label for="empresa_id">Empresa</label>
+                                <select class="form-control" name="empresa_id">
+                                    <option value="">Todas</option>
+                                    @foreach ($empresa as $emp)
+                                        <option value="{{ $emp->id }}">{{ $emp->nome }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-file-pdf"></i> Gerar PDF
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     @if (session('sweet_error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
