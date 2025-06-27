@@ -67,15 +67,21 @@ class CaixaController extends Controller
     {
         $users = Auth::user();
         $empresas = Empresa::all();
+        $empresaSelecionada = session('empresa_id'); // <-- Empresa escolhida no seletor
+
         if (Auth::user()->hasRole('Master')) {
-            $caixas = Caixa::all();
+            if ($empresaSelecionada) {
+                $caixas = Caixa::where('empresa_id', $empresaSelecionada)->get();
+            } else {
+                $caixas = Caixa::all();
+            }
         } else {
             $caixas = Caixa::where('empresa_id', Auth::user()->empresa_id)->get();
         }
 
-
         return view('caixa.index', compact('caixas', 'empresas', 'users'));
     }
+
 
     /**
      * Store a newly created resource in storage.

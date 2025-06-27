@@ -24,31 +24,46 @@ class FluxoCaixaController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $query = FluxoCaixa::with('movimento');
+{
+    $query = FluxoCaixa::with('movimento');
 
-        // Filtro por tipo (entrada/saida)
-        if ($request->filled('tipo')) {
-            $query->where('tipo', $request->tipo);
+    $empresaSelecionada = session('empresa_id');
+    $usuario = Auth::user();
+
+    // Filtro de empresa: se não for Master, sempre aplica o filtro
+    if ($usuario->hasRole('Master')) {
+        if ($empresaSelecionada) {
+            $query->where('empresa_id', $empresaSelecionada);
         }
-
-        // Filtro por data ou intervalo de datas
-        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
-        } else {
-            // Exibir do dia atual por padrão
-            $hoje = \Carbon\Carbon::today();
-            $query->whereDate('data', $hoje);
-        }
-
-        $fluxoCaixas = $query->orderBy('data', 'desc')->get();
-        $users = Auth::user();
-        $movimento = Movimento::all();
-        $empresa = Empresa::all();
-        $caixa = Caixa::all();
-        $planoDeContas = PlanoDeConta::all();
-        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa'));
+        // senão mostra tudo
+    } else {
+        $query->where('empresa_id', $usuario->empresa_id);
     }
+
+    // Filtro por tipo (entrada/saida)
+    if ($request->filled('tipo')) {
+        $query->where('tipo', $request->tipo);
+    }
+
+    // Filtro por data ou intervalo de datas
+    if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+        $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+    } else {
+        // Exibir do dia atual por padrão
+        $hoje = \Carbon\Carbon::today();
+        $query->whereDate('data', $hoje);
+    }
+
+    $fluxoCaixas = $query->orderBy('data', 'desc')->get();
+    $users = $usuario;
+    $movimento = Movimento::all();
+    $empresa = Empresa::all();
+    $caixa = Caixa::all();
+    $planoDeContas = PlanoDeConta::all();
+
+    return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa'));
+}
+
 
     /**
      * Show the form for creating a new resource.
