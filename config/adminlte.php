@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+
 return [
 
     /*
@@ -305,11 +307,6 @@ return [
             'text' => 'search',
             'topnav_right' => false,
         ],
-        // Sidebar items:
-        // [
-        //     'text' => 'Financeiro',
-        //     'url' => '/financeiro',
-        // ],
         [
             'text'    => 'Lago',
             'icon'    => 'fas fa-place-of-worship',
@@ -320,28 +317,33 @@ return [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
                     'url'  => '/dayuse/create',
+                    'can'  => 'vender dayuse'
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
-                    'url'  => '/dayuse'
+                    'url'  => '/dayuse',
+                    'can'  => 'gerenciar dayuse'
                 ],
                 ['header' => 'Aluguel de Espaços'],
                 [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-campground',
                     'url'  => '/aluguel/create',
+                    'can'  => 'cadastrar aluguel'
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',
+                    'can'  => 'gerenciar aluguel'
                 ],
             ],
         ],
         [
             'text'    => 'Hotel',
             'icon'    => 'fas fa-hotel',
+            'can'     => 'hotel',
             'submenu' => [
                 [
                     'text' => 'Home',
@@ -419,12 +421,6 @@ return [
                     'can'  => 'gerenciar adiantamento',
                 ],
                 [
-                    'text' => 'Vendedores',
-                    'url'  => '/vendedor',
-                    'icon' => 'fas fa-user-tie',
-                    'can'  => 'gerenciar adiantamento',
-                ],
-                [
                     'text' => 'Banco',
                     'url'  => '/bancos',
                     'icon' => 'fas fa-university',
@@ -474,10 +470,12 @@ return [
             'text' => 'Preferências',
             'url'  => '/preferencias',
             'icon' => 'fas fa-cogs',
+            'can'  => 'gerenciar preferencias'
         ],
         [
             'text'    => 'NFe',
             'icon'    => 'far fa-file-alt',
+            'can'     => 'gerenciar NFe',
             'submenu' => [
                 [
                     'text'        => 'Emitir NFe',

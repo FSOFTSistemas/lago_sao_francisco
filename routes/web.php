@@ -48,6 +48,7 @@ use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\VendedorController;
+use App\Livewire\Dayuse\ShowDayuse;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -125,11 +126,7 @@ Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('map
 
 Route::resource('aluguel', AluguelController::class);
 
-//Route::resource('buffet', BuffetItemController::class);
-
 Route::resource('cardapios', CardapioController::class);
-
-//Route::resource('categoriasCardapio', CategoriasCardapioController::class);
 
 Route::resource('estoques', EstoqueController::class);
 
@@ -142,7 +139,6 @@ Route::resource('nota_fiscal', NotaFiscalController::class);
 Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');
 
 Route::get('/espacos/disponibilidade', [EspacoDisponibilidadeController::class, 'getDisponibilidade']);
-
 
 // Responsável Técnico (RT)
 Route::resource('empresaRT', EmpresaRTController::class)->middleware('permission:gerenciar empresa');
@@ -168,16 +164,22 @@ Route::resource('adicionais', AdicionalController::class);
 
 Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
 
-Route::resource('dayuse', DayUseController::class);
+Route::resource('dayuse', DayUseController::class)->middleware('caixa.aberto'); //esse é o middleware para impedir acesso caso o caixa esteja fechado
 
 Route::resource('itemDayuse', ItensDayUseController::class);
 
 Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clientes.search');
 
-Route::get('/vendedors/search', [VendedorController::class, 'search'])->name('vendedors.search');
+Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
 
 Route::resource('parceiros', ParceiroController::class);
 
 Route::resource('categoriasParceiro', CategoriaParceiroController::class);
 
 Route::post('/calcular-valor', [AluguelController::class, 'calcularValor']);
+
+Route::post('/caixas/{id}/abrir', [CaixaController::class, 'abrir'])->name('caixas.abrir');
+
+Route::post('/caixas/{id}/fechar', [CaixaController::class, 'fechar'])->name('caixas.fechar');
+
+Route::get('/caixas/{caixa}/resumo', [CaixaController::class, 'getResumoFechamento']);

@@ -10,10 +10,10 @@ class Espaco extends Model
     use HasFactory;
     protected $fillable = [
         'nome',
-        'status',
         'valor_semana',
         'valor_fim',
-        'empresa_id'
+        'empresa_id',
+        'capela'
     ];
     public function empresa()
     {

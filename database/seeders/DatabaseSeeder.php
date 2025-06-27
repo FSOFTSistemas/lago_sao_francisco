@@ -127,4 +127,6 @@ class DatabaseSeeder extends Seeder
      * 10 recebimento-cheque
      * 11 sangria
      * 12 suprimento
+     * 13 abertura de caixa
+     * 14 fechamento de caixa
      */

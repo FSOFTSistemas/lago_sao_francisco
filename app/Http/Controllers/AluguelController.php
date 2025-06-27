@@ -9,9 +9,8 @@ use App\Models\FormaPagamento;
 use App\Models\Adicional;
 use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
-use App\Models\Parceiro;
+use App\Models\AluguelPagamento;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,11 +28,13 @@ class AluguelController extends Controller
         $clientes = Cliente::all();
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
-        $itens = Adicional::all();
+        $adicionais = Adicional::all();
         $cardapios = Cardapio::all();
+        $adicionaisSelecionados = collect();
+
 
         return view('aluguel.create', compact(
-            'clientes', 'espacos', 'formasPagamento', 'itens', 'cardapios'
+            'clientes', 'espacos', 'formasPagamento', 'adicionais', 'cardapios', 'adicionaisSelecionados'
         ));
     }
 
@@ -57,10 +58,12 @@ class AluguelController extends Controller
                 'status' => 'nullable|string',
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
+                'tipo' => 'string|required',
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
-                
+                // Campos de pagamento
+                'pagamentos_json' => 'nullable|string',
             ]);
         
             $validated['empresa_id'] = Auth::user()->empresa_id;
@@ -73,17 +76,18 @@ class AluguelController extends Controller
                 $aluguel = Aluguel::create($validated);
             
                 // Relacionar itens adicionais
-                $aluguel->adicionais()->sync($request->input('itens', []));
+                $this->salvarAdicionais($aluguel, $request);
+
             
                 // Salvar escolhas do buffet se existirem
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
                 }
-                
-                // Compatibilidade com sistema antigo de categorias
-                // if ($request->filled('categorias')) {
-                //     $this->salvarCategoriasAntigas($aluguel, $request);
-                // }
+
+                // Salvar pagamentos se existirem
+                if ($request->filled('pagamentos_json')) {
+                    $this->salvarPagamentos($aluguel, $request);
+                }
                 
                 DB::commit();
                 
@@ -101,34 +105,53 @@ class AluguelController extends Controller
 
     public function edit(Aluguel $aluguel)
     {
-        // Carregar relações necessárias para o formulário
         $aluguel->load([
             'cliente',
             'espaco',
-            'adicionais',
+            'formaPagamento',
             'cardapio.secoes.categorias.itens',
             'cardapio.opcoes.categorias.itens',
-            'formaPagamento',
             'buffetEscolhas.categoria',
             'buffetEscolhas.item',
-            'buffetEscolhas.opcaoRefeicao'
+            'buffetEscolhas.opcaoRefeicao',
+            'pagamentos.formaPagamento',
         ]);
 
+        // Dados de apoio para os selects
         $clientes = Cliente::all();
         $espacos = Espaco::all();
-        $itens = Adicional::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
-        $cardapios = Cardapio::where('empresa_id', Auth::user()->empresa_id)->orderBy('nome')->get();
+        $cardapios = Cardapio::all();
         $formasPagamento = FormaPagamento::all();
+        $adicionais = Adicional::all();
 
-        return view('aluguel.edit', compact(
+        // Itens das categorias que foram selecionados (Buffet)
+        $itensSelecionados = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'categoria_item')
+            ->pluck('item_id')
+            ->toArray();
+
+        // Opção de refeição escolhida (Buffet)
+        $opcaoSelecionada = BuffetEscolha::where('aluguel_id', $aluguel->id)
+            ->where('tipo', 'opcao_refeicao')
+            ->value('opcao_refeicao_id');
+
+        // Adicionais já escolhidos para o aluguel (com quantidade, observação e valor total)
+        $adicionaisSelecionados = $aluguel->adicionaisAluguel()->with('adicional')->get();
+
+        return view('aluguel.create', compact(
             'aluguel',
-            'clientes',
             'espacos',
-            'itens',
+            'formasPagamento',
+            'clientes',
             'cardapios',
-            'formasPagamento'
+            'adicionais',
+            'itensSelecionados',
+            'opcaoSelecionada',
+            'adicionaisSelecionados'
         ));
     }
+
+
 
     public function update(Request $request, Aluguel $aluguel)
     {
@@ -148,11 +171,14 @@ class AluguelController extends Controller
                 'vencimento' => 'nullable|date',
                 'contrato' => 'nullable|string',
                 'status' => 'nullable|string',
+                'tipo' => 'string|required',
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
+                // Campos de pagamento
+                'pagamentos_json' => 'nullable|string',
             ]);
 
             $validated['empresa_id'] = Auth::user()->empresa_id;
@@ -164,7 +190,7 @@ class AluguelController extends Controller
                 $aluguel->update($validated);
 
                 // Atualizar itens adicionais
-                $aluguel->adicionais()->sync($request->input('itens', []));
+                $this->salvarAdicionais($aluguel, $request);
 
                 // Remover escolhas antigas do buffet
                 BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
@@ -173,7 +199,12 @@ class AluguelController extends Controller
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
                 }
-                
+
+                // Remover pagamentos antigos e salvar novos
+                AluguelPagamento::where('aluguel_id', $aluguel->id)->delete();
+                if ($request->filled('pagamentos_json')) {
+                    $this->salvarPagamentos($aluguel, $request);
+                }
 
                 // Atualizar a relação many-to-many (caso esteja usando também)
                 if ($request->filled('buffet_itens')) {
@@ -202,6 +233,9 @@ class AluguelController extends Controller
             
             // Remover escolhas do buffet
             BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
+            
+            // Remover pagamentos
+            AluguelPagamento::where('aluguel_id', $aluguel->id)->delete();
             
             // Remover outras relações se necessário
             if (method_exists($aluguel, 'aluguelCategoriaItems')) {
@@ -254,6 +288,23 @@ class AluguelController extends Controller
     }
 
     /**
+     * Salva os pagamentos vindos do JavaScript
+     */
+    private function salvarPagamentos(Aluguel $aluguel, Request $request)
+    {
+        $pagamentosJson = json_decode($request->pagamentos_json, true) ?? [];
+        
+        foreach ($pagamentosJson as $pagamento) {
+            AluguelPagamento::create([
+                'aluguel_id' => $aluguel->id,
+                'forma_pagamento_id' => $pagamento['forma_pagamento_id'],
+                'valor' => $pagamento['valor'],
+                'observacoes' => null,
+            ]);
+        }
+    }
+
+    /**
      * Método para buscar dados do cardápio via AJAX
      */
     public function getCardapioData($cardapioId)
@@ -274,24 +325,32 @@ class AluguelController extends Controller
         }
     }
 
-        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim)
+        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim, $capela, $tipo_evento)
     {
         $inicio = \Carbon\Carbon::parse($data_inicio);
         $fim = \Carbon\Carbon::parse($data_fim);
         $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
         $total = 0;
 
-        foreach ($periodo as $data) {
-            $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+        if($capela){
+            if($tipo_evento == 'casamento'){
+                foreach($periodo as $data) {
+                    $total += $valor_fim;
+                }
+            } else  if($tipo_evento == 'batizado'){
+                foreach($periodo as $data) {
+                    $total += $valor_semana;
+                }
+            }
+        } else {
+            foreach ($periodo as $data) {
+                $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
+            }
         }
+
 
         return $total;
     }
-
-
-
-
-
 
         public function calcularValor(Request $request)
     {
@@ -301,10 +360,44 @@ class AluguelController extends Controller
             $request->data_inicio,
             $request->data_fim,
             $espaco->valor_semana,
-            $espaco->valor_fim
+            $espaco->valor_fim,
+            $espaco->capela,
+            $request->tipo_evento
         );
 
         return response()->json(['total' => $total]);
+    }
+
+
+    /**
+ * Salva os adicionais escolhidos no aluguel
+ */
+        private function salvarAdicionais(Aluguel $aluguel, Request $request)
+    {
+        // Limpa os anteriores
+        DB::table('adicionais_aluguel')->where('aluguel_id', $aluguel->id)->delete();
+
+        if ($request->has('adicionais')) {
+            foreach ($request->adicionais as $adicionalId => $dados) {
+                $quantidade = intval($dados['quantidade'] ?? 0);
+                $observacao = $dados['observacao'] ?? '';
+
+                if ($quantidade > 0) {
+                    $adicional = Adicional::find($adicionalId);
+                    $valorTotal = $quantidade * $adicional->valor;
+
+                    DB::table('adicionais_aluguel')->insert([
+                        'aluguel_id' => $aluguel->id,
+                        'adicional_id' => $adicionalId,
+                        'quantidade' => $quantidade,
+                        'valor_total' => $valorTotal,
+                        'observacao' => $observacao,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
     }
 
 

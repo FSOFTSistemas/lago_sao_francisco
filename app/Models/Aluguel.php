@@ -27,7 +27,8 @@ class Aluguel extends Model
         'empresa_id',
         'forma_pagamento_id',
         'numero_pessoas_buffet',
-        'cardapio_id'
+        'cardapio_id',
+        'tipo'
     ];
 
     protected $casts = [
@@ -62,13 +63,6 @@ class Aluguel extends Model
         return $this->belongsTo(Cardapio::class);
     }
 
-    // === Relacionamentos Many-to-Many ===
-
-    public function adicionais()
-    {
-        return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
-    }
-
     // === Relacionamentos do Buffet ===
 
     /**
@@ -77,6 +71,23 @@ class Aluguel extends Model
     public function buffetEscolhas()
     {
         return $this->hasMany(BuffetEscolha::class);
+    }
+
+    // === Relacionamentos do Adicional ===
+
+    public function adicionaisAluguel()
+    {
+        return $this->hasMany(AdicionalAluguel::class);
+    }
+
+      // === Relacionamentos de Pagamento ===
+
+    /**
+     * Relacionamento com os pagamentos do aluguel
+     */
+    public function pagamentos()
+    {
+        return $this->hasMany(AluguelPagamento::class);
     }
 
     // === Métodos auxiliares para o Buffet ===
@@ -161,6 +172,50 @@ class Aluguel extends Model
         $escolhas['total'] = $this->calcularTotalBuffet();
 
         return $escolhas;
+    }
+
+    // === Métodos auxiliares para Pagamento ===
+
+    /**
+     * Calcula o total pago para este aluguel
+     */
+    public function getTotalPago()
+    {
+        return $this->pagamentos()->sum('valor');
+    }
+
+    /**
+     * Calcula o valor restante a ser pago
+     */
+    public function getValorRestante()
+    {
+        return $this->total - $this->getTotalPago();
+    }
+
+    /**
+     * Verifica se o aluguel está totalmente pago
+     */
+    public function estaPago()
+    {
+        return $this->getValorRestante() <= 0;
+    }
+
+    /**
+     * Recupera os pagamentos formatados para exibição
+     */
+    public function getPagamentosFormatados()
+    {
+        return $this->pagamentos()
+                    ->with('formaPagamento')
+                    ->get()
+                    ->map(function ($pagamento) {
+                        return [
+                            'id' => $pagamento->id,
+                            'forma_pagamento' => $pagamento->formaPagamento->nome,
+                            'valor' => $pagamento->valor,
+                            'data_pagamento' => $pagamento->created_at->format('d/m/Y H:i')
+                        ];
+                    });
     }
     
     // === Escopos globais ===

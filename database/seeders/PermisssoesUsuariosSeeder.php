@@ -87,8 +87,11 @@ class PermisssoesUsuariosSeeder extends Seeder
 
         $movimentos = [
             'venda-dinheiro',                   
-            'venda-cartão',
+            'venda-cartão-crédito',
+            'venda-cartão-débito',
             'venda-pix',
+            'venda-transferência-bancária',
+            'venda-boleto-bancário',
             'venda-carteira',
             'venda-cheque',
             'recebimento-dinheiro',
@@ -98,6 +101,8 @@ class PermisssoesUsuariosSeeder extends Seeder
             'recebimento-cheque',
             'sangria',
             'suprimento',
+            'abertura de caixa',
+            'fechamento de caixa'
         ];
 
         foreach ($movimentos as $descricao) {

@@ -36,10 +36,12 @@ class DayUseController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(DayUse $dayUse)
-    {
-        //
-    }
+public function show($id)
+{
+    return view('dayuse.show', [
+        'id' => $id,    
+    ]);
+}
 
     /**
      * Show the form for editing the specified resource.

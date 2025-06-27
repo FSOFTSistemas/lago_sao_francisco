@@ -18,7 +18,10 @@ class Funcionario extends Model
         'status',
         'setor',
         'cargo',
-        'empresa_id'
+        'empresa_id',
+        'vendedor',
+        'caixa',
+        'senha_supervisor'
     ];
 
     public function empresa()

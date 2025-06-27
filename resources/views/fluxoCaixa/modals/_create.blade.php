@@ -43,7 +43,7 @@
                           <select class="form-control" id="caixa" name="caixa_id" required>
                               <option value="">Selecione</option>
                               @foreach ($caixa as $caixa)
-                                  <option value="{{ $caixa->id }}">{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</option>
+                                  <option value="{{ $caixa->id }}">{{ $caixa->descricao}}</option>
                               @endforeach
                           </select>
                         </div>

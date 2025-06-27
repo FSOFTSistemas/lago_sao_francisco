@@ -146,9 +146,9 @@
                             </div>
 
                             <div class="form-group row">
-                                <label class="col-md-3 label-control"  for="apelido">* Apelido:</label>
+                                <label class="col-md-3 label-control"  for="telefone"> Telefone:</label>
                                 <div class="col-md-6">
-                                <div><input class="form-control" required="required" type="text" wire:model='apelido_nome_fantasia' id="apelido" autocomplete="off"></div>
+                                <div><input class="form-control" type="number" wire:model='telefone' id="telefone" autocomplete="off"></div>
                                 </div>
                             </div>
           

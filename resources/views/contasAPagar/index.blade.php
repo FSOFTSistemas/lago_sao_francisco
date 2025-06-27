@@ -81,4 +81,25 @@
 
 @section('js')
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script>
+    function validarValor(input) {
+        const valor = parseFloat(input.value);
+        if (isNaN(valor) || valor < 0.01) {
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    }
+
+    function validarValorPago(input) {
+        const valorPago = parseFloat(input.value) || 0;
+        const valorConta = parseFloat(document.getElementById('valor').value) || 0;
+        
+        if (valorPago < 0 || (valorPago > 0 && valorPago > valorConta)) {
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    }
+</script>
 @stop

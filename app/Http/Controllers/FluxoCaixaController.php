@@ -7,23 +7,47 @@ use App\Models\Empresa;
 use App\Models\FluxoCaixa;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
+use App\Services\CaixaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class FluxoCaixaController extends Controller
 {
+    protected $caixaService;
+
+    public function __construct(CaixaService $caixaService)
+    {
+        $this->caixaService = $caixaService;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $query = FluxoCaixa::with('movimento');
+
+        // Filtro por tipo (entrada/saida)
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+
+        // Filtro por data ou intervalo de datas
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+        } else {
+            // Exibir do dia atual por padrão
+            $hoje = \Carbon\Carbon::today();
+            $query->whereDate('data', $hoje);
+        }
+
+        $fluxoCaixas = $query->orderBy('data', 'desc')->get();
         $users = Auth::user();
         $movimento = Movimento::all();
         $empresa = Empresa::all();
         $caixa = Caixa::all();
         $planoDeContas = PlanoDeConta::all();
-        $fluxoCaixas = FluxoCaixa::all();
-        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa' ));
+        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa'));
     }
 
     /**
@@ -36,26 +60,33 @@ class FluxoCaixaController extends Controller
 
     public function store(Request $request)
     {
-        try{
-            $request->validate([
-                'descricao' => 'required|string',
-                'valor' => 'required|numeric',
-                'data' => 'required|date',
-                'tipo' => 'required|in:entrada,saida',
-                'movimento_id' => 'required|exists:movimentos,id', 
-                'caixa_id' => 'required|exists:caixas,id',
-                'empresa_id' => 'required|exists:empresas,id',
-                'valor_total' => 'required|numeric',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
-            ]);
-            $request['usuario_id'] = Auth::user()->id;
-            FluxoCaixa::create($request->all());
+        $request->validate([
+            'descricao' => 'required|string',
+            'valor' => 'required|numeric|min:0',
+            'data' => 'required|date',
+            'tipo' => 'required|in:entrada,saida,abertura,fechamento',
+            'movimento_id' => 'required|exists:movimentos,id',
+            'caixa_id' => 'required|exists:caixas,id',
+            'empresa_id' => 'required|exists:empresas,id',
+            'valor_total' => 'required|numeric|min:0',
+            'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
+        ]);
+
+        try {
+            // Buscar o Caixa para passar para o serviço
+            $caixa = Caixa::findOrFail($request->caixa_id);
+
+            // Chama o serviço para inserir movimentação (com validação de saldo)
+            $this->caixaService->inserirMovimentacao($caixa, $request->all());
+
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa cadastrado com sucesso!');
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->route('fluxoCaixa.index')->with('error', 'Erro ao cadastrar fluxo de caixa!');
+        } catch (\InvalidArgumentException $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('sweet_error', $e->getMessage());
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -81,13 +112,13 @@ class FluxoCaixaController extends Controller
     public function update(Request $request, FluxoCaixa $fluxoCaixa)
     {
         try {
-            $fluxoCaixa= FluxoCaixa::findOrFail($fluxoCaixa->id);
+            $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
             $request->validate([
                 'descricao' => 'required|string',
                 'valor' => 'required|numeric',
                 'data' => 'required|date',
-                'tipo' => 'required|in:entrada,saida',
-                'movimento_id' => 'required|exists:movimentos,id', 
+                'tipo' => 'required|in:entrada,saida,abertura,fechamento',
+                'movimento_id' => 'required|exists:movimentos,id',
                 'caixa_id' => 'required|exists:caixas,id',
                 'empresa_id' => 'required|exists:empresas,id',
                 'valor_total' => 'required|numeric',

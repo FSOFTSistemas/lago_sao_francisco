@@ -13,6 +13,9 @@
                 <p><strong>Salário:</strong> <span id="salario">R${{$funcionario->salario}}</span></p>
                 <p><strong>Setor:</strong> <span id="setor">{{$funcionario->setor}}</span></p>
                 <p><strong>Cargo:</strong> <span id="cargo">{{$funcionario->cargo}}</span></p>
+                @if($funcionario->vendedor || $funcionario->caixa)
+                <p><strong>Função:</strong> <span id="funcao">{{$funcionario->vendedor ? 'Vendedor, ' : ''}} {{$funcionario->caixa ? ' Caixa' : ''}}</span></p>
+                @endif
                 <p><strong>Situação:</strong> <span id="status">{{$funcionario->status}}</span></p>
                 <p><strong>Empresa:</strong> <span id="empresa">{{ $funcionario->empresa->nome_fantasia ?? '' }}</span></p>
                 <p><strong>Endereço:</strong> <span id="endereco">{{$funcionario->endereco->logradouro ?? ''}}, {{$funcionario->endereco->numero ?? ''}}</span></p>
