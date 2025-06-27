@@ -67,7 +67,13 @@ class CaixaController extends Controller
     {
         $users = Auth::user();
         $empresas = Empresa::all();
-        $caixas = Caixa::all();
+        if (Auth::user()->hasRole('Master')) {
+            $caixas = Caixa::all();
+        } else {
+            $caixas = Caixa::where('empresa_id', Auth::user()->empresa_id)->get();
+        }
+
+
         return view('caixa.index', compact('caixas', 'empresas', 'users'));
     }
 
