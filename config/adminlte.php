@@ -419,12 +419,6 @@ return [
                     'can'  => 'gerenciar adiantamento',
                 ],
                 [
-                    'text' => 'Vendedores',
-                    'url'  => '/vendedor',
-                    'icon' => 'fas fa-user-tie',
-                    'can'  => 'gerenciar adiantamento',
-                ],
-                [
                     'text' => 'Banco',
                     'url'  => '/bancos',
                     'icon' => 'fas fa-university',

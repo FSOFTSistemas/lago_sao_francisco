@@ -15,19 +15,19 @@ class FormaPagamentoSeeder extends Seeder
     {
         $formasPagamento = [
             [
-                'descricao' => 'Cartão de Crédito',
+                'descricao' => 'Cartão-crédito',
                 'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Cartão de Débito',
+                'descricao' => 'Cartão-débito',
                 'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Boleto Bancário',
+                'descricao' => 'Boleto-bancário',
                 'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -39,7 +39,7 @@ class FormaPagamentoSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Transferência Bancária',
+                'descricao' => 'Transferência-bancária',
                 'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
