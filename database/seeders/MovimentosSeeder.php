@@ -31,7 +31,16 @@ class MovimentosSeeder extends Seeder
             'sangria',
             'suprimento',
             'abertura de caixa',
-            'fechamento de caixa'
+            'fechamento de caixa',
+            'cancelamento-dinheiro',
+            'cancelamento-cartão-crédito',
+            'cancelamento-cartão-débito',
+            'cancelamento-pix',
+            'cancelamento-transferência-bancária',
+            'cancelamento-boleto-bancário',
+            'cancelamento-carteira',
+            'cancelamento-cheque',
+            'cancelamento-sympla',
         ];
 
         foreach ($movimentos as $descricao) {

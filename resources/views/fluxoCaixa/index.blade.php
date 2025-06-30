@@ -34,6 +34,7 @@
                     <option value="saida" {{ request('tipo') == 'saida' ? 'selected' : '' }}>Saída</option>
                     <option value="abertura" {{ request('tipo') == 'abertura' ? 'selected' : '' }}>Abertura</option>
                     <option value="fechamento" {{ request('tipo') == 'fechamento' ? 'selected' : '' }}>Fechamento</option>
+                    <option value="fechamento" {{ request('tipo') == 'cancelamento' ? 'selected' : '' }}>Cancelamento</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
@@ -179,6 +180,7 @@
                             @case('saida') red @break
                             @case('abertura') maroon @break
                             @case('fechamento') maroon @break
+                            @case('cancelamento') grey @break
                             @default black
                         @endswitch;">
                         {{ ucfirst($fluxoCaixa->tipo) }}

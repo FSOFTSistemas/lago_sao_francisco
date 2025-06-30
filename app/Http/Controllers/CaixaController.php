@@ -151,25 +151,29 @@ class CaixaController extends Controller
     }
 
     public function getResumoFechamento(Caixa $caixa)
-    {
-        $fluxos = FluxoCaixa::with('movimento')
-            ->where('caixa_id', $caixa->id)
-            ->get();
+{
+    $fluxos = FluxoCaixa::with('movimento')
+        ->where('caixa_id', $caixa->id)
+        ->get();
 
-        $saldo = $fluxos->where('tipo', 'entrada')->sum('valor')
-            - $fluxos->where('tipo', 'saida')->sum('valor');
+    // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento)
+    $saldo = $fluxos->sum('valor');
 
-        $formasPagamento = $fluxos->filter(function ($fluxo) {
-            return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
-        })->groupBy(function ($fluxo) {
-            return explode('-', $fluxo->movimento->descricao)[1] ?? 'outro';
-        })->map(function ($items) {
-            return $items->sum('valor');
-        });
+    // Agrupamento por forma de pagamento
+    $formasPagamento = $fluxos->filter(function ($fluxo) {
+        return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
+    })->groupBy(function ($fluxo) {
+        // Considera apenas o segundo termo como chave (ex: "venda-cartão-crédito" -> "cartão-crédito")
+        $partes = explode('-', $fluxo->movimento->descricao);
+        return $partes[1] ?? 'outro';
+    })->map(function ($items) {
+        return $items->sum('valor');
+    });
 
-        return [
-            'saldo' => $saldo,
-            'formas' => $formasPagamento,
-        ];
-    }
+    return [
+        'saldo' => $saldo,
+        'formas' => $formasPagamento,
+    ];
+}
+
 }
