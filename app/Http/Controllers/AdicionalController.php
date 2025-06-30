@@ -39,10 +39,10 @@ class AdicionalController extends Controller
         }
     }
 
-    public function update(Request $request, Adicional $adicional)
+    public function update(Request $request, $id)
     {
         try{
-            $adicional = Adicional::findOrFail($adicional->id);
+            $adicional = Adicional::findOrFail($id);
              $validated = $request->validate([
                 'descricao' => 'string|required',
                 'valor' => 'numeric|required',

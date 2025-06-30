@@ -14,7 +14,7 @@ class FormaPagamentoController extends Controller
      */
     public function index()
     {
-        $formaPagamento = FormaPagamento::daEmpresa(Auth::user()->empresa_id)->get();
+        $formaPagamento = FormaPagamento::all();
         return view('preferencias.formaPagamento', compact('formaPagamento'));
     }
 

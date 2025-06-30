@@ -53,11 +53,16 @@
                             </button>
                         </form>
 
+                        @php
+                            $hoje = \Illuminate\Support\Carbon::today()->toDateString();
+                        @endphp
 
-                        <button type="button" class="btn btn-danger btn-sm" title="Excluir"
-                            onclick="confirmarExclusaoDayUse({{ $dayuse->id }})">
-                            🗑️
-                        </button>
+                        @if ($dayuse->data == $hoje)
+                            <button type="button" class="btn btn-danger btn-sm" title="Excluir"
+                                onclick="confirmarExclusaoDayUse({{ $dayuse->id }})">
+                                🗑️
+                            </button>
+                        @endif
                     </td>
                 </tr>
 
@@ -91,59 +96,58 @@
         </tbody>
     @endcomponent
     <script>
-function confirmarExclusaoDayUse(dayuseId) {
-    Swal.fire({
-        title: 'Autenticação do Supervisor',
-        text: 'Digite a senha do supervisor para confirmar a exclusão do Day Use.',
-        input: 'password',
-        inputLabel: 'Senha do Supervisor',
-        inputPlaceholder: 'Digite a senha',
-        inputAttributes: {
-            autocapitalize: 'off',
-            autocorrect: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Confirmar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: (senha) => {
-            return fetch("{{ route('dayuse.verificaSupervisor') }}", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        function confirmarExclusaoDayUse(dayuseId) {
+            Swal.fire({
+                title: 'Autenticação do Supervisor',
+                text: 'Digite a senha do supervisor para confirmar a exclusão do Day Use.',
+                input: 'password',
+                inputLabel: 'Senha do Supervisor',
+                inputPlaceholder: 'Digite a senha',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
                 },
-                body: JSON.stringify({
-                    senha: senha,
-                    dayuse_id: dayuseId
-                })
-            })
-            .then(response => {
-                console.log('aqui', response)
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message);
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: (senha) => {
+                    return fetch("{{ route('dayuse.verificaSupervisor') }}", {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                senha: senha,
+                                dayuse_id: dayuseId
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.message);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Excluído!',
+                        text: result.value.message
+                    }).then(() => {
+                        location.reload(); // recarrega para refletir exclusão
                     });
                 }
-                return response.json();
-            })
-            .catch(error => {
-                Swal.showValidationMessage(error.message);
             });
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Excluído!',
-                text: result.value.message
-            }).then(() => {
-                location.reload(); // recarrega para refletir exclusão
-            });
-        }
-    });
-}
-</script>
+    </script>
 
 
 

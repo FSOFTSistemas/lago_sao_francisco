@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 
 class FuncionarioController extends Controller
 {
-    public $cargos = ['Auxiliar de Manutenção', 'Eletricista', 'Jardineiro', 'Serviços Gerais', 'Vigia', 'Assistente Administrativo', 'Porteiro', 'Tratadpr de Animais', 'Cozinheiro Geral', 'Assistente de Vendas', 'Camareira de Hotel', 'Recepcionista em Geral', 'Garçom', 'Lavadeira em Geral', 'Chefe de Portaria', 'Coordenador Administrativo', 'Gerente Administrativo', 'Analista Financeiro'];
+    public $cargos = ['Auxiliar de Manutenção', 'Eletricista', 'Jardineiro', 'Serviços Gerais', 'Vigia', 'Assistente Administrativo', 'Porteiro', 'Tratador de Animais', 'Cozinheiro Geral', 'Assistente de Vendas', 'Camareira de Hotel', 'Recepcionista em Geral', 'Garçom', 'Lavadeira em Geral', 'Chefe de Portaria', 'Coordenador Administrativo', 'Gerente Administrativo', 'Analista Financeiro'];
 
     public $setores = ['Administrativo', 'Produção', 'Manutenção', 'Gerência'];
     /**

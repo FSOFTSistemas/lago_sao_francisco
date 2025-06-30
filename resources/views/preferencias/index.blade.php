@@ -69,14 +69,6 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ route('categoriaItensCardapio.index')}}" class="card card-opcao text-center">
-                <div class="card-body">
-                    <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Categorias do Cardapio</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
             <a href="{{ route('adicionais.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-chair fa-3x" style="color: #679A4C;"></i>
