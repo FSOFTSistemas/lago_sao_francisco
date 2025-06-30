@@ -8,9 +8,12 @@ use App\Models\Caixa;
 use App\Models\FluxoCaixa;
 use App\Models\Funcionario;
 use App\Models\LogDayuse;
+use App\Models\MovDayUse;
 use App\Models\Movimento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -19,10 +22,43 @@ class DayUseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+     public function index(Request $request)
     {
-        $dayuses = DayUse::all();
-        return view('dayuse.index', compact('dayuses'));
+        $empresaId = Auth::user()->empresa_id;
+
+        // Datas padrão: hoje
+        $dataInicio = $request->input('data_inicio', now()->toDateString());
+        $dataFim = $request->input('data_fim', now()->toDateString());
+
+        // Validação: data fim não pode ser anterior à início
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            if (Carbon::parse($dataFim)->lt(Carbon::parse($dataInicio))) {
+                return redirect()->route('dayuse.index')
+                    ->with('error', 'A data final não pode ser anterior à data inicial.');
+            }
+        }
+
+        // Recuperar DayUses do período
+        $dayuses = DayUse::with(['cliente', 'vendedor'])
+            ->whereBetween('data', [$dataInicio, $dataFim])
+            ->orderByDesc('data')
+            ->get();
+
+        // Agrupar MovDayUse por item para contagem
+        $movimentos = MovDayUse::with('item')
+    ->whereHas('dayuse', function ($query) use ($dataInicio, $dataFim) {
+        $query->whereBetween('data', [$dataInicio, $dataFim]);
+    })
+    ->select('item_dayuse_id', DB::raw('SUM(quantidade) as total_quantidade'))
+    ->groupBy('item_dayuse_id')
+    ->get()
+    ->map(function ($mov) {
+        $mov->item_nome = $mov->item->descricao ?? 'Item';
+        $mov->passeio = $mov->item->passeio ?? false;
+        return $mov;
+    });
+
+        return view('dayuse.index', compact('dayuses', 'dataInicio', 'dataFim', 'movimentos'));
     }
 
     /**

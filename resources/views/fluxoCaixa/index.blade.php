@@ -192,7 +192,7 @@
                             👁️
                         </button>
 
-                        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
+                        {{-- <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
                             data-target="#editFluxoCaixaModal{{ $fluxoCaixa->id }}">
                             ✏️
                         </button>
@@ -200,7 +200,7 @@
                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                             data-target="#deleteFluxoCaixaModal{{ $fluxoCaixa->id }}">
                             🗑️
-                        </button>
+                        </button> --}}
                     </td>
                 </tr>
 
