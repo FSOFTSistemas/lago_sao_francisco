@@ -42,6 +42,9 @@ class DatabaseSeeder extends Seeder
         $permissionUsuarios = new PermisssoesUsuariosSeeder();
         $permissionUsuarios->empresa_id = $empresa->empresaLago->id;
         $permissionUsuarios->run();
+
+        $movimentos = new MovimentosSeeder();
+        $movimentos->run();
         
         $notaFiscalItens  = new NotaFiscalItensSeeder();
         $notaFiscalItens->usuarioId = $permissionUsuarios->usuario_id;
@@ -115,6 +118,9 @@ class DatabaseSeeder extends Seeder
 
         $caixa = new CaixaSeeder();
         $caixa->run();
+
+        $mobilia = new MobiliaSeeder();
+        $mobilia->run();
 
     }
 

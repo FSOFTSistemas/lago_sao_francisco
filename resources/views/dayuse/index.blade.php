@@ -8,13 +8,80 @@
 @stop
 
 @section('content')
-    <div class="row mb-3">
-        <div class="col d-flex justify-content-end">
-            <a href="{{ route('dayuse.create') }}" class="btn btn-success new">
-                <i class="fas fa-plus"></i> Novo Day Use
-            </a>
-        </div>
+<div class="row mb-3">
+    <div class="col-md-8">
+        <form method="GET" action="{{ route('dayuse.index') }}" class="d-flex align-items-end gap-2">
+            <div class="me-2">
+                <label>Data Início:</label>
+                <input type="date" name="data_inicio" class="form-control" value="{{ request('data_inicio') }}">
+            </div>
+            <div class="me-2">
+                <label>Data Fim:</label>
+                <input type="date" name="data_fim" class="form-control" value="{{ request('data_fim') }}">
+            </div>
+            <div class="me-2">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                <a href="{{ route('dayuse.index') }}" class="btn btn-secondary">Limpar</a>
+            </div>
+        </form>
     </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ route('dayuse.create') }}" class="btn btn-success new">
+            <i class="fas fa-plus"></i> Novo Day Use
+        </a>
+    </div>
+</div>
+
+    
+
+<!-- Botão para abrir/fechar os cards -->
+<div class="mb-3 d-flex justify-content-end">
+    <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCardsDayUse" aria-expanded="false" aria-controls="collapseCardsDayUse">
+       <i class="fas fa-filter"></i> Mostrar Resumo de Itens
+    </button>
+</div>
+
+<!-- Conteúdo que aparece/oculta -->
+<div class="collapse" id="collapseCardsDayUse">
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <button class="btn btn-outline-primary" onclick="filtrarCards('passeio')">
+            <i class="fas fa-umbrella-beach"></i> Mostrar Passeios
+        </button>
+        <button class="btn btn-outline-secondary" onclick="filtrarCards('outros')">
+            <i class="fas fa-box"></i> Mostrar Outros Itens
+        </button>
+        <button class="btn btn-outline-info" onclick="filtrarCards('todos')">
+            <i class="fas fa-list"></i> Mostrar Todos
+        </button>
+    </div>
+</div>
+    <div class="row">
+        @foreach ($movimentos as $mov)
+            @php
+                $isPasseio = $mov->passeio ? 'passeio' : 'outros';
+            @endphp
+            <div class="col-md-3 mb-3 card-mov {{ $isPasseio }}">
+                <div class="card border-left-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} shadow h-100 py-2">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} font-weight-bold text-uppercase mb-1">
+                                {{ $mov->item_nome ?? 'Item' }}
+                            </h6>
+                            <span class="text-dark">Qtd: {{ $mov->total_quantidade }}</span>
+                        </div>
+                        <div class="icon text-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} ml-3">
+                            <i class="fas {{ $isPasseio == 'passeio' ? 'fa-umbrella-beach' : 'fa-ticket-alt' }} fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+
+
+
 
     @component('components.data-table', [
         'responsive' => [
@@ -53,11 +120,16 @@
                             </button>
                         </form>
 
+                        @php
+                            $hoje = \Illuminate\Support\Carbon::today()->toDateString();
+                        @endphp
 
-                        <button type="button" class="btn btn-danger btn-sm" title="Excluir"
-                            onclick="confirmarExclusaoDayUse({{ $dayuse->id }})">
-                            🗑️
-                        </button>
+                        @if ($dayuse->data == $hoje)
+                            <button type="button" class="btn btn-danger btn-sm" title="Excluir"
+                                onclick="confirmarExclusaoDayUse({{ $dayuse->id }})">
+                                🗑️
+                            </button>
+                        @endif
                     </td>
                 </tr>
 
@@ -91,59 +163,74 @@
         </tbody>
     @endcomponent
     <script>
-function confirmarExclusaoDayUse(dayuseId) {
-    Swal.fire({
-        title: 'Autenticação do Supervisor',
-        text: 'Digite a senha do supervisor para confirmar a exclusão do Day Use.',
-        input: 'password',
-        inputLabel: 'Senha do Supervisor',
-        inputPlaceholder: 'Digite a senha',
-        inputAttributes: {
-            autocapitalize: 'off',
-            autocorrect: 'off'
-        },
-        showCancelButton: true,
-        confirmButtonText: 'Confirmar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: (senha) => {
-            return fetch("{{ route('dayuse.verificaSupervisor') }}", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        function confirmarExclusaoDayUse(dayuseId) {
+            Swal.fire({
+                title: 'Autenticação do Supervisor',
+                text: 'Digite a senha do supervisor para confirmar a exclusão do Day Use.',
+                input: 'password',
+                inputLabel: 'Senha do Supervisor',
+                inputPlaceholder: 'Digite a senha',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
                 },
-                body: JSON.stringify({
-                    senha: senha,
-                    dayuse_id: dayuseId
-                })
-            })
-            .then(response => {
-                console.log('aqui', response)
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message);
+                showCancelButton: true,
+                confirmButtonText: 'Confirmar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: (senha) => {
+                    return fetch("{{ route('dayuse.verificaSupervisor') }}", {
+                            method: "POST",
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                senha: senha,
+                                dayuse_id: dayuseId
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(data => {
+                                    throw new Error(data.message);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .catch(error => {
+                            Swal.showValidationMessage(error.message);
+                        });
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Excluído!',
+                        text: result.value.message
+                    }).then(() => {
+                        location.reload(); // recarrega para refletir exclusão
                     });
                 }
-                return response.json();
-            })
-            .catch(error => {
-                Swal.showValidationMessage(error.message);
             });
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Excluído!',
-                text: result.value.message
-            }).then(() => {
-                location.reload(); // recarrega para refletir exclusão
-            });
+    </script>
+    <script>
+    function filtrarCards(tipo) {
+        if(tipo === 'todos'){
+            $('.card-mov').show();
+        } else {
+            $('.card-mov').hide();
+            $('.' + tipo).show();
         }
+    }
+
+    // Exibir todos por padrão
+    $(document).ready(function () {
+        filtrarCards('todos');
     });
-}
 </script>
+
 
 
 
@@ -164,4 +251,10 @@ function confirmarExclusaoDayUse(dayuseId) {
             background-color: #3e7222 !important;
         }
     </style>
+    <style>
+    .card-mov {
+        transition: all 0.3s ease-in-out;
+    }
+</style>
+
 @stop

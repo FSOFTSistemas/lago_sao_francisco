@@ -25,7 +25,7 @@ class VerificaCaixaAberto
         }
 
         if (!Carbon::parse($caixaAberto->data_abertura)->isToday()) {
-            return redirect()->back()->with('sweet_error', 'O caixa aberto não é do dia atual. Feche-o para continuar.');
+            return redirect()->route('caixa.index')->with('sweet_error', 'O caixa aberto não é do dia atual. Feche-o para continuar.');
         }
 
         return $next($request);

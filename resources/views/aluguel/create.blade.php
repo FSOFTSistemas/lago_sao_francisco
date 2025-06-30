@@ -248,6 +248,9 @@
                     {{-- Aba 3: Adicionais --}}
                     {{-- @php dd($adicionais) @endphp --}}
                     <div class="tab-pane fade" id="tab-adicional">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <button type="button" id="btnProximoAdicional" class="btn btn-primary w-25">Próximo</button>
+                        </div>
                         @php
                             $adicionaisSelecionadosArray = collect($adicionaisSelecionados)->keyBy('adicional_id');
                         @endphp
@@ -1377,13 +1380,19 @@
                 const abaBuffet = document.querySelector('a[href="#tab-buffet"]');
                 abaBuffet.click();
             } else {
-                // vai para a aba pagamentos
-                const abaPagamentos = document.querySelector('a[href="#tab-pagamento"]');
-                abaPagamentos.click();
+                // vai para a aba adicional
+                const abaAdicional = document.querySelector('a[href="#tab-adicional"]');
+                abaAdicional.click();
             }
         });
 
         document.getElementById('btnProximoBuffet').addEventListener('click', function() {
+            const abaAdicional = document.querySelector('a[href="#tab-adicional"]');
+            if (abaAdicional) {
+                abaAdicional.click();
+            }
+        });
+        document.getElementById('btnProximoAdicional').addEventListener('click', function() {
             const abaPagamentos = document.querySelector('a[href="#tab-pagamento"]');
             if (abaPagamentos) {
                 abaPagamentos.click();

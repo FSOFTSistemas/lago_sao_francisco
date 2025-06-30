@@ -10,6 +10,10 @@ use App\Models\Adicional;
 use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
 use App\Models\AluguelPagamento;
+use App\Models\Caixa;
+use App\Models\FluxoCaixa;
+use App\Models\Movimento;
+use App\Services\CaixaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,6 +21,13 @@ use Illuminate\Support\Facades\DB;
 
 class AluguelController extends Controller
 {
+    protected $caixaService;
+    
+    public function __construct(CaixaService $caixaService)
+{
+    $this->caixaService = $caixaService;
+}
+
     public function index()
     {
         $aluguel = Aluguel::with(['cliente', 'espaco'])->latest()->paginate(15);
@@ -89,6 +100,9 @@ class AluguelController extends Controller
                     $this->salvarPagamentos($aluguel, $request);
                 }
                 
+                // ✅ Criar fluxo de caixa com os pagamentos
+                $this->salvarFluxosDePagamento($aluguel);
+
                 DB::commit();
                 
                 return redirect()->route('aluguel.create')->with('success', 'Aluguel criado com sucesso!');
@@ -399,6 +413,45 @@ class AluguelController extends Controller
             }
         }
     }
+
+    private function salvarFluxosDePagamento(Aluguel $aluguel)
+{
+    $empresaId = Auth::user()->empresa_id;
+
+    // Busca o caixa aberto da empresa no dia
+    $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+        ->where('status', 'aberto')
+        ->where('empresa_id', $empresaId)
+        ->first();
+
+    if (!$caixa) {
+        session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+        return;
+    }
+
+    foreach ($aluguel->pagamentos as $pagamento) {
+        $formaPagamento = $pagamento->formaPagamento;
+
+        $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
+        $tipoMov = 'venda-' . $slug;
+
+        $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
+
+        if (!$movimentoId) {
+            continue; // pula se não encontrar o movimento
+        }
+
+        app(CaixaService::class)->inserirMovimentacao($caixa, [
+            'descricao' => 'Aluguel #' . $aluguel->id,
+            'valor' => $pagamento->valor,
+            'valor_total' => $pagamento->valor,
+            'tipo' => 'entrada',
+            'movimento_id' => $movimentoId,
+            'plano_de_conta_id' => 1, // ou o plano de conta padrão
+        ]);
+    }
+}
+
 
 
 

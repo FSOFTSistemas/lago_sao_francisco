@@ -2,11 +2,6 @@
     <!-- Cabeçalho -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">DayUse #{{ $dayUseId}}</h2>
-        <div>
-            <button wire:click="confirmDelete" class="btn btn-danger">
-                <i class="fas fa-trash"></i> Excluir
-            </button>
-        </div>
     </div>
 
     <!-- Card Principal -->

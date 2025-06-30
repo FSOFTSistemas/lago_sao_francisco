@@ -92,32 +92,6 @@ class PermisssoesUsuariosSeeder extends Seeder
             'gerenciar plano de conta',
             'gerenciar produto');
 
-        $movimentos = [
-            'venda-dinheiro',                   
-            'venda-cartão-crédito',
-            'venda-cartão-débito',
-            'venda-pix',
-            'venda-transferência-bancária',
-            'venda-boleto-bancário',
-            'venda-carteira',
-            'venda-cheque',
-            'recebimento-dinheiro',
-            'recebimento-cartão',
-            'recebimento-pix',
-            'recebimento-carteira',
-            'recebimento-cheque',
-            'sangria',
-            'suprimento',
-            'abertura de caixa',
-            'fechamento de caixa'
-        ];
-
-        foreach ($movimentos as $descricao) {
-            Movimento::firstOrCreate([
-                'descricao' => $descricao,
-            ]);
-        }
-
         Hospede::firstOrCreate(
             ['nome' => 'Bloqueado']
         );
