@@ -25,7 +25,7 @@ return new class extends Migration {
 
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->foreign('plano_de_contas_id')->references('id')->on('plano_de_contas')->onDelete('cascade');
-
+            $table->foreign('fornecedor_id')->references('id')->on('fornecedors')->onDelete('set null');
         });
     }
 

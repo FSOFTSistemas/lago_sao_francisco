@@ -5,66 +5,67 @@ namespace App\Http\Controllers;
 use App\Models\ContasAPagar;
 use App\Models\Empresa;
 use App\Models\Fornecedor;
+use App\Models\ParcelaContasAPagar;
 use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class ContasAPagarController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $planoDeContas = PlanoDeConta::all();
-        $empresas = Empresa::all();
-        $contasAPagar = ContasAPagar::all();
-        $fornecedores = Fornecedor::all();
-        return view('contasAPagar.index', compact('contasAPagar', 'planoDeContas', 'empresas', 'fornecedores'));
+    public function index(Request $request)
+{
+    $planoDeContas = PlanoDeConta::all();
+    $empresas = Empresa::all();
+    $fornecedores = Fornecedor::all();
+
+    $query = ContasAPagar::where('empresa_id', Auth::user()->empresa_id);
+
+    // Filtro por mês (YYYY-MM)
+    if ($request->has('mes') && $request->mes) {
+        try {
+            $mes = \Carbon\Carbon::createFromFormat('Y-m', $request->mes);
+            $inicioMes = $mes->copy()->startOfMonth()->toDateString();
+            $fimMes = $mes->copy()->endOfMonth()->toDateString();
+
+            // Filtra contas cujo vencimento está dentro do mês selecionado
+            $query->whereBetween('data_vencimento', [$inicioMes, $fimMes]);
+        } catch (\Exception $e) {
+            // Se formato inválido, ignora filtro
+        }
+    } else {
+        // Sem filtro, busca todas as contas da empresa
+        $query->orderBy('data_vencimento', 'asc');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    $contasAPagar = $query->get();
+
+    // Se houver parcelamento (supondo que você adicionou colunas no modelo para isso),
+    // define propriedades auxiliares para a view:
+    foreach ($contasAPagar as $conta) {
+        // Se você tem campos como 'numero_parcela' e 'total_parcelas' na tabela:
+        $conta->numero_parcela = $conta->numero_parcela ?? 1;
+        $conta->total_parcelas = $conta->total_parcelas ?? 1;
+    }
+
+    return view('contasAPagar.index', compact('contasAPagar', 'planoDeContas', 'empresas', 'fornecedores'));
+}
+
+
     public function store(Request $request)
     {
         try {
             $validatedData = $request->validate([
                 'descricao' => 'required|string|max:255',
                 'valor' => 'required|numeric|min:0.01',
-                'valor_pago' => [
-                    'nullable',
-                    'numeric',
-                    'min:0',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value > $request->valor) {
-                            $fail('O valor pago não pode ser maior que o valor da conta.');
-                        }
-                    }
-                ],
-                'data_vencimento' => [
-                    'required',
-                    'date',
-                    'after_or_equal:today' // ou 'after:yesterday' dependendo do requisito
-                ],
-                'data_pagamento' => [
-                    'nullable',
-                    'date',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value && $request->data_vencimento && $value < $request->data_vencimento) {
-                            $fail('A data de pagamento não pode ser anterior à data de vencimento.');
-                        }
-                    }
-                ],
+                'data_vencimento' => 'required|date|after_or_equal:today',
                 'status' => 'required|in:pendente,finalizado',
                 'plano_de_contas_id' => [
                     'nullable',
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
-                        // Verifica se o plano de contas pertence à mesma empresa do usuário
                         if ($value && !PlanoDeConta::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)
-                            ->exists()) {
+                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
                             $fail('O plano de contas selecionado não pertence à sua empresa.');
                         }
                     }
@@ -73,150 +74,96 @@ class ContasAPagarController extends Controller
                     'nullable',
                     'exists:fornecedors,id',
                     function ($attribute, $value, $fail) {
-                        // Verifica se o fornecedor pertence à mesma empresa do usuário
                         if ($value && !Fornecedor::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)
-                            ->exists()) {
+                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
                             $fail('O fornecedor selecionado não pertence à sua empresa.');
                         }
                     }
                 ],
-            ], [
-                'descricao.required' => 'A descrição da conta é obrigatória.',
-                'valor.required' => 'O valor da conta é obrigatório.',
-                'valor.min' => 'O valor da conta deve ser pelo menos R$ 0,01.',
-                'data_vencimento.required' => 'A data de vencimento é obrigatória.',
-                'data_vencimento.after_or_equal' => 'A data de vencimento não pode ser no passado.',
-                'status.required' => 'O status da conta é obrigatório.',
+                'parcelas' => 'nullable|integer|min:1'
             ]);
 
             $validatedData['empresa_id'] = Auth::user()->empresa_id;
-            
-            ContasAPagar::create($validatedData);
-            
+
+            $conta = ContasAPagar::create($validatedData);
+
+            $numParcelas = $request->input('parcelas', 1);
+            $valorParcela = round($conta->valor / $numParcelas, 2);
+            $dataBase = Carbon::parse($validatedData['data_vencimento']);
+
+            for ($i = 1; $i <= $numParcelas; $i++) {
+                ParcelaContasAPagar::create([
+                    'contas_a_pagar_id' => $conta->id,
+                    'numero_parcela' => $i,
+                    'valor' => $valorParcela,
+                    'data_vencimento' => $dataBase->copy()->addMonths($i - 1),
+                    'status' => 'pendente'
+                ]);
+            }
+
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('success', 'Conta a pagar cadastrada com sucesso!');
-                
+
         } catch (\Exception $e) {
             return redirect()
                 ->route('contasAPagar.index')
-                ->with('error', 'Erro ao cadastrar conta a pagar: ' . $e->getMessage());
+                ->with('error', 'Erro ao cadastrar conta: ' . $e->getMessage());
         }
     }
-    /**
-     * Update the specified resource in storage.
-     */
-        public function update(Request $request, ContasAPagar $contasAPagar)
+
+    public function update(Request $request, ContasAPagar $contasAPagar)
     {
         try {
             $validatedData = $request->validate([
                 'descricao' => 'required|string|max:255',
                 'valor' => [
-                    'required',
-                    'numeric',
-                    'min:0.01',
+                    'required', 'numeric', 'min:0.01',
                     function ($attribute, $value, $fail) use ($contasAPagar) {
-                        // Impede a redução do valor se já houver pagamento
                         if ($contasAPagar->valor_pago > 0 && $value < $contasAPagar->valor) {
                             $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
                         }
                     }
                 ],
-                'valor_pago' => [
-                    'nullable',
-                    'numeric',
-                    'min:0',
-                    function ($attribute, $value, $fail) use ($request, $contasAPagar) {
-                        $value = $value ?? 0;
-                        // Validação cruzada com o valor total
-                        if ($value > $request->valor) {
-                            $fail('O valor pago não pode ser maior que o valor da conta.');
-                        }
-                        // Validação para status finalizado
-                        if ($request->status == 'finalizado' && $value < $request->valor) {
-                            $fail('Para finalizar a conta, o valor pago deve ser igual ao valor total.');
-                        }
-                    }
-                ],
-                'data_vencimento' => [
-                    'required',
-                    'date',
-                    function ($attribute, $value, $fail) use ($contasAPagar) {
-                        // Não permite alterar data de vencimento se já foi pago
-                        if ($contasAPagar->valor_pago > 0 && $value != $contasAPagar->data_vencimento) {
-                            $fail('Não é possível alterar a data de vencimento de uma conta já paga.');
-                        }
-                    }
-                ],
-                'data_pagamento' => [
-                    'nullable',
-                    'date',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value && $request->data_vencimento && $value < $request->data_vencimento) {
-                            $fail('A data de pagamento não pode ser anterior à data de vencimento.');
-                        }
-                    }
-                ],
+                'data_vencimento' => 'required|date',
                 'status' => [
-                    'required',
-                    'in:pendente,finalizado',
-                    function ($attribute, $value, $fail) use ($request) {
-                        if ($value == 'finalizado' && (empty($request->valor_pago) || $request->valor_pago < $request->valor)) {
-                            $fail('Para finalizar a conta, o valor pago deve ser igual ao valor total.');
-                        }
-                    }
+                    'required', 'in:pendente,finalizado',
                 ],
                 'plano_de_contas_id' => [
-                    'nullable',
-                    'exists:plano_de_contas,id',
+                    'nullable', 'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
                         if ($value && !PlanoDeConta::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)
-                            ->exists()) {
+                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
                             $fail('O plano de contas selecionado não pertence à sua empresa.');
                         }
                     }
                 ],
                 'fornecedor_id' => [
-                    'nullable',
-                    'exists:fornecedors,id',
+                    'nullable', 'exists:fornecedors,id',
                     function ($attribute, $value, $fail) {
                         if ($value && !Fornecedor::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)
-                            ->exists()) {
+                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
                             $fail('O fornecedor selecionado não pertence à sua empresa.');
                         }
                     }
                 ],
-            ], [
-                'descricao.required' => 'A descrição da conta é obrigatória.',
-                'valor.required' => 'O valor da conta é obrigatório.',
-                'valor.min' => 'O valor da conta deve ser pelo menos R$ 0,01.',
-                'data_vencimento.required' => 'A data de vencimento é obrigatória.',
-                'status.required' => 'O status da conta é obrigatório.',
-                'status.in' => 'O status deve ser "pendente" ou "finalizado".',
             ]);
 
-            // Atualiza os dados
             $contasAPagar->update($validatedData);
 
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('success', 'Conta a pagar atualizada com sucesso!');
-                
+
         } catch (\Exception $e) {
             return redirect()
                 ->route('contasAPagar.index')
-                ->with('error', 'Erro ao atualizar conta a pagar: ' . $e->getMessage());
+                ->with('error', 'Erro ao atualizar conta: ' . $e->getMessage());
         }
     }
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(ContasAPagar $contasAPagar)
     {
-        $contasAPagar = ContasAPagar::findOrFail($contasAPagar->id);
         $contasAPagar->delete();
         return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
     }
