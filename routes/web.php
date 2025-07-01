@@ -191,3 +191,4 @@ Route::resource('logsdayuse', LogDayuseController::class);
 
 Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])->name('fluxoCaixa.pdf');
 
+Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');

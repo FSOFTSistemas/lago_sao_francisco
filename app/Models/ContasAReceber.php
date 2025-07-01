@@ -15,7 +15,7 @@ class ContasAReceber extends Model
         'valor',
         'valor_recebido',
         'data_vencimento',
-        'data_pagamento',
+        'data_recebimento',
         'status',
         'venda_id',
         'parcela',
