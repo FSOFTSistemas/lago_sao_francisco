@@ -391,13 +391,13 @@ return [
             'can'  => 'gerenciar funcionario',
         ],
         [
-            'text' => 'Caixa',
+            'text' => '!Caixa',
             'url'  => '/caixa',
             'icon' => 'fas fa-money-bill-alt',
             'can'  => 'gerenciar caixa',
         ],
         [
-            'text' => 'Fluxos de Caixa',
+            'text' => 'Caixa',
             'url'  => '/fluxoCaixa',
             'icon' => 'fas fa-file-invoice',
             'can'  => 'gerenciar fluxo de caixa',

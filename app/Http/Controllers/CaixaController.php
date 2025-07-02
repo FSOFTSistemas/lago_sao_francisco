@@ -65,7 +65,7 @@ class CaixaController extends Controller
      */
     public function index()
     {
-        $users = Auth::user();
+        $usuario = Auth::user();
         $empresas = Empresa::all();
         $empresaSelecionada = session('empresa_id'); // <-- Empresa escolhida no seletor
 
@@ -79,7 +79,7 @@ class CaixaController extends Controller
             $caixas = Caixa::where('empresa_id', Auth::user()->empresa_id)->get();
         }
 
-        return view('caixa.index', compact('caixas', 'empresas', 'users'));
+        return view('caixa.index', compact('caixas', 'empresas', 'usuario'));
     }
 
 

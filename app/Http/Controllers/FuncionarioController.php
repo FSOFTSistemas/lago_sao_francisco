@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Empresa;
 use App\Models\Endereco;
 use App\Models\Funcionario;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class FuncionarioController extends Controller
 {
@@ -43,7 +46,10 @@ class FuncionarioController extends Controller
         $enderecos = Endereco::all();
         $setores = $this->setores;
         $cargos = $this->cargos;
-        return view('funcionario.form', compact('empresas', 'enderecos','setores', 'cargos'));
+        $roles = Role::all();
+        $users = User::with('roles')->get();
+        $permissoes = Permission::all();
+        return view('funcionario.form', compact('empresas', 'enderecos','setores', 'cargos', 'roles', 'users', 'permissoes'));
     }
 
     /**
@@ -190,4 +196,7 @@ class FuncionarioController extends Controller
             ->limit(20)
             ->get(['id', 'nome']);
     }
+
+
+
 }

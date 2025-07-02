@@ -68,65 +68,91 @@ class FluxoCaixaController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-    {
-        $query = FluxoCaixa::with('movimento');
+{
+    $usuario = Auth::user();
+    $empresaSelecionada = session('empresa_id');
 
-        $empresaSelecionada = session('empresa_id');
-        $usuario = Auth::user();
+    // -----------------------------
+    // FLUXO DE CAIXA
+    // -----------------------------
+    $fluxoQuery = FluxoCaixa::with('movimento');
 
-        // Filtro de empresa: se não for Master, sempre aplica o filtro
-        if ($usuario->hasRole('Master')) {
-            if ($empresaSelecionada) {
-                $query->where('empresa_id', $empresaSelecionada);
-            }
-            // senão mostra tudo
-        } else {
-            $query->where('empresa_id', $usuario->empresa_id);
+    if ($usuario->hasRole('Master')) {
+        if ($empresaSelecionada) {
+            $fluxoQuery->where('empresa_id', $empresaSelecionada);
         }
-
-        // Filtro por tipo (entrada/saida)
-        if ($request->filled('tipo')) {
-            $query->where('tipo', $request->tipo);
-        }
-
-        // Filtro por data ou intervalo de datas
-        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
-        } else {
-            // Exibir do dia atual por padrão
-            $hoje = \Carbon\Carbon::today();
-            $query->whereDate('data', $hoje);
-        }
-
-        $fluxoCaixas = $query->orderBy('data', 'desc')->orderBy('id', 'desc')->get();
-        $users = $usuario;
-        $movimento = Movimento::all();
-        $empresa = Empresa::all();
-        $caixa = Caixa::all();
-        $planoDeContas = PlanoDeConta::all();
-
-        // Totais por forma de pagamento
-        $totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
-            ->with('movimento')
-            ->when(!Auth::user()->hasRole('Master'), function ($q) {
-                $q->where('empresa_id', Auth::user()->empresa_id);
-            })
-            ->when($request->filled('tipo'), function ($q) use ($request) {
-                $q->where('tipo', $request->tipo);
-            })
-            ->when($request->filled('data_inicio') && $request->filled('data_fim'), function ($q) use ($request) {
-                $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
-            }, function ($q) {
-                $q->whereDate('data', \Carbon\Carbon::today());
-            })
-            ->groupBy('movimento_id')
-            ->get();
-
-        // Total geral
-        $totalGeral = $totaisPorMovimento->sum('total');
-
-        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa', 'totalGeral', 'totaisPorMovimento'));
+    } else {
+        $fluxoQuery->where('empresa_id', $usuario->empresa_id);
     }
+
+    // Filtros opcionais de tipo e data
+    if ($request->filled('tipo')) {
+        $fluxoQuery->where('tipo', $request->tipo);
+    }
+
+    if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+        $fluxoQuery->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+    } else {
+        $fluxoQuery->whereDate('data', \Carbon\Carbon::today());
+    }
+
+    $fluxoCaixas = $fluxoQuery->orderBy('data', 'desc')->orderBy('id', 'desc')->get();
+
+    // -----------------------------
+    // TOTALIZADOR
+    // -----------------------------
+    $totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
+        ->with('movimento')
+        ->when(!$usuario->hasRole('Master'), function ($q) use ($usuario) {
+            $q->where('empresa_id', $usuario->empresa_id);
+        })
+        ->when($request->filled('tipo'), function ($q) use ($request) {
+            $q->where('tipo', $request->tipo);
+        })
+        ->when($request->filled('data_inicio') && $request->filled('data_fim'), function ($q) use ($request) {
+            $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+        }, function ($q) {
+            $q->whereDate('data', \Carbon\Carbon::today());
+        })
+        ->groupBy('movimento_id')
+        ->get();
+
+    $totalGeral = $totaisPorMovimento->sum('total');
+
+    // -----------------------------
+    // CAIXAS
+    // -----------------------------
+    $caixaQuery = Caixa::query();
+
+    if ($usuario->hasRole('Master')) {
+        if ($empresaSelecionada) {
+            $caixaQuery->where('empresa_id', $empresaSelecionada);
+        }
+    } else {
+        $caixaQuery->where('empresa_id', $usuario->empresa_id)
+                   ->where('usuario_id', $usuario->id);
+    }
+
+    $caixas = $caixaQuery->get();
+
+    // -----------------------------
+    // DEMAIS DADOS
+    // -----------------------------
+    $empresas = Empresa::all();
+    $planoDeContas = PlanoDeConta::all();
+    $movimento = Movimento::all();
+
+    return view('fluxoCaixa.index', compact(
+        'fluxoCaixas',
+        'movimento',
+        'empresas',
+        'planoDeContas',
+        'usuario',
+        'caixas',
+        'totalGeral',
+        'totaisPorMovimento'
+    ));
+}
 
 
     /**

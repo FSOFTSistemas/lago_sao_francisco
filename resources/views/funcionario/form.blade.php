@@ -164,6 +164,44 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+    <label>
+        <input type="checkbox" id="criar_usuario" name="criar_usuario" value="1">
+        Criar também um usuário para este funcionário
+    </label>
+</div>
+
+<div id="dados_usuario" style="display: none;">
+    <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" id="email" class="form-control" readonly>
+    </div>
+
+    <div class="form-group">
+        <label>Senha Gerada</label>
+        <input type="text" name="senha_visivel" id="senha_visivel" class="form-control" readonly>
+        <input type="hidden" name="password" id="password">
+    </div>
+
+    <div class="form-group">
+        <label>Tipo de Usuário</label>
+        <select name="tipo" class="form-control">
+            <option value="funcionario">Funcionário</option>
+            <option value="financeiro">Financeiro</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Permissões</label>
+        <select name="permissoes[]" multiple class="form-control select2">
+            @foreach ($permissoes as $permissao)
+                <option value="{{ $permissao->name }}">{{ $permissao->name }}</option>
+            @endforeach
+        </select>
+    </div>
+</div>
+
+
                 <!-- Botão de Salvar -->
                 <div class="card-footer">
                     <a href="{{ route('funcionario.index') }}" class="btn btn-secondary">Voltar</a>
@@ -239,6 +277,51 @@
             mostrarCampo();
         });
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const checkbox = document.getElementById('criar_usuario');
+        const container = document.getElementById('dados_usuario');
+        const nomeInput = document.querySelector('input[name="nome"]');
+        const emailInput = document.getElementById('email');
+        const senhaInput = document.getElementById('senha_visivel');
+        const passwordHidden = document.getElementById('password');
+
+        function gerarEmail(nome) {
+            if (!nome) return '';
+            const partes = nome.trim().toLowerCase().split(' ');
+            const primeiro = partes[0];
+            const ultimo = partes[partes.length - 1];
+            const random = Math.floor(100 + Math.random() * 900);
+            return `${primeiro}${ultimo}${random}@lago.com`;
+        }
+
+        function gerarSenha() {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let senha = '';
+            for (let i = 0; i < 8; i++) {
+                senha += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return senha;
+        }
+
+        checkbox.addEventListener('change', function () {
+            if (this.checked) {
+                container.style.display = 'block';
+                const nome = nomeInput.value;
+                emailInput.value = gerarEmail(nome);
+                const senha = gerarSenha();
+                senhaInput.value = senha;
+                passwordHidden.value = senha;
+            } else {
+                container.style.display = 'none';
+                emailInput.value = '';
+                senhaInput.value = '';
+                passwordHidden.value = '';
+            }
+        });
+    });
+</script>
+
 
 @endsection
 
