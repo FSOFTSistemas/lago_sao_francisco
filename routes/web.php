@@ -173,6 +173,8 @@ Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clie
 
 Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
 
+Route::get('/fornecedores/search', [FornecedorController::class, 'search'])->name('fornecedores.search');
+
 Route::resource('parceiros', ParceiroController::class);
 
 Route::resource('categoriasParceiro', CategoriaParceiroController::class);
@@ -192,3 +194,5 @@ Route::resource('logsdayuse', LogDayuseController::class);
 Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])->name('fluxoCaixa.pdf');
 
 Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');
+
+Route::post('contas-a-pagar/{contasAPagar}/pagar', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');

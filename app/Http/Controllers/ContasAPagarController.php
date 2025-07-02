@@ -13,7 +13,7 @@ use Carbon\Carbon;
 
 class ContasAPagarController extends Controller
 {
-    public function index(Request $request)
+ public function index(Request $request)
 {
     $planoDeContas = PlanoDeConta::all();
     $empresas = Empresa::all();
@@ -21,36 +21,53 @@ class ContasAPagarController extends Controller
 
     $query = ContasAPagar::where('empresa_id', Auth::user()->empresa_id);
 
-    // Filtro por mês (YYYY-MM)
-    if ($request->has('mes') && $request->mes) {
-        try {
-            $mes = \Carbon\Carbon::createFromFormat('Y-m', $request->mes);
-            $inicioMes = $mes->copy()->startOfMonth()->toDateString();
-            $fimMes = $mes->copy()->endOfMonth()->toDateString();
-
-            // Filtra contas cujo vencimento está dentro do mês selecionado
-            $query->whereBetween('data_vencimento', [$inicioMes, $fimMes]);
-        } catch (\Exception $e) {
-            // Se formato inválido, ignora filtro
-        }
-    } else {
-        // Sem filtro, busca todas as contas da empresa
-        $query->orderBy('data_vencimento', 'asc');
+    // Aplica o filtro por status (na conta principal)
+    if ($request->filled('status')) {
+        $query->where('status', $request->input('status'));
     }
 
-    $contasAPagar = $query->get();
+    if ($request->filled('fornecedor_id')) {
+        $query->where('fornecedor_id', $request->input('fornecedor_id'));
+    }
 
-    // Se houver parcelamento (supondo que você adicionou colunas no modelo para isso),
-    // define propriedades auxiliares para a view:
+    // Obtem contas com parcelas carregadas
+    $contasAPagar = $query->with('parcelas')->get();
+
+    $contasComParcelas = [];
+
+    // Pega intervalo de datas do filtro ou padrão para o mês atual
+    $inicio = $request->input('data_inicio') ?? Carbon::now()->startOfYear()->toDateString();
+    $fim = $request->input('data_fim') ?? Carbon::now()->endOfYear()->toDateString();
+
     foreach ($contasAPagar as $conta) {
-        // Se você tem campos como 'numero_parcela' e 'total_parcelas' na tabela:
-        $conta->numero_parcela = $conta->numero_parcela ?? 1;
-        $conta->total_parcelas = $conta->total_parcelas ?? 1;
+        if ($conta->parcelas->isEmpty()) {
+            // Conta sem parcelamento → filtra pelo vencimento da conta
+            if (
+                $conta->data_vencimento >= $inicio &&
+                $conta->data_vencimento <= $fim
+            ) {
+                $contasComParcelas[] = $conta;
+            }
+        } else {
+            // Conta com parcelas → adiciona somente as parcelas no período
+            foreach ($conta->parcelas as $parcela) {
+                if (
+                    $parcela->data_vencimento >= $inicio &&
+                    $parcela->data_vencimento <= $fim
+                ) {
+                    $contaClone = clone $conta;
+                    $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$conta->parcelas->count()}";
+                    $contaClone->valor = $parcela->valor;
+                    $contaClone->data_vencimento = $parcela->data_vencimento;
+                    $contaClone->status = $parcela->status;
+                    $contasComParcelas[] = $contaClone;
+                }
+            }
+        }
     }
 
-    return view('contasAPagar.index', compact('contasAPagar', 'planoDeContas', 'empresas', 'fornecedores'));
+    return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'empresas', 'fornecedores'));
 }
-
 
     public function store(Request $request)
     {
@@ -73,12 +90,6 @@ class ContasAPagarController extends Controller
                 'fornecedor_id' => [
                     'nullable',
                     'exists:fornecedors,id',
-                    function ($attribute, $value, $fail) {
-                        if ($value && !Fornecedor::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
-                            $fail('O fornecedor selecionado não pertence à sua empresa.');
-                        }
-                    }
                 ],
                 'parcelas' => 'nullable|integer|min:1'
             ]);
@@ -90,7 +101,7 @@ class ContasAPagarController extends Controller
             $numParcelas = $request->input('parcelas', 1);
             $valorParcela = round($conta->valor / $numParcelas, 2);
             $dataBase = Carbon::parse($validatedData['data_vencimento']);
-
+            
             for ($i = 1; $i <= $numParcelas; $i++) {
                 ParcelaContasAPagar::create([
                     'contas_a_pagar_id' => $conta->id,
@@ -167,4 +178,22 @@ class ContasAPagarController extends Controller
         $contasAPagar->delete();
         return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
     }
+
+    public function pagar(Request $request, ContasAPagar $contasAPagar)
+{
+    $request->validate([
+        'data_pagamento' => 'required|date',
+        'valor_pago' => 'required|numeric|min:0.01',
+        'forma_pagamento' => 'required|string',
+    ]);
+
+    $contasAPagar->update([
+        'status' => 'Pago',
+        'valor_pago' => $request->valor_pago,
+        'data_pagamento' => $request->data_pagamento,
+    ]);
+
+    return redirect()->route('contasAPagar.index')->with('success', 'Pagamento registrado com sucesso!');
+}
+
 }

@@ -16,6 +16,16 @@ class FornecedorController extends Controller
         return view('fornecedor.index', compact('fornecedores'));
     }
 
+    public function search(Request $request)
+{
+    $term = $request->get('q');
+
+    return Fornecedor::where('nome_fantasia', 'like', "%{$term}%")
+        ->limit(20)
+        ->get(['id', 'nome_fantasia']);
+}
+
+
 
     /**
      * Store a newly created resource in storage.
