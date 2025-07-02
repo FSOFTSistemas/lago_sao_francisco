@@ -22,6 +22,48 @@ class FluxoCaixaController extends Controller
         $this->caixaService = $caixaService;
     }
 
+    public function abrir(Request $request, $id)
+    {
+        $request->validate([
+            'valor_inicial' => 'required|numeric|min:0',
+        ]);
+
+        $caixa = Caixa::findOrFail($id);
+
+        if ($caixa->status === 'aberto') {
+            return back()->with('error', 'O caixa já está aberto.');
+        }
+
+        $this->caixaService->abrirCaixa($caixa, $request->valor_inicial);
+
+        return back()->with('success', 'Caixa aberto com sucesso.');
+    }
+
+    public function fechar(Request $request, $id)
+    {
+        try {
+            $request->merge([
+                'valor_final' => str_replace(',', '.', $request->valor_final),
+            ]);
+
+            $request->validate([
+                'valor_final' => 'required|numeric|min:0',
+            ]);
+
+            $caixa = Caixa::findOrFail($id);
+
+            if ($caixa->status === 'fechado') {
+                return back()->with('error', 'O caixa já está fechado.');
+            }
+
+            $this->caixaService->fecharCaixa($caixa, $request->valor_final);
+
+            return back()->with('success', 'Caixa fechado com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao fechar caixa', $e);
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -56,7 +98,7 @@ class FluxoCaixaController extends Controller
             $query->whereDate('data', $hoje);
         }
 
-        $fluxoCaixas = $query->orderBy('data', 'desc')->get();
+        $fluxoCaixas = $query->orderBy('data', 'desc')->orderBy('id', 'desc')->get();
         $users = $usuario;
         $movimento = Movimento::all();
         $empresa = Empresa::all();

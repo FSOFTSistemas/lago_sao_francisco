@@ -152,17 +152,21 @@ class ContasAReceberController extends Controller
     public function destroy(ContasAReceber $contasAReceber)
     {
         try {
-            if ($contasAReceber->grupo_id) {
-                // Exclui todas as contas do mesmo grupo
-                ContasAReceber::where('grupo_id', $contasAReceber->grupo_id)->delete();
-                $mensagem = 'Todas as parcelas do grupo foram deletadas com sucesso.';
+            if ($this->grupoPossuiRecebimentos($contasAReceber->id)) {
+                return redirect()->back()->with('error', 'Não é possível excluir uma conta que já recebeu valores.');
             } else {
-                // Exclui apenas a conta individual
-                $contasAReceber->delete();
-                $mensagem = 'Conta a receber deletada com sucesso.';
+                if ($contasAReceber->grupo_id) {
+                    // Exclui todas as contas do mesmo grupo
+                    ContasAReceber::where('grupo_id', $contasAReceber->grupo_id)->delete();
+                    $mensagem = 'Todas as parcelas do grupo foram deletadas com sucesso.';
+                } else {
+                    // Exclui apenas a conta individual
+                    $contasAReceber->delete();
+                    $mensagem = 'Conta a receber deletada com sucesso.';
+                }
+    
+                return redirect()->route('contasAReceber.index')->with('success', $mensagem);
             }
-
-            return redirect()->route('contasAReceber.index')->with('success', $mensagem);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao deletar conta a receber: ' . $e->getMessage());
         }
@@ -250,7 +254,7 @@ class ContasAReceberController extends Controller
         $fileName = 'recibos/recibo_' . now()->format('Ymd_His') . '.pdf';
         Storage::disk('public')->put($fileName, $pdf->output());
 
-        return redirect()->route('contasAReceber.index')->with(
+        return redirect()->back()->with(
             'success',
             'Pagamento efetuado com sucesso! <a href="' . asset('storage/' . $fileName) . '" target="_blank" rel="noopener noreferrer">Ver recibo</a>'
         );
@@ -263,5 +267,22 @@ class ContasAReceberController extends Controller
             return $matches[1];
         }
         return 'Única';
+    }
+
+    public function grupoPossuiRecebimentos(int $contaId): bool
+    {
+        $conta = ContasAReceber::findOrFail($contaId);
+
+        // Se não houver grupo, verifica só a própria conta
+        if (is_null($conta->grupo_id)) {
+            return ContaPagamentos::where('conta_id', $conta->id)->exists();
+        }
+
+        // Busca todas as contas do grupo e verifica se alguma tem pagamento
+        return ContaPagamentos::whereIn('conta_id', function ($query) use ($conta) {
+            $query->select('id')
+                ->from('contas_a_receber')
+                ->where('grupo_id', $conta->grupo_id);
+        })->exists();
     }
 }

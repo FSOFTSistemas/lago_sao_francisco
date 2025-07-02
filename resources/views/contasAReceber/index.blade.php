@@ -105,16 +105,12 @@
                             data-target="#showContasAReceber{{ $conta->id }}">
                             👁️
                         </button>
-
-                        <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                            data-target="#editContasAReceberModal{{ $conta->id }}">
-                            ✏️
-                        </button>
-
+                        @if($conta->status != 'recebido')
                         <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                             data-target="#deleteContasAReceberModal{{ $conta->id }}">
                             🗑️
                         </button>
+                        @endif
                     </td>
                 </tr>
                 @include('contasAReceber.modals._show', ['contasAReceber' => $conta])

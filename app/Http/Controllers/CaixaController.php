@@ -151,29 +151,32 @@ class CaixaController extends Controller
     }
 
     public function getResumoFechamento(Caixa $caixa)
-{
-    $fluxos = FluxoCaixa::with('movimento')
-        ->where('caixa_id', $caixa->id)
-        ->get();
+    {
+        $fluxos = FluxoCaixa::with('movimento')
+            ->where('caixa_id', $caixa->id)
+            ->whereDoesntHave('movimento', function ($query) {
+                $query->whereIn('descricao', ['abertura de caixa', 'fechamento de caixa']);
+            })
+            ->get();
 
-    // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento)
-    $saldo = $fluxos->sum('valor');
 
-    // Agrupamento por forma de pagamento
-    $formasPagamento = $fluxos->filter(function ($fluxo) {
-        return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
-    })->groupBy(function ($fluxo) {
-        // Considera apenas o segundo termo como chave (ex: "venda-cartão-crédito" -> "cartão-crédito")
-        $partes = explode('-', $fluxo->movimento->descricao);
-        return $partes[1] ?? 'outro';
-    })->map(function ($items) {
-        return $items->sum('valor');
-    });
+        // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento) e soma o fundo de caixa
+        $saldo = $fluxos->sum('valor') + $caixa->valor_inicial;
 
-    return [
-        'saldo' => $saldo,
-        'formas' => $formasPagamento,
-    ];
-}
+        // Agrupamento por forma de pagamento
+        $formasPagamento = $fluxos->filter(function ($fluxo) {
+            return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
+        })->groupBy(function ($fluxo) {
+            // Considera apenas o segundo termo como chave (ex: "venda-cartão-crédito" -> "cartão-crédito")
+            $partes = explode('-', $fluxo->movimento->descricao);
+            return $partes[1] ?? 'outro';
+        })->map(function ($items) {
+            return $items->sum('valor');
+        });
 
+        return [
+            'saldo' => $saldo,
+            'formas' => $formasPagamento,
+        ];
+    }
 }
