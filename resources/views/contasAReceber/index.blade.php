@@ -25,7 +25,7 @@
                 <select name="status" id="status" class="form-control">
                     <option value="">Todos</option>
                     <option value="pendente" {{ request('status') == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                    <option value="finalizado" {{ request('status') == 'finalizado' ? 'selected' : '' }}>Recebido</option>
+                    <option value="recebido" {{ request('status') == 'recebido' ? 'selected' : '' }}>Recebido</option>
                     <option value="atrasado" {{ request('status') == 'atrasado' ? 'selected' : '' }}>Atrasado</option>
                 </select>
             </div>
@@ -81,20 +81,21 @@
                     <td>
                         @if ($conta->status == 'pendente')
                             <p>Pendente <i class="fa-solid fa-triangle-exclamation"></i></p>
-                        @elseif($conta->status == 'finalizado')
-                            <p>Finalizado <i class="fa-regular fa-circle-check"></i></p>
+                        @elseif($conta->status == 'recebido')
+                            <p>recebido <i class="fa-regular fa-circle-check"></i></p>
                         @else
                             <p>Atrasado <i class="fa-solid fa-exclamation"></i></p>
                         @endif
                     </td>
                     <td>{{ $conta->cliente->nome_razao_social }}</td>
                     <td>
-                        @if ($conta->status != 'finalizado')
+                        @if ($conta->status != 'recebido')
                             <div class="col">
                                 <button class="btn btn-sm btn-success" title="Receber"
-                                    onclick="abrirModalReceber({{ $conta->id }}, {{ $conta->valor }})">
+                                    onclick="abrirModalReceber({{ $conta->id }}, {{ $conta->valor }}, {{ $conta->valor_recebido ?? 0 }})">
                                     Receber
                                 </button>
+
                             </div>
                         @endif
 
@@ -121,10 +122,20 @@
                 @include('contasAReceber.modals._delete', ['contasAReceber' => $conta])
                 @include('contasAReceber.modals._receber')
                 <script>
-                    function abrirModalReceber(id, valor) {
+                    function abrirModalReceber(id, valorTotal, valorRecebido = 0) {
+                        // Converte valores para float (caso venham como string)
+                        const total = parseFloat(valorTotal);
+                        const recebido = parseFloat(valorRecebido);
+                        const restante = (total - recebido).toFixed(2);
+
+                        // Preenche os campos do modal
                         $('#pagamento_id').val(id);
-                        $('#valorReceberTexto').text('Valor: R$ ' + parseFloat(valor).toFixed(2).replace('.', ','));
-                        $('#forma_pagamento').val(''); // limpa o select
+                        $('#valor_pago').val(restante).attr('max', restante);
+                        $('#valor_restante_texto').text('R$ ' + restante.replace('.', ','));
+                        $('#valorReceberTexto').text('Valor: R$ ' + total.toFixed(2).replace('.', ','));
+                        $('#forma_pagamento').val('');
+
+                        // Abre o modal
                         $('#modalReceberConta').modal('show');
                     }
                 </script>

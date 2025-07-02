@@ -18,6 +18,14 @@
                     <input type="hidden" name="pagamento_id" id="pagamento_id" value="">
 
                     <div class="form-group text-left">
+                        <label for="valor_pago">Valor a Receber</label>
+                        <input type="number" name="valor_pago" id="valor_pago" class="form-control" required
+                            step="0.01" min="0.01">
+                        <small class="text-muted">Valor restante: <span id="valor_restante_texto"
+                                class="text-success"></span></small>
+                    </div>
+
+                    <div class="form-group text-left mt-2">
                         <label for="forma_pagamento">Forma de Pagamento</label>
                         <select name="forma_pagamento" id="forma_pagamento" class="form-control" required>
                             <option value="">Selecione</option>
@@ -30,10 +38,11 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-success">Confirmar</button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">Confirmar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
                 </form>
-
             </div>
         </div>
     </div>

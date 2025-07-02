@@ -7,7 +7,7 @@ class UpdateStatusEnumInContasAReceber extends Migration
 {
     public function up(): void
     {
-        DB::statement("ALTER TABLE contas_a_receber MODIFY COLUMN status ENUM('pendente', 'finalizado', 'atrasado') DEFAULT 'pendente'");
+        DB::statement("ALTER TABLE contas_a_receber MODIFY COLUMN status ENUM('pendente', 'recebido', 'atrasado') DEFAULT 'pendente'");
     }
 
     public function down(): void
