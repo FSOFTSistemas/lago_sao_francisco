@@ -40,31 +40,30 @@ class ContasAPagarController extends Controller
     $fim = $request->input('data_fim') ?? Carbon::now()->endOfYear()->toDateString();
 
     foreach ($contasAPagar as $conta) {
-        if ($conta->parcelas->isEmpty()) {
-            // Conta sem parcelamento → filtra pelo vencimento da conta
-            if (
-                $conta->data_vencimento >= $inicio &&
-                $conta->data_vencimento <= $fim
-            ) {
-                $contasComParcelas[] = $conta;
-            }
-        } else {
-            // Conta com parcelas → adiciona somente as parcelas no período
-            foreach ($conta->parcelas as $parcela) {
-                if (
-                    $parcela->data_vencimento >= $inicio &&
-                    $parcela->data_vencimento <= $fim
-                ) {
-                    $contaClone = clone $conta;
-                    $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$conta->parcelas->count()}";
-                    $contaClone->valor = $parcela->valor;
-                    $contaClone->data_vencimento = $parcela->data_vencimento;
-                    $contaClone->status = $parcela->status;
-                    $contasComParcelas[] = $contaClone;
-                }
+
+    if ($conta->parcelas->isEmpty()) {
+        if ($conta->data_vencimento >= $inicio && $conta->data_vencimento <= $fim) {
+            $conta->pode_excluir = $conta->status !== 'pago';
+            $contasComParcelas[] = $conta;
+        }
+    } else {
+        $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
+
+        foreach ($conta->parcelas as $parcela) {
+            if ($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim) {
+                $contaClone = clone $conta;
+                $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$conta->parcelas->count()}";
+                $contaClone->valor = $parcela->valor;
+                $contaClone->data_vencimento = $parcela->data_vencimento;
+                $contaClone->status = $parcela->status;
+                $contaClone->numero_parcela = $parcela->numero_parcela;
+                $contaClone->total_parcelas = $conta->parcelas->count();
+                $contaClone->pode_excluir = !$temParcelaPaga;
+                $contasComParcelas[] = $contaClone;
             }
         }
     }
+}
 
     return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'empresas', 'fornecedores'));
 }
@@ -188,7 +187,7 @@ class ContasAPagarController extends Controller
     ]);
 
     $contasAPagar->update([
-        'status' => 'Pago',
+        'status' => 'pago',
         'valor_pago' => $request->valor_pago,
         'data_pagamento' => $request->data_pagamento,
     ]);

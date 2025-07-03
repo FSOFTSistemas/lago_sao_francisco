@@ -33,13 +33,13 @@
         </div>
 
     <div class="col-md-6">
-    <label for="fornecedorSelect" class="form-label" style="font-size: 1.2rem">Fornecedor:</label>
-    <select id="fornecedorSelect" name="fornecedor_id" class="form-control w-100">
-        @if(old('fornecedor_id') && $fornecedor = \App\Models\Fornecedor::find(old('fornecedor_id')))
-            <option value="{{ $fornecedor->id }}" selected>{{ $fornecedor->nome_fantasia }}</option>
-        @endif
-    </select>
-</div>
+        <label for="fornecedorSelect" class="form-label" style="font-size: 1.2rem">Fornecedor:</label>
+        <select id="fornecedorSelect" name="fornecedor_id" class="form-control w-100">
+            @if(old('fornecedor_id') && $fornecedor = \App\Models\Fornecedor::find(old('fornecedor_id')))
+                <option value="{{ $fornecedor->id }}" selected>{{ $fornecedor->nome_fantasia }}</option>
+            @endif
+        </select>
+    </div>
 
 
 
@@ -128,7 +128,7 @@
                 @endif
             </td>
             <td>
-                {{ $contasAPagar->fornecedor->nome_fantasia }}
+                {{ $contasAPagar->fornecedor->nome_fantasia ?? ''}}
             </td>
             <td>
                 <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
@@ -145,10 +145,14 @@
                     ✏️
                 </button>
 
-                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                    data-target="#deleteContasAPagarModal{{ $contasAPagar->id }}">
-                    🗑️
-                </button>
+               @if($contasAPagar->pode_excluir)
+                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                        data-target="#deleteContasAPagarModal{{ $contasAPagar->id }}">
+                        🗑️
+                    </button>
+                @endif
+
+
             </td>
         </tr>
         @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
@@ -160,132 +164,59 @@
 @endcomponent
 
 @include('contasAPagar.modals._create')
-   <!-- jQuery primeiro -->
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-
-    <!-- Depois o Select2 -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    
-    <script>
-        console.log($.fn.jquery);
-
-        $(document).ready(function () {
-            console.log('Inicializando Select2...');
-            $('#fornecedorSelect').select2({
-                placeholder: 'Selecione um fornecedor',
-                minimumInputLength: 2,
-                ajax: {
-                    url: '{{ route('fornecedores.search') }}',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function (params) {
-                        return {
-                            q: params.term
-                        };
-                    },
-                    processResults: function (data) {
-                        return {
-                            results: data.map(f => ({ id: f.id, text: f.nome_fantasia }))
-                        };
-                    },
-                    cache: true
-                },
-                width: '100%',
-                language: {
-                    noResults: function () { return "Nenhum resultado encontrado"; },
-                    searching: function () { return "Buscando..."; },
-                    inputTooShort: function (args) {
-                        var restante = args.minimum - args.input.length;
-                        return 'Digite mais ' + restante + ' caractere' + (restante !== 1 ? 's' : '') + ' para buscar';
-                    }
-                }
-            });
-        });
-    </script>
-
 @stop
 
+@push('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container--default .select2-selection--single {
+        height: calc(2.25rem + 2px);
+        padding: .375rem .75rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: calc(2.25rem + 2px);
+    }
+    .new {
+        background-color: #679A4C !important;
+        border: none !important;
+    }
+</style>
+@endpush
 
-@section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
-
-
-    <style>
-        .new {
-            background-color: #679A4C !important;
-            border: none !important;
-        }
-    </style>
-@stop
-
-@section('js')
-    <!-- jQuery e Select2 -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+@push('js')
+<!-- Then Select2 JS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-    $(document).ready(function () {
-        console.log("Documento pronto");
+    $(document).ready(function() {
+        console.log('Inicializando Select2...');
+        
         $('#fornecedorSelect').select2({
-            placeholder: 'Selecione um Fornecedor',
+            placeholder: "Selecione um fornecedor",
+            allowClear: true,
             minimumInputLength: 2,
+            language: "pt-BR",
             ajax: {
-                url: '{{ route('fornecedores.search') }}', // Verifique se esta rota existe!
+                url: '{{ route("fornecedores.search") }}',
                 dataType: 'json',
                 delay: 250,
-                data: function (params) {
-                    return {
-                        q: params.term
-                    };
-                },
                 processResults: function (data) {
                     return {
-                        results: data.map(function (fornecedor) {
+                        results: $.map(data, function (item) {
                             return {
-                                id: fornecedor.id,
-                                text: fornecedor.nome_fantasia
-                            };
+                                text: item.nome_fantasia,
+                                id: item.id
+                            }
                         })
                     };
-                },
-                cache: true
-            },
-            width: '100%',
-            language: {
-                noResults: function () {
-                    return "Nenhum resultado encontrado";
-                },
-                searching: function () {
-                    return "Buscando...";
-                },
-                inputTooShort: function (args) {
-                    return 'Digite ao menos 2 caracteres';
                 }
             }
+        }).on('select2:open', () => {
+            console.log('Select2 aberto');
         });
+        
+        console.log('Select2 inicializado');
     });
 </script>
-
-    <script>
-        function validarValor(input) {
-            const valor = parseFloat(input.value);
-            if (isNaN(valor) || valor < 0.01) {
-                input.classList.add('is-invalid');
-            } else {
-                input.classList.remove('is-invalid');
-            }
-        }
-
-        function validarValorPago(input) {
-            const valorPago = parseFloat(input.value) || 0;
-            const valorConta = parseFloat(document.getElementById('valor').value) || 0;
-
-            if (valorPago < 0 || (valorPago > 0 && valorPago > valorConta)) {
-                input.classList.add('is-invalid');
-            } else {
-                input.classList.remove('is-invalid');
-            }
-        }
-    </script>
-@endsection
+@endpush

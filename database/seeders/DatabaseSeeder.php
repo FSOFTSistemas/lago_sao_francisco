@@ -122,9 +122,9 @@ class DatabaseSeeder extends Seeder
         $mobilia = new MobiliaSeeder();
         $mobilia->run();
 
-        $contasPagar = new ContasAPagarSeeder();
-        $contasPagar->empresaId = $empresa->empresaLago->id;
-        $contasPagar->run();
+        // $contasPagar = new ContasAPagarSeeder();
+        // $contasPagar->empresaId = $empresa->empresaLago->id;
+        // $contasPagar->run();
 
     }
 

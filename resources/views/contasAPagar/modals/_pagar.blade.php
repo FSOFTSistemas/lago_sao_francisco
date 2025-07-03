@@ -6,11 +6,11 @@
             @csrf
             @method('POST')
             <div class="modal-content">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header">
                     <h5 class="modal-title" id="pagarContasAPagarModalLabel{{ $contasAPagar->id }}">
                         Pagar Conta
                     </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Fechar">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
