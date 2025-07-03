@@ -8,6 +8,7 @@ use App\Models\DayUsePag;
 use App\Models\FormaPagamento;
 use App\Services\CaixaService;
 use App\Models\Caixa;
+use App\Models\Souvenir;
 use Illuminate\Support\Facades\Auth;
 
 class DayUsePagamento extends Component
@@ -26,7 +27,13 @@ class DayUsePagamento extends Component
     public $restante = 0; // Valor restante a ser pago
     public $inputKey;
 
-       protected CaixaService $caixaService;
+    public $souvenirs;
+    public $souvenirSelecionadoId;
+    public $souvenirQuantidade = 1;
+    public $souvenirAdicionados = [];
+    public $totalSouvenir = 0;
+
+    protected CaixaService $caixaService;
 
     public function __construct()
     {
@@ -55,6 +62,7 @@ class DayUsePagamento extends Component
         $this->itemSubtotal = $itemSubtotal;
 
         $this->formaPagamento = FormaPagamento::where('descricao', '!=', 'crediário')->get();
+        $this->souvenirs = Souvenir::where('estoque', '>', 0)->get();
 
         if ($this->dayUseId) {
             $dayUse = DayUse::find($this->dayUseId);
@@ -211,6 +219,12 @@ class DayUsePagamento extends Component
             ]);
         }
 
+        foreach ($this->souvenirAdicionados as $item) {
+        $souvenir = Souvenir::find($item['id']);
+        $souvenir->estoque -= $item['quantidade'];
+        $souvenir->save();
+        }
+
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }
@@ -219,4 +233,49 @@ class DayUsePagamento extends Component
     {
         return view('livewire.day-use-pagamento');
     }
+
+    public function adicionarSouvenir()
+{
+    $souvenir = Souvenir::find($this->souvenirSelecionadoId);
+
+    if (!$souvenir || $this->souvenirQuantidade < 1) {
+        session()->flash('error', 'Selecione um souvenir válido e uma quantidade.');
+        return;
+    }
+
+    if ($this->souvenirQuantidade > $souvenir->estoque) {
+        session()->flash('error', 'Quantidade maior que o estoque disponível.');
+        return;
+    }
+
+    $total = $souvenir->valor * $this->souvenirQuantidade;
+
+    $this->souvenirAdicionados[] = [
+        'id' => $souvenir->id,
+        'descricao' => $souvenir->descricao,
+        'quantidade' => $this->souvenirQuantidade,
+        'valor_unitario' => $souvenir->valor,
+        'valor_total' => $total,
+    ];
+
+    $this->calcularTotalSouvenir();
+
+    // reset
+    $this->souvenirSelecionadoId = '';
+    $this->souvenirQuantidade = 1;
+}
+
+public function removerSouvenir($index)
+{
+    unset($this->souvenirAdicionados[$index]);
+    $this->souvenirAdicionados = array_values($this->souvenirAdicionados); // reorganiza índices
+    $this->calcularTotalSouvenir();
+}
+
+private function calcularTotalSouvenir()
+{
+    $this->totalSouvenir = collect($this->souvenirAdicionados)->sum('valor_total');
+    $this->itemSubtotal += $this->totalSouvenir;
+}
+
 }

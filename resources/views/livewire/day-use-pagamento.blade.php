@@ -1,4 +1,37 @@
 <form wire:submit.prevent="savePayments">
+    <h5 class="mt-4">Adicionar Souvenir</h5>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label>Souvenir</label>
+        <select class="form-control" wire:model="souvenirSelecionadoId">
+            <option value="">Selecione...</option>
+            @foreach($souvenirs as $souvenir)
+                <option value="{{ $souvenir->id }}">
+                    {{ $souvenir->descricao }} (R${{ number_format($souvenir->valor, 2, ',', '.') }}, Estoque: {{ $souvenir->estoque }})
+                </option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label>Quantidade</label>
+        <input type="number" class="form-control" min="1" wire:model="souvenirQuantidade">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+        <button class="btn btn-success w-100" type="button" wire:click="adicionarSouvenir">Adicionar</button>
+    </div>
+</div>
+
+@if(count($souvenirAdicionados) > 0)
+    <ul class="list-group mb-3">
+        @foreach($souvenirAdicionados as $index => $souvenir)
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ $souvenir['descricao'] }} - {{ $souvenir['quantidade'] }} x R${{ number_format($souvenir['valor_unitario'], 2, ',', '.') }} = <strong>R${{ number_format($souvenir['valor_total'], 2, ',', '.') }}</strong>
+                <button type="button" class="btn btn-danger btn-sm" wire:click="removerSouvenir({{ $index }})">Remover</button>
+            </li>
+        @endforeach
+    </ul>
+@endif
+
     <div class="form-group row">
         <label for="subtotalItems" class="col-md-3 label-control">Subtotal (Itens)</label>
         <div class="col-md-6">
