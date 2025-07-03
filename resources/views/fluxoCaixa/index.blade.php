@@ -215,6 +215,7 @@
     ])
         <thead class="bg-primary text-white">
             <tr>
+                <th>Ordenação</th>
                 <th>Origem</th>
                 <th>Descrição</th>
                 <th>Valor</th>
@@ -227,6 +228,7 @@
         <tbody>
             @foreach ($fluxoCaixas as $fluxoCaixa)
                 <tr>
+                    <td>{{ $fluxoCaixa->created_at}}</td>
                     <td>{{ $fluxoCaixa->caixa->descricao }}</td>
                     <td>{{ $fluxoCaixa->descricao }}</td>
                     <td>R${{ $fluxoCaixa->valor }}</td>
