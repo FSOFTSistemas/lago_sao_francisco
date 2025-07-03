@@ -11,6 +11,7 @@ use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
 use App\Models\AluguelPagamento;
 use App\Models\Caixa;
+use App\Models\ContasAReceber;
 use App\Models\FluxoCaixa;
 use App\Models\Movimento;
 use App\Services\CaixaService;
@@ -22,11 +23,11 @@ use Illuminate\Support\Facades\DB;
 class AluguelController extends Controller
 {
     protected $caixaService;
-    
+
     public function __construct(CaixaService $caixaService)
-{
-    $this->caixaService = $caixaService;
-}
+    {
+        $this->caixaService = $caixaService;
+    }
 
     public function index()
     {
@@ -45,7 +46,12 @@ class AluguelController extends Controller
 
 
         return view('aluguel.create', compact(
-            'clientes', 'espacos', 'formasPagamento', 'adicionais', 'cardapios', 'adicionaisSelecionados'
+            'clientes',
+            'espacos',
+            'formasPagamento',
+            'adicionais',
+            'cardapios',
+            'adicionaisSelecionados'
         ));
     }
 
@@ -76,20 +82,20 @@ class AluguelController extends Controller
                 // Campos de pagamento
                 'pagamentos_json' => 'nullable|string',
             ]);
-        
+
             $validated['empresa_id'] = Auth::user()->empresa_id;
-        
+
             // Usar transação para garantir consistência
             DB::beginTransaction();
-            
+
             try {
                 // Criação do aluguel
                 $aluguel = Aluguel::create($validated);
-            
+
                 // Relacionar itens adicionais
                 $this->salvarAdicionais($aluguel, $request);
 
-            
+
                 // Salvar escolhas do buffet se existirem
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
@@ -99,20 +105,32 @@ class AluguelController extends Controller
                 if ($request->filled('pagamentos_json')) {
                     $this->salvarPagamentos($aluguel, $request);
                 }
-                
+
+                foreach ($aluguel->pagamentos as $pagamento) {
+                    $forma = strtolower($pagamento->formaPagamento->descricao ?? '');
+
+                    if (str_contains($forma, 'crediário') && $request->filled('parcelas')) {
+                        $this->criarContasAReceber(
+                            $aluguel,
+                            $pagamento->valor,
+                            $pagamento->forma_pagamento_id,
+                            $request->parcelas
+                        );
+                    }
+                }
+
+
                 // ✅ Criar fluxo de caixa com os pagamentos
                 $this->salvarFluxosDePagamento($aluguel);
 
                 DB::commit();
-                
+
                 return redirect()->route('aluguel.create')->with('success', 'Aluguel criado com sucesso!');
-                
             } catch (\Exception $e) {
                 DB::rollback();
                 throw $e;
             }
-            
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel: ' . $e->getMessage());
         }
     }
@@ -199,7 +217,7 @@ class AluguelController extends Controller
 
             // Usar transação para garantir consistência
             DB::beginTransaction();
-            
+
             try {
                 $aluguel->update($validated);
 
@@ -226,15 +244,13 @@ class AluguelController extends Controller
                 }
 
                 DB::commit();
-                
+
                 return redirect()->route('aluguel.index')->with('success', 'Aluguel atualizado com sucesso!');
-                
             } catch (\Exception $e) {
                 DB::rollback();
                 throw $e;
             }
-            
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao atualizar Aluguel: ' . $e->getMessage());
         }
     }
@@ -244,25 +260,24 @@ class AluguelController extends Controller
         try {
             // Usar transação para garantir que todas as relações sejam removidas
             DB::beginTransaction();
-            
+
             // Remover escolhas do buffet
             BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
-            
+
             // Remover pagamentos
             AluguelPagamento::where('aluguel_id', $aluguel->id)->delete();
-            
+
             // Remover outras relações se necessário
             if (method_exists($aluguel, 'aluguelCategoriaItems')) {
                 $aluguel->aluguelCategoriaItems()->delete();
             }
-            
+
             $aluguel->delete();
-            
+
             DB::commit();
-            
+
             return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
-            
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Erro ao deletar Aluguel: ' . $e->getMessage());
         }
@@ -275,7 +290,7 @@ class AluguelController extends Controller
     {
         // Decodificar as categorias escolhidas (JSON)
         $categoriasEscolhidas = json_decode($request->buffet_categorias_escolhidas, true) ?? [];
-        
+
         // Salvar itens das categorias escolhidas
         foreach ($categoriasEscolhidas as $categoriaId => $itensIds) {
             foreach ($itensIds as $itemId) {
@@ -307,7 +322,7 @@ class AluguelController extends Controller
     private function salvarPagamentos(Aluguel $aluguel, Request $request)
     {
         $pagamentosJson = json_decode($request->pagamentos_json, true) ?? [];
-        
+
         foreach ($pagamentosJson as $pagamento) {
             AluguelPagamento::create([
                 'aluguel_id' => $aluguel->id,
@@ -328,31 +343,30 @@ class AluguelController extends Controller
                 'secoes.categorias.itens',
                 'opcoes.categorias.itens'
             ])->findOrFail($cardapioId);
-            
+
             return response()->json([
                 'secoes' => $cardapio->secoes,
                 'opcoes' => $cardapio->opcoes
             ]);
-            
         } catch (\Exception $e) {
             return response()->json(['error' => 'Cardápio não encontrado'], 404);
         }
     }
 
-        private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim, $capela, $tipo_evento)
+    private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim, $capela, $tipo_evento)
     {
         $inicio = \Carbon\Carbon::parse($data_inicio);
         $fim = \Carbon\Carbon::parse($data_fim);
         $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
         $total = 0;
 
-        if($capela){
-            if($tipo_evento == 'casamento'){
-                foreach($periodo as $data) {
+        if ($capela) {
+            if ($tipo_evento == 'casamento') {
+                foreach ($periodo as $data) {
                     $total += $valor_fim;
                 }
-            } else  if($tipo_evento == 'batizado'){
-                foreach($periodo as $data) {
+            } else  if ($tipo_evento == 'batizado') {
+                foreach ($periodo as $data) {
                     $total += $valor_semana;
                 }
             }
@@ -366,7 +380,7 @@ class AluguelController extends Controller
         return $total;
     }
 
-        public function calcularValor(Request $request)
+    public function calcularValor(Request $request)
     {
         $espaco = Espaco::findOrFail($request->espaco_id);
 
@@ -384,9 +398,9 @@ class AluguelController extends Controller
 
 
     /**
- * Salva os adicionais escolhidos no aluguel
- */
-        private function salvarAdicionais(Aluguel $aluguel, Request $request)
+     * Salva os adicionais escolhidos no aluguel
+     */
+    private function salvarAdicionais(Aluguel $aluguel, Request $request)
     {
         // Limpa os anteriores
         DB::table('adicionais_aluguel')->where('aluguel_id', $aluguel->id)->delete();
@@ -415,45 +429,74 @@ class AluguelController extends Controller
     }
 
     private function salvarFluxosDePagamento(Aluguel $aluguel)
-{
-    $empresaId = Auth::user()->empresa_id;
+    {
+        $empresaId = Auth::user()->empresa_id;
 
-    // Busca o caixa aberto da empresa no dia
-    $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
-        ->where('status', 'aberto')
-        ->where('empresa_id', $empresaId)
-        ->first();
+        // Busca o caixa aberto da empresa no dia
+        $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+            ->where('status', 'aberto')
+            ->where('empresa_id', $empresaId)
+            ->where('usuario_id', Auth::id())
+            ->first();
 
-    if (!$caixa) {
-        session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
-        return;
-    }
-
-    foreach ($aluguel->pagamentos as $pagamento) {
-        $formaPagamento = $pagamento->formaPagamento;
-
-        $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
-        $tipoMov = 'venda-' . $slug;
-
-        $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
-
-        if (!$movimentoId) {
-            continue; // pula se não encontrar o movimento
+        if (!$caixa) {
+            session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+            return;
         }
 
-        app(CaixaService::class)->inserirMovimentacao($caixa, [
-            'descricao' => 'Aluguel #' . $aluguel->id,
-            'valor' => $pagamento->valor,
-            'valor_total' => $pagamento->valor,
-            'tipo' => 'entrada',
-            'movimento_id' => $movimentoId,
-            'plano_de_conta_id' => 1, // ou o plano de conta padrão
-        ]);
+        foreach ($aluguel->pagamentos as $pagamento) {
+            $formaPagamento = $pagamento->formaPagamento;
+
+            // ignora se for crediário
+            $descricaoForma = strtolower($formaPagamento->descricao ?? '');
+            if (str_contains($descricaoForma, 'crediário')) {
+                continue;
+            }
+
+            $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
+            $tipoMov = 'venda-' . $slug;
+
+            $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
+
+            if (!$movimentoId) {
+                continue; // pula se não encontrar o movimento
+            }
+
+            app(CaixaService::class)->inserirMovimentacao($caixa, [
+                'descricao' => 'Aluguel #' . $aluguel->id,
+                'valor' => $pagamento->valor,
+                'valor_total' => $pagamento->valor,
+                'tipo' => 'entrada',
+                'movimento_id' => $movimentoId,
+                'plano_de_conta_id' => 1, // ou o plano de conta padrão
+            ]);
+        }
+    }
+
+
+    private function criarContasAReceber(Aluguel $aluguel, float $valorTotal, int $formaPagamentoId, int $qtdParcelas)
+    {
+        $clienteId = $aluguel->cliente_id;
+        $empresaId = $aluguel->empresa_id;
+        $descricaoBase = "Aluguel #{$aluguel->id}";
+        $vencimento = Carbon::now(); // ou a data desejada
+        $grupoId = ($qtdParcelas > 1) ? mt_rand(100000, 999999999) : null;
+        $valorParcela = round($valorTotal / $qtdParcelas, 2);
+
+        for ($i = 1; $i <= $qtdParcelas; $i++) {
+            ContasAReceber::create([
+                'descricao' => $qtdParcelas > 1 ? "{$descricaoBase} | {$i}/{$qtdParcelas}" : $descricaoBase,
+                'valor' => $valorParcela,
+                'data_vencimento' => $vencimento,
+                'status' => 'pendente',
+                'cliente_id' => $clienteId,
+                'empresa_id' => $empresaId,
+                'grupo_id' => $grupoId,
+                'plano_de_contas_id' => 1, // ou qualquer plano default
+                'venda_id' => null,
+            ]);
+
+            $vencimento = \App\Services\ContasService::proximoMes($vencimento);
+        }
     }
 }
-
-
-
-
-}
-

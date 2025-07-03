@@ -54,7 +54,7 @@ class DayUsePagamento extends Component
         $this->dayUseId = $dayUseId;
         $this->itemSubtotal = $itemSubtotal;
 
-        $this->formaPagamento = FormaPagamento::all();
+        $this->formaPagamento = FormaPagamento::where('descricao', '!=', 'crediário')->get();
 
         if ($this->dayUseId) {
             $dayUse = DayUse::find($this->dayUseId);
