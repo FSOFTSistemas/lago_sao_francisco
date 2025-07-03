@@ -215,7 +215,7 @@
     ])
         <thead class="bg-primary text-white">
             <tr>
-                <th>ID</th>
+                <th>Origem</th>
                 <th>Descrição</th>
                 <th>Valor</th>
                 <th>Data</th>
@@ -227,7 +227,7 @@
         <tbody>
             @foreach ($fluxoCaixas as $fluxoCaixa)
                 <tr>
-                    <td>{{ $fluxoCaixa->id }}</td>
+                    <td>{{ $fluxoCaixa->caixa->descricao }}</td>
                     <td>{{ $fluxoCaixa->descricao }}</td>
                     <td>R${{ $fluxoCaixa->valor }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->data)->format('d/m/Y') }}</td>
@@ -263,8 +263,8 @@
                 </tr>
 
                 @include('fluxoCaixa.modals._show', ['fluxoCaixa' => $fluxoCaixa])
-                @include('fluxoCaixa.modals._edit', ['fluxoCaixa' => $fluxoCaixa])
-                @include('fluxoCaixa.modals._delete', ['fluxoCaixa' => $fluxoCaixa])
+                {{-- @include('fluxoCaixa.modals._edit', ['fluxoCaixa' => $fluxoCaixa])
+                @include('fluxoCaixa.modals._delete', ['fluxoCaixa' => $fluxoCaixa]) --}}
             @endforeach
         </tbody>
     @endcomponent
