@@ -14,9 +14,8 @@ class CaixaSeeder extends Seeder
     public $caixaRestaurante;
     public function run(): void
     {
-        $caixas = [
-            [
-            'descricao' => 'caixa Lago',
+        $caixa = [
+            'descricao' => 'caixa Master',
             'valor_inicial' => 0,
             'valor_final' => 0,
             'data_abertura' => Carbon::now(),
@@ -26,34 +25,9 @@ class CaixaSeeder extends Seeder
             'empresa_id' => 1,
             'usuario_abertura_id' => 1,
             'usuario_fechamento_id' => null,
-        ],
-        [
-            'descricao' => 'caixa Restaurante',
-            'valor_inicial' => 0,
-            'valor_final' => 0,
-            'data_abertura' => Carbon::now(),
-            'data_fechamento' => null,
-            'status' => 'aberto',
-            'observacoes' => null,
-            'empresa_id' => 2,
-            'usuario_abertura_id' => 1,
-            'usuario_fechamento_id' => null,
-        ],
-        [
-            'descricao' => 'caixa Hotel',
-            'valor_inicial' => 0,
-            'valor_final' => 0,
-            'data_abertura' => Carbon::now(),
-            'data_fechamento' => null,
-            'observacoes' => null,
-            'status' => 'aberto',
-            'empresa_id' => 3,
-            'usuario_abertura_id' => 1,
-            'usuario_fechamento_id' => null,
-        ],
+            'usuario_id' => 1
     ];
-    $this->caixaLago = Caixa::create($caixas[0]);
-    $this->caixaRestaurante = Caixa::create($caixas[1]);
-    $this->caixaHotel = Caixa::create($caixas[2]);
+    $this->caixaLago = Caixa::create($caixa);
+   
     }
 }

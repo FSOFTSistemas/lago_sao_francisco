@@ -15,13 +15,14 @@ class ContasAReceber extends Model
         'valor',
         'valor_recebido',
         'data_vencimento',
-        'data_pagamento',
+        'data_recebimento',
         'status',
         'venda_id',
         'parcela',
         'cliente_id',
         'empresa_id',
-        'plano_de_contas_id'
+        'plano_de_contas_id',
+        'grupo_id'
     ];
     public function daEmpresa()
     {
@@ -38,4 +39,9 @@ class ContasAReceber extends Model
     public function venda(){
         return $this->belongsTo(Venda::class, 'venda_id');
     }
+    public function pagamentos()
+    {
+        return $this->hasMany(ContaPagamentos::class, 'conta_id');
+    }
+
 }

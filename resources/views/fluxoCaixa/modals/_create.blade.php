@@ -42,7 +42,7 @@
                           <label for="caixa">caixa:</label>
                           <select class="form-control" id="caixa" name="caixa_id" required>
                               <option value="">Selecione</option>
-                              @foreach ($caixa as $caixa)
+                              @foreach ($caixas as $caixa)
                                   <option value="{{ $caixa->id }}">{{ $caixa->descricao}}</option>
                               @endforeach
                           </select>
@@ -70,7 +70,7 @@
                         <label for="empresa">Empresa:</label>
                         <select class="form-control" id="empresa" name="empresa_id" required>
                             <option value="">Selecione</option>
-                            @foreach ($empresa as $empresa)
+                            @foreach ($empresas as $empresa)
                                 <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
                             @endforeach
                         </select>

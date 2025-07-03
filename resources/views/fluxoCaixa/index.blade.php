@@ -3,11 +3,68 @@
 @section('title', 'Fluxo de Caixa')
 
 @section('content_header')
-    <h5>Fluxo de Caixas</h5>
-    <hr>
+    <h5>Caixa</h5>
 @stop
 
 @section('content')
+    <div class="caixas-list-wrapper">
+
+
+        <div class="list-group shadow-sm">
+            @forelse ($caixas as $caixa)
+                <div class="list-group-item flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                        <div class="d-flex flex-wrap align-items-center gap-3 mb-1">
+                            <span><strong>#{{ $caixa->id }}</strong> - {{ $caixa->descricao }}</span> |
+                            <span>
+                                <strong>Status:</strong>
+                                @if ($caixa->status === 'aberto')
+                                    <span class="badge bg-success text-white">Aberto</span>
+                                @else
+                                    <span class="badge bg-danger text-white">Fechado</span>
+                                @endif
+                            </span> |
+                            <span><strong>Abertura:</strong>
+                                {{ \Carbon\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</span> |
+                            <span><strong>Fechamento:</strong>
+                                {{ \Carbon\Carbon::parse($caixa->data_fechamento)->format('d/m/Y') }}</span>
+                        </div>
+                        <div class="text-right d-flex flex-column justify-content-center">
+                            @if ($caixa->status === 'fechado')
+                                <button class="btn btn-success btn-sm mb-1" data-bs-toggle="modal"
+                                    data-bs-target="#abrirCaixaModal{{ $caixa->id }}">
+                                    🟢 Abrir Caixa
+                                </button>
+                            @else
+                                <button class="btn btn-danger btn-sm mb-1" data-bs-toggle="modal"
+                                    data-bs-target="#fecharCaixaModal{{ $caixa->id }}">
+                                    🔴 Fechar Caixa
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                    
+
+                    @include('caixa.modals._abrircaixa', ['caixa' => $caixa])
+                    @include('caixa.modals._fecharcaixa', ['caixa' => $caixa])
+                    @include('caixa.modals._show', ['caixa' => $caixa])
+                    @include('caixa.modals._edit', ['caixa' => $caixa])
+                    @include('caixa.modals._delete', ['caixa' => $caixa])
+                </div>
+            @empty
+                <div class="list-group-item">Nenhum caixa encontrado.</div>
+            @endforelse
+        </div>
+
+        @include('caixa.modals._create')
+    </div>
+    <hr>
+
+
+
+
+
+
     <div class="d-flex justify-content-end">
         <button class="btn btn-outline-danger mb-3" data-toggle="modal" data-target="#pdfResumoModal">
             <i class="fas fa-file-pdf"></i> Gerar PDF Resumo
@@ -34,7 +91,8 @@
                     <option value="saida" {{ request('tipo') == 'saida' ? 'selected' : '' }}>Saída</option>
                     <option value="abertura" {{ request('tipo') == 'abertura' ? 'selected' : '' }}>Abertura</option>
                     <option value="fechamento" {{ request('tipo') == 'fechamento' ? 'selected' : '' }}>Fechamento</option>
-                    <option value="fechamento" {{ request('tipo') == 'cancelamento' ? 'selected' : '' }}>Cancelamento</option>
+                    <option value="fechamento" {{ request('tipo') == 'cancelamento' ? 'selected' : '' }}>Cancelamento
+                    </option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
@@ -157,7 +215,8 @@
     ])
         <thead class="bg-primary text-white">
             <tr>
-                <th>ID</th>
+                <th>Ordenação</th>
+                <th>Origem</th>
                 <th>Descrição</th>
                 <th>Valor</th>
                 <th>Data</th>
@@ -169,7 +228,8 @@
         <tbody>
             @foreach ($fluxoCaixas as $fluxoCaixa)
                 <tr>
-                    <td>{{ $fluxoCaixa->id }}</td>
+                    <td>{{ $fluxoCaixa->created_at}}</td>
+                    <td>{{ $fluxoCaixa->caixa->descricao }}</td>
                     <td>{{ $fluxoCaixa->descricao }}</td>
                     <td>R${{ $fluxoCaixa->valor }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($fluxoCaixa->data)->format('d/m/Y') }}</td>
@@ -205,8 +265,8 @@
                 </tr>
 
                 @include('fluxoCaixa.modals._show', ['fluxoCaixa' => $fluxoCaixa])
-                @include('fluxoCaixa.modals._edit', ['fluxoCaixa' => $fluxoCaixa])
-                @include('fluxoCaixa.modals._delete', ['fluxoCaixa' => $fluxoCaixa])
+                {{-- @include('fluxoCaixa.modals._edit', ['fluxoCaixa' => $fluxoCaixa])
+                @include('fluxoCaixa.modals._delete', ['fluxoCaixa' => $fluxoCaixa]) --}}
             @endforeach
         </tbody>
     @endcomponent
@@ -249,7 +309,7 @@
                             <label for="caixa_id">Caixa</label>
                             <select class="form-control" name="caixa_id">
                                 <option value="">Todos</option>
-                                @foreach ($caixa as $cx)
+                                @foreach ($caixas as $cx)
                                     <option value="{{ $cx->id }}">{{ $cx->descricao ?? 'Caixa #' . $cx->id }}
                                     </option>
                                 @endforeach
@@ -303,6 +363,40 @@
                 } else {
                     $btn.html('<i class="fas fa-filter"></i> Esconder Totais por Movimento');
                 }
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('[id^="fecharCaixaModal"]').on('show.bs.modal', function() {
+                const modalId = $(this).attr('id');
+                const caixaId = modalId.replace('fecharCaixaModal', '');
+                const url = `/caixas/${caixaId}/resumo`;
+
+                $.get(url, function(resumo) {
+                    const saldo = resumo.saldo ?? 0;
+                    const formas = resumo.formas ?? {};
+
+                    $(`#valor_final${caixaId}`).val(saldo.toFixed(2).replace('.', ','));
+
+                    const lista = $(`#resumoFormas${caixaId}`);
+                    lista.empty();
+
+                    if (Object.keys(formas).length === 0) {
+                        lista.append(
+                            '<li class="list-group-item">Nenhuma movimentação encontrada.</li>');
+                    } else {
+                        for (const [forma, valor] of Object.entries(formas)) {
+                            const nome = forma.charAt(0).toUpperCase() + forma.slice(1);
+                            lista.append(
+                                `<li class="list-group-item">${nome}: R$ ${valor.toFixed(2).replace('.', ',')}</li>`
+                                );
+                        }
+                    }
+                }).fail(function() {
+                    $(`#resumoFormas${caixaId}`).html(
+                        '<li class="list-group-item text-danger">Erro ao carregar resumo.</li>');
+                });
             });
         });
     </script>

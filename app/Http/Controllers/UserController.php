@@ -70,11 +70,13 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'role' => 'required|exists:roles,name',
                 'permissions' => 'array',
+                'empresa_id' => 'required|exists:empresas,id',
             ]);
 
             $user->update([
                 'name' => $request->name,
                 'password' => $request->filled('password') ? Hash::make($request->password) : $user->password,
+                'empresa_id' => $request->empresa_id,
             ]);
 
             $user->syncRoles([$request->role]);

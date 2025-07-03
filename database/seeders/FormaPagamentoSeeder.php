@@ -48,6 +48,11 @@ class FormaPagamentoSeeder extends Seeder
                 'descricao' => 'Sympla',
                 'created_at' => now(),
                 'updated_at' => now()
+            ],
+            [
+                'descricao' => 'crediário',
+                'created_at' => now(),
+                'updated_at' => now()
             ]
         ];
 

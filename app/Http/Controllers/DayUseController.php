@@ -22,44 +22,95 @@ class DayUseController extends Controller
     /**
      * Display a listing of the resource.
      */
-     public function index(Request $request)
-    {
-        $empresaId = Auth::user()->empresa_id;
+public function index(Request $request)
+{
+    $empresaId = Auth::user()->empresa_id;
 
-        // Datas padrão: hoje
-        $dataInicio = $request->input('data_inicio', now()->toDateString());
-        $dataFim = $request->input('data_fim', now()->toDateString());
+    // Datas padrão: hoje
+    $dataInicio = $request->input('data_inicio', now()->toDateString());
+    $dataFim = $request->input('data_fim', now()->toDateString());
 
-        // Validação: data fim não pode ser anterior à início
-        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            if (Carbon::parse($dataFim)->lt(Carbon::parse($dataInicio))) {
-                return redirect()->route('dayuse.index')
-                    ->with('error', 'A data final não pode ser anterior à data inicial.');
+    // Validação: data fim não pode ser anterior à início
+    if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+        if (Carbon::parse($dataFim)->lt(Carbon::parse($dataInicio))) {
+            return redirect()->route('dayuse.index')
+                ->with('error', 'A data final não pode ser anterior à data inicial.');
+        }
+    }
+
+    // Recuperar DayUses do período
+    $dayuses = DayUse::with(['cliente', 'vendedor'])
+        ->whereBetween('data', [$dataInicio, $dataFim])
+        ->orderByDesc('data')
+        ->get();
+
+    // Agrupar MovDayUse por item para contagem dos cards
+    $movimentos = MovDayUse::with('item')
+        ->whereHas('dayuse', function ($query) use ($dataInicio, $dataFim) {
+            $query->whereBetween('data', [$dataInicio, $dataFim]);
+        })
+        ->select('item_dayuse_id', DB::raw('SUM(quantidade) as total_quantidade'))
+        ->groupBy('item_dayuse_id')
+        ->get()
+        ->map(function ($mov) {
+            $mov->item_nome = $mov->item->descricao ?? 'Item';
+            $mov->passeio = $mov->item->passeio ?? false;
+            return $mov;
+        });
+
+    // Gráfico: agrupamento por item e data
+    $movimentosPorDia = MovDayUse::with('item', 'dayuse')
+        ->whereHas('dayuse', function ($query) use ($dataInicio, $dataFim) {
+            $query->whereBetween('data', [$dataInicio, $dataFim]);
+        })
+        ->get()
+        ->groupBy(function ($mov) {
+            return Carbon::parse($mov->dayuse->data)->format('Y-m-d');
+        });
+
+    $labels = $movimentosPorDia->keys()->sort()->values()->toArray();
+
+    $itens = [];
+    $tiposItens = [];
+
+    foreach ($movimentosPorDia as $data => $movs) {
+        foreach ($movs as $mov) {
+            $nome = $mov->item->descricao ?? 'Desconhecido';
+            $tiposItens[$nome] = $mov->item->passeio ?? false;
+            $itens[$nome][$data] = ($itens[$nome][$data] ?? 0) + $mov->quantidade;
+        }
+    }
+
+    // Preenche dias ausentes com zero
+    foreach ($itens as $nome => $datas) {
+        foreach ($labels as $dataLabel) {
+            if (!isset($itens[$nome][$dataLabel])) {
+                $itens[$nome][$dataLabel] = 0;
             }
         }
-
-        // Recuperar DayUses do período
-        $dayuses = DayUse::with(['cliente', 'vendedor'])
-            ->whereBetween('data', [$dataInicio, $dataFim])
-            ->orderByDesc('data')
-            ->get();
-
-        // Agrupar MovDayUse por item para contagem
-        $movimentos = MovDayUse::with('item')
-    ->whereHas('dayuse', function ($query) use ($dataInicio, $dataFim) {
-        $query->whereBetween('data', [$dataInicio, $dataFim]);
-    })
-    ->select('item_dayuse_id', DB::raw('SUM(quantidade) as total_quantidade'))
-    ->groupBy('item_dayuse_id')
-    ->get()
-    ->map(function ($mov) {
-        $mov->item_nome = $mov->item->descricao ?? 'Item';
-        $mov->passeio = $mov->item->passeio ?? false;
-        return $mov;
-    });
-
-        return view('dayuse.index', compact('dayuses', 'dataInicio', 'dataFim', 'movimentos'));
+        ksort($itens[$nome]);
     }
+
+    $dadosGrafico = [];
+    foreach ($itens as $nome => $datas) {
+        $dadosGrafico[] = [
+            'nome' => $nome,
+            'data' => array_values($datas),
+        ];
+    }
+
+    return view('dayuse.index', compact(
+        'dayuses',
+        'dataInicio',
+        'dataFim',
+        'movimentos',
+        'dadosGrafico',
+        'labels',
+        'tiposItens'
+    ));
+}
+
+
 
     /**
      * Show the form for creating a new resource.
@@ -143,7 +194,7 @@ class DayUseController extends Controller
                 // Buscar caixa aberto da empresa
                 $caixa = Caixa::where('empresa_id', Auth::user()->empresa_id)
                     ->where('status', 'aberto')
-                    ->latest()
+                    ->where('usuario_id', Auth::id())
                     ->first();
 
                 if ($caixa) {

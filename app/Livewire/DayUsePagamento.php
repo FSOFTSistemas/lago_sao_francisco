@@ -182,7 +182,8 @@ class DayUsePagamento extends Component
         $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
             ->where('status', 'aberto')
             ->where('empresa_id', $empresaId)
-            ->first();
+            ->where('usuario_id', Auth::id())
+            ->first();;
 
         if (!$caixa) {
             session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');

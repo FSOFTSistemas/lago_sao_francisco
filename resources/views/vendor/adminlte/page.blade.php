@@ -189,7 +189,7 @@
 <script>
     Swal.fire({
         title: 'Sucesso!',
-        text: "{{ session('success') }}",
+        html: `{!! session('success') !!}`,
         icon: 'success',
         confirmButtonText: 'OK'
     });

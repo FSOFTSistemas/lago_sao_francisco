@@ -35,7 +35,6 @@
                 <th>Situação</th>
                 <th>Data de Abertura</th>
                 <th>Data de Fechamento</th>
-                <th>Valor Final</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -47,7 +46,6 @@
                     <td>{{ $caixa->status }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($caixa->data_fechamento)->format('d/m/Y') }}</td>
-                    <td>R${{ $caixa->valor_final }}</td>
                     <td>
                         @if ($caixa->status === 'fechado')
                             <button class="btn btn-success btn-sm" data-bs-toggle="modal"

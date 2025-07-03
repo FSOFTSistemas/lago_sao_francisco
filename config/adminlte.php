@@ -390,16 +390,16 @@ return [
             'icon' => 'fas fa-user',
             'can'  => 'gerenciar funcionario',
         ],
+        // [
+        //     'text' => '!Caixa',
+        //     'url'  => '/caixa',
+        //     'icon' => 'fas fa-money-bill-alt',
+        //     'can'  => 'gerenciar caixa',
+        // ],
         [
             'text' => 'Caixa',
-            'url'  => '/caixa',
-            'icon' => 'fas fa-money-bill-alt',
-            'can'  => 'gerenciar caixa',
-        ],
-        [
-            'text' => 'Fluxos de Caixa',
             'url'  => '/fluxoCaixa',
-            'icon' => 'fas fa-file-invoice',
+            'icon' => 'fas fa-money-bill-alt',
             'can'  => 'gerenciar fluxo de caixa',
         ],
         [
