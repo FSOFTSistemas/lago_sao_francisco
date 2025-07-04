@@ -120,6 +120,7 @@
             </td>
             <td>{{ \Carbon\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y') }}</td>
             <td>R${{ number_format($contasAPagar->valor, 2, ',', '.') }}</td>
+        
             <td>
                 @if($contasAPagar->status == "pago")
                     <span class="text-success">Pago <i class="fa-regular fa-circle-check"></i></span>
