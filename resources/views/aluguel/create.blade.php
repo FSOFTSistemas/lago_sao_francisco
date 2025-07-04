@@ -26,7 +26,7 @@
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-buffet"
                             role="tab">Buffet</a>
                     </li>
-                    <li class="nav-item" id="adicionalAba" >
+                    <li class="nav-item" id="adicionalAba">
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-adicional"
                             role="tab">Mobília</a>
                     </li>
@@ -83,7 +83,8 @@
                             <div class="form-check form-switch">
                                 <input type="hidden" name="ativo" value="0">
                                 <input class="form-check-input" type="checkbox" id="ativoSwitch" name="ativo"
-                                    value="1" {{ old('ativo', isset($aluguel->cardapio_id) ? 1 : 0) ? 'checked' : '' }}>
+                                    value="1"
+                                    {{ old('ativo', isset($aluguel->cardapio_id) ? 1 : 0) ? 'checked' : '' }}>
                                 <label class="form-check-label ms-2" for="ativoSwitch" id="ativoLabel">
                                     {{ old('ativo', isset($aluguel->cardapio_id) ? 1 : 0) ? 'Sim' : 'Não' }}
 
@@ -95,11 +96,21 @@
                             <label for="tipo_evento" class="form-label col-md-3 label-control">* Tipo de Evento:</label>
                             <div class="col-md-3">
                                 <select name="tipo" id="tipo_evento" class="form-control" required>
-                                    <option value="" disabled {{ old('tipo', $aluguel->tipo ?? '') == '' ? 'selected' : '' }}>Selecione o tipo</option>
-                                    <option value="casamento" {{ old('tipo', $aluguel->tipo ?? '') == 'casamento' ? 'selected' : '' }}>Casamento</option>
-                                    <option value="aniversario" {{ old('tipo', $aluguel->tipo ?? '') == 'aniversario' ? 'selected' : '' }}>Aniversário</option>
-                                    <option value="batizado" {{ old('tipo', $aluguel->tipo ?? '') == 'batizado' ? 'selected' : '' }}>Batizado</option>
-                                    <option value="confraternizacao" {{ old('tipo', $aluguel->tipo ?? '') == 'confraternizacao' ? 'selected' : '' }}>Confraternização</option>
+                                    <option value="" disabled
+                                        {{ old('tipo', $aluguel->tipo ?? '') == '' ? 'selected' : '' }}>Selecione o tipo
+                                    </option>
+                                    <option value="casamento"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'casamento' ? 'selected' : '' }}>Casamento
+                                    </option>
+                                    <option value="aniversario"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'aniversario' ? 'selected' : '' }}>
+                                        Aniversário</option>
+                                    <option value="batizado"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'batizado' ? 'selected' : '' }}>Batizado
+                                    </option>
+                                    <option value="confraternizacao"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'confraternizacao' ? 'selected' : '' }}>
+                                        Confraternização</option>
                                 </select>
                             </div>
                         </div>
@@ -112,7 +123,8 @@
                         <div class="alert alert-secondary">
                             <strong>DICA:</strong> Para selecionar a data da reserva/aluguel, basta clicar na data referente
                             ao espaço desejado. <br>
-                            <strong>ATENÇÃO:</strong> <u>Ao selecionar a capela, escolher o tipo <strong>Casamento</strong> ou <strong>Batizado</strong>! <br></u>
+                            <strong>ATENÇÃO:</strong> <u>Ao selecionar a capela, escolher o tipo <strong>Casamento</strong>
+                                ou <strong>Batizado</strong>! <br></u>
                             <em>Para selecionar apenas 1 dia, basta clicar na data escolhida 2 vezes.</em>
                         </div>
                         <hr>
@@ -255,7 +267,7 @@
                             $adicionaisSelecionadosArray = collect($adicionaisSelecionados)->keyBy('adicional_id');
                         @endphp
 
-                       <div class="card mt-4">
+                        <div class="card mt-4">
                             <div class="card-header bg-success text-white">
                                 <strong>Adicionais</strong>
                             </div>
@@ -270,12 +282,13 @@
                                     <div class="row mb-3 align-items-center border-bottom pb-2">
                                         <div class="col-md-4">
                                             <strong>{{ $adicional->descricao }}</strong><br>
-                                            <small>Valor unitário: R$ {{ number_format($adicional->valor, 2, ',', '.') }}</small>
+                                            <small>Valor unitário: R$
+                                                {{ number_format($adicional->valor, 2, ',', '.') }}</small>
                                         </div>
 
                                         <div class="col-md-2">
                                             <label>Quantidade:</label>
-                                            <input type="number" min="0" 
+                                            <input type="number" min="0"
                                                 class="form-control adicional-quantidade"
                                                 data-valor="{{ $adicional->valor }}"
                                                 name="adicionais[{{ $adicional->id }}][quantidade]"
@@ -284,7 +297,7 @@
 
                                         <div class="col-md-4">
                                             <label>Observação:</label>
-                                            <input type="text" class="form-control" 
+                                            <input type="text" class="form-control"
                                                 name="adicionais[{{ $adicional->id }}][observacao]"
                                                 value="{{ $observacao }}">
                                         </div>
@@ -292,7 +305,7 @@
                                         <div class="col-md-2">
                                             <label>Total:</label>
                                             <input type="text" readonly class="form-control adicional-total"
-                                                value="{{ $quantidade > 0 ? 'R$ '.number_format($valorTotal, 2, ',', '.') : '' }}">
+                                                value="{{ $quantidade > 0 ? 'R$ ' . number_format($valorTotal, 2, ',', '.') : '' }}">
                                         </div>
                                     </div>
                                 @endforeach
@@ -413,6 +426,15 @@
                                                 @endforeach
                                             </select>
                                         </div>
+                                        <div class="form-group d-none" id="campo-parcelas">
+                                            <label for="parcelas">Número de Parcelas:</label>
+                                            <select name="parcelas" id="parcelas" class="form-control">
+                                                @for ($i = 1; $i <= 12; $i++)
+                                                    <option value="{{ $i }}">{{ $i }}x</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
@@ -617,7 +639,7 @@
                 window.pagamentosExistentes.forEach(function(pag) {
                     pagamentosAdicionados.push({
                         id: pag
-                        .id, // Importante manter o ID real para permitir edição/exclusão depois
+                            .id, // Importante manter o ID real para permitir edição/exclusão depois
                         forma_pagamento_id: pag.forma_pagamento_id,
                         forma_pagamento_nome: pag.forma_pagamento ? pag.forma_pagamento.descricao :
                             '',
@@ -645,9 +667,10 @@
                     .replace(',', '.')) || 0;
                 const valorBuffet = parseFloat(document.getElementById('total_buffet').value.replace(/[^\d,]/g, '')
                     .replace(',', '.')) || 0;
-                const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(/[^\d,]/g, '')
+                const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(
+                        /[^\d,]/g, '')
                     .replace(',', '.')) || 0;
-            
+
                 valorAluguelDisplay.value = formatarMoeda(valorAluguel);
                 valorBuffetDisplay.value = formatarMoeda(valorBuffet);
                 valorAdicionalDisplay.value = formatarMoeda(valorAdicional);
@@ -900,36 +923,36 @@
 
 
 
-              function calcularTotalAdicionais() {
-        let totalGeral = 0;
+            function calcularTotalAdicionais() {
+                let totalGeral = 0;
 
-        document.querySelectorAll('.adicional-quantidade').forEach(input => {
-            const quantidade = parseFloat(input.value.replace(',', '.')) || 0;
-            const valorUnitario = parseFloat(input.dataset.valor) || 0;
-            const totalItem = quantidade * valorUnitario;
+                document.querySelectorAll('.adicional-quantidade').forEach(input => {
+                    const quantidade = parseFloat(input.value.replace(',', '.')) || 0;
+                    const valorUnitario = parseFloat(input.dataset.valor) || 0;
+                    const totalItem = quantidade * valorUnitario;
 
-            const totalField = input.closest('.row').querySelector('.adicional-total');
-            totalField.value = totalItem > 0 ? totalItem.toFixed(2) : '';
+                    const totalField = input.closest('.row').querySelector('.adicional-total');
+                    totalField.value = totalItem > 0 ? totalItem.toFixed(2) : '';
 
-            totalGeral += totalItem;
-        });
+                    totalGeral += totalItem;
+                });
 
-        const totalInput = document.getElementById('totalAdicionais');
+                const totalInput = document.getElementById('totalAdicionais');
 
-        if (totalInput) {
-            totalInput.value = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;  
-        }
-        calcularSubtotal()
-    }
+                if (totalInput) {
+                    totalInput.value = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+                }
+                calcularSubtotal()
+            }
 
-    // Atualiza ao alterar qualquer quantidade
-    document.querySelectorAll('.adicional-quantidade').forEach(input => {
-        input.addEventListener('input', calcularTotalAdicionais);
-    });
+            // Atualiza ao alterar qualquer quantidade
+            document.querySelectorAll('.adicional-quantidade').forEach(input => {
+                input.addEventListener('input', calcularTotalAdicionais);
+            });
 
-    // Cálculo inicial
-    calcularTotalAdicionais();
-            
+            // Cálculo inicial
+            calcularTotalAdicionais();
+
 
 
 
@@ -1005,6 +1028,26 @@
     </script>
 
     <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectForma = document.getElementById('forma_pagamento_select');
+        const campoParcelas = document.getElementById('campo-parcelas');
+
+        selectForma.addEventListener('change', function () {
+            const selectedOption = selectForma.options[selectForma.selectedIndex];
+            const textoSelecionado = selectedOption ? selectedOption.text.toLowerCase() : '';
+
+            if (textoSelecionado.includes('crediário')) {
+                campoParcelas.classList.remove('d-none');
+            } else {
+                campoParcelas.classList.add('d-none');
+                document.getElementById('parcelas').value = ''; // limpa seleção
+            }
+        });
+    });
+</script>
+
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const switchInput = document.getElementById('ativoSwitch');
             const label = document.getElementById('ativoLabel');
@@ -1042,8 +1085,8 @@
         });
     </script>
     <script>
-       const teste12 = window.itensSelecionadosBuffet = {!! json_encode($itensSelecionados ?? []) !!};
-       const teste13 = window.opcaoSelecionadaBuffet = {{ $opcaoSelecionada ?? 'null' }};
+        const teste12 = window.itensSelecionadosBuffet = {!! json_encode($itensSelecionados ?? []) !!};
+        const teste13 = window.opcaoSelecionadaBuffet = {{ $opcaoSelecionada ?? 'null' }};
     </script>
 
 
@@ -1253,7 +1296,8 @@
                             // Marcar itens já selecionados (se vieram do backend)
                             if (window.itensSelecionadosBuffet.length > 0) {
                                 window.itensSelecionadosBuffet.forEach(itemId => {
-                                    const checkbox = categoriasContainer.querySelector(`input[type="checkbox"][value="${itemId}"]`);
+                                    const checkbox = categoriasContainer.querySelector(
+                                        `input[type="checkbox"][value="${itemId}"]`);
                                     if (checkbox) {
                                         checkbox.checked = true;
                                     }
@@ -1264,7 +1308,9 @@
 
                             // Marcar opção de refeição já escolhida
                             if (window.opcaoSelecionadaBuffet !== null) {
-                                const radio = opcoesContainer.querySelector(`input[name="opcao_escolhida"][value="${window.opcaoSelecionadaBuffet}"]`);
+                                const radio = opcoesContainer.querySelector(
+                                    `input[name="opcao_escolhida"][value="${window.opcaoSelecionadaBuffet}"]`
+                                    );
                                 if (radio) {
                                     radio.checked = true;
                                     calcularValorFinal();
@@ -1277,7 +1323,7 @@
                             console.error('Erro ao carregar dados do cardápio:', error);
                         });
                 }
-                
+
             });
 
             if (cardapioSelect.value) {
@@ -1365,7 +1411,7 @@
             espacoSelect.addEventListener('change', calcularValor);
             dataInicio.addEventListener('change', calcularValor);
             dataFim.addEventListener('change', calcularValor);
-            $('#tipo_evento').on('change', function () {
+            $('#tipo_evento').on('change', function() {
                 calcularValor();
             });
         });
@@ -1445,35 +1491,36 @@
                 }
             });
             $('#tipo_evento').select2({
-                    placeholder: 'Selecione um tipo',
-                    width: '100%'
-                });
+                placeholder: 'Selecione um tipo',
+                width: '100%'
+            });
         });
     </script>
 
 
-<script> //calcula o total do custo daquela mobília (linha)
-document.addEventListener('DOMContentLoaded', function () {
-    function atualizarTotais() {
-        document.querySelectorAll('.row').forEach(row => {
-            const input = row.querySelector('.adicional-quantidade');
-            const totalInput = row.querySelector('.adicional-total');
-            if (input && totalInput && input.dataset.valor) {
-                const valorUnitario = parseFloat(input.dataset.valor);
-                const quantidade = parseInt(input.value) || 0;
-                const total = valorUnitario * quantidade;
-                totalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
+    <script>
+        //calcula o total do custo daquela mobília (linha)
+        document.addEventListener('DOMContentLoaded', function() {
+            function atualizarTotais() {
+                document.querySelectorAll('.row').forEach(row => {
+                    const input = row.querySelector('.adicional-quantidade');
+                    const totalInput = row.querySelector('.adicional-total');
+                    if (input && totalInput && input.dataset.valor) {
+                        const valorUnitario = parseFloat(input.dataset.valor);
+                        const quantidade = parseInt(input.value) || 0;
+                        const total = valorUnitario * quantidade;
+                        totalInput.value = "R$ " + total.toFixed(2).replace('.', ',');
+                    }
+                });
             }
+
+            document.querySelectorAll('.adicional-quantidade').forEach(input => {
+                input.addEventListener('input', atualizarTotais);
+            });
+
+            atualizarTotais();
         });
-    }
-
-    document.querySelectorAll('.adicional-quantidade').forEach(input => {
-        input.addEventListener('input', atualizarTotais);
-    });
-
-    atualizarTotais();
-});
-</script>
+    </script>
 @endsection
 
 @section('css')
@@ -1752,10 +1799,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             /* Opcional: Esconder o texto 'X' e usar só fundo em telas muito pequenas */
             /*
-                    .date-cell.booked span {
-                        display: none;
-                    }
-                    */
+                        .date-cell.booked span {
+                            display: none;
+                        }
+                        */
         }
 
         /* Ajustes finos para telas muito pequenas (opcional) */

@@ -48,6 +48,7 @@ use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
 use App\Http\Controllers\ParceiroController;
+use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
 use App\Livewire\Dayuse\ShowDayuse;
@@ -198,3 +199,5 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/usuario/alterar-senha', [UsuarioSenhaController::class, 'form'])->name('usuario.senha.form');
     Route::post('/usuario/alterar-senha', [UsuarioSenhaController::class, 'atualizar'])->name('usuario.senha.atualizar');
 });
+
+Route::resource('souvenir', SouvenirController::class);
