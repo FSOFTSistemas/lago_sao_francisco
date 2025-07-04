@@ -56,24 +56,32 @@
                                     <div class="icon-placeholder mb-3">
                                         @if($item->descricao == 'Meia Entrada')
                                             <i class="fas fa-percent fa-3x" style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Adulto')
+                                        @elseif($item->descricao == 'Entrada Adulto')
                                             <i class="fas fa-user fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Cine')
+                                        @elseif($item->descricao == 'Passeio Cine 6D')
                                             <i class="fas fa-film fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Ensaio')
+                                        @elseif($item->descricao == 'Ensaio Individual')
                                             <i class="fas fa-camera fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Pedalinho')
+                                        @elseif($item->descricao == 'Passeio de Pedalinho')
                                             <i class="fas fa-water fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Tirolesa')
+                                        @elseif($item->descricao == 'Passeio de Tirolesa')
                                             <i class="fas fa-mountain fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Pônei')
+                                        @elseif($item->descricao == 'Passeio de Cavalo/Pônei')
                                             <i class="fas fa-horse fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Circuito')
+                                        @elseif($item->descricao == 'Circuito de Passeios')
                                             <i class="fas fa-layer-group fa-3x " style="color: #679A4C;"></i> 
                                         @elseif($item->descricao == 'Outros')
                                             <i class="fas fa-ellipsis-h fa-3x " style="color: #679A4C;"></i> 
-                                        @elseif($item->descricao == 'Excursão')
+                                        @elseif($item->descricao == 'Entrada Excursão')
                                             <i class="fas fa-route fa-3x " style="color: #679A4C;"></i> 
+                                        @elseif($item->descricao == 'Ensaio Pré-Wedding')
+                                            <i class="fas fa-ring fa-3x " style="color: #679A4C;"></i>
+                                        @elseif($item->descricao == 'Venda Passaporte')
+                                            <i class="fas fa-ticket-alt fa-3x " style="color: #679A4C;"></i>
+                                        @elseif($item->descricao == 'Entrada Passaporte')
+                                            <i class="fas fa-check fa-3x " style="color: #679A4C;"></i>
+                                        @elseif($item->descricao == 'Entrada Infantil até 4 anos')
+                                            <i class="fas fa-child fa-3x " style="color: #679A4C;"></i>
                                         @else
                                             <i class="fas fa-layer-group fa-3x " style="color: #679A4C;"></i> {{-- Ícone genérico --}}
                                         @endif
