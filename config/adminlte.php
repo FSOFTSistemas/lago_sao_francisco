@@ -400,7 +400,7 @@ return [
             'text' => 'Caixa',
             'url'  => '/fluxoCaixa',
             'icon' => 'fas fa-money-bill-alt',
-            'can'  => 'gerenciar fluxo de caixa',
+            'can'  => 'gerenciar caixa',
         ],
         [
             'text' => 'Empresas',

@@ -8,10 +8,12 @@
 @stop
 
 @section('content')
-<div class="alert alert-secondary">
-    <strong>DICA:</strong> As permissões é o que define quais seções um usuário pode ou não ver/acessar<br>
-    <em><strong>Financeiro Geral:</strong> tem acesso a todas as empresas e pode escolher, <strong>Finaceiro Empresa:</strong> está limitado a empresa de usuário dele, <strong>Funcionário:</strong> só pode ver dados do seu próprio usuário</em>
-</div>
+    <div class="alert alert-secondary">
+        <strong>DICA:</strong> As permissões é o que define quais seções um usuário pode ou não ver/acessar<br>
+        <em><strong>Financeiro Geral:</strong> tem acesso a todas as empresas e pode escolher, <strong>Finaceiro
+                Empresa:</strong> está limitado a empresa de usuário dele, <strong>Funcionário:</strong> só pode ver dados
+            do seu próprio usuário</em>
+    </div>
     <div class="card">
         <div class="card-header green bg-primary text-white">
             <h3 class="card-title">
@@ -113,11 +115,14 @@
                                             : [];
                                 @endphp
                                 @foreach ($permissions as $permission)
-                                    <option value="{{ $permission->id }}"
-                                        {{ in_array($permission->id, $selectedPermissions) ? 'selected' : '' }}>
-                                        {{ $permission->name }}
-                                    </option>
+                                    @if ($permission->name !== 'gerenciar fluxo de caixa')
+                                        <option value="{{ $permission->id }}"
+                                            {{ in_array($permission->id, $selectedPermissions) ? 'selected' : '' }}>
+                                            {{ $permission->name }}
+                                        </option>
+                                    @endif
                                 @endforeach
+
                             </select>
 
                             <!-- Botões de Controle -->
