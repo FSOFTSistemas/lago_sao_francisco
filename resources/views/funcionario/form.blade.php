@@ -194,8 +194,21 @@
                         <label class="label-control col-md-3">Tipo de Usuário</label>
                         <div class="col-md-3">
                             <select name="role" class="form-control">
-                                <option value="funcionario">Funcionário</option>
-                                <option value="financeiro">Financeiro</option>
+                                <option value="">Selecione um tipo</option>
+                                @foreach ($roles as $role)
+                                    @php
+                                        $label = match ($role->name) {
+                                            'Master' => 'Financeiro Geral',
+                                            'financeiro' => 'Financeiro Empresa',
+                                            'funcionario' => 'Funcionario',
+                                            default => ucfirst($role->name),
+                                        };
+                                    @endphp
+                                    <option value="{{ $role->name }}"
+                                        {{ isset($user) && ($user->roles->first()->name ?? '') == $role->name ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -215,10 +228,12 @@
                                                 : [];
                                     @endphp
                                     @foreach ($permissoes as $permissao)
-                                        <option value="{{ $permissao->id }}"
-                                            {{ in_array($permissao->id, $selectedpermissoes) ? 'selected' : '' }}>
-                                            {{ $permissao->name }}
-                                        </option>
+                                        @if ($permissao->name !== 'gerenciar fluxo de caixa')
+                                            <option value="{{ $permissao->id }}"
+                                                {{ in_array($permissao->id, $selectedpermissoes) ? 'selected' : '' }}>
+                                                {{ $permissao->name }}
+                                            </option>
+                                        @endif
                                     @endforeach
                                 </select>
 
