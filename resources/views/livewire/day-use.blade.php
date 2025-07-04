@@ -162,13 +162,6 @@
                                 <div><input class="form-control" type="number" wire:model='telefone' id="telefone" autocomplete="off" required="required"></div>
                                 </div>
                             </div>
-          
-                        <div class="form-group row">
-                            <label class="col-md-3 label-control"  for="data_nascimento">* Data de Nascimento:</label>
-                            <div class="col-md-6">
-                              <div><input class="form-control" type="date" wire:model='data_nascimento' id="data_nascimento" required="required"></div>
-                            </div>
-                        </div>
                         </div>
       
                     </form>

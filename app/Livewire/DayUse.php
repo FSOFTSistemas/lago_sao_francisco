@@ -172,7 +172,6 @@ class DayUse extends Component
         $this->validate([
             'nome_razao_social' => 'string|required',
             'tipo' => 'required|string',
-            'data_nascimento' => 'date|required',
             'telefone' => [
                 'required',
                 'string',
@@ -198,8 +197,6 @@ class DayUse extends Component
             'nome_razao_social.string' => 'O campo nome deve ser uma string.',
             'tipo.required' => 'O campo tipo é obrigatório.',
             'tipo.string' => 'O campo tipo deve ser uma string.',
-            'data_nascimento.required' => 'O campo data de nascimento é obrigatório.',
-            'data_nascimento.date' => 'O campo data de nascimento deve ser uma data válida.', 
             'telefone.required' => 'O campo telefone é obrigatório.',
             'telefone.max' => 'O telefone não pode ter mais que 20 caracteres.',
         ]);
@@ -207,13 +204,11 @@ class DayUse extends Component
         Cliente::create([
             'nome_razao_social' => $this->nome_razao_social,
             'tipo' => $this->tipo,
-            'data_nascimento' => $this->data_nascimento,
             'telefone' => $this->telefone,
             'empresa_id' =>  Auth::user()->empresa_id
         ]);
         $this->nome_razao_social = '';
         $this->telefone = '';
-        $this->data_nascimento = '';
         $this->fecharModal();
     }
 }
