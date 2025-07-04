@@ -8,6 +8,7 @@ use App\Models\DayUsePag;
 use App\Models\FormaPagamento;
 use App\Services\CaixaService;
 use App\Models\Caixa;
+use App\Models\Souvenir;
 use Illuminate\Support\Facades\Auth;
 
 class DayUsePagamento extends Component
@@ -26,7 +27,15 @@ class DayUsePagamento extends Component
     public $restante = 0; // Valor restante a ser pago
     public $inputKey;
 
-       protected CaixaService $caixaService;
+    public $souvenirs; // Collection vinda do banco
+    public $souvenirsAdicionados = []; // Lista de adicionados
+    public $souvenirSelecionadoId;
+    public $souvenirQuantidade = 1;
+    public $subtotalSouvenir = 0;
+    public $estoqueDisponivel;
+    public $subtotalOriginal = 0;
+
+    protected CaixaService $caixaService;
 
     public function __construct()
     {
@@ -54,7 +63,8 @@ class DayUsePagamento extends Component
         $this->dayUseId = $dayUseId;
         $this->itemSubtotal = $itemSubtotal;
 
-        $this->formaPagamento = FormaPagamento::all();
+        $this->formaPagamento = FormaPagamento::where('descricao', '!=', 'crediário')->get();
+        $this->souvenirs = Souvenir::where('estoque', '>', 0)->get();
 
         if ($this->dayUseId) {
             $dayUse = DayUse::find($this->dayUseId);
@@ -89,7 +99,7 @@ class DayUsePagamento extends Component
 
     public function calculateFinalPaymentTotal()
     {
-        $this->finalPagamentoTotal = $this->itemSubtotal + $this->acrescimo - $this->desconto;
+        $this->finalPagamentoTotal = $this->itemSubtotal + $this->subtotalSouvenir + $this->acrescimo - $this->desconto;
         if ($this->finalPagamentoTotal < 0) {
             $this->finalPagamentoTotal = 0; // Evita total negativo
         }
@@ -182,7 +192,8 @@ class DayUsePagamento extends Component
         $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
             ->where('status', 'aberto')
             ->where('empresa_id', $empresaId)
-            ->first();
+            ->where('usuario_id', Auth::id())
+            ->first();;
 
         if (!$caixa) {
             session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
@@ -210,6 +221,19 @@ class DayUsePagamento extends Component
             ]);
         }
 
+        foreach ($this->souvenirsAdicionados as $souvenirItem) {
+            $souvenir = \App\Models\Souvenir::find($souvenirItem['id']);
+
+            if ($souvenir && $souvenir->estoque >= $souvenirItem['quantidade']) {
+                $souvenir->estoque -= $souvenirItem['quantidade'];
+                $souvenir->save();
+            } else {
+                session()->flash('error', 'Estoque insuficiente ao salvar o pagamento para: ' . $souvenirItem['descricao']);
+                return;
+            }
+        }
+
+
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }
@@ -217,5 +241,116 @@ class DayUsePagamento extends Component
     public function render()
     {
         return view('livewire.day-use-pagamento');
+    }
+
+    public function updatedSouvenirQuantidade()
+    {
+        $this->resetErrorBag('souvenirQuantidade');
+        if (!$this->souvenirSelecionadoId) return;
+
+        $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
+
+        if ($souvenir && $this->souvenirQuantidade > $souvenir->estoque) {
+            $this->souvenirQuantidade = $souvenir->estoque;
+            $this->addError('souvenirQuantidade', 'Quantidade excede o estoque disponível!');
+        }
+    }
+
+
+    public function addSouvenir()
+    {
+        $this->resetErrorBag('souvenirQuantidade');
+        if (!$this->souvenirSelecionadoId || !$this->souvenirQuantidade) return;
+
+        $souvenir = $this->souvenirs->firstWhere('id', $this->souvenirSelecionadoId);
+
+        if (!$souvenir) {
+            $this->addError('souvenirSelecionadoId', 'Souvenir inválido.');
+            return;
+        }
+
+        // Verificar quanto já foi adicionado desse souvenir
+        $quantidadeJaAdicionada = collect($this->souvenirsAdicionados)
+            ->where('id', $souvenir->id)
+            ->sum('quantidade');
+
+        $estoqueRestante = $souvenir->estoque - $quantidadeJaAdicionada;
+
+        if ($this->souvenirQuantidade > $estoqueRestante) {
+            $this->addError('souvenirQuantidade', "Estoque insuficiente. Máximo disponível: {$estoqueRestante}");
+            return;
+        }
+
+        // Se já existir, apenas aumenta a quantidade
+        foreach ($this->souvenirsAdicionados as &$item) {
+            if ($item['id'] === $souvenir->id) {
+                $item['quantidade'] += $this->souvenirQuantidade;
+                $item['valor_total'] = $item['quantidade'] * $item['valor_unitario'];
+                $this->atualizarSubtotal();
+                $this->resetSouvenirInputs();
+                return;
+            }
+        }
+
+        // Se ainda não adicionado, cria novo
+        $this->souvenirsAdicionados[] = [
+            'id' => $souvenir->id,
+            'descricao' => $souvenir->descricao,
+            'quantidade' => $this->souvenirQuantidade,
+            'valor_unitario' => $souvenir->valor,
+            'valor_total' => $souvenir->valor * $this->souvenirQuantidade,
+        ];
+
+        $this->atualizarSubtotal();
+        $this->resetSouvenirInputs();
+    }
+
+
+    public function removeSouvenir($index)
+    {
+        if (!isset($this->souvenirsAdicionados[$index])) return;
+
+        unset($this->souvenirsAdicionados[$index]);
+        $this->souvenirsAdicionados = array_values($this->souvenirsAdicionados); // Reindexa
+
+        $this->atualizarSubtotal();
+    }
+
+
+    public function atualizarSubtotal()
+    {
+        $this->subtotalSouvenir = collect($this->souvenirsAdicionados)->sum('valor_total');
+
+
+        $this->finalPagamentoTotal = $this->itemSubtotal + $this->subtotalSouvenir;
+
+        $this->calculateFinalPaymentTotal();
+    }
+
+    public function getEstoqueDisponivelProperty()
+    {
+        if (!$this->souvenirSelecionadoId) {
+            return null; // ou 0, se preferir
+        }
+
+        // Encontra o souvenir selecionado no estoque total
+        $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
+        if (!$souvenir) {
+            return null;
+        }
+
+        // Soma a quantidade já adicionada desse souvenir na lista
+        $quantidadeAdicionada = collect($this->souvenirsAdicionados)
+            ->where('id', $this->souvenirSelecionadoId)
+            ->sum('quantidade');
+
+        // Calcula o estoque disponível subtraindo o que já foi adicionado
+        return max($souvenir->estoque - $quantidadeAdicionada, 0);
+    }
+
+    public function resetSouvenirInputs()
+    {
+        $this->souvenirSelecionadoId = null;
+        $this->souvenirQuantidade = 1;
     }
 }

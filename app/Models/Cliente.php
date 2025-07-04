@@ -29,4 +29,9 @@ class Cliente extends Model
     {
         return $this->belongsTo(Endereco::class, 'endereco_id');
     }
+    public function pagamentosConta()
+    {
+        return $this->hasMany(ContaPagamentos::class);
+    }
+
 }

@@ -20,7 +20,7 @@ class VerificaCaixaAberto
             ->first();
 
         if (!$caixaAberto) {
-            return redirect()->route('caixa.index')
+            return redirect()->route('fluxoCaixa.index')
                 ->with('sweet_error', 'Você precisa abrir o caixa do dia para continuar.');
         }
 

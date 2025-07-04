@@ -22,52 +22,96 @@ class FluxoCaixaController extends Controller
         $this->caixaService = $caixaService;
     }
 
+    public function abrir(Request $request, $id)
+    {
+        $request->validate([
+            'valor_inicial' => 'required|numeric|min:0',
+        ]);
+
+        $caixa = Caixa::findOrFail($id);
+
+        if ($caixa->status === 'aberto') {
+            return back()->with('error', 'O caixa já está aberto.');
+        }
+
+        $this->caixaService->abrirCaixa($caixa, $request->valor_inicial);
+
+        return back()->with('success', 'Caixa aberto com sucesso.');
+    }
+
+    public function fechar(Request $request, $id)
+    {
+        try {
+            $request->merge([
+                'valor_final' => str_replace(',', '.', $request->valor_final),
+            ]);
+
+            $request->validate([
+                'valor_final' => 'required|numeric|min:0',
+            ]);
+
+            $caixa = Caixa::findOrFail($id);
+
+            if ($caixa->status === 'fechado') {
+                return back()->with('error', 'O caixa já está fechado.');
+            }
+
+            $this->caixaService->fecharCaixa($caixa, $request->valor_final);
+
+            return back()->with('success', 'Caixa fechado com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao fechar caixa', $e);
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $query = FluxoCaixa::with('movimento');
-
-        $empresaSelecionada = session('empresa_id');
         $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
 
-        // Filtro de empresa: se não for Master, sempre aplica o filtro
+        // -----------------------------
+        // FLUXO DE CAIXA
+        // -----------------------------
+        $fluxoQuery = FluxoCaixa::with('movimento');
+
         if ($usuario->hasRole('Master')) {
             if ($empresaSelecionada) {
-                $query->where('empresa_id', $empresaSelecionada);
+                $fluxoQuery->where('empresa_id', $empresaSelecionada);
             }
-            // senão mostra tudo
+        } elseif ($usuario->hasRole('financeiro')) {
+            // Pode ver todos os fluxos da empresa dele
+            $fluxoQuery->where('empresa_id', $usuario->empresa_id);
         } else {
-            $query->where('empresa_id', $usuario->empresa_id);
+            // Só pode ver os próprios fluxos
+            $fluxoQuery->where('empresa_id', $usuario->empresa_id)
+                ->where('usuario_id', $usuario->id);
         }
 
-        // Filtro por tipo (entrada/saida)
+
+
+        // Filtros opcionais de tipo e data
         if ($request->filled('tipo')) {
-            $query->where('tipo', $request->tipo);
+            $fluxoQuery->where('tipo', $request->tipo);
         }
 
-        // Filtro por data ou intervalo de datas
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            $query->whereBetween('data', [$request->data_inicio, $request->data_fim]);
+            $fluxoQuery->whereBetween('data', [$request->data_inicio, $request->data_fim]);
         } else {
-            // Exibir do dia atual por padrão
-            $hoje = \Carbon\Carbon::today();
-            $query->whereDate('data', $hoje);
+            $fluxoQuery->whereDate('data', \Carbon\Carbon::today());
         }
 
-        $fluxoCaixas = $query->orderBy('data', 'desc')->get();
-        $users = $usuario;
-        $movimento = Movimento::all();
-        $empresa = Empresa::all();
-        $caixa = Caixa::all();
-        $planoDeContas = PlanoDeConta::all();
+        $fluxoCaixas = $fluxoQuery->orderBy('data', 'desc')->orderBy('id', 'desc')->get();
 
-        // Totais por forma de pagamento
+        // -----------------------------
+        // TOTALIZADOR
+        // -----------------------------
         $totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
             ->with('movimento')
-            ->when(!Auth::user()->hasRole('Master'), function ($q) {
-                $q->where('empresa_id', Auth::user()->empresa_id);
+            ->when(!$usuario->hasRole('Master'), function ($q) use ($usuario) {
+                $q->where('empresa_id', $usuario->empresa_id);
             })
             ->when($request->filled('tipo'), function ($q) use ($request) {
                 $q->where('tipo', $request->tipo);
@@ -80,10 +124,43 @@ class FluxoCaixaController extends Controller
             ->groupBy('movimento_id')
             ->get();
 
-        // Total geral
         $totalGeral = $totaisPorMovimento->sum('total');
 
-        return view('fluxoCaixa.index', compact('fluxoCaixas', 'movimento', 'empresa', 'planoDeContas', 'users', 'caixa', 'totalGeral', 'totaisPorMovimento'));
+        // -----------------------------
+        // CAIXAS
+        // -----------------------------
+        $caixaQuery = Caixa::query();
+
+        if ($usuario->hasRole('Master')) {
+            if ($empresaSelecionada) {
+                $caixaQuery->where('empresa_id', $empresaSelecionada);
+            }
+        } elseif ($usuario->hasRole('financeiro')) {
+            $caixaQuery->where('empresa_id', $usuario->empresa_id);
+        } else {
+            $caixaQuery->where('empresa_id', $usuario->empresa_id)
+                ->where('usuario_id', $usuario->id);
+        }
+
+        $caixas = $caixaQuery->get();
+
+        // -----------------------------
+        // DEMAIS DADOS
+        // -----------------------------
+        $empresas = Empresa::all();
+        $planoDeContas = PlanoDeConta::all();
+        $movimento = Movimento::all();
+
+        return view('fluxoCaixa.index', compact(
+            'fluxoCaixas',
+            'movimento',
+            'empresas',
+            'planoDeContas',
+            'usuario',
+            'caixas',
+            'totalGeral',
+            'totaisPorMovimento'
+        ));
     }
 
 

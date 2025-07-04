@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\ContasAReceber;
 use App\Models\Cliente;
+use App\Models\ContaPagamentos;
 use App\Models\Empresa;
-use App\Models\FluxoCaixa;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use App\Models\Venda;
@@ -87,6 +87,10 @@ class ContasAReceberController extends Controller
             $valorTotal = $request->valor;
             $valorParcela = round($valorTotal / $qtdParcelas, 2); // arredondamento simples
 
+            // Gera um grupo_id único se for parcelado
+            $grupoId = $qtdParcelas > 1 ? mt_rand(100000, 999999999) : null;
+
+
             if ($qtdParcelas > 1) {
                 $descricaoOriginal = $dadosBase['descricao'];
 
@@ -95,12 +99,14 @@ class ContasAReceberController extends Controller
                     $dadosParcela['data_vencimento'] = $vencimento;
                     $dadosParcela['valor'] = $valorParcela;
                     $dadosParcela['descricao'] = "{$descricaoOriginal} | {$i}/{$qtdParcelas}";
+                    $dadosParcela['grupo_id'] = $grupoId;
 
                     ContasAReceber::create($dadosParcela);
 
                     $vencimento = ContasService::proximoMes($vencimento);
                 }
             } else {
+                $dadosBase['grupo_id'] = null; // explícito, se quiser
                 ContasAReceber::create($dadosBase);
             }
 
@@ -146,26 +152,39 @@ class ContasAReceberController extends Controller
     public function destroy(ContasAReceber $contasAReceber)
     {
         try {
-            $contasAReceber->delete();
-            return redirect()->route('contasAReceber.index')->with('success', 'Conta a receber deletada com sucesso');
+            if ($this->grupoPossuiRecebimentos($contasAReceber->id)) {
+                return redirect()->back()->with('error', 'Não é possível excluir uma conta que já recebeu valores.');
+            } else {
+                if ($contasAReceber->grupo_id) {
+                    // Exclui todas as contas do mesmo grupo
+                    ContasAReceber::where('grupo_id', $contasAReceber->grupo_id)->delete();
+                    $mensagem = 'Todas as parcelas do grupo foram deletadas com sucesso.';
+                } else {
+                    // Exclui apenas a conta individual
+                    $contasAReceber->delete();
+                    $mensagem = 'Conta a receber deletada com sucesso.';
+                }
+    
+                return redirect()->route('contasAReceber.index')->with('success', $mensagem);
+            }
         } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->back()->with('error', 'Erro ao deletar conta a receber');
+            return redirect()->back()->with('error', 'Erro ao deletar conta a receber: ' . $e->getMessage());
         }
     }
+
 
     public function receber(Request $request)
     {
         $data = $request->validate([
             'pagamento_id' => ['required', 'numeric'],
             'forma_pagamento' => ['required', 'string'],
+            'valor_pago' => ['required', 'numeric', 'min:0.01'],
         ]);
 
         DB::transaction(function () use ($data) {
             $usuario = Auth::user();
             $empresaId = $usuario->empresa_id;
 
-            // Buscar o caixa aberto do dia
             $caixa = Caixa::whereDate('data_abertura', now())
                 ->where('status', 'aberto')
                 ->where('empresa_id', $empresaId)
@@ -175,20 +194,34 @@ class ContasAReceberController extends Controller
                 throw new \Exception("Nenhum caixa aberto encontrado para registrar o recebimento.");
             }
 
-            // Atualiza status da conta
             $pagamento = ContasAReceber::findOrFail($data['pagamento_id']);
 
+            // Calcula novo valor recebido acumulado
             $valorAtual = $pagamento->valor_recebido ?? 0;
-            $novoValor = $pagamento->valor;
-            $valorFinal = $valorAtual + $novoValor;
+            $valorFinal = $valorAtual + $data['valor_pago'];
+            $valorRestante = $pagamento->valor - $valorAtual;
 
+            if ($valorFinal > $pagamento->valor) {
+                throw new \Exception("O valor recebido ({$data['valor_pago']}) não pode ser maior que o valor restante ({$valorRestante}).");
+            }
+
+            // Atualiza o pagamento
             $pagamento->update([
-                'data_recebimento' => now(),
                 'valor_recebido' => $valorFinal,
-                'status' => 'finalizado',
+                'data_recebimento' => now(),
+                'status' => $valorFinal >= $pagamento->valor ? 'recebido' : 'pendente',
             ]);
 
-            // Encontra o movimento com base na forma de pagamento
+            // Cria registro em ContaPagamentos
+            ContaPagamentos::create([
+                'conta_id' => $pagamento->id,
+                'cliente_id' => $pagamento->cliente_id,
+                'usuario_id' => $usuario->id,
+                'valor_recebido' => $data['valor_pago'],
+                'data_recebimento' => now(),
+            ]);
+
+            // Movimento
             $slug = 'recebimento-' . strtolower(str_replace(' ', '-', $data['forma_pagamento']));
             $movimentoId = Movimento::where('descricao', $slug)->value('id');
 
@@ -196,50 +229,60 @@ class ContasAReceberController extends Controller
                 throw new \Exception("Movimento '{$slug}' não encontrado.");
             }
 
-            // Usa o CaixaService para inserir o fluxo
             app(CaixaService::class)->inserirMovimentacao($caixa, [
                 'descricao' => $pagamento->descricao,
-                'valor' => $pagamento->valor,
+                'valor' => $data['valor_pago'],
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
                 'plano_de_conta_id' => $pagamento->plano_de_contas_id ?? 1,
             ]);
-
         });
-        
-        // Dados para o PDF
+
+        // PDF (atualizado para refletir valor pago)
         $pagamento = ContasAReceber::findOrFail($data['pagamento_id']);
-    $pdfData = [
-        'cliente' => $pagamento->cliente->nome_razao_social ?? 'Cliente não informado',
-        'descricao' => $pagamento->descricao,
-        'valor' => number_format($pagamento->valor, 2, ',', '.'),
-        'forma_pagamento' => $data['forma_pagamento'],
-        'data_pagamento' => now()->format('d/m/Y'),
-        'data_vencimento' => \Carbon\Carbon::parse($pagamento->data_vencimento)->format('d/m/Y'),
-        'parcela' => $this->extrairParcela($pagamento->descricao),
-    ];
+        $pdfData = [
+            'cliente' => $pagamento->cliente->nome_razao_social ?? 'Cliente não informado',
+            'descricao' => $pagamento->descricao,
+            'valor' => number_format($data['valor_pago'], 2, ',', '.'),
+            'forma_pagamento' => $data['forma_pagamento'],
+            'data_pagamento' => now()->format('d/m/Y'),
+            'data_vencimento' => \Carbon\Carbon::parse($pagamento->data_vencimento)->format('d/m/Y'),
+            'parcela' => $this->extrairParcela($pagamento->descricao),
+        ];
 
-    // Gera PDF em memória
-    $pdf = Pdf::loadView('contasAReceber.recibo', $pdfData);
+        $pdf = Pdf::loadView('contasAReceber.recibo', $pdfData);
+        $fileName = 'recibos/recibo_' . now()->format('Ymd_His') . '.pdf';
+        Storage::disk('public')->put($fileName, $pdf->output());
 
-    // Define nome e caminho para salvar o PDF
-    $fileName = 'recibos/recibo_' . now()->format('Ymd_His') . '.pdf';
-
-    // Salva o PDF no disco storage/app/public/recibos (precisa ter link simbólico 'storage')
-    Storage::disk('public')->put($fileName, $pdf->output());
-
-    // Redireciona para o index com link para o recibo na sessão (como HTML)
-    return redirect()->route('contasAReceber.index')->with('success', 
-        'Pagamento efetuado com sucesso! <a href="' . asset('storage/' . $fileName) . '" target="_blank" rel="noopener noreferrer">Ver recibo</a>'
-    );
+        return redirect()->back()->with(
+            'success',
+            'Pagamento efetuado com sucesso! <a href="' . asset('storage/' . $fileName) . '" target="_blank" rel="noopener noreferrer">Ver recibo</a>'
+        );
     }
+
 
     private function extrairParcela($descricao)
-{
-    if (preg_match('/\b(\d+\/\d+)\b/', $descricao, $matches)) {
-        return $matches[1];
+    {
+        if (preg_match('/\b(\d+\/\d+)\b/', $descricao, $matches)) {
+            return $matches[1];
+        }
+        return 'Única';
     }
-    return 'Única';
-}
 
+    public function grupoPossuiRecebimentos(int $contaId): bool
+    {
+        $conta = ContasAReceber::findOrFail($contaId);
+
+        // Se não houver grupo, verifica só a própria conta
+        if (is_null($conta->grupo_id)) {
+            return ContaPagamentos::where('conta_id', $conta->id)->exists();
+        }
+
+        // Busca todas as contas do grupo e verifica se alguma tem pagamento
+        return ContaPagamentos::whereIn('conta_id', function ($query) use ($conta) {
+            $query->select('id')
+                ->from('contas_a_receber')
+                ->where('grupo_id', $conta->grupo_id);
+        })->exists();
+    }
 }

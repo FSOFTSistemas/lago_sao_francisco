@@ -16,6 +16,7 @@ class Caixa extends Model
         'data_abertura',
         'data_fechamento',
         'status',
+        'usuario_id',
         'usuario_abertura_id',
         'usuario_fechamento_id',
         'observacoes',
@@ -36,5 +37,9 @@ class Caixa extends Model
     public function usuarioFechamento()
     {
         return $this->belongsTo(User::class, 'usuario_fechamento_id');
+    }
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

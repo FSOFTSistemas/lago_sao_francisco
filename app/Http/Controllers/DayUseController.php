@@ -194,7 +194,7 @@ public function index(Request $request)
                 // Buscar caixa aberto da empresa
                 $caixa = Caixa::where('empresa_id', Auth::user()->empresa_id)
                     ->where('status', 'aberto')
-                    ->latest()
+                    ->where('usuario_id', Auth::id())
                     ->first();
 
                 if ($caixa) {

@@ -109,8 +109,8 @@
 
                         <label class="switch-slide mb-0">
                             <input type="hidden" name="caixa" value="0">
-                            <input type="checkbox" id="caixa{{ $funcionario->id ?? '' }}" value="1" name="caixa"
-                                @checked(old('caixa', isset($funcionario) ? $funcionario->caixa : false))>
+                            <input class="caixacheck" type="checkbox" id="caixa{{ $funcionario->id ?? '' }}" value="1"
+                                name="caixa" @checked(old('caixa', isset($funcionario) ? $funcionario->caixa : false))>
                             <span class="slider-slide"></span>
                         </label>
                     </div>
@@ -163,6 +163,94 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 form-label d-block label-control">
+                        Criar também um usuário para este funcionário
+                    </label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="criar_usuario" name="criar_usuario"
+                            value="1">
+                    </div>
+                </div>
+
+                <div id="dados_usuario" style="display: none;">
+                    <div class="form-group row">
+                        <label class="label-control col-md-3">Email</label>
+                        <div class="col-md-4">
+                            <input type="email" name="email" id="email" class="form-control" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="label-control col-md-3">Senha Gerada</label>
+                        <div class="col-md-4">
+                            <input type="text" name="senha_visivel" id="senha_visivel" class="form-control" readonly>
+                            <input type="hidden" name="password" id="password">
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="label-control col-md-3">Tipo de Usuário</label>
+                        <div class="col-md-3">
+                            <select name="role" class="form-control">
+                                <option value="">Selecione um tipo</option>
+                                @foreach ($roles as $role)
+                                    @php
+                                        $label = match ($role->name) {
+                                            'Master' => 'Financeiro Geral',
+                                            'financeiro' => 'Financeiro Empresa',
+                                            'funcionario' => 'Funcionario',
+                                            default => ucfirst($role->name),
+                                        };
+                                    @endphp
+                                    <option value="{{ $role->name }}"
+                                        {{ isset($user) && ($user->roles->first()->name ?? '') == $role->name ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="permissoes"
+                            class="col-md-3 col-form-label text-md-right font-weight-bold">Permissões:</label>
+                        <div class="col-md-7">
+                            <div class="permissoes-select-container">
+                                <!-- Select2 -->
+                                <select class="form-control select2-permissoes" id="permissoes" name="permissoes[]"
+                                    multiple="multiple" style="width: 100%;">
+                                    @php
+                                        $selectedpermissoes =
+                                            isset($usuario) && $usuario->permissoes
+                                                ? $usuario->permissoes->pluck('id')->toArray()
+                                                : [];
+                                    @endphp
+                                    @foreach ($permissoes as $permissao)
+                                        @if ($permissao->name !== 'gerenciar fluxo de caixa')
+                                            <option value="{{ $permissao->id }}"
+                                                {{ in_array($permissao->id, $selectedpermissoes) ? 'selected' : '' }}>
+                                                {{ $permissao->name }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
+
+                                <!-- Botões de Controle -->
+                                <div class="permissions-control-buttons mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary select-all-btn">
+                                        <i class="fas fa-check-double mr-1"></i> Selecionar todas
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary deselect-all-btn ml-2">
+                                        <i class="fas fa-times-circle mr-1"></i> Limpar seleção
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Botão de Salvar -->
                 <div class="card-footer">
@@ -239,6 +327,86 @@
             mostrarCampo();
         });
     </script>
+    <script>
+        $(document).ready(function() {
+            // Inicializa o Select2 com configurações aprimoradas
+            $('.select2-permissoes').select2({
+                placeholder: "Selecione as permissões...",
+                allowClear: true,
+                closeOnSelect: false,
+                width: '100%'
+            });
+
+            // Selecionar todas
+            $('.select-all-btn').click(function() {
+                $('.select2-permissoes option').prop('selected', true);
+                $('.select2-permissoes').trigger('change');
+            });
+
+            // Desmarcar todas
+            $('.deselect-all-btn').click(function() {
+                $('.select2-permissoes option').prop('selected', false);
+                $('.select2-permissoes').trigger('change');
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('criar_usuario');
+            const container = document.getElementById('dados_usuario');
+            const nomeInput = document.querySelector('input[name="nome"]');
+            const emailInput = document.getElementById('email');
+            const senhaInput = document.getElementById('senha_visivel');
+            const passwordHidden = document.getElementById('password');
+            const caixa = document.querySelector('.caixacheck')
+
+            function gerarEmail(nome) {
+                if (!nome) return '';
+                const partes = nome.trim().toLowerCase().split(' ');
+                const primeiro = partes[0];
+                const ultimo = partes[partes.length - 1];
+                const random = Math.floor(100 + Math.random() * 900);
+                return `${primeiro}${ultimo}${random}@lago.com`;
+            }
+
+            function gerarSenha() {
+                const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+                let senha = '';
+                for (let i = 0; i < 8; i++) {
+                    senha += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return senha;
+            }
+
+            caixa.addEventListener('change', () => {
+                if (caixa.checked) {
+                    checkbox.checked = true;
+                    const evento = new Event('change', {
+                        bubbles: true
+                    });
+                    checkbox.dispatchEvent(evento);
+
+                }
+            });
+
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    container.style.display = 'block';
+                    const nome = nomeInput.value;
+                    emailInput.value = gerarEmail(nome);
+                    const senha = gerarSenha();
+                    senhaInput.value = senha;
+                    passwordHidden.value = senha;
+                } else {
+                    container.style.display = 'none';
+                    emailInput.value = '';
+                    senhaInput.value = '';
+                    passwordHidden.value = '';
+                }
+            });
+        });
+    </script>
+
 
 @endsection
 
@@ -288,6 +456,47 @@
 
         .switch-slide input:checked+.slider-slide:before {
             transform: translateX(24px);
+        }
+
+        /* Área de seleção principal - Fundo branco com borda verde */
+        .select2-selection--multiple {
+            min-height: 38px !important;
+            border: 1px solid #679A4C !important;
+            border-radius: 4px !important;
+            background-color: white !important;
+            /* Fundo branco */
+            color: #495057 !important;
+            /* Texto preto padrão */
+            padding: 0 5px !important;
+        }
+
+        /* Tags dos itens selecionados - Fundo verde com texto branco */
+        .select2-selection--multiple .select2-selection__choice {
+            background-color: #679A4C !important;
+            border-color: #55853a !important;
+            color: white !important;
+            padding: 0 8px;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        /* Texto do placeholder */
+        .select2-selection--multiple .select2-search__field {
+            color: #495057 !important;
+        }
+
+        .select2-selection--multiple .select2-search__field::placeholder {
+            color: #6c757d !important;
+        }
+
+        /* Botão de remover item (mantém branco) */
+        .select2-selection--multiple .select2-selection__choice__remove {
+            color: rgba(255, 255, 255, 0.7) !important;
+            margin-right: 4px;
+        }
+
+        .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: white !important;
         }
     </style>
 @endsection

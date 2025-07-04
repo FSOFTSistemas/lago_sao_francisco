@@ -85,6 +85,12 @@
                                     </form>
                                 </div>
                             </li>
+                            <li>
+    <a class="dropdown-item" href="{{ route('usuario.senha.form') }}">
+        <i class="fas fa-key mr-2"></i> Alterar Senha
+    </a>
+</li>
+
                         @endguest
                     </ul>
                 </div>
