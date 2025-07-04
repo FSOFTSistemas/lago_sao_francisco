@@ -27,11 +27,13 @@ class DayUsePagamento extends Component
     public $restante = 0; // Valor restante a ser pago
     public $inputKey;
 
-    public $souvenirs;
+    public $souvenirs; // Collection vinda do banco
+    public $souvenirsAdicionados = []; // Lista de adicionados
     public $souvenirSelecionadoId;
     public $souvenirQuantidade = 1;
-    public $souvenirAdicionados = [];
-    public $totalSouvenir = 0;
+    public $subtotalSouvenir = 0;
+    public $estoqueDisponivel;
+    public $subtotalOriginal = 0;
 
     protected CaixaService $caixaService;
 
@@ -97,7 +99,7 @@ class DayUsePagamento extends Component
 
     public function calculateFinalPaymentTotal()
     {
-        $this->finalPagamentoTotal = $this->itemSubtotal + $this->acrescimo - $this->desconto;
+        $this->finalPagamentoTotal = $this->itemSubtotal + $this->subtotalSouvenir + $this->acrescimo - $this->desconto;
         if ($this->finalPagamentoTotal < 0) {
             $this->finalPagamentoTotal = 0; // Evita total negativo
         }
@@ -219,11 +221,18 @@ class DayUsePagamento extends Component
             ]);
         }
 
-        foreach ($this->souvenirAdicionados as $item) {
-        $souvenir = Souvenir::find($item['id']);
-        $souvenir->estoque -= $item['quantidade'];
+        foreach ($this->souvenirsAdicionados as $souvenirItem) {
+    $souvenir = \App\Models\Souvenir::find($souvenirItem['id']);
+
+    if ($souvenir && $souvenir->estoque >= $souvenirItem['quantidade']) {
+        $souvenir->estoque -= $souvenirItem['quantidade'];
         $souvenir->save();
-        }
+    } else {
+        session()->flash('error', 'Estoque insuficiente ao salvar o pagamento para: ' . $souvenirItem['descricao']);
+        return;
+    }
+}
+
 
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
@@ -234,48 +243,117 @@ class DayUsePagamento extends Component
         return view('livewire.day-use-pagamento');
     }
 
-    public function adicionarSouvenir()
+  public function updatedSouvenirQuantidade()
 {
-    $souvenir = Souvenir::find($this->souvenirSelecionadoId);
+    $this->resetErrorBag('souvenirQuantidade');
+    if (!$this->souvenirSelecionadoId) return;
 
-    if (!$souvenir || $this->souvenirQuantidade < 1) {
-        session()->flash('error', 'Selecione um souvenir válido e uma quantidade.');
+    $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
+
+    if ($souvenir && $this->souvenirQuantidade > $souvenir->estoque) {
+        $this->souvenirQuantidade = $souvenir->estoque;
+        $this->addError('souvenirQuantidade', 'Quantidade excede o estoque disponível!');
+    }
+}
+
+
+public function addSouvenir()
+{
+    $this->resetErrorBag('souvenirQuantidade');
+    if (!$this->souvenirSelecionadoId || !$this->souvenirQuantidade) return;
+
+    $souvenir = $this->souvenirs->firstWhere('id', $this->souvenirSelecionadoId);
+
+    if (!$souvenir) {
+        $this->addError('souvenirSelecionadoId', 'Souvenir inválido.');
         return;
     }
 
-    if ($this->souvenirQuantidade > $souvenir->estoque) {
-        session()->flash('error', 'Quantidade maior que o estoque disponível.');
-        return;
+    // Verificar quanto já foi adicionado desse souvenir
+    $quantidadeJaAdicionada = collect($this->souvenirsAdicionados)
+        ->where('id', $souvenir->id)
+        ->sum('quantidade');
+
+    $estoqueRestante = $souvenir->estoque - $quantidadeJaAdicionada;
+
+if ($this->souvenirQuantidade > $estoqueRestante) {
+    $this->addError('souvenirQuantidade', "Estoque insuficiente. Máximo disponível: {$estoqueRestante}");
+    return;
+}
+
+    // Se já existir, apenas aumenta a quantidade
+    foreach ($this->souvenirsAdicionados as &$item) {
+        if ($item['id'] === $souvenir->id) {
+            $item['quantidade'] += $this->souvenirQuantidade;
+            $item['valor_total'] = $item['quantidade'] * $item['valor_unitario'];
+            $this->atualizarSubtotal();
+            $this->resetSouvenirInputs();
+            return;
+        }
     }
 
-    $total = $souvenir->valor * $this->souvenirQuantidade;
-
-    $this->souvenirAdicionados[] = [
+    // Se ainda não adicionado, cria novo
+    $this->souvenirsAdicionados[] = [
         'id' => $souvenir->id,
         'descricao' => $souvenir->descricao,
         'quantidade' => $this->souvenirQuantidade,
         'valor_unitario' => $souvenir->valor,
-        'valor_total' => $total,
+        'valor_total' => $souvenir->valor * $this->souvenirQuantidade,
     ];
 
-    $this->calcularTotalSouvenir();
+    $this->atualizarSubtotal();
+    $this->resetSouvenirInputs();
+}
 
-    // reset
-    $this->souvenirSelecionadoId = '';
+
+public function removeSouvenir($index)
+{
+    if (!isset($this->souvenirsAdicionados[$index])) return;
+
+    unset($this->souvenirsAdicionados[$index]);
+    $this->souvenirsAdicionados = array_values($this->souvenirsAdicionados); // Reindexa
+
+    $this->atualizarSubtotal();
+}
+
+
+public function atualizarSubtotal()
+{
+    $this->subtotalSouvenir = collect($this->souvenirsAdicionados)->sum('valor_total');
+
+
+    $this->finalPagamentoTotal = $this->itemSubtotal + $this->subtotalSouvenir;
+
+    $this->calculateFinalPaymentTotal();
+}
+
+public function getEstoqueDisponivelProperty()
+{
+    if (!$this->souvenirSelecionadoId) {
+        return null; // ou 0, se preferir
+    }
+
+    // Encontra o souvenir selecionado no estoque total
+    $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
+    if (!$souvenir) {
+        return null;
+    }
+
+    // Soma a quantidade já adicionada desse souvenir na lista
+    $quantidadeAdicionada = collect($this->souvenirsAdicionados)
+        ->where('id', $this->souvenirSelecionadoId)
+        ->sum('quantidade');
+
+    // Calcula o estoque disponível subtraindo o que já foi adicionado
+    return max($souvenir->estoque - $quantidadeAdicionada, 0);
+}
+
+public function resetSouvenirInputs()
+{
+    $this->souvenirSelecionadoId = null;
     $this->souvenirQuantidade = 1;
 }
 
-public function removerSouvenir($index)
-{
-    unset($this->souvenirAdicionados[$index]);
-    $this->souvenirAdicionados = array_values($this->souvenirAdicionados); // reorganiza índices
-    $this->calcularTotalSouvenir();
-}
 
-private function calcularTotalSouvenir()
-{
-    $this->totalSouvenir = collect($this->souvenirAdicionados)->sum('valor_total');
-    $this->itemSubtotal += $this->totalSouvenir;
-}
 
 }

@@ -1,39 +1,83 @@
 <form wire:submit.prevent="savePayments">
-    <h5 class="mt-4">Adicionar Souvenir</h5>
+   <h5 class="mt-4">Adicionar Souvenir</h5>
+
 <div class="row mb-3">
     <div class="col-md-6">
         <label>Souvenir</label>
         <select class="form-control" wire:model="souvenirSelecionadoId">
             <option value="">Selecione...</option>
-            @foreach($souvenirs as $souvenir)
-                <option value="{{ $souvenir->id }}">
-                    {{ $souvenir->descricao }} (R${{ number_format($souvenir->valor, 2, ',', '.') }}, Estoque: {{ $souvenir->estoque }})
-                </option>
-            @endforeach
+           @foreach($souvenirs as $souvenir)
+    @php
+        $quantidadeAdicionada = collect($souvenirsAdicionados)
+            ->where('id', $souvenir->id)
+            ->sum('quantidade');
+
+        $estoqueRestante = $souvenir->estoque - $quantidadeAdicionada;
+    @endphp
+
+    <option value="{{ $souvenir->id }}">
+        {{ $souvenir->descricao }} 
+        (R${{ number_format($souvenir->valor, 2, ',', '.') }}, 
+        Estoque disponível: {{ max($estoqueRestante, 0) }})
+    </option>
+@endforeach
         </select>
+        @error('souvenirSelecionadoId') 
+            <span class="text-danger">{{ $message }}</span> 
+        @enderror
     </div>
+
     <div class="col-md-3">
         <label>Quantidade</label>
-        <input type="number" class="form-control" min="1" wire:model="souvenirQuantidade">
+       <input type="number" min="1"
+       class="form-control"
+       wire:model.lazy="souvenirQuantidade"
+       @if(!is_null($this->estoqueDisponivel)) max="{{ $this->estoqueDisponivel }}" @endif>
+
+@if(!is_null($estoqueDisponivel) && $souvenirQuantidade > $estoqueDisponivel)
+    <span class="text-danger">Estoque insuficiente! Máximo: {{ $estoqueDisponivel }}</span>
+@endif
+
+        @error('souvenirQuantidade') 
+            <span class="text-danger">{{ $message }}</span> 
+        @enderror
     </div>
+
     <div class="col-md-3 d-flex align-items-end">
-        <button class="btn btn-success w-100" type="button" wire:click="adicionarSouvenir">Adicionar</button>
+        <button class="btn btn-success w-100" type="button" wire:click="addSouvenir">
+            Adicionar
+        </button>
     </div>
 </div>
 
-@if(count($souvenirAdicionados) > 0)
+@if(count($souvenirsAdicionados) > 0)
     <ul class="list-group mb-3">
-        @foreach($souvenirAdicionados as $index => $souvenir)
+        @foreach($souvenirsAdicionados as $index => $souvenir)
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ $souvenir['descricao'] }} - {{ $souvenir['quantidade'] }} x R${{ number_format($souvenir['valor_unitario'], 2, ',', '.') }} = <strong>R${{ number_format($souvenir['valor_total'], 2, ',', '.') }}</strong>
-                <button type="button" class="btn btn-danger btn-sm" wire:click="removerSouvenir({{ $index }})">Remover</button>
+                {{ $souvenir['descricao'] }}
+                - {{ $souvenir['quantidade'] }} x R${{ number_format($souvenir['valor_unitario'], 2, ',', '.') }}
+                = <strong>R${{ number_format($souvenir['valor_total'], 2, ',', '.') }}</strong>
+
+                <button type="button" class="btn btn-danger btn-sm ml-3" wire:click="removeSouvenir({{ $index }})">
+                    Remover
+                </button>
             </li>
         @endforeach
     </ul>
-@endif
 
     <div class="form-group row">
-        <label for="subtotalItems" class="col-md-3 label-control">Subtotal (Itens)</label>
+        <label class="col-md-3 label-control">Total Souvenirs:</label>
+        <div class="col-md-6 ">
+            <input type="text" class="form-control" 
+                   value="R$ {{ number_format($subtotalSouvenir, 2, ',', '.') }}" readonly>
+        </div>
+    </div>
+@endif
+
+
+
+    <div class="form-group row">
+        <label for="subtotalItems" class="col-md-3 label-control">Subtotal (Day Use)</label>
         <div class="col-md-6">
             <input type="text" id="subtotalItems" class="form-control" value="R$ {{ number_format($itemSubtotal, 2, ',', '.') }}" readonly>
         </div>
