@@ -131,7 +131,12 @@ class FluxoCaixaController extends Controller
             ->groupBy('movimento_id')
             ->get();
 
-        $totalGeral = $totaisPorMovimento->sum('total');
+        $totalGeral = $totaisPorMovimento
+    ->filter(function ($item) {
+        return optional($item->movimento)->descricao !== 'venda-sympla';
+    })
+    ->sum('total');
+
 
         // -----------------------------
         // CAIXAS
