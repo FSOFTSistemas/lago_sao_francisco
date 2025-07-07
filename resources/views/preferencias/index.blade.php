@@ -38,6 +38,15 @@
                 </div>
             </a>
         </div>
+        <!-- Preferências do Hotel -->
+        <div class="col-md-3">
+            <a href="{{ route('preferencias.hotel')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fa fa-key fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Preferências - Reserva</h5>
+                </div>
+            </a>
+        </div>
     </div>
     <br>
     <h5>Configurações de Eventos / Cadastro</h5>

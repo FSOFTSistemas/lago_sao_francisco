@@ -175,5 +175,5 @@
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary mt-3">Finalizar Pagamento</button>
+    <button type="submit" class="btn btn-primary mt-3 p-2 w-100">Finalizar Pagamento</button>
 </form>

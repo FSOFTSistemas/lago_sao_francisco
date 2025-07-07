@@ -132,10 +132,12 @@
                 {{ $contasAPagar->fornecedor->nome_fantasia ?? ''}}
             </td>
             <td>
-                <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                    data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
-                    💰
-                </button>
+                @if($contasAPagar->valor - $contasAPagar->valor_pago > 0)
+                    <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
+                        data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
+                        💰
+                    </button>
+                @endif
                 <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                     data-target="#showContasAPagar{{ $contasAPagar->id }}">
                     👁️
@@ -148,7 +150,7 @@
 
                @if($contasAPagar->pode_excluir)
                     <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                        data-target="#deleteContasAPagarModal{{ $contasAPagar->id }}">
+                        data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
                         🗑️
                     </button>
                 @endif
@@ -159,12 +161,15 @@
         @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
         @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
         @include('contasAPagar.modals._edit', ['contasAPagar' => $contasAPagar])
-        @include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
+        
         @endforeach
+        
     </tbody>
+
 @endcomponent
 
 @include('contasAPagar.modals._create')
+@include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
 @stop
 
 @push('css')
