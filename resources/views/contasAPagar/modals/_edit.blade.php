@@ -46,17 +46,18 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="planoDeConta">Plano de contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai">
+                        <label for="planoDeConta">Plano de Contas</label>
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required>
                             <option value="">Selecione</option>
-                            @foreach ($planoDeContas as $planoDeConta)
-                                <option value="{{ $planoDeConta->id }}" 
-                                    {{ old('plano_de_contas_pai', $contasAPagar->plano_de_contas_pai) == $planoDeConta->id ? 'selected' : '' }}>
-                                    {{ $planoDeConta->descricao }}
+                            @foreach ($planoDeContas as $plano)
+                                <option value="{{ $plano->id }}"
+                                    {{ (old('plano_de_contas_pai', $contasAPagar->plano_de_contas_pai ?? null) == $plano->id) ? 'selected' : '' }}>
+                                    {{ $plano->descricao }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label for="fornecedor">Fornecedor</label>
                         <select class="form-control" id="fornecedor" name="fornecedor_id">

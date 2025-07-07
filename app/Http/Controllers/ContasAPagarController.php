@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Caixa;
+use App\Models\ContaCorrente;
 use App\Models\ContasAPagar;
 use App\Models\Empresa;
 use App\Models\Fornecedor;
@@ -16,22 +18,38 @@ class ContasAPagarController extends Controller
 {
 public function index(Request $request)
 {
-    $planoDeContas = PlanoDeConta::all();
-    $empresas = Empresa::all();
-    $fornecedores = Fornecedor::all();
+    $usuario = Auth::user();
+    $empresaSelecionada = session('empresa_id');
 
-    $query = ContasAPagar::where('empresa_id', Auth::user()->empresa_id);
+    // Preparar a query base
+    if ($empresaSelecionada == null) {
+        $planoDeContas = PlanoDeConta::all();
+        $fornecedores = Fornecedor::all();
+        $contas_corrente = ContaCorrente::all();
+        $caixas = ContaCorrente::all();
+        $query = ContasAPagar::query();
+    } else {
+        $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
 
-    if ($request->filled('status')) {
-        $query->where('status', $request->input('status'));
+        $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
+        $fornecedores = Fornecedor::all();
+        $contas_corrente = ContaCorrente::all();
+        $caixas = Caixa::where('empresa_id', $empresa_id)->get();
+        $query = ContasAPagar::where('empresa_id', $empresa_id);
     }
 
     if ($request->filled('fornecedor_id')) {
         $query->where('fornecedor_id', $request->input('fornecedor_id'));
     }
 
-    // Carrega com parcelas
-    $contasAPagar = $query->with('parcelas')->get();
+    // Adiciona o eager loading de parcelas antes de executar a query
+    $query->with('parcelas');
+
+    if ($request->filled('status')) {
+        $query->where('status', $request->input('status'));
+    }
+
+    $contasAPagar = $query->get();
     $contasComParcelas = [];
 
     // Intervalo de datas
@@ -53,6 +71,7 @@ public function index(Request $request)
             foreach ($conta->parcelas as $parcela) {
                 if ($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim) {
                     $contaClone = clone $conta;
+                    $contaClone->id = $parcela->id;
                     $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
                     $contaClone->valor = $parcela->valor;
                     $contaClone->data_vencimento = $parcela->data_vencimento;
@@ -60,16 +79,19 @@ public function index(Request $request)
                     $contaClone->data_pagamento = $parcela->data_pagamento;
                     $contaClone->numero_parcela = $parcela->numero_parcela;
                     $contaClone->total_parcelas = $totalParcelas;
-                    $contaClone->parcela_id = $parcela->id;
+                    $contaClone->conta_id = $conta->id;
+                    $contaClone->conta_descricao = $conta->descricao;
                     $contaClone->pode_excluir = !$temParcelaPaga;
+                    $contaClone->valor_pago = $parcela->valor_pago;
                     $contasComParcelas[] = $contaClone;
                 }
             }
         }
     }
 
-    return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'empresas', 'fornecedores'));
+    return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente','caixas'));
 }
+
 
 
     public function store(Request $request)
@@ -192,14 +214,13 @@ public function index(Request $request)
     }
 
 
-public function pagar(Request $request, ContasAPagar $contasAPagar)
+public function pagar(Request $request)
 {
     try{
-    //dd($request);
     $request->validate([
         'data_pagamento' => 'required|date',
         'valor_pago' => 'required|numeric|min:0.01',
-        'parcela_id' => 'nullable|exists:parcelas_contas_a_pagar,id',
+        'id' => 'nullable|exists:parcelas_contas_a_pagar,id',
         'fonte_pagadora' => 'required|in:caixa,conta_corrente',
     ], [
         'data_pagamento.required' => 'A data do pagamento é obrigatória.',
@@ -209,7 +230,7 @@ public function pagar(Request $request, ContasAPagar $contasAPagar)
         'valor_pago.numeric' => 'O valor pago deve ser um número.',
         'valor_pago.min' => 'O valor pago deve ser no mínimo R$ 0,01.',
 
-        'parcela_id.exists' => 'A parcela informada não existe.',
+        'id.exists' => 'A parcela informada não existe.',
 
         'fonte_pagadora.required' => 'A fonte pagadora é obrigatória.',
         'fonte_pagadora.in' => 'A fonte pagadora deve ser "caixa" ou "conta corrente".',
@@ -217,29 +238,45 @@ public function pagar(Request $request, ContasAPagar $contasAPagar)
 
 
     
-        if ($request->filled('parcela_id')) {
-            $parcela = \App\Models\ParcelaContasAPagar::findOrFail($request->parcela_id);
-            //dd($request->valor_pago);
+        if ($request->filled('id')) {
 
-            $parcela->update([
+            
+
+            $parcela = \App\Models\ParcelaContasAPagar::findOrFail($request->id);
+            $valor_pago = $parcela->valor_pago + $request->valor_pago;
+            
+            
+            if($valor_pago == $parcela->valor){
+                 $parcela->update([
                 'status' => 'pago',
-                'valor_pago' => '200.00',
+                'valor_pago' => $valor_pago,
                 'data_pagamento' => $request->data_pagamento,
             ]);
-            
+            }else{
+                $parcela->update([
+                'valor_pago' => $valor_pago,
+                'data_pagamento' => $request->data_pagamento,
+            ]);
+            }
+
             $conta = $parcela->conta;
+            
 
             $todasPagas = $conta->parcelas->every(fn($p) => $p->status === 'pago');
-
             if ($todasPagas) {
                 $conta->update([
                     'status' => 'pago',
                     'valor_pago' => $conta->parcelas->sum('valor_pago'),
                     'data_pagamento' => now()->toDateString(),
                 ]);
+            }else{
+                $conta->update([
+                    'valor_pago' => $conta->parcelas->sum('valor_pago'),
+                ]);
             }
 
         } else {
+            $contasAPagar = \App\Models\ContasAPagar::findOrFail($request->conta_id);
             $contasAPagar->update([
                 'status' => 'pago',
                 'valor_pago' => $request->valor_pago,
