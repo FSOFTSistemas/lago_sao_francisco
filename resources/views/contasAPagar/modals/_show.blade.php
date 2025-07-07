@@ -7,6 +7,8 @@
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                @php
+                @endphp
                 <p><strong>Descrição:</strong> <span id="descricao">{{$contasAPagar->descricao}}</span></p>
                 <p><strong>Parcela:</strong> {{ $contasAPagar->numero_parcela }} de {{ $contasAPagar->total_parcelas }}</p>
                 <p><strong>Valor:</strong> <span id="valor">R${{$contasAPagar->valor}}</span></p>
