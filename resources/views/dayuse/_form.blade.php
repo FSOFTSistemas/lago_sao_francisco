@@ -34,7 +34,38 @@
 @stop
 
 @section('js')
-@livewireScripts
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('hideSidebarAndButton', () => {
+                console.log('Evento hideSidebarAndButton recebido no AdminLTE page!');
 
+                const sidebar = document.querySelector('.main-sidebar');
+                if (sidebar) {
+                    sidebar.style.display = 'none';
+                    console.log('Sidebar oculta.');
+                } else {
+                    console.log('Sidebar não encontrada.');
+                }
+
+                const contentWrapper = document.querySelector('.content-wrapper');
+                if (contentWrapper) {
+                    contentWrapper.style.marginLeft = '0';
+                    console.log('Content wrapper ajustado.');
+                } else {
+                    console.log('Content wrapper não encontrado.');
+                }
+                
+                const menuToggleButton = document.querySelector('[data-widget="pushmenu"]');
+                if (menuToggleButton) {
+                    menuToggleButton.style.display = 'none';
+                    console.log('Botão de toggle oculto.');
+                } else {
+                    console.log('Botão de toggle não encontrado.');
+                }
+            });
+        });
+    </script>
+
+@livewireScripts
 @stop

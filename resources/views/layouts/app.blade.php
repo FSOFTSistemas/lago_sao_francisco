@@ -102,7 +102,6 @@
         </main>
     </div>
     <script src="{{ asset('js/endereco.js') }}"></script>
-    
 </body>
 </html>
 @endsection

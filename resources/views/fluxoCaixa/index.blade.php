@@ -43,7 +43,7 @@
                             @endif
                         </div>
                     </div>
-                    
+
 
                     @include('caixa.modals._abrircaixa', ['caixa' => $caixa])
                     @include('caixa.modals._fecharcaixa', ['caixa' => $caixa])
@@ -73,17 +73,17 @@
     </div>
     <form method="GET" action="{{ route('fluxoCaixa.index') }}" class="mb-4">
         <div class="row">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="data_inicio">Data Início</label>
                 <input type="date" class="form-control" name="data_inicio" id="data_inicio"
                     value="{{ request('data_inicio', now()->toDateString()) }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="data_fim">Data Fim</label>
                 <input type="date" class="form-control" name="data_fim" id="data_fim"
                     value="{{ request('data_fim', now()->toDateString()) }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="tipo">Tipo</label>
                 <select name="tipo" id="tipo" class="form-control">
                     <option value="">Todos</option>
@@ -95,7 +95,20 @@
                     </option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label for="caixa_id">Caixa:</label>
+                    <select name="caixa_id" id="caixa_id" class="form-control">
+                        <option value="">Todos os Caixas</option>
+                        @foreach ($caixas as $caixa)
+                            <option value="{{ $caixa->id }}" {{ request('caixa_id') == $caixa->id ? 'selected' : '' }}>
+                                {{ $caixa->descricao }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 d-flex align-items-end pb-3">
                 <button type="submit" class="btn btn-primary w-100">Filtrar</button>
             </div>
         </div>
@@ -228,7 +241,7 @@
         <tbody>
             @foreach ($fluxoCaixas as $fluxoCaixa)
                 <tr>
-                    <td>{{ $fluxoCaixa->created_at}}</td>
+                    <td>{{ $fluxoCaixa->created_at }}</td>
                     <td>{{ $fluxoCaixa->caixa->descricao }}</td>
                     <td>{{ $fluxoCaixa->descricao }}</td>
                     <td>R${{ $fluxoCaixa->valor }}</td>
@@ -390,7 +403,7 @@
                             const nome = forma.charAt(0).toUpperCase() + forma.slice(1);
                             lista.append(
                                 `<li class="list-group-item">${nome}: R$ ${valor.toFixed(2).replace('.', ',')}</li>`
-                                );
+                            );
                         }
                     }
                 }).fail(function() {

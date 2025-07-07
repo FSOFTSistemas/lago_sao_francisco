@@ -92,7 +92,7 @@ class FluxoCaixaController extends Controller
 
 
 
-        // Filtros opcionais de tipo e data
+        // Filtros opcionais de tipo e data e caixa
         if ($request->filled('tipo')) {
             $fluxoQuery->where('tipo', $request->tipo);
         }
@@ -101,6 +101,10 @@ class FluxoCaixaController extends Controller
             $fluxoQuery->whereBetween('data', [$request->data_inicio, $request->data_fim]);
         } else {
             $fluxoQuery->whereDate('data', \Carbon\Carbon::today());
+        }
+
+        if ($request->filled('caixa_id')) {
+            $fluxoQuery->where('caixa_id', $request->caixa_id);
         }
 
         $fluxoCaixas = $fluxoQuery->orderBy('data', 'desc')->orderBy('id', 'desc')->get();
@@ -120,6 +124,9 @@ class FluxoCaixaController extends Controller
                 $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
             }, function ($q) {
                 $q->whereDate('data', \Carbon\Carbon::today());
+            })
+            ->when($request->filled('caixa_id'), function ($q) use ($request) {
+                $q->where('caixa_id', $request->caixa_id);
             })
             ->groupBy('movimento_id')
             ->get();
