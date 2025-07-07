@@ -17,10 +17,15 @@ return new class extends Migration {
             $table->decimal('valor_pago', 15, 2)->nullable()->default(0);
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
-            $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
+            $table->enum('status', ['pendente', 'pago'])->default('pendente');
             $table->unsignedBigInteger('empresa_id');
             $table->unsignedBigInteger('plano_de_contas_id')->nullable();
             $table->unsignedBigInteger('fornecedor_id')->nullable();
+            
+            // Novos campos de parcelamento
+            $table->unsignedInteger('numero_parcela')->nullable();
+            $table->unsignedInteger('total_parcelas')->nullable();
+
             $table->timestamps();
 
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');

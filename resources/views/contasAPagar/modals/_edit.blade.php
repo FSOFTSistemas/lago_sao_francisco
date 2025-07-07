@@ -41,7 +41,7 @@
                         <label for="tipo">Situação</label>
                         <select class="form-control" id="status" name="status" required>
                             <option value="pendente" {{ old('status', $contasAPagar->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                            <option value="finalizado" {{ old('status', $contasAPagar->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                            <option value="pago" {{ old('status', $contasAPagar->status) == 'pago' ? 'selected' : '' }}>Pago</option>
                         </select>
                     </div>
 

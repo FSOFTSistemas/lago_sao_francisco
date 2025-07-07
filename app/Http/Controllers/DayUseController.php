@@ -59,9 +59,12 @@ public function index(Request $request)
         });
 
     // Gráfico: agrupamento por item e data
+     $inicioMesAtual = now()->startOfMonth()->toDateString();
+        $fimMesAtual = now()->endOfMonth()->toDateString();
+
     $movimentosPorDia = MovDayUse::with('item', 'dayuse')
-        ->whereHas('dayuse', function ($query) use ($dataInicio, $dataFim) {
-            $query->whereBetween('data', [$dataInicio, $dataFim]);
+        ->whereHas('dayuse', function ($query) use ( $inicioMesAtual,  $fimMesAtual) {
+            $query->whereBetween('data', [ $inicioMesAtual,  $fimMesAtual]);
         })
         ->get()
         ->groupBy(function ($mov) {

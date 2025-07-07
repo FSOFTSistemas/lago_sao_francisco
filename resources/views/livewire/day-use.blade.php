@@ -107,7 +107,7 @@
                         @error('total') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
                     <div class="col d-flex justify-content-end">
-                         <button type="submit" class="btn btn-primary mt-3 w-100" style="font-size: 1.5rem !important">Pagamento</button>
+                         <button type="submit" class="btn btn-primary mt-3 w-100" style="font-size: 1.5rem !important">Próximo</button>
                     </div>
                 </div>
                 <br>
