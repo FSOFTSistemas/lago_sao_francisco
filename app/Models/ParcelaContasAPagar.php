@@ -21,14 +21,15 @@ class ParcelaContasAPagar extends Model
         'status',
     ];
 
-    public function conta()
-    {
-        return $this->belongsTo(ContasAPagar::class, 'contas_a_pagar_id');
-    }
+public function conta()
+{
+    return $this->belongsTo(ContasAPagar::class, 'contas_a_pagar_id');
+}
+
 
     public function isPaga()
     {
-        return $this->status === 'finalizado';
+        return $this->status === 'pago';
     }
 }
 

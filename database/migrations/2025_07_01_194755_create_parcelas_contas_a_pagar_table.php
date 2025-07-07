@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
             $table->decimal('valor_pago', 15, 2)->default(0);
-            $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
+            $table->enum('status', ['pendente', 'pago'])->default('pendente');
             $table->timestamps();
 
             $table->foreign('contas_a_pagar_id')->references('id')->on('contas_a_pagar')->onDelete('cascade');
