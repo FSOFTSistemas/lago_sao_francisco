@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Http\Controllers\Controller;
+use App\Models\Tarifa;
 use Illuminate\Http\Request;
 
 class CategoriaController extends Controller
@@ -36,6 +37,12 @@ class CategoriaController extends Controller
             $lastPosition = Categoria::max('posicao'); 
             $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1;
         }
+
+        Tarifa::create([
+            'nome' => $validatedData['titulo'],
+            'ativo' => true,
+
+        ]);
 
         Categoria::create($validatedData);
 

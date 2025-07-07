@@ -66,10 +66,12 @@
                         <select class="form-control select2" name="hospede_id_disabled" id="hospede_id" disabled>
                             <option value="">Selecione um hóspede</option>
                             @foreach($hospedes as $hospede)
+                            @if($hospede->nome !== 'Bloqueado')
                                 <option value="{{ $hospede->id }}" 
                                     {{ $hospedeSelecionado == $hospede->id ? 'selected' : '' }}>
                                     {{ $hospede->nome }}
                                 </option>
+                            @endif
                             @endforeach
                         </select>
                         <input type="hidden" name="hospede_id" value="{{ $hospedeSelecionado }}">
@@ -77,10 +79,12 @@
                         <select class="form-control select2" name="hospede_id" id="hospede_id">
                             <option value="">Selecione um hóspede</option>
                             @foreach($hospedes as $hospede)
+                            @if($hospede->nome !== 'Bloqueado')
                                 <option value="{{ $hospede->id }}" 
                                     {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
                                     {{ $hospede->nome }}
                                 </option>
+                                @endif
                             @endforeach
                         </select>
                     @endif

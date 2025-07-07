@@ -48,6 +48,7 @@ use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
 use App\Http\Controllers\ParceiroController;
+use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
@@ -207,3 +208,6 @@ Route::middleware(['auth'])->group(function () {
 
 Route::resource('souvenir', SouvenirController::class);
 
+Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])->name('preferencias.hotel');
+
+Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');
