@@ -8,6 +8,7 @@ use App\Models\DayUsePag;
 use App\Models\FormaPagamento;
 use App\Services\CaixaService;
 use App\Models\Caixa;
+use App\Models\Movimento;
 use App\Models\Souvenir;
 use Illuminate\Support\Facades\Auth;
 
@@ -58,6 +59,7 @@ class DayUsePagamento extends Component
 
     public function mount($dayUseId, $itemSubtotal)
     {
+        $this->dispatch('hideSidebarAndButton');
         $this->caixaService = app(CaixaService::class); // ou resolve(CaixaService::class)
 
         $this->dayUseId = $dayUseId;
@@ -206,7 +208,7 @@ class DayUsePagamento extends Component
 
             // Verifica tipo com base no nome da forma de pagamento
             $tipoMov = 'venda-' . strtolower(str_replace(' ', '-', $formaPagamento->descricao));
-            $movimentoId = \App\Models\Movimento::where('descricao', $tipoMov)->value('id');
+            $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
             if (!$movimentoId) {
                 continue; // Pula se não tiver mapeado corretamente
             }
@@ -222,7 +224,7 @@ class DayUsePagamento extends Component
         }
 
         foreach ($this->souvenirsAdicionados as $souvenirItem) {
-            $souvenir = \App\Models\Souvenir::find($souvenirItem['id']);
+            $souvenir = Souvenir::find($souvenirItem['id']);
 
             if ($souvenir && $souvenir->estoque >= $souvenirItem['quantidade']) {
                 $souvenir->estoque -= $souvenirItem['quantidade'];
@@ -232,7 +234,6 @@ class DayUsePagamento extends Component
                 return;
             }
         }
-
 
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
