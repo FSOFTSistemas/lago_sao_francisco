@@ -29,7 +29,7 @@ class TarifaController extends Controller
                 'nome' => 'required|string',
                 'ativo' => 'required|boolean',
                 'observacoes' => 'string|nullable',
-                'categoria' => 'required|string',
+                'categoria_id' => 'required|exists:categorias,id',
                 'seg' => 'decimal:2|nullable',
                 'ter' => 'decimal:2|nullable',
                 'qua' => 'decimal:2|nullable',
@@ -50,9 +50,9 @@ class TarifaController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Tarifa $tarifa)
+    public function edit($id)
     {   
-        $tarifa = Tarifa::all();
+        $tarifa = Tarifa::findOrFail($id);
         return view('tarifa.manageTarifa', compact('tarifa'));
     }
 

@@ -13,7 +13,7 @@ class Tarifa extends Model
         'nome',
         'ativo',
         'observacoes',
-        'categoria',
+        'categoria_id',
         'seg',
         'ter',
         'qua',
@@ -26,5 +26,9 @@ class Tarifa extends Model
     public function tarifaHospede()
     {
         return $this->belongsTo(TarifaHospede::class, 'tarifa_hospede_id');
+    }
+    public function categoria()
+    {
+        return $this->belongsTo(Categoria::class, 'categoria_id');
     }
 }

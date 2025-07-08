@@ -133,9 +133,10 @@ class FluxoCaixaController extends Controller
 
         $totalGeral = $totaisPorMovimento
     ->filter(function ($item) {
-        return optional($item->movimento)->descricao !== 'venda-sympla';
+        return optional($item->movimento)->descricao !== 'fechamento de caixa';
     })
     ->sum('total');
+
 
 
         // -----------------------------
@@ -308,9 +309,17 @@ class FluxoCaixaController extends Controller
         $fluxos = $query->get();
 
         // Agrupa e soma os valores por movimento
-        $resumo = $fluxos->groupBy('movimento.descricao')->map(function ($grupo) {
+       $resumo = $fluxos
+        ->filter(function ($fluxo) {
+            $descricao = optional($fluxo->movimento)->descricao;
+            return !in_array($descricao, ['abertura de caixa', 'fechamento de caixa']);
+        })
+        ->groupBy('movimento.descricao')
+        ->map(function ($grupo) {
             return $grupo->sum('valor');
         });
+
+
 
         $empresa = Empresa::find($request->empresa_id) ?? Auth::user()->empresa;
         $periodo = $dataInicio->format('d/m/Y') . ' a ' . $dataFim->format('d/m/Y');
