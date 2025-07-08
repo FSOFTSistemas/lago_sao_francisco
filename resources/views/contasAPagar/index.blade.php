@@ -76,6 +76,7 @@
         ['responsivePriority' => 2, 'targets' => 2],
         ['responsivePriority' => 2, 'targets' => 3],
         ['responsivePriority' => 2, 'targets' => 4],
+        ['responsivePriority' => 2, 'targets' => 5],
         ['responsivePriority' => 4, 'targets' => -1],
     ],
     'itemsPerPage' => 10,
@@ -90,6 +91,7 @@
         <th>Valor</th>
         <th>Situação</th>
         <th>Fornecedor</th>
+        <th>Empresa</th>
         <th>Ações</th>
     </tr>
 </thead>
@@ -132,6 +134,9 @@
                 {{ $contasAPagar->fornecedor->nome_fantasia ?? ''}}
             </td>
             <td>
+                {{ $contasAPagar->empresa->nome_fantasia ?? ''}}
+            </td>
+            <td>
                 @if($contasAPagar->valor - $contasAPagar->valor_pago > 0)
                     <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
                         data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
@@ -141,11 +146,6 @@
                 <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                     data-target="#showContasAPagar{{ $contasAPagar->id }}">
                     👁️
-                </button>
-
-                <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                    data-target="#editContasAPagarModal{{ $contasAPagar->id }}">
-                    ✏️
                 </button>
 
                @if($contasAPagar->pode_excluir)
@@ -161,15 +161,17 @@
         @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
         @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
         @include('contasAPagar.modals._edit', ['contasAPagar' => $contasAPagar])
-        
+        @push('modais')
+            @include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
+        @endpush
+
         @endforeach
         
     </tbody>
 
 @endcomponent
-
 @include('contasAPagar.modals._create')
-@include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
+@stack('modais')
 @stop
 
 @push('css')
@@ -193,6 +195,7 @@
 <!-- Then Select2 JS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 
 <script>
     $(document).ready(function() {

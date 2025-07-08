@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\CaixaService;
 
 class ContasAPagarController extends Controller
 {
@@ -216,87 +217,123 @@ public function index(Request $request)
 
 public function pagar(Request $request)
 {
-    try{
-    $request->validate([
-        'data_pagamento' => 'required|date',
-        'valor_pago' => 'required|numeric|min:0.01',
-        'id' => 'nullable|exists:parcelas_contas_a_pagar,id',
-        'fonte_pagadora' => 'required|in:caixa,conta_corrente',
-    ], [
-        'data_pagamento.required' => 'A data do pagamento é obrigatória.',
-        'data_pagamento.date' => 'A data do pagamento deve ser uma data válida.',
+    try {
+        $request->validate([
+            'data_pagamento' => 'required|date',
+            'valor_pago' => 'required|numeric|min:0.01',
+            'id' => 'nullable|exists:parcelas_contas_a_pagar,id',
+            'fonte_pagadora' => 'required|in:caixa,conta_corrente',
+        ]);
 
-        'valor_pago.required' => 'O valor pago é obrigatório.',
-        'valor_pago.numeric' => 'O valor pago deve ser um número.',
-        'valor_pago.min' => 'O valor pago deve ser no mínimo R$ 0,01.',
+        $valorPago = $request->valor_pago;
+        $contasAPagar = null;
 
-        'id.exists' => 'A parcela informada não existe.',
-
-        'fonte_pagadora.required' => 'A fonte pagadora é obrigatória.',
-        'fonte_pagadora.in' => 'A fonte pagadora deve ser "caixa" ou "conta corrente".',
-    ]);
-
-
-    
+        // Se for pagamento de parcela
         if ($request->filled('id')) {
-
-            
-
             $parcela = \App\Models\ParcelaContasAPagar::findOrFail($request->id);
-            $valor_pago = $parcela->valor_pago + $request->valor_pago;
-            
-            
-            if($valor_pago == $parcela->valor){
-                 $parcela->update([
-                'status' => 'pago',
-                'valor_pago' => $valor_pago,
-                'data_pagamento' => $request->data_pagamento,
-            ]);
-            }else{
-                $parcela->update([
-                'valor_pago' => $valor_pago,
-                'data_pagamento' => $request->data_pagamento,
-            ]);
-            }
+            $valor_pago_total = $parcela->valor_pago + $valorPago;
 
             $conta = $parcela->conta;
-            
 
-            $todasPagas = $conta->parcelas->every(fn($p) => $p->status === 'pago');
-            if ($todasPagas) {
-                $conta->update([
-                    'status' => 'pago',
-                    'valor_pago' => $conta->parcelas->sum('valor_pago'),
-                    'data_pagamento' => now()->toDateString(),
-                ]);
-            }else{
-                $conta->update([
-                    'valor_pago' => $conta->parcelas->sum('valor_pago'),
+            // Se a fonte for CAIXA, verificar e registrar antes
+            if ($request->fonte_pagadora == 'caixa') {
+                $usuario = Auth::user();
+                $empresaSelecionada = session('empresa_id');
+                $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+
+                $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+                    ->where('status', 'aberto')
+                    ->where('empresa_id', $empresa_id)
+                    ->where('usuario_id', Auth::id())
+                    ->first();
+
+                if (!$caixa) {
+                    return redirect()
+                        ->route('contasAPagar.index')
+                        ->with('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+                }
+
+                app(CaixaService::class)->inserirMovimentacao($caixa, [
+                    'descricao' => 'Pagamento #' . $conta->descricao,
+                    'valor' => $valorPago,
+                    'valor_total' => $valorPago,
+                    'tipo' => 'saida',
+                    'movimento_id' => 31,
+                    'plano_de_conta_id' => $conta->plano_de_contas_id,
                 ]);
             }
 
+            // Agora atualiza a parcela
+            $dadosUpdate = [
+                'valor_pago' => $valor_pago_total,
+                'data_pagamento' => $request->data_pagamento,
+            ];
+
+            if ($valor_pago_total == $parcela->valor) {
+                $dadosUpdate['status'] = 'pago';
+            }
+
+            $parcela->update($dadosUpdate);
+
+            // Atualiza a conta principal
+            $conta->update([
+                'valor_pago' => $conta->parcelas->sum('valor_pago'),
+                'status' => $conta->parcelas->every(fn($p) => $p->status === 'pago') ? 'pago' : $conta->status,
+                'data_pagamento' => $conta->parcelas->every(fn($p) => $p->status === 'pago') ? now()->toDateString() : $conta->data_pagamento,
+            ]);
+
+            $contasAPagar = $conta;
         } else {
+            // Pagamento total direto (sem parcelamento)
             $contasAPagar = \App\Models\ContasAPagar::findOrFail($request->conta_id);
+
+            if ($request->fonte_pagadora == 'caixa') {
+                $usuario = Auth::user();
+                $empresaSelecionada = session('empresa_id');
+                $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+
+                $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+                    ->where('status', 'aberto')
+                    ->where('empresa_id', $empresa_id)
+                    ->where('usuario_id', Auth::id())
+                    ->first();
+
+                if (!$caixa) {
+                    return redirect()
+                        ->route('contasAPagar.index')
+                        ->with('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+                }
+
+                app(CaixaService::class)->inserirMovimentacao($caixa, [
+                    'descricao' => 'Pagamento #' . $contasAPagar->descricao,
+                    'valor' => $valorPago,
+                    'valor_total' => $valorPago,
+                    'tipo' => 'saida',
+                    'movimento_id' => 31,
+                    'plano_de_conta_id' => $contasAPagar->plano_de_contas_id,
+                ]);
+            }
+
+            // Atualiza conta
             $contasAPagar->update([
                 'status' => 'pago',
-                'valor_pago' => $request->valor_pago,
+                'valor_pago' => $valorPago,
                 'data_pagamento' => $request->data_pagamento,
             ]);
         }
-
-        // Aqui você pode lançar o fluxo de caixa com base em $request->fonte_pagadora
-        // Exemplo: CaixaService::registrarSaida(...)
 
         return redirect()
             ->route('contasAPagar.index')
             ->with('success', 'Pagamento registrado com sucesso!');
     } catch (\Throwable $e) {
-        \Log::error('Erro ao registrar pagamento da conta ID ' . $contasAPagar->id . ': ' . $e->getMessage());
+        \Log::error('Erro ao registrar pagamento: ' . $e->getMessage());
 
         return redirect()
             ->route('contasAPagar.index')
-            ->with('error', 'Erro ao registrar o pagamento. Verifique os dados ou tente novamente.' . $e);
+            ->with('error', 'Erro ao registrar o pagamento. Verifique os dados ou tente novamente.');
     }
 }
+
+
 
 }
