@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Reserva;
 use App\Models\Quarto;
 use App\Models\Hospede;
+use App\Models\Categoria;
+use App\Models\FormaPagamento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -36,43 +38,63 @@ class ReservaController extends Controller
         $quartos = $quartos->whereNotIn('id', $ocupados);
     }
 
-    $quartos = $quartos->get();
+    // Buscar quartos agrupados por categoria
+    $quartosAgrupados = $quartos->with('categoria')->get()->groupBy('categoria.titulo');
+    $categorias = Categoria::where('status', 1)->orderBy('posicao')->get();
+    $formasPagamento = FormaPagamento::all();
+
     $hospedes = Hospede::all();
     $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
 
-    return view('reserva.create', compact('quartos', 'hospedes', 'hospedeBloqueado', 'checkin', 'checkout'));
+    return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'checkin', 'checkout'));
 }
 
 
     public function store(Request $request)
     {
-        try {
-            $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'hospede_id' => 'nullable|exists:hospedes,id',
-                'data_checkin' => 'required|date',
-                'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'required',
-                'valor_total' => 'numeric',
-                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
-                'n_adultos' => 'required',
-                'n_criancas' => 'required',
-            ]);
-    
-            Reserva::create($request->all());
-    
-            return redirect()->route('reserva.index')->with('success', 'Reserva criada com sucesso!');
-        } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->back()->with('error', 'Erro ao criar reserva!');
-        }
+       try {
+    $request->validate([
+        'quarto_id' => 'required|exists:quartos,id',
+        'hospede_id' => 'nullable|exists:hospedes,id',
+        'data_checkin' => 'required|date',
+        'data_checkout' => 'required|date|after_or_equal:data_checkin',
+        'valor_diaria' => 'required',
+        'valor_total' => 'numeric|nullable',
+        'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
+        'n_adultos' => 'required',
+        'n_criancas' => 'required',
+    ]);
+
+    $dados = $request->all();
+
+    // Tratamento para garantir que seja salvo com ponto decimal
+    $dados['valor_diaria'] = str_replace(',', '.', preg_replace('/[^0-9,]/', '', $dados['valor_diaria']));
+
+    // Se quiser fazer o mesmo com valor_total, só aplicar o mesmo filtro
+    if (isset($dados['valor_total'])) {
+        $dados['valor_total'] = str_replace(',', '.', preg_replace('/[^0-9,]/', '', $dados['valor_total']));
+    }
+
+    $reserva = Reserva::create($dados);
+
+    return redirect()->route('reserva.edit', $reserva->id)
+        ->with('success', 'Reserva criada com sucesso!');
+} catch (\Exception $e) {
+    dd($e->getMessage());
+    return redirect()->back()->with('error', 'Erro ao criar reserva!');
+}
     }
 
     public function edit(Reserva $reserva)
     {
-        $quartos = Quarto::all();
+        // Buscar quartos agrupados por categoria para edição
+        $quartosAgrupados = Quarto::with('categoria')->get()->groupBy('categoria.titulo');
+        $categorias = Categoria::where('status', 1)->orderBy('posicao')->get();
+        $formasPagamento = FormaPagamento::all();
         $hospedes = Hospede::all();
-        return view('reserva.create', compact('reserva', 'quartos', 'hospedes'));
+        $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+        
+        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento'));
     }
 
     public function update(Request $request, Reserva $reserva)
@@ -128,9 +150,27 @@ class ReservaController extends Controller
         })
         ->pluck('quarto_id');
 
-    $quartosDisponiveis = Quarto::whereNotIn('id', $quartosIndisponiveis)->get();
+    $quartosDisponiveis = Quarto::with('categoria')
+        ->whereNotIn('id', $quartosIndisponiveis)
+        ->get()
+        ->groupBy('categoria.titulo');
 
-    return response()->json($quartosDisponiveis);
+    // Formatar resposta para incluir informações da categoria
+    $response = [];
+    foreach ($quartosDisponiveis as $categoria => $quartos) {
+        $response[] = [
+            'categoria' => $categoria,
+            'quartos' => $quartos->map(function($quarto) {
+                return [
+                    'id' => $quarto->id,
+                    'nome' => $quarto->nome,
+                    'categoria_id' => $quarto->categoria_id
+                ];
+            })
+        ];
+    }
+
+    return response()->json($response);
 }
 
 

@@ -50,6 +50,7 @@ use App\Http\Controllers\LogDayuseController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\TransacaoController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
 use App\Livewire\Dayuse\ShowDayuse;
@@ -211,3 +212,11 @@ Route::resource('souvenir', SouvenirController::class);
 Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])->name('preferencias.hotel');
 
 Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');
+
+Route::get('/transacoes/resumo/{reservaId}', [TransacaoController::class, 'getResumoReserva'])->name('transacoes.resumo');
+
+Route::get('/transacoes/reserva/{reservaId}', [TransacaoController::class, 'getByReserva'])->name('transacoes.reserva');
+
+Route::post('/transacoes', [TransacaoController::class, 'store'])->name('transacoes.store');
+
+Route::delete('/transacoes/{id}', [TransacaoController::class, 'destroy'])->name('transacoes.destroy');
