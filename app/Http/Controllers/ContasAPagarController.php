@@ -26,7 +26,7 @@ public function index(Request $request)
         $planoDeContas = PlanoDeConta::all();
         $fornecedores = Fornecedor::all();
         $contas_corrente = ContaCorrente::all();
-        $caixas = ContaCorrente::all();
+        $caixas = Caixa::all();
         $query = ContasAPagar::query();
     } else {
         $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
