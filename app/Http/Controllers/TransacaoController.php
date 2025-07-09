@@ -89,9 +89,10 @@ class TransacaoController extends Controller
         }
     }
 
-    public function destroy(Transacao $transacao)
+    public function destroy($id)
     {
         try {
+            $transacao = Transacao::findOrFail($id);
             $transacao->delete();
 
             return response()->json([

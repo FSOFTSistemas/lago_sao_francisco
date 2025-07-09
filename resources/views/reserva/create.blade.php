@@ -106,13 +106,13 @@
                                     </button>
                                 </div>
                             </div>
-
                             <!-- Campo do período -->
                             <div class="form-group row" id="campoPeriodo">
                                 <label class="col-md-3 label-control" for="periodo">* Período</label>
                                 <div class="col-md-4">
                                     <input type="text" class="form-control" id="periodo" name="periodo"
                                         value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
+                                    <small style="color: red">Selecione um período antes de escolher o quarto</small>
                                 </div>
                             </div>
 
@@ -144,6 +144,7 @@
                             </div>
 
                             @if (isset($reserva))
+                                {{-- @php dd($reserva->quarto_id) @endphp --}}
                                 <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
                                 <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                             @endif
@@ -188,13 +189,15 @@
                                         data-target="#deleteReservaModal{{ $reserva->id }}">
                                         Excluir 🗑️
                                     </button>
-                                    @include('reserva.modals._delete')
                                 @endif
                                 <a href="{{ route('reserva.index') }}" class="btn btn-secondary">Voltar</a>
                                 <button type="submit"
                                     class="btn btn-primary">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
                             </div>
                         </form>
+                        @if (isset($reserva))
+                            @include('reserva.modals._delete')
+                        @endif
                     </div>
                 </div>
             </div>
@@ -207,6 +210,7 @@
                         <div class="card-header bg-light">
                             <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">FALTA LANÇAR</h5>
                             <h2 class="text-danger mb-0" id="falta-lancar">R$ 0,00</h2>
+                            <input type="hidden" id="valor-falta-lancar" name="falta_lancar" value="0.00">
                         </div>
                     </div>
 
@@ -769,14 +773,28 @@
     <script>
         $(document).ready(function() {
             const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? '' }}";
+            const diaria = $('#valor_diaria');
+            const valorDiariaArmazenado = diaria.val();
 
             function atualizarCampos() {
                 const situacao = $('input[name="situacao"]:checked').val();
+                if (!situacao) {
+                    $('.form-group').each(function() {
+                        const id = $(this).attr('id');
+                        if (['campoSituacao'].includes(
+                                id)) {
+                            $(this).slideDown(200);
+                        } else {
+                            $(this).slideUp(200);
+                        }
+                    });
+                    return
+                }
 
                 if (situacao === 'bloqueado') {
                     $('.form-group').each(function() {
                         const id = $(this).attr('id');
-                        if (['campoPeriodo', 'campoQuarto', 'campoObservacoes', 'campoSituacao'].includes(
+                        if (['campoPeriodo', 'campoObservacoes', 'campoSituacao'].includes(
                                 id)) {
                             $(this).slideDown(200);
                         } else {
@@ -789,94 +807,19 @@
                     $('#valor_diaria').val(0);
                 } else {
                     $('.form-group').slideDown(200);
+                    $('#campoQuarto').hide()
                     $('#hospede_id').prop('disabled', false).val('');
-                    $('#valor_diaria').val('');
+                    if (valorDiariaArmazenado) {
+                        diaria.val(valorDiariaArmazenado)
+                    } else {
+                        $('#valor_diaria').val('');
+                    }
                 }
             }
 
             $('input[name="situacao"]').on('change', atualizarCampos);
 
             atualizarCampos();
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            const reservaId = $('#reserva_id').val(); // Pega o ID da reserva se estiver editando
-            const quartoSelecionado = $('#quarto_selecionado').val(); // Pega o quarto já selecionado (em edição)
-
-            $('#periodo').daterangepicker({
-                locale: {
-                    format: 'DD/MM/YYYY',
-                    separator: ' a ',
-                    applyLabel: 'Aplicar',
-                    cancelLabel: 'Cancelar',
-                    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
-                    monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
-                        'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-                    ],
-                    firstDay: 0
-                },
-                opens: 'center'
-            }, function(start, end) {
-                // Atualiza os inputs hidden
-                $('#data_checkin').val(start.format('YYYY-MM-DD'));
-                $('#data_checkout').val(end.format('YYYY-MM-DD'));
-
-                // Faz requisição para buscar quartos disponíveis agrupados por categoria
-                $.ajax({
-                    url: '{{ route('quartos.disponiveis') }}',
-                    method: 'GET',
-                    data: {
-                        checkin: start.format('DD/MM/YYYY'),
-                        checkout: end.format('DD/MM/YYYY'),
-                        reserva_id: reservaId
-                    },
-                    success: function(response) {
-                        let $select = $('#quarto');
-                        $select.prop('disabled', false);
-                        $select.empty().append('<option value="">Selecione um quarto</option>');
-
-                        // Adicionar quartos agrupados por categoria
-                        response.forEach(function(grupo) {
-                            let $optgroup = $('<optgroup label="' + grupo.categoria +
-                                '">');
-
-                            grupo.quartos.forEach(function(quarto) {
-                                $optgroup.append('<option value="' + quarto.id +
-                                    '">' + quarto.nome + '</option>');
-                            });
-
-                            $select.append($optgroup);
-                        });
-
-                        if (quartoSelecionado) {
-                            $select.val(quartoSelecionado);
-                        }
-
-                        // Reinicializar o select2 para aplicar os novos optgroups
-                        $select.select2({
-                            placeholder: "Selecione um quarto...",
-                            allowClear: true,
-                            width: '100%'
-                        });
-                    },
-                    error: function() {
-                        alert('Erro ao buscar quartos disponíveis.');
-                    }
-                });
-            });
-
-            let checkin = $('#data_checkin').val();
-            let checkout = $('#data_checkout').val();
-
-            if (checkin && checkout) {
-                let start = moment(checkin, 'YYYY-MM-DD');
-                let end = moment(checkout, 'YYYY-MM-DD');
-                $('#periodo').data('daterangepicker').setStartDate(start);
-                $('#periodo').data('daterangepicker').setEndDate(end);
-                $('#periodo').val(start.format('DD/MM/YYYY') + ' a ' + end.format('DD/MM/YYYY'));
-            }
         });
     </script>
 
@@ -907,6 +850,15 @@
                     }
                 });
             }
+
+            function atualizarInputFaltaLancar(valorNumerico) {
+                const valorFormatado = valorNumerico.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2
+                });
+                $('#falta-lancar').text('R$ ' + valorFormatado);
+                $('#valor-falta-lancar').val(valorNumerico.toFixed(2)); // para POST no formato 999.99
+            }
+
 
             function carregarResumo() {
                 $.ajax({
@@ -951,10 +903,7 @@
                                 'pt-BR', {
                                     minimumFractionDigits: 2
                                 }));
-                            $('#falta-lancar').text('R$ ' + resumo.falta_lancar.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
+                            atualizarInputFaltaLancar(resumo.falta_lancar);
                         }
                     },
                     error: function() {
@@ -964,11 +913,6 @@
             }
             // Função para atualizar o resumo (para reservas novas)
             function atualizarResumo() {
-
-                // if (reservaId) {
-                //     carregarResumo();
-                //     return;
-                // }
 
                 const checkin = $('#data_checkin').val();
                 const checkout = $('#data_checkout').val();
@@ -1017,9 +961,8 @@
                 $('#total-recebido').text('R$ ' + totalRecebido.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 }));
-                $('#falta-lancar').text('R$ ' + faltaLancar.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
+                atualizarInputFaltaLancar(faltaLancar);
+
             }
             // Atualizar resumo quando valor da diária mudar
             $('#valor_diaria').on('input', atualizarResumo);
@@ -1068,11 +1011,8 @@
             });
 
             // Salvar transação
+
             $('#btn-salvar-transacao').click(function() {
-                if (!reservaId) {
-                    alert('Salve a reserva primeiro antes de adicionar transações.');
-                    return;
-                }
 
                 const descricao = $('#descricao_transacao').val();
                 const valorStr = $('#valor_transacao').val();
@@ -1081,6 +1021,18 @@
                 const observacoes = $('#observacoes_transacao').val();
                 const categoria = $('#categoria_transacao').val();
                 const tipo = $('#tipo_transacao').val();
+                const restante = parseFloat($('#valor-falta-lancar').val());
+
+                if (valorStr > restante) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Valor inválido',
+                        text: 'O valor não pode ser maior do que o restante.',
+                        confirmButtonText: 'Entendi'
+                    });
+
+                    return
+                }
 
                 if (!descricao || !valorStr || !formaPagamentoId || !dataTransacao) {
                     alert('Preencha todos os campos obrigatórios');
@@ -1259,6 +1211,87 @@
                 $('#periodo').val(moment(initialStartDate, 'YYYY-MM-DD').format('DD/MM/YYYY') + ' a ' + moment(
                     initialEndDate, 'YYYY-MM-DD').format('DD/MM/YYYY'));
                 atualizarResumo();
+            }
+
+            const quartoSelecionado = $('#quarto_selecionado').val(); // Pega o quarto já selecionado (em edição)
+            if (quartoSelecionado) {
+                const quarto = $('#quarto')
+                quarto.val(quartoSelecionado);
+                quarto.prop('disabled', false);
+                $('#campoQuarto').hide()
+            }
+            $('#periodo').daterangepicker({
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    separator: ' a ',
+                    applyLabel: 'Aplicar',
+                    cancelLabel: 'Cancelar',
+                    daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'],
+                    monthNames: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+                        'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                    ],
+                    firstDay: 0
+                },
+                opens: 'center'
+            }, function(start, end) {
+                // Atualiza os inputs hidden
+                $('#data_checkin').val(start.format('YYYY-MM-DD'));
+                $('#data_checkout').val(end.format('YYYY-MM-DD'));
+
+                // Faz requisição para buscar quartos disponíveis agrupados por categoria
+                $.ajax({
+                    url: '{{ route('quartos.disponiveis') }}',
+                    method: 'GET',
+                    data: {
+                        checkin: start.format('DD/MM/YYYY'),
+                        checkout: end.format('DD/MM/YYYY'),
+                        reserva_id: reservaId
+                    },
+                    success: function(response) {
+                        $('#campoQuarto').show();
+                        let $select = $('#quarto');
+                        $select.prop('disabled', false);
+                        $select.empty().append('<option value="">Selecione um quarto</option>');
+
+                        // Adicionar quartos agrupados por categoria
+                        response.forEach(function(grupo) {
+                            let $optgroup = $('<optgroup label="' + grupo.categoria +
+                                '">');
+
+                            grupo.quartos.forEach(function(quarto) {
+                                $optgroup.append('<option value="' + quarto.id +
+                                    '">' + quarto.nome + '</option>');
+                            });
+
+                            $select.append($optgroup);
+                        });
+
+                        if (quartoSelecionado) {
+                            $select.val(quartoSelecionado);
+                        }
+
+                        // Reinicializar o select2 para aplicar os novos optgroups
+                        $select.select2({
+                            placeholder: "Selecione um quarto...",
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    },
+                    error: function() {
+                        alert('Erro ao buscar quartos disponíveis.');
+                    }
+                });
+            });
+
+            let checkin = $('#data_checkin').val();
+            let checkout = $('#data_checkout').val();
+
+            if (checkin && checkout) {
+                let start = moment(checkin, 'YYYY-MM-DD');
+                let end = moment(checkout, 'YYYY-MM-DD');
+                $('#periodo').data('daterangepicker').setStartDate(start);
+                $('#periodo').data('daterangepicker').setEndDate(end);
+                $('#periodo').val(start.format('DD/MM/YYYY') + ' a ' + end.format('DD/MM/YYYY'));
             }
         });
     </script>
