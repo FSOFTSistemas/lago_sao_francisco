@@ -13,26 +13,26 @@
                   <form id="createContasAReceberForm" action="{{ route('contasAReceber.store') }}" method="POST">
                       @csrf
                       <div class="mb-3">
-                          <label for="descricao">Descrição:</label>
+                          <label for="descricao">* Descrição:</label>
                           <input type="text" class="form-control" id="descricao" name="descricao" required>
                       </div>
 
                       <div class="row">
                           <div class="col-md-6 mb-3">
-                              <label for="valor">Valor:</label>
-                              <input type="text" class="form-control" id="valor" name="valor">
+                              <label for="valor">* Valor:</label>
+                              <input type="number" class="form-control" id="valor" name="valor">
 
                           </div>
                           <div class="col-md-6 mb-3">
                               <label for="valorRecebido">Valor Recebido:</label>
-                              <input type="text" class="form-control" id="valorRecebido" name="valor_recebido">
+                              <input type="number" class="form-control" id="valorRecebido" name="valor_recebido" placeholder="Deixe em branco se não foi recebido">
                           </div>
 
                       </div>
 
                       <div class="row">
                           <div class="col-md-6 mb-3">
-                              <label for="dataVencimento">Data de Vencimento:</label>
+                              <label for="dataVencimento">* Data de Vencimento:</label>
                               <input type="date" class="form-control" id="dataVencimento" name="data_vencimento">
                             </div>
                             
@@ -52,7 +52,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                              <label for="tipo">Situação</label>
+                              <label for="tipo">*Situação</label>
                               <select class="form-control" id="status" name="status" required>
                                   <option value="pendente">Pendente</option>
                                   <option value="finalizado">Finalizado</option>
@@ -72,7 +72,7 @@
         
         
                     <div class="mb-3">
-                        <label for="cliente">Cliente</label>
+                        <label for="cliente">*Cliente</label>
                         <select class="form-control" id="cliente" name="cliente_id">
                             <option value="">Selecione</option>
                             @foreach ($clientes as $cliente)

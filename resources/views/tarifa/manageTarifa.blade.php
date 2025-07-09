@@ -39,9 +39,9 @@
                     </div>
 
                     <div class="form-group row">
-                        <label for="categoria" class="col-md-3 label-control">* Categoria:</label>
+                        <label for="categoria" class="col-md-3 label-control">Categoria:</label>
                         <div class="col-md-3">
-                            <input type="text" class="form-control" id="categoria" name="categoria" value="{{ old('categoria', $tarifa->categoria ?? '') }}" required>
+                            <input type="text" class="form-control" id="categoria" name="categoria" value="{{ old('categoria', $tarifa->categoria->titulo ?? '') }}" readonly>
                         </div>
                     </div>
 
@@ -53,7 +53,7 @@
                     </div>
 
                     <div class="form-group row">
-                      <label class="col-md-3 label-control form-lab d-block">* Tarifa Ativa?</label>
+                      <label class="col-md-3 label-control form-lab d-block">Tarifa Ativa?</label>
                       <div class="form-check form-switch">
                           <input type="hidden" name="ativo" value="0">
                           <input 
@@ -97,7 +97,7 @@
                             <label class="col-md-3 label-control col-form-label">{{ $label }}</label>
                             <div class="col-sm-4">
                                 <input
-                                    type="text"
+                                    type="number"
                                     class="form-control"
                                     name="{{ $key }}"
                                     value="{{ old($key, $tarifa->$key ?? '') }}"
@@ -125,6 +125,7 @@
 
         
         <div class="card-footer text-end">
+             <a href="{{ route('tarifa.index') }}" class="btn btn-secondary">Voltar</a>
             <button type="submit" class="btn new btn-{{ isset($tarifa) ? 'info' : 'success' }}">
                 {{ isset($tarifa) ? 'Atualizar Tarifa' : 'Criar Tarifa' }}
             </button>

@@ -15,41 +15,45 @@ class FormaPagamentoSeeder extends Seeder
     {
         $formasPagamento = [
             [
-                'descricao' => 'Cartão de Crédito',
-                'empresa_id' => 1,
+                'descricao' => 'Cartão-crédito',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Cartão de Débito',
-                'empresa_id' => 1,
+                'descricao' => 'Cartão-débito',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Boleto Bancário',
-                'empresa_id' => 1,
+                'descricao' => 'Boleto-bancário',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
                 'descricao' => 'PIX',
-                'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'descricao' => 'Transferência Bancária',
-                'empresa_id' => 1,
+                'descricao' => 'Transferência-bancária',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
                 'descricao' => 'Dinheiro',
-                'empresa_id' => 1,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+            [
+                'descricao' => 'Sympla',
+                'created_at' => now(),
+                'updated_at' => now()
+            ],
+            [
+                'descricao' => 'crediário',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
         ];
 
         DB::table('forma_pagamentos')->insert($formasPagamento);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Parceiro;
 use App\Http\Controllers\Controller;
+use App\Models\CategoriaParceiro;
 use Illuminate\Http\Request;
 
 class ParceiroController extends Controller
@@ -14,7 +15,8 @@ class ParceiroController extends Controller
     public function index()
     {
         $parceiros = Parceiro::all();
-        return view('parceiros.index', compact('parceiros'));
+        $categorias = CategoriaParceiro::all();
+        return view('parceiros.index', compact('parceiros', 'categorias'));
     }
 
     /**
@@ -26,12 +28,13 @@ class ParceiroController extends Controller
             $request->validate([
                 'descricao' => 'string|required',
                 'valor' => 'required',
-                'categoria' => 'string|required'
+                'categoria_id' => 'required|exists:categoria_parceiros,id'
             ]);
             Parceiro::create($request->all());
             return redirect()->route('parceiros.index')->with('success', 'Parceiro criado com sucesso!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'erro ao criar Parceiro');
+            dd($e->getMessage());
+            return redirect()->back()->with('error', 'erro ao criar Parceiro', $e);
         }
     }
 
@@ -45,12 +48,12 @@ class ParceiroController extends Controller
             $request->validate([
                 'descricao' => 'string|required',
                 'valor' => 'required',
-                'categoria' => 'string|required'
+                'categoria_id' => 'required|exists:categoria_parceiros,id'
             ]);
             $parceiro->update($request->all());
             return redirect()->route('parceiros.index')->with('success', 'Parceiro atualizado com sucesso!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'erro ao atualizar Parceiro');
+            return redirect()->back()->with('error', 'erro ao atualizar Parceiro', $e);
         }
     }
 

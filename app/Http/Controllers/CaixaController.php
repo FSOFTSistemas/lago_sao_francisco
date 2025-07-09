@@ -4,21 +4,84 @@ namespace App\Http\Controllers;
 
 use App\Models\Caixa;
 use App\Models\Empresa;
+use App\Models\FluxoCaixa;
+use App\Services\CaixaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CaixaController extends Controller
 {
+
+    protected $caixaService;
+
+    public function __construct(CaixaService $caixaService)
+    {
+        $this->caixaService = $caixaService;
+    }
+
+    public function abrir(Request $request, $id)
+    {
+        $request->validate([
+            'valor_inicial' => 'required|numeric|min:0',
+        ]);
+
+        $caixa = Caixa::findOrFail($id);
+
+        if ($caixa->status === 'aberto') {
+            return back()->with('error', 'O caixa já está aberto.');
+        }
+
+        $this->caixaService->abrirCaixa($caixa, $request->valor_inicial);
+
+        return back()->with('success', 'Caixa aberto com sucesso.');
+    }
+
+    public function fechar(Request $request, $id)
+    {
+        try {
+            $request->merge([
+                'valor_final' => str_replace(',', '.', $request->valor_final),
+            ]);
+
+            $request->validate([
+                'valor_final' => 'required|numeric|min:0',
+            ]);
+
+            $caixa = Caixa::findOrFail($id);
+
+            if ($caixa->status === 'fechado') {
+                return back()->with('error', 'O caixa já está fechado.');
+            }
+
+            $this->caixaService->fecharCaixa($caixa, $request->valor_final);
+
+            return back()->with('success', 'Caixa fechado com sucesso.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao fechar caixa', $e);
+        }
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $users = Auth::user();
+        $usuario = Auth::user();
         $empresas = Empresa::all();
-        $caixas = Caixa::all();
-        return view('caixa.index', compact('caixas', 'empresas', 'users'));
+        $empresaSelecionada = session('empresa_id'); // <-- Empresa escolhida no seletor
+
+        if (Auth::user()->hasRole('Master')) {
+            if ($empresaSelecionada) {
+                $caixas = Caixa::where('empresa_id', $empresaSelecionada)->get();
+            } else {
+                $caixas = Caixa::all();
+            }
+        } else {
+            $caixas = Caixa::where('empresa_id', Auth::user()->empresa_id)->get();
+        }
+
+        return view('caixa.index', compact('caixas', 'empresas', 'usuario'));
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -85,5 +148,39 @@ class CaixaController extends Controller
             dd($e->getMessage());
             return redirect()->route('caixa.index')->with('error', 'Erro ao deletar caixa!');
         }
+    }
+
+    public function getResumoFechamento(Caixa $caixa)
+    {
+        $fluxos = FluxoCaixa::with('movimento')
+            ->where('caixa_id', $caixa->id)
+            ->whereDoesntHave('movimento', function ($query) {
+                $query->whereIn('descricao', ['abertura de caixa', 'fechamento de caixa']);
+            })
+            ->get();
+
+
+        // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento) e soma o fundo de caixa
+        $saldo = $fluxos
+            ->filter(fn($fluxo) => optional($fluxo->movimento)->descricao !== 'fechamento de caixa')
+            ->sum('valor') + $caixa->valor_inicial;
+
+
+
+        // Agrupamento por forma de pagamento
+        $formasPagamento = $fluxos->filter(function ($fluxo) {
+            return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
+        })->groupBy(function ($fluxo) {
+            // Considera apenas o segundo termo como chave (ex: "venda-cartão-crédito" -> "cartão-crédito")
+            $partes = explode('-', $fluxo->movimento->descricao);
+            return $partes[1] ?? 'outro';
+        })->map(function ($items) {
+            return $items->sum('valor');
+        });
+
+        return [
+            'saldo' => $saldo,
+            'formas' => $formasPagamento,
+        ];
     }
 }

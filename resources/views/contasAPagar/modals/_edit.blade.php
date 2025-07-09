@@ -17,11 +17,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="valor">Valor:</label>
-                            <input type="text" class="form-control" id="valor" name="valor" value="{{$contasAPagar->valor}}">
+                            <input type="number" class="form-control" id="valor" name="valor" step="0.01" value="{{$contasAPagar->valor}}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="valorPago">Valor Pago:</label>
-                            <input type="text" class="form-control" id="valorPago" name="valor_pago" value="{{$contasAPagar->valor_pago}}">
+                            <input type="number" class="form-control" id="valorPago" name="valor_pago" step="0.01" value="{{$contasAPagar->valor_pago}}">
                         </div>
                     </div>
                     
@@ -41,22 +41,23 @@
                         <label for="tipo">Situação</label>
                         <select class="form-control" id="status" name="status" required>
                             <option value="pendente" {{ old('status', $contasAPagar->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                            <option value="finalizado" {{ old('status', $contasAPagar->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                            <option value="pago" {{ old('status', $contasAPagar->status) == 'pago' ? 'selected' : '' }}>Pago</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label for="planoDeConta">Plano de contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai">
+                        <label for="planoDeConta">Plano de Contas</label>
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_pai" required>
                             <option value="">Selecione</option>
-                            @foreach ($planoDeContas as $planoDeConta)
-                                <option value="{{ $planoDeConta->id }}" 
-                                    {{ old('plano_de_contas_pai', $contasAPagar->plano_de_contas_pai) == $planoDeConta->id ? 'selected' : '' }}>
-                                    {{ $planoDeConta->descricao }}
+                            @foreach ($planoDeContas as $plano)
+                                <option value="{{ $plano->id }}"
+                                    {{ (old('plano_de_contas_pai', $contasAPagar->plano_de_contas_pai ?? null) == $plano->id) ? 'selected' : '' }}>
+                                    {{ $plano->descricao }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
+
                     <div class="mb-3">
                         <label for="fornecedor">Fornecedor</label>
                         <select class="form-control" id="fornecedor" name="fornecedor_id">

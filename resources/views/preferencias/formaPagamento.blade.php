@@ -99,7 +99,7 @@
                             <form action="{{ route('formaPagamento.destroy', $formaPagamento->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <div class="modal-header bg-danger text-white">
+                                <div class="modal-header">
                                     <h5 class="modal-title">
                                         <i class="fas fa-trash"></i> Confirmar Exclusão
                                     </h5>
@@ -143,7 +143,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Salvar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </form>
             </div>

@@ -8,19 +8,33 @@ use Illuminate\Database\Eloquent\Model;
 class Cardapio extends Model
 {
     use HasFactory;
-    protected $fillable = ['nome', 'observacoes'];
+    protected $table = 'cardapios';
 
-    public function categorias()
-    {
-        return $this->belongsToMany(CategoriasCardapio::class, 'cardapio_categoria', 'cardapio_id', 'categoria_id')
-                    ->withPivot('quantidade_itens')
-                    ->withTimestamps();
-    }
-    public function itensPorCategoria()
+    protected $fillable = [
+        'NomeCardapio',
+        'AnoCardapio',
+        'ValidadeOrcamentoDias',
+        'PoliticaCriancaGratisLimiteIdade',
+        'PoliticaCriancaDescontoPercentual',
+        'PoliticaCriancaDescontoIdadeInicio',
+        'PoliticaCriancaDescontoIdadeFim',
+        'PoliticaCriancaPrecoIntegralIdadeInicio',
+        'PossuiOpcaoEscolhaConteudoPrincipalRefeicao',
+    ];
+
+    protected $casts = [
+        'PoliticaCriancaDescontoPercentual' => 'decimal:2',
+        'PossuiOpcaoEscolhaConteudoPrincipalRefeicao' => 'boolean',
+    ];
+
+    public function secoes()
 {
-    return $this->belongsToMany(BuffetItem::class, 'cardapio_categoria_item')
-        ->withPivot('categoria_cardapio_id')
-        ->withTimestamps();
+    return $this->hasMany(SecoesCardapio::class, 'cardapio_id');
+}
+
+public function opcoes()
+{
+    return $this->hasMany(RefeicaoPrincipal::class, 'cardapio_id');
 }
 
 }

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
+
 return [
 
     /*
@@ -64,7 +66,7 @@ return [
     */
 
     'logo' => '<b>Lago </b>',
-    'logo_img' => 'vendor/imgs/logofsoft.png',
+    'logo_img' => 'vendor/imgs/logoSF.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
@@ -86,7 +88,7 @@ return [
     'auth_logo' => [
         'enabled' => false,
         'img' => [
-            'path' => 'vendor/imgs/logofsoft.png',
+            'path' => 'vendor/imgs/logoSF.png',
             'alt' => 'Auth Logo',
             'class' => '',
             'width' => 50,
@@ -113,11 +115,11 @@ return [
         'enabled' => true,
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'vendor/imgs/logofsoft.png',
+            'path' => 'vendor/imgs/logoSF.png',
             'alt' => 'Preloader Image',
             'effect' => 'animation__shake',
-            'width' => 420,
-            'height' => 240,
+            'width' => 200,
+            'height' => 200,
         ],
     ],
 
@@ -305,35 +307,43 @@ return [
             'text' => 'search',
             'topnav_right' => false,
         ],
-        // Sidebar items:
-        // [
-        //     'text' => 'Financeiro',
-        //     'url' => '/financeiro',
-        // ],
         [
             'text'    => 'Lago',
             'icon'    => 'fas fa-place-of-worship',
             'submenu' => [
-                // [
-                //     'text' => 'Espaços',
-                //     'icon' => 'fas fa-campground',
-                //     'url'  => '/espaco',
-                // ],
+                ['header' => 'Day Use'],
+
                 [
-                    'text' => 'Day use / Passaporte',
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/diaria',
+                    'url'  => '/dayuse/create',
+                    'can'  => 'vender dayuse'
                 ],
                 [
-                    'text' => 'Aluguel de Espaços',
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
+                    'url'  => '/dayuse',
+                    'can'  => 'gerenciar dayuse'
+                ],
+                ['header' => 'Aluguel de Espaços'],
+                [
+                    'text' => 'Cadastrar',
                     'icon' => 'fas fa-campground',
+                    'url'  => '/aluguel/create',
+                    'can'  => 'cadastrar aluguel'
+                ],
+                [
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',
-                ]
+                    'can'  => 'gerenciar aluguel'
+                ],
             ],
         ],
         [
             'text'    => 'Hotel',
             'icon'    => 'fas fa-hotel',
+            'can'     => 'hotel',
             'submenu' => [
                 [
                     'text' => 'Home',
@@ -380,9 +390,15 @@ return [
             'icon' => 'fas fa-user',
             'can'  => 'gerenciar funcionario',
         ],
+        // [
+        //     'text' => '!Caixa',
+        //     'url'  => '/caixa',
+        //     'icon' => 'fas fa-money-bill-alt',
+        //     'can'  => 'gerenciar caixa',
+        // ],
         [
             'text' => 'Caixa',
-            'url'  => '/caixa',
+            'url'  => '/fluxoCaixa',
             'icon' => 'fas fa-money-bill-alt',
             'can'  => 'gerenciar caixa',
         ],
@@ -403,6 +419,7 @@ return [
             'icon'    => 'fas fa-money-check-alt',
             'can'     => 'gerenciar financeiro',
             'submenu' => [
+
                 [
                     'text' => 'Adiantamentos',
                     'url'  => '/adiantamento',
@@ -415,8 +432,8 @@ return [
                     'icon' => 'fas fa-university',
                     'can'  => 'gerenciar banco',
                 ],
-                
-                
+
+
                 [
                     'text'  => 'Conta Corrente',
                     'url'   => '/contaCorrente',
@@ -436,16 +453,41 @@ return [
                     'can'  => 'gerenciar contas a receber',
                 ],
                 [
-                    'text' => 'Fluxos de Caixa',
-                    'url'  => '/fluxoCaixa',
-                    'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar fluxo de caixa',
-                ],                
-                [
                     'text' => 'Plano de Contas',
                     'url'  => '/planoDeConta',
                     'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar plano de conta',
+                ],
+                [
+                    'text'    => 'NFe',
+                    'icon'    => 'far fa-file-alt',
+                    'can'     => 'gerenciar NFe',
+                    'submenu' => [
+                        [
+                            'text'        => 'Emitir NFe',
+                            'url'         => '/nota_fiscal/create',
+                            'icon'        => 'fas fa-upload',
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text'        => 'Notas Emitidas (NFe)',
+                            'url'         => '/nota_fiscal',
+                            'icon'        => 'fas fa-list-ul',
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text'        => 'Baixar XML (NFe)',
+                            'url'         => '/notas',
+                            'icon'        => 'fas fa-download',
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text'        => 'Relatórios (NFe)',
+                            'url'         => '/relatorios',
+                            'icon'        => 'fas fa-chart-area',
+                            'shift' => 'ml-2'
+                        ],
+                    ],
                 ],
             ],
         ],
@@ -459,38 +501,10 @@ return [
             'text' => 'Preferências',
             'url'  => '/preferencias',
             'icon' => 'fas fa-cogs',
+            'can'  => 'gerenciar preferencias'
         ],
-        [
-            'text'    => 'NFe',
-            'icon'    => 'far fa-file-alt',
-            'submenu' => [
-                [
-                    'text'        => 'Emitir NFe',
-                    'url'         => '/nota_fiscal/create',
-                    'icon'        => 'fas fa-upload',
-                    'shift' => 'ml-2'
-                ],
-                [
-                    'text'        => 'Notas Emitidas (NFe)',
-                    'url'         => '/nota_fiscal',
-                    'icon'        => 'fas fa-list-ul',
-                    'shift' => 'ml-2'
-                ],
-                [
-                    'text'        => 'Baixar XML (NFe)',
-                    'url'         => '/notas',
-                    'icon'        => 'fas fa-download',
-                    'shift' => 'ml-2'
-                ],
-                [
-                    'text'        => 'Relatórios (NFe)',
-                    'url'         => '/relatorios',
-                    'icon'        => 'fas fa-chart-area',
-                    'shift' => 'ml-2'
-                ],
-            ],
-        ],
-    
+
+
     ],
 
     /*

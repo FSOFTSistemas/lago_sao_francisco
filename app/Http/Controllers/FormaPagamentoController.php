@@ -14,7 +14,7 @@ class FormaPagamentoController extends Controller
      */
     public function index()
     {
-        $formaPagamento = FormaPagamento::daEmpresa(Auth::user()->empresa_id)->get();
+        $formaPagamento = FormaPagamento::all();
         return view('preferencias.formaPagamento', compact('formaPagamento'));
     }
 
@@ -25,7 +25,6 @@ class FormaPagamentoController extends Controller
                 'descricao' => 'required|string|max:255',
             ]);
 
-            $validated['empresa_id'] = Auth::user()->empresa_id;
             FormaPagamento::create($validated);
             return redirect()->route('formaPagamento.index')->with('success', 'Registro criado com sucesso!');
         } catch (\Exception $e) {

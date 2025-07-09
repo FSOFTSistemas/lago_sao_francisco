@@ -1,18 +1,21 @@
 <?php
 
 use App\Http\Controllers\AdiantamentoController;
+use App\Http\Controllers\AdicionalController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
-use App\Http\Controllers\BuffetItemController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
 use App\Http\Controllers\CategoriaController;
-use App\Http\Controllers\CategoriasCardapioController;
+use App\Http\Controllers\CategoriaParceiroController;
+use App\Http\Controllers\CategoriaProdutoController;
+use App\Http\Controllers\CategoriasDeItensCardapioController;
+use App\Http\Controllers\CfopController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
-use App\Http\Controllers\DiariaController;
+use App\Http\Controllers\DayUseController;
 use App\Http\Controllers\EmpresaContadorController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EmpresaPreferenciaController;
@@ -25,6 +28,7 @@ use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\HospedeController;
+use App\Http\Controllers\ItensDoCardapioController;
 use App\Http\Controllers\MapaQuartoController;
 use App\Http\Controllers\MapaReservaController;
 use App\Http\Controllers\NotaFiscalController;
@@ -39,8 +43,16 @@ use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\LogDayuseController;
+use App\Http\Controllers\ParceiroController;
+use App\Http\Controllers\PreferenciasHotelController;
+use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\UsuarioSenhaController;
+use App\Http\Controllers\VendedorController;
+use App\Livewire\Dayuse\ShowDayuse;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -95,8 +107,6 @@ Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('p
 
 Route::resource('espaco', EspacoController::class); //->middleware('permission:gerenciar espaco')
 
-Route::resource('diaria', DiariaController::class); //->middleware('permission:gerenciar diaria')
-
 Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')
 
 Route::resource('hospede', HospedeController::class);
@@ -120,11 +130,7 @@ Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('map
 
 Route::resource('aluguel', AluguelController::class);
 
-Route::resource('buffet', BuffetItemController::class);
-
 Route::resource('cardapios', CardapioController::class);
-
-Route::resource('categoriasCardapio', CategoriasCardapioController::class);
 
 Route::resource('estoques', EstoqueController::class);
 
@@ -138,7 +144,6 @@ Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name(
 
 Route::get('/espacos/disponibilidade', [EspacoDisponibilidadeController::class, 'getDisponibilidade']);
 
-
 // Responsável Técnico (RT)
 Route::resource('empresaRT', EmpresaRTController::class)->middleware('permission:gerenciar empresa');
 
@@ -147,3 +152,62 @@ Route::resource('empresaContador', EmpresaContadorController::class)->middleware
 
 // Preferências da Empresa
 Route::resource('empresaPreferencia', EmpresaPreferenciaController::class)->middleware('permission:gerenciar empresa');
+
+Route::resource('itemCardapio', ItensDoCardapioController::class);
+
+Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);
+
+//Rota para gerar PDF de cardapio
+Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('cardapios.pdf');
+
+Route::resource('cfop', CfopController::class);
+
+Route::resource('categoriaProduto', CategoriaProdutoController::class);
+
+Route::resource('adicionais', AdicionalController::class);
+
+Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
+
+Route::resource('dayuse', DayUseController::class)->middleware('caixa.aberto'); //esse é o middleware para impedir acesso caso o caixa esteja fechado
+
+Route::resource('itemDayuse', ItensDayUseController::class);
+
+Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clientes.search');
+
+Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
+
+Route::get('/fornecedores/search', [FornecedorController::class, 'search'])->name('fornecedores.search');
+
+Route::resource('parceiros', ParceiroController::class);
+
+Route::resource('categoriasParceiro', CategoriaParceiroController::class);
+
+Route::post('/calcular-valor', [AluguelController::class, 'calcularValor']);
+
+Route::post('/caixas/{id}/abrir', [CaixaController::class, 'abrir'])->name('caixas.abrir');
+
+Route::post('/caixas/{id}/fechar', [CaixaController::class, 'fechar'])->name('caixas.fechar');
+
+Route::get('/caixas/{caixa}/resumo', [CaixaController::class, 'getResumoFechamento']);
+
+Route::post('/dayuse/verifica-supervisor', [DayUseController::class, 'verificaSupervisor'])->name('dayuse.verificaSupervisor');
+
+Route::resource('logsdayuse', LogDayuseController::class);
+
+Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])->name('fluxoCaixa.pdf');
+
+Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');
+
+
+Route::post('contas-a-pagar/{contasAPagar}/pagar', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/usuario/alterar-senha', [UsuarioSenhaController::class, 'form'])->name('usuario.senha.form');
+    Route::post('/usuario/alterar-senha', [UsuarioSenhaController::class, 'atualizar'])->name('usuario.senha.atualizar');
+});
+
+Route::resource('souvenir', SouvenirController::class);
+
+Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])->name('preferencias.hotel');
+
+Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');

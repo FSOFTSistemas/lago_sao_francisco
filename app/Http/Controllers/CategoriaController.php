@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Http\Controllers\Controller;
+use App\Models\Tarifa;
 use Illuminate\Http\Request;
 
 class CategoriaController extends Controller
@@ -13,7 +14,6 @@ class CategoriaController extends Controller
     {
         $categorias = Categoria::withCount('quartos')->get();
         return view('categoria.index', compact('categorias'));
-
     }
 
     public function create()
@@ -22,29 +22,35 @@ class CategoriaController extends Controller
     }
 
     public function store(Request $request)
-{
-    try {
-        $validatedData = $request->validate([
-            'titulo' => 'required|string',
-            'ocupantes' => 'required|string',
-            'descricao' => 'nullable|string',
-            'status' => 'required|boolean',
-            'posicao' => 'nullable|string',
-        ]);
+    {
+        try {
+            $validatedData = $request->validate([
+                'titulo' => 'required|string',
+                'ocupantes' => 'required|string',
+                'descricao' => 'nullable|string',
+                'status' => 'required|boolean',
+                'posicao' => 'nullable|string',
+            ]);
 
-        if (empty($validatedData['posicao'])) {
-            $lastPosition = Categoria::max('posicao'); 
-            $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1;
+            if (empty($validatedData['posicao'])) {
+                $lastPosition = Categoria::max('posicao');
+                $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1;
+            }
+
+            $categoria = Categoria::create($validatedData);
+
+            Tarifa::create([
+                'nome' => $categoria->titulo,
+                'ativo' => true,
+                'categoria_id' => $categoria->id,
+            ]);
+
+            return redirect()->route('categoria.index')->with('success', 'Categoria criada com sucesso!');
+        } catch (\Exception $e) {
+            dd($e)->getMessage();
+            return redirect()->back()->with('error', 'Erro ao criar a categoria.');
         }
-
-        Categoria::create($validatedData);
-
-        return redirect()->route('categoria.index')->with('success', 'Categoria criada com sucesso!');
-    } catch (\Exception $e) {
-        dd($e)->getMessage();
-        return redirect()->back()->with('error', 'Erro ao criar a categoria.');
     }
-}
 
     public function edit($id)
     {
@@ -67,16 +73,16 @@ class CategoriaController extends Controller
                 'status' => 'required|boolean',
                 'posicao' => 'nullable|integer',
             ]);
-    
+
             $categoria = Categoria::findOrFail($id);
-    
+
             if (empty($request->posicao)) {
-                $lastPosition = Categoria::max('posicao'); 
-                $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1; 
+                $lastPosition = Categoria::max('posicao');
+                $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1;
             }
-    
+
             $categoria->update($validatedData);
-    
+
             return redirect()->route('categoria.index')->with('success', 'Categoria atualizada com sucesso!');
         } catch (\Exception $e) {
             dd($e->getMessage());

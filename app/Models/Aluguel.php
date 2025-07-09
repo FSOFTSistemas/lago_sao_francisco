@@ -27,7 +27,13 @@ class Aluguel extends Model
         'empresa_id',
         'forma_pagamento_id',
         'numero_pessoas_buffet',
-        'cardapio_id'
+        'cardapio_id',
+        'tipo'
+    ];
+
+    protected $casts = [
+        'data_inicio' => 'date',
+        'data_fim' => 'date',
     ];
 
     // === Relacionamentos diretos ===
@@ -57,26 +63,161 @@ class Aluguel extends Model
         return $this->belongsTo(Cardapio::class);
     }
 
-    // === Relacionamentos Many-to-Many ===
+    // === Relacionamentos do Buffet ===
 
-    public function adicionais()
+    /**
+     * Relacionamento com as escolhas do buffet
+     */
+    public function buffetEscolhas()
     {
-        return $this->belongsToMany(Adicional::class, 'adicionais_aluguel');
+        return $this->hasMany(BuffetEscolha::class);
     }
 
-    public function buffetItens()
+    // === Relacionamentos do Adicional ===
+
+    public function adicionaisAluguel()
     {
-        return $this->belongsToMany(BuffetItem::class, 'aluguel_buffet_item', 'aluguel_id', 'buffet_item_id');
+        return $this->hasMany(AdicionalAluguel::class);
     }
 
-    // === Relacionamento com itens agrupados por categoria ===
+      // === Relacionamentos de Pagamento ===
 
-    public function categoriaItens()
+    /**
+     * Relacionamento com os pagamentos do aluguel
+     */
+    public function pagamentos()
     {
-        return $this->hasMany(AluguelCategoriaItem::class);
+        return $this->hasMany(AluguelPagamento::class);
+    }
+
+    // === Métodos auxiliares para o Buffet ===
+
+    /**
+     * Recupera as escolhas de categorias do buffet agrupadas por categoria
+     */
+    public function getEscolhasCategorias()
+    {
+        return $this->buffetEscolhas()
+                    ->where('tipo', 'categoria_item')
+                    ->with(['categoria', 'item'])
+                    ->get()
+                    ->groupBy('categoria_id');
+    }
+
+    /**
+     * Recupera a opção de refeição escolhida
+     */
+    public function getEscolhaOpcaoRefeicao()
+    {
+        return $this->buffetEscolhas()
+                    ->where('tipo', 'opcao_refeicao')
+                    ->with('opcaoRefeicao')
+                    ->first();
+    }
+
+    /**
+     * Calcula o total do buffet baseado na opção escolhida e número de pessoas
+     */
+    public function calcularTotalBuffet()
+    {
+        $opcaoRefeicao = $this->getEscolhaOpcaoRefeicao();
+        
+        if ($opcaoRefeicao && $this->numero_pessoas_buffet) {
+            $precoPorPessoa = $opcaoRefeicao->opcaoRefeicao->preco_por_pessoa;
+            return $this->numero_pessoas_buffet * $precoPorPessoa;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Verifica se o aluguel tem buffet ativo
+     */
+    public function temBuffet()
+    {
+        return !is_null($this->cardapio_id) && !is_null($this->numero_pessoas_buffet);
+    }
+
+    /**
+     * Recupera todas as escolhas do buffet formatadas para exibição
+     */
+    public function getBuffetEscolhasFormatadas()
+    {
+        $escolhas = [
+            'categorias' => [],
+            'opcao_refeicao' => null,
+            'total' => 0
+        ];
+
+        // Categorias e itens
+        $categorias = $this->getEscolhasCategorias();
+        foreach ($categorias as $categoriaId => $itens) {
+            $categoria = $itens->first()->categoria;
+            $escolhas['categorias'][] = [
+                'nome' => $categoria->nome,
+                'itens' => $itens->pluck('item.nome')->toArray()
+            ];
+        }
+
+        // Opção de refeição
+        $opcaoRefeicao = $this->getEscolhaOpcaoRefeicao();
+        if ($opcaoRefeicao) {
+            $escolhas['opcao_refeicao'] = [
+                'nome' => $opcaoRefeicao->opcaoRefeicao->nome,
+                'preco_por_pessoa' => $opcaoRefeicao->opcaoRefeicao->preco_por_pessoa
+            ];
+        }
+
+        // Total
+        $escolhas['total'] = $this->calcularTotalBuffet();
+
+        return $escolhas;
+    }
+
+    // === Métodos auxiliares para Pagamento ===
+
+    /**
+     * Calcula o total pago para este aluguel
+     */
+    public function getTotalPago()
+    {
+        return $this->pagamentos()->sum('valor');
+    }
+
+    /**
+     * Calcula o valor restante a ser pago
+     */
+    public function getValorRestante()
+    {
+        return $this->total - $this->getTotalPago();
+    }
+
+    /**
+     * Verifica se o aluguel está totalmente pago
+     */
+    public function estaPago()
+    {
+        return $this->getValorRestante() <= 0;
+    }
+
+    /**
+     * Recupera os pagamentos formatados para exibição
+     */
+    public function getPagamentosFormatados()
+    {
+        return $this->pagamentos()
+                    ->with('formaPagamento')
+                    ->get()
+                    ->map(function ($pagamento) {
+                        return [
+                            'id' => $pagamento->id,
+                            'forma_pagamento' => $pagamento->formaPagamento->nome,
+                            'valor' => $pagamento->valor,
+                            'data_pagamento' => $pagamento->created_at->format('d/m/Y H:i')
+                        ];
+                    });
     }
     
-
     // === Escopos globais ===
 
     protected static function booted()
@@ -84,3 +225,4 @@ class Aluguel extends Model
         static::addGlobalScope(new EmpresaScope);
     }
 }
+

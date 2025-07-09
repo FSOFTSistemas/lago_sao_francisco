@@ -178,17 +178,18 @@
         @endif
 
     </div>
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 @stop
 
 @section('adminlte_js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
 @if(session('success'))
 <script>
     Swal.fire({
         title: 'Sucesso!',
-        text: "{{ session('success') }}",
+        html: `{!! session('success') !!}`,
         icon: 'success',
         confirmButtonText: 'OK'
     });
@@ -205,6 +206,20 @@
     });
 </script>
 @endif
+
+@if (session('sweet_error'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                icon: 'error',
+                title: 'Atenção!',
+                text: '{{ session('sweet_error') }}',
+                confirmButtonColor: '#d33'
+            });
+        });
+    </script>
+@endif
+
 
     @stack('js')
     @yield('js')

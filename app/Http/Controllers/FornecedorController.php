@@ -12,9 +12,19 @@ class FornecedorController extends Controller
      */
     public function index()
     {
-        $fornecedor = Fornecedor::all();
-        return view('fornecedor.index', compact('fornecedor'));
+        $fornecedores = Fornecedor::all();
+        return view('fornecedor.index', compact('fornecedores'));
     }
+
+    public function search(Request $request)
+{
+    $term = $request->get('q');
+
+    return Fornecedor::where('nome_fantasia', 'like', "%{$term}%")
+        ->limit(20)
+        ->get(['id', 'nome_fantasia']);
+}
+
 
 
     /**
@@ -26,9 +36,9 @@ class FornecedorController extends Controller
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
-                'cnpj' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'required|string'
+                'inscricao_estadual' => 'nullable|string'
             ]);
             Fornecedor::create($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
@@ -49,9 +59,9 @@ class FornecedorController extends Controller
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
-                'cnpj' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'required|string'
+                'inscricao_estadual' => 'nullable|string'
             ]);
             $fornecedor->update($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');

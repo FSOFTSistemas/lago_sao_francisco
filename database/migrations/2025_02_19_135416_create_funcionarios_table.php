@@ -14,13 +14,16 @@ return new class extends Migration
         Schema::create('funcionarios', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->string('cpf')->unique();
+            $table->string('cpf')->unique()->nullable();
             $table->unsignedBigInteger('endereco_id')->nullable();
-            $table->decimal('salario', 10, 2);
+            $table->decimal('salario', 10, 2)->nullable();
             $table->date('data_contratacao');
             $table->enum('status', ['ativo', 'inativo']);
             $table->string('setor');
             $table->string('cargo');
+            $table->boolean('vendedor')->default(false);
+            $table->boolean('caixa')->default(false);
+            $table->string('senha_supervisor')->nullable();
             $table->unsignedBigInteger('empresa_id');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
             $table->foreign('endereco_id')->references('id')->on('enderecos')->onDelete('cascade');

@@ -8,9 +8,9 @@
             </div>
             <div class="col-md-3">
                 <label for="cliente" class="form-label">Cliente</label>
-                <input type="text" id="cliente" wire:model="cliente.nome_razao_social" readonly
-                    class="form-control" placeholder="Clique para selecionar" style="cursor: pointer;"
-                    wire:click="abrirModalCliente" />
+                <input type="text" id="cliente" wire:model="cliente.razao_social"
+                    wire:key="cliente1-{{ $keyCliente }}" readonly class="form-control"
+                    placeholder="Clique para selecionar" style="cursor: pointer;" wire:click="abrirModalCliente" />
             </div>
             <div class="col-md-1">
                 <label for="numero" class="form-label">N. Nota</label>
@@ -31,14 +31,16 @@
             </div>
             <div class="col-md-2">
                 <label for="tipo_nota" class="form-label">Tipo de Nota</label>
-                <select id="tipo_nota" wire:model="tipo_nota" class="form-select form-control">
-                    <option value="entrada">Entrada</option>
-                    <option value="saida">Saída</option>
+                <select id="tipo_nota" wire:model="tipo_nota" wire:init="$set('tipo_nota', 1)"
+                    class="form-select form-control">
+                    <option value="0">Entrada</option>
+                    <option value="1">Saída</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <label for="finalidade" class="form-label">Finalidade da Nota</label>
-                <select id="finalidade" wire:model="finalidade" class="form-select form-control">
+                <select id="finalidade" wire:model="finalidade" wire:init="$set('finalidade', 1)"
+                    class="form-select form-control">
                     <option value="1">NF-e normal</option>
                     <option value="2">NF-e complementar</option>
                     <option value="3">NF-e de ajuste</option>
@@ -47,10 +49,20 @@
             </div>
             <div class="col-md-3">
                 <label for="forma_pagamento" class="form-label">Forma de Pagamento</label>
-                <select id="forma_pagamento" wire:model="forma_pagamento" class="form-select form-control">
+                <select id="forma_pagamento" wire:model="forma_pagamento" wire:init="$set('forma_pagamento', 0)"
+                    class="form-select form-control">
                     <option value="0">Pagamento à Vista</option>
                     <option value="1">Pagamento a Prazo</option>
                 </select>
+            </div>
+            <div class="col-md-2">
+                <label for="cfop" class="form-label">CFOP</label>
+                <div class="input-group">
+                    <input type="text" id="cfop" class="form-control" wire:model="cfop" placeholder="Digite ou selecione o CFOP" />
+                    <button class="btn btn-outline-secondary" type="button" wire:click="abrirModalCfop">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -146,72 +158,78 @@
                             <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
                         </div>
                     </div>
+                    <div class="col-12 text-end mt-3">
+                        <button type="button" wire:click="salvarNfe" class="btn btn-success me-2">
+                            <i class="fas fa-save"></i> Gravar Nota
+                        </button>
+
+                        <a href="{{ route('nota_fiscal.index') }}">
+                            <button type="button" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </a>
+
+                    </div>
                 </div>
             </div>
-@elseif($aba == 'faturamento')
-    <div x-data="{ forma: '' }" role="tabpanel" class="tab-pane active">
-        <div class="mb-3">
-            <label for="forma_pagamento_detalhada" class="form-label">Forma de Pagamento</label>
-            <select id="forma_pagamento_detalhada" x-model="forma" wire:model="forma_pagamento_detalhada" class="form-control">
-                <option value="">Selecione</option>
-                <option value="01">01 - Dinheiro</option>
-                <option value="02">02 - Cheque</option>
-                <option value="03">03 - Cartão de Crédito</option>
-                <option value="04">04 - Cartão de Débito</option>
-                <option value="15">15 - Boleto Bancário</option>
-                <option value="16">16 - Depósito Bancário</option>
-                <option value="17">17 - Pagamento Instantâneo (PIX)</option>
-                <option value="90">90 - Sem Pagamento</option>
-                <option value="99">99 - Outros</option>
-            </select>
-        </div>
-        <div x-show="forma === '03'" class="mb-3">
-            <label for="quantidade_parcelas" class="form-label">Quantidade de Parcelas</label>
-            <input type="number" id="quantidade_parcelas" wire:model.defer="quantidade_parcelas" class="form-control" min="1" />
-        </div>
-        <div x-show="forma === '03'" class="mb-3">
-            <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
-            <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao" class="form-control" />
-        </div>
+        @elseif($aba == 'faturamento')
+            <div x-data="{ forma: '' }" role="tabpanel" class="tab-pane active">
+                <div class="mb-3">
+                    <label for="forma_pagamento_detalhada" class="form-label">Forma de Pagamento</label>
+                    <select id="forma_pagamento_detalhada" x-model="forma" wire:model="forma_pagamento_detalhada"
+                        class="form-control">
+                        <option value="">Selecione</option>
+                        <option value="01">01 - Dinheiro</option>
+                        <option value="02">02 - Cheque</option>
+                        <option value="03">03 - Cartão de Crédito</option>
+                        <option value="04">04 - Cartão de Débito</option>
+                        <option value="15">15 - Boleto Bancário</option>
+                        <option value="16">16 - Depósito Bancário</option>
+                        <option value="17">17 - Pagamento Instantâneo (PIX)</option>
+                        <option value="90">90 - Sem Pagamento</option>
+                        <option value="99">99 - Outros</option>
+                    </select>
+                </div>
+                <div x-show="forma === '03'" class="mb-3">
+                    <label for="quantidade_parcelas" class="form-label">Quantidade de Parcelas</label>
+                    <input type="number" id="quantidade_parcelas" wire:model.defer="quantidade_parcelas"
+                        class="form-control" min="1" />
+                </div>
+                <div x-show="forma === '03'" class="mb-3">
+                    <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
+                    <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao"
+                        class="form-control" />
+                </div>
 
-        <div x-show="forma === '04'" class="mb-3">
-            <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
-            <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao" class="form-control" />
-        </div>
+                <div x-show="forma === '04'" class="mb-3">
+                    <label for="bandeira_cartao" class="form-label">Bandeira do Cartão</label>
+                    <input type="text" id="bandeira_cartao" wire:model.defer="bandeira_cartao"
+                        class="form-control" />
+                </div>
 
-        <div x-show="forma === '15'" class="mb-3">
-            <label for="data_vencimento" class="form-label">Data de Vencimento</label>
-            <input type="date" id="data_vencimento" wire:model.defer="data_vencimento" class="form-control" />
-        </div>
-    </div>
+                <div x-show="forma === '15'" class="mb-3">
+                    <label for="data_vencimento" class="form-label">Data de Vencimento</label>
+                    <input type="date" id="data_vencimento" wire:model.defer="data_vencimento"
+                        class="form-control" />
+                </div>
+            </div>
         @elseif($aba == 'complementares')
             <div role="tabpanel" class="tab-pane active">
                 <div class="mb-3">
                     <label for="informacoes_complementares" class="form-label">Informações Complementares</label>
-                    <textarea
-                        id="informacoes_complementares"
-                        wire:model.defer="informacoes_complementares"
-                        class="form-control"
-                        rows="5"
-                        style="text-transform: uppercase;"
-                        oninput="this.value = this.value.toUpperCase();"
-                        placeholder="Digite informações complementares..."
-                    ></textarea>
+                    <textarea id="informacoes_complementares" wire:model.defer="informacoes_complementares" class="form-control"
+                        rows="5" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase();"
+                        placeholder="Digite informações complementares..."></textarea>
                 </div>
             </div>
         @elseif($aba == 'referenciada')
             <div role="tabpanel" class="tab-pane active">
                 <div class="mb-3">
                     <label for="nfe_referenciada" class="form-label">Chave da NFe Referenciada</label>
-                    <input
-                        type="text"
-                        id="nfe_referenciada"
-                        wire:model.defer="chave_nfe_referenciada"
-                        class="form-control"
-                        maxlength="44"
+                    <input type="text" id="nfe_referenciada" wire:model.defer="chave_nfe_referenciada"
+                        class="form-control" maxlength="44"
                         oninput="this.value = this.value.replace(/\D/g, '').slice(0, 44)"
-                        placeholder="Digite a chave com até 44 dígitos"
-                    />
+                        placeholder="Digite a chave com até 44 dígitos" />
                 </div>
             </div>
         @endif
@@ -231,24 +249,29 @@
                     <form>
                         <div class="mb-3">
                             <label for="produto" class="form-label">Produto</label>
-                            <input type="text" id="produto" wire:model="novoItem.produto" readonly
-                                class="form-control" placeholder="Clique para selecionar" style="cursor: pointer;"
+                            <input type="text" id="produto" wire:model="novoItem.produto"
+                                wire:key="prodBusca-{{ $keyProd }}" readonly class="form-control"
+                                placeholder="Clique para selecionar" style="cursor: pointer;"
                                 wire:click="abrirModalProduto" />
                         </div>
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="quantidade" class="form-label">Quantidade</label>
-                                <input type="number" id="quantidade" wire:model="novoItem.quantidade" wire:blur="atualizarTotaisItem"
-                                    class="form-control" min="1" />
+                                <input type="number" id="quantidade" wire:model="novoItem.quantidade"
+                                    wire:blur="atualizarTotaisItem" class="form-control" min="1"
+                                    wire:key="prodBusca-{{ $keyProd }}" />
                             </div>
                             <div class="col-md-4">
                                 <label for="valor_unitario" class="form-label">Valor Unitário</label>
-                                <input type="number" id="valor_unitario" wire:model="novoItem.valor_unitario" wire:blur="atualizarTotaisItem"
-                                    class="form-control" step="0.01" />
+                                <input type="number" id="valor_unitario" wire:model="novoItem.valor_unitario"
+                                    wire:blur="atualizarTotaisItem" class="form-control" step="0.01"
+                                    wire:key="prodBusca-{{ $keyProd }}" />
                             </div>
                             <div class="col-md-4">
                                 <label for="subtotal" class="form-label">Subtotal</label>
-                                <input type="text" id="subtotal" class="form-control" value="{{ number_format($novoItem['subtotal'], 2, ',', '.') }}" readonly />
+                                <input type="text" id="subtotal" class="form-control"
+                                    value="{{ number_format($novoItem['subtotal'], 2, ',', '.') }}"
+                                    wire:key="prodBusca-{{ $keyProd }}" readonly />
                             </div>
                         </div>
 
@@ -267,32 +290,35 @@
                                 <div class="col-md-3">
                                     <label for="cst" class="form-label">CST</label>
                                     <input type="text" id="cst" wire:model="novoItem.cst"
-                                        class="form-control" />
+                                        class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="cfop" class="form-label">CFOP</label>
                                     <input type="text" id="cfop" wire:model="novoItem.cfop"
-                                        class="form-control" />
+                                        class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="csosn" class="form-label">CSOSN</label>
                                     <input type="text" id="csosn" wire:model="novoItem.csosn"
-                                        class="form-control" />
+                                        class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-3">
                                     <label for="aliquota" class="form-label">Alíquota (%)</label>
                                     <input type="number" id="aliquota" wire:model="novoItem.aliquota"
-                                        class="form-control" step="0.01" />
+                                        class="form-control" step="0.01"
+                                        wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-4">
                                     <label for="valor_icms" class="form-label">Valor do ICMS</label>
                                     <input type="number" id="valor_icms" wire:model="novoItem.valor_icms"
-                                        class="form-control" step="0.01" />
+                                        class="form-control" step="0.01"
+                                        wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-4">
                                     <label for="base_calculo" class="form-label">Base de Cálculo</label>
                                     <input type="number" id="base_calculo" wire:model="novoItem.base_calculo"
-                                        class="form-control" step="0.01" />
+                                        class="form-control" step="0.01"
+                                        wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                             </div>
                         @endif
@@ -370,4 +396,39 @@
             </div>
         </div>
     </div>
+
+
+    <!-- Modal para selecionar CFOP -->
+    <div class="modal fade @if ($modalCfopAberto) show d-block @endif" tabindex="-1"
+        style="@if ($modalCfopAberto) background-color: rgba(0,0,0,0.5); @else display:none; @endif"
+        aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar CFOP</h5>
+                    <button type="button" class="btn-close" wire:click="fecharModalCfop"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" wire:model="buscaCfop" placeholder="Buscar CFOP ou descrição..."
+                        class="form-control mb-3" />
+
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @foreach ($cfops as $cfop)
+                            <div wire:click="selecionarCfop('{{ $cfop['codigo'] }}')" class="p-2 border-bottom"
+                                style="cursor:pointer;">
+                                <strong>{{ $cfop['codigo'] }}</strong> - {{ $cfop['descricao'] }}
+                            </div>
+                        @endforeach
+                        @if (count($cfops) === 0)
+                            <p>Nenhum CFOP encontrado.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" wire:click="fecharModalCfop" class="btn btn-secondary">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>

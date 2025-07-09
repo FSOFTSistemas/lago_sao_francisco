@@ -10,15 +10,7 @@
 @section('content')
 <h5>Configurações de Hotel / Cadastro</h5>
     <div class="row">
-        <!-- Formas de Pagamento -->
-        <div class="col-md-3">
-            <a href="{{ route('formaPagamento.index') }}" class="card card-opcao text-center">
-                <div class="card-body">
-                    <i class="fas fa-credit-card fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Formas de Pagamento</h5>
-                </div>
-            </a>
-        </div>
+       
         <!-- Tarifas Hotel -->
         <div class="col-md-3">
             <a href="{{ route('tarifa.index')}}" class="card card-opcao text-center">
@@ -46,6 +38,15 @@
                 </div>
             </a>
         </div>
+        <!-- Preferências do Hotel -->
+        <div class="col-md-3">
+            <a href="{{ route('preferencias.hotel')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fa fa-key fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Preferências - Reserva</h5>
+                </div>
+            </a>
+        </div>
     </div>
     <br>
     <h5>Configurações de Eventos / Cadastro</h5>
@@ -61,7 +62,7 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ route('buffet.index')}}" class="card card-opcao text-center">
+            <a href="{{ route('itemCardapio.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-utensils fa-3x" style="color: #679A4C;"></i>
                     <h5 class="mt-3">Itens Buffet</h5>
@@ -77,10 +78,77 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{{ route('categoriasCardapio.index')}}" class="card card-opcao text-center">
+            <a href="{{ route('adicionais.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-chair fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Adicionais (Mobília)</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('parceiros.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-handshake fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Parceiros</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('categoriasParceiro.index')}}" class="card card-opcao text-center">
                 <div class="card-body">
                     <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
-                    <h5 class="mt-3">Categorias do Cardapio</h5>
+                    <h5 class="mt-3">Categorias Parceiros</h5>
+                </div>
+            </a>
+        </div>
+    </div>
+     <br>
+    <h5>Configurações Gerais / Cadastro</h5>
+    <br>
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{{ route('categoriaProduto.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-bookmark fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Categorias dos Produtos</h5>
+                </div>
+            </a>
+        </div>
+         <!-- Formas de Pagamento -->
+        <div class="col-md-3">
+            <a href="{{ route('formaPagamento.index') }}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-credit-card fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Formas de Pagamento</h5>
+                </div>
+            </a>
+        </div>
+    </div>
+     <br>
+    <h5>Configurações Day Use / Cadastro</h5>
+    <br>
+    <div class="row">
+        <div class="col-md-3">
+            <a href="{{ route('itemDayuse.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-ticket-alt fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Entrada/Passeios</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('logsdayuse.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-info fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Logs</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{{ route('souvenir.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-gift fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Souvenir</h5>
                 </div>
             </a>
         </div>

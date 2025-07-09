@@ -20,7 +20,7 @@
                       <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="valor">Valor:</label>
-                            <input type="text" class="form-control" id="valor" name="valor" required>
+                            <input type="number" class="form-control" id="valor" name="valor" required>
                         </div>
                         
                         <div class="col-md-6 mb-3">
@@ -42,8 +42,8 @@
                           <label for="caixa">caixa:</label>
                           <select class="form-control" id="caixa" name="caixa_id" required>
                               <option value="">Selecione</option>
-                              @foreach ($caixa as $caixa)
-                                  <option value="{{ $caixa->id }}">{{ \Illuminate\Support\Carbon::parse($caixa->data_abertura)->format('d/m/Y') }}</option>
+                              @foreach ($caixas as $caixa)
+                                  <option value="{{ $caixa->id }}">{{ $caixa->descricao}}</option>
                               @endforeach
                           </select>
                         </div>
@@ -61,7 +61,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="valorTotal">Valor Total:</label>
-                            <input type="text" class="form-control" id="valorTotal" name="valor_total" required>
+                            <input type="number" class="form-control" id="valorTotal" name="valor_total" required>
                         </div>
                     </div>
                     
@@ -70,7 +70,7 @@
                         <label for="empresa">Empresa:</label>
                         <select class="form-control" id="empresa" name="empresa_id" required>
                             <option value="">Selecione</option>
-                            @foreach ($empresa as $empresa)
+                            @foreach ($empresas as $empresa)
                                 <option value="{{ $empresa->id }}">{{ $empresa->nome_fantasia }}</option>
                             @endforeach
                         </select>
@@ -79,7 +79,7 @@
                       
                       <div class="mb-3">
                         <label for="planoDeConta">Plano de conta:</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_conta_id">
+                        <select class="form-control" id="planoDeConta" name="plano_de_conta_id" required>
                           <option value="">Selecione</option>
                           @foreach ($planoDeContas as $planoDeConta)
                             <option value="{{$planoDeConta->id}}">{{$planoDeConta->descricao}}</option>

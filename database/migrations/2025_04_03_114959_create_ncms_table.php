@@ -19,17 +19,7 @@ return new class extends Migration
             $table->string('descricao');
             $table->timestamps();
         });
-        $path = Storage::path('public/ncms/ncms.csv');
-        $ncms = explode("\r\n", file_get_contents($path));
-        foreach ($ncms as $n) {
-            if ($n) {
-                $ncm = (explode(";", $n));
-                Ncm::create([
-                    'ncm' => $ncm[0],
-                    'descricao' => $ncm[1],
-                ]);
-            }
-        }
+        
     }
 
     /**

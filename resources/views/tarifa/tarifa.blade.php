@@ -51,19 +51,18 @@
                           <i class="fa-regular fa-circle-xmark"></i>
                       @endif
                     </td>
-                    <td>{{ $tarifa->nome }}</td>
-                    <td>{{ $tarifa->categoria }}</td>
+                    <td>
+                        <a id="editlink" href="{{ route('tarifa.edit', $tarifa->id) }}">
+                            {{ $tarifa->nome }}
+                          </a>
+                    </td>
+                    <td>{{ $tarifa->categoria->titulo }}</td>
                     <td>{{ \Illuminate\Support\Carbon::parse($tarifa->updated_at)->format('d/m/Y H:i') }}</td>
                     <td>
-                        <!-- Botão Editar -->
+                        {{-- <!-- Botão Editar -->
                         <a href="{{route('tarifa.edit', $tarifa->id)}}" class="btn btn-warning btn-sm">
                           ✏️
-                      </a>
-                        <!-- Botão Excluir -->
-                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#deleteTarifaModal{{ $tarifa->id }}">
-                            🗑️
-                        </button>
+                      </a> --}}
                     </td>
                 </tr>
 

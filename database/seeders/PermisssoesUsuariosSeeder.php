@@ -37,6 +37,14 @@ class PermisssoesUsuariosSeeder extends Seeder
             'gerenciar fornecedor',
             'gerenciar plano de conta',
             'gerenciar produto',
+            'gerenciar cardapio',
+            'gerenciar preferencias',
+            'gerenciar dayuse',
+            'vender dayuse',
+            'cadastrar aluguel',
+            'gerenciar aluguel',
+            'hotel',
+            'gerenciar NFe'
         ];
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
@@ -83,27 +91,6 @@ class PermisssoesUsuariosSeeder extends Seeder
             'gerenciar fornecedor',
             'gerenciar plano de conta',
             'gerenciar produto');
-
-        $movimentos = [
-            'venda-dinheiro',                   
-            'venda-cartão',
-            'venda-pix',
-            'venda-carteira',
-            'venda-cheque',
-            'recebimento-dinheiro',
-            'recebimento-cartão',
-            'recebimento-pix',
-            'recebimento-carteira',
-            'recebimento-cheque',
-            'sangria',
-            'suprimento',
-        ];
-
-        foreach ($movimentos as $descricao) {
-            Movimento::firstOrCreate([
-                'descricao' => $descricao,
-            ]);
-        }
 
         Hospede::firstOrCreate(
             ['nome' => 'Bloqueado']
