@@ -19,8 +19,9 @@ class ContasAPagar extends Model
         'data_pagamento',
         'status',
         'empresa_id',
-        'plano_de_conta_id',
-        'fornecedor_id'
+        'plano_de_contas_id',
+        'fornecedor_id',
+        'total_parcelas'
     ];
 
     public function empresa()

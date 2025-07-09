@@ -160,7 +160,7 @@ class CaixaController extends Controller
             ->get();
 
 
-        // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento) e soma o fundo de caixa
+        // Cálculo de saldo inclui todos os tipos (entrada, saida, cancelamento) e soma o fundo de caixa
         $saldo = $fluxos
             ->filter(fn($fluxo) => optional($fluxo->movimento)->descricao !== 'fechamento de caixa')
             ->sum('valor') + $caixa->valor_inicial;

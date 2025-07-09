@@ -19,7 +19,7 @@ return new class extends Migration {
             $table->date('data_pagamento')->nullable();
             $table->enum('status', ['pendente', 'pago'])->default('pendente');
             $table->unsignedBigInteger('empresa_id');
-            $table->unsignedBigInteger('plano_de_contas_id')->nullable();
+            $table->unsignedBigInteger('plano_de_contas_id');
             $table->unsignedBigInteger('fornecedor_id')->nullable();
             
             // Novos campos de parcelamento
