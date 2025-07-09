@@ -7,50 +7,50 @@
 @stop
 
 @section('content')
-    <div class='container-fluid'>
-        <div class='row'>
+    <div class="container-fluid">
+        <div class="row">
             <!-- Coluna Principal (Formulário) -->
-            <div class='col-lg-8'>
-                <div class='card'>
-                    <div class='card-header green bg-primary text-white'>
-                        <h3 class='card-title'>
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header green bg-primary text-white">
+                        <h3 class="card-title">
                             {{ isset($reserva) ? 'Editar informações da Reserva' : 'Preencha os dados da nova Reserva' }}
                         </h3>
                     </div>
-                    <div class='card-body'>
-                        <form id='createReservaForm'
-                            action='{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}
-                            method='POST' enctype='multipart/form-data'>
+                    <div class="card-body">
+                        <form id="createReservaForm"
+                            action="{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}"
+                            method="POST" enctype="multipart/form-data">
                             @csrf
                             @if (isset($reserva))
                                 @method('PUT')
                             @endif
 
-                            <div class='form-group row' id='campoSituacao'>
-                                <label class='col-md-3 label-control'><strong>* Situação</strong></label>
-                                <div class='situacao-options'>
+                            <div class="form-group row" id="campoSituacao">
+                                <label class="col-md-3 label-control"><strong>* Situação</strong></label>
+                                <div class="situacao-options">
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='pre-reserva'
+                                    <label class="radio-option">
+                                        <input type="radio" name="situacao" value="pre-reserva"
                                             @checked(old('situacao', $reserva->situacao ?? '') === 'pre-reserva') required>
-                                        <span class='badge badge-warning'>pré-reservar</span>
+                                        <span class="badge badge-warning">pré-reservar</span>
                                     </label>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='reserva' @checked(old('situacao', $reserva->situacao ?? '') === 'reserva')>
-                                        <span class='badge badge-primary'>reservar</span>
+                                    <label class="radio-option">
+                                        <input type="radio" name="situacao" value="reserva" @checked(old('situacao', $reserva->situacao ?? '') === 'reserva')>
+                                        <span class="badge badge-primary">reservar</span>
                                     </label>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='hospedado'
+                                    <label class="radio-option">
+                                        <input type="radio" name="situacao" value="hospedado"
                                             @checked(old('situacao', $reserva->situacao ?? '') === 'hospedado')>
-                                        <span class='badge badge-danger'>hospedar</span>
+                                        <span class="badge badge-danger">hospedar</span>
                                     </label>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='bloqueado'
+                                    <label class="radio-option">
+                                        <input type="radio" name="situacao" value="bloqueado"
                                             @checked(old('situacao', $reserva->situacao ?? '') === 'bloqueado')>
-                                        <span class='badge badge-dark'>bloquear datas</span>
+                                        <span class="badge badge-dark">bloquear datas</span>
                                     </label>
                                 </div>
                             </div>
@@ -61,17 +61,17 @@
                                 <hr>
                             </div>
 
-                            <div class='form-group row'>
-                                <label for='hospede_id' class='col-md-3 label-control'>* Hóspede</label>
-                                <div class='col-sm-4'>
+                            <div class="form-group row">
+                                <label for="hospede_id" class="col-md-3 label-control">* Hóspede</label>
+                                <div class="col-sm-4">
                                     @php
                                         $hospedeSelecionado = old('hospede_id', $reserva->hospede_id ?? '');
                                     @endphp
 
                                     @if ($hospedeSelecionado)
-                                        <select class='form-control select2' name='hospede_id_disabled' id='hospede_id'
+                                        <select class="form-control select2" name="hospede_id_disabled" id="hospede_id"
                                             disabled>
-                                            <option value=''>Selecione um hóspede</option>
+                                            <option value="">Selecione um hóspede</option>
                                             @foreach ($hospedes as $hospede)
                                                 @if ($hospede->nome !== 'Bloqueado')
                                                     <option value="{{ $hospede->id }}"
@@ -81,9 +81,9 @@
                                                 @endif
                                             @endforeach
                                         </select>
-                                        <input type='hidden' name='hospede_id' value="{{ $hospedeSelecionado }}">
+                                        <input type="hidden" name="hospede_id" value="{{ $hospedeSelecionado }}">
                                     @else
-                                        <select class='form-control select2' name='hospede_id' id='hospede_id'>
+                                        <select class="form-control select2" name="hospede_id" id="hospede_id">
                                             <option value="">Selecione um hóspede</option>
                                             @foreach ($hospedes as $hospede)
                                                 @if ($hospede->nome !== 'Bloqueado')
@@ -204,102 +204,108 @@
 
             <!-- Coluna Lateral (Resumo e Pagamentos) -->
             @if (isset($reserva))
-                <div class='col-lg-4'>
+                <div class="col-lg-4">
                     <!-- Card de Resumo -->
-                    <div class='card shadow-sm mb-4'>
-                        <div class='card-header bg-light'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>FALTA LANÇAR</h5>
-                            <h2 class='text-danger mb-0' id='falta-lancar'>R$ 0,00</h2>
-                            <input type='hidden' id='valor-falta-lancar' name='falta_lancar' value='0.00'>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">FALTA LANÇAR</h5>
+                            <h2 class="text-danger mb-0" id="falta-lancar">R$ 0,00</h2>
+                            <input type="hidden" id="valor-falta-lancar" name="falta_lancar" value="0.00">
                         </div>
                     </div>
 
                     <!-- Card de Resumo Detalhado -->
-                    <div class='card shadow-sm mb-4'>
-                        <div class='card-header bg-light'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>RESUMO</h5>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">RESUMO</h5>
                         </div>
-                        <div class='card-body'>
-                            <div class='d-flex justify-content-between mb-2'>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Nº diárias</span>
-                                <span id='num-diarias'>1</span>
+                                <span id="num-diarias">1</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Diária Média</span>
-                                <span id='diaria-media'>R$ 0,00</span>
+                                <span id="diaria-media">R$ 0,00</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Diárias</span>
-                                <span id='total-diarias'>R$ 0,00</span>
+                                <span id="total-diarias">R$ 0,00</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Produtos</span>
-                                <span id='total-produtos'>R$ 0,00</span>
+                                <span id="total-produtos">R$ 0,00</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Serviços</span>
-                                <span id='total-servicos'>R$ 0,00</span>
+                                <span id="total-servicos">R$ 0,00</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <span>Alimentos</span>
-                                <span id='total-alimentos'>R$ 0,00</span>
+                                <span id="total-alimentos">R$ 0,00</span>
                             </div>
                             <hr>
-                            <div class='d-flex justify-content-between mb-2'>
+                            <div class="d-flex justify-content-between mb-2">
                                 <strong>Total</strong>
-                                <strong id='total-geral'>R$ 0,00</strong>
+                                <strong id="total-geral">R$ 0,00</strong>
                             </div>
-                            <div class='d-flex justify-content-between text-success'>
+                            <div class="d-flex justify-content-between text-success">
                                 <span>Recebido</span>
-                                <span id='total-recebido'>R$ 0,00</span>
+                                <span id="total-recebido">R$ 0,00</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Card de Atividades na Reserva -->
-                    <div class='card shadow-sm'>
-                        <div class='card-header bg-light d-flex justify-content-between align-items-center'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA RESERVA
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">ATIVIDADES NA RESERVA
                             </h5>
-                            <div class='dropdown'>
-                                <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
-                                    id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true'
-                                    aria-expanded='false'>
-                                    <i class='fas fa-plus'></i>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                                    id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true"
+                                    aria-expanded="false">
+                                    <i class="fas fa-plus"></i>
                                 </button>
-                                <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
-                                    <a class='dropdown-item' href='#'
+                                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <a class="dropdown-item" href="#"
                                         onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
-                                    <a class='dropdown-item' href='#'
+                                    <a class="dropdown-item" href="#"
                                         onclick="mostrarFormulario('produto')">Adicionar Produto</a>
+                                    <a class="dropdown-item" href="#"
+                                        onclick="mostrarFormulario('servico')">Adicionar Serviço</a>
+                                    <a class="dropdown-item" href="#"
+                                        onclick="mostrarFormulario('alimento')">Adicionar Alimento</a>
+                                    <a class="dropdown-item" href="#"
+                                        onclick="mostrarFormulario('desconto')">Adicionar Desconto</a>
                                 </div>
                             </div>
                         </div>
-                        <div class='card-body'>
-                            <div id='lista-atividades'>
-                                <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
+                        <div class="card-body">
+                            <div id="lista-atividades">
+                                <p class="text-muted text-center">Nenhuma atividade adicionada</p>
                             </div>
 
-                            <!-- Formulário para adicionar transação (pagamento) -->
-                            <div id='form-transacao-pagamento' style='display: none;'>
+                            <!-- Formulário para adicionar transação -->
+                            <div id="form-transacao" style="display: none;">
                                 <hr>
-                                <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
-                                <div class='form-group'>
-                                    <label for='descricao_transacao'>Descrição</label>
-                                    <input type='text' class='form-control' id='descricao_transacao'
-                                        placeholder='Ex: Pagamento da diária'>
+                                <h6 id="titulo-form">Adicionar Transação</h6>
+                                <div class="form-group">
+                                    <label for="descricao_transacao">Descrição</label>
+                                    <input type="text" class="form-control" id="descricao_transacao"
+                                        placeholder="Ex: Pagamento da diária">
                                 </div>
-                                <div class='form-group'>
-                                    <label for='valor_transacao'>Valor</label>
-                                    <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
+                                <div class="form-group">
+                                    <label for="valor_transacao">Valor</label>
+                                    <input type="text" class="form-control" id="valor_transacao" placeholder="0,00">
                                 </div>
-                                <div class='form-group'>
-                                    <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
-                                    <select class='form-control' id='forma_pagamento_transacao'>
-                                        <option value=''>Selecione...</option>
+                                <div class="form-group">
+                                    <label for="forma_pagamento_transacao">Forma de Pagamento</label>
+                                    <select class="form-control" id="forma_pagamento_transacao">
+                                        <option value="">Selecione...</option>
                                         @if (isset($formasPagamento))
                                             @foreach ($formasPagamento as $forma)
-                                                <option value='{{ $forma->id }}' {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>{{ $forma->descricao }}</option>
+                                                <option value="{{ $forma->id }}">{{ $forma->descricao }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -313,55 +319,13 @@
                                     <label for="observacoes_transacao">Observações</label>
                                     <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
                                 </div>
-                                <input type="hidden" id="categoria_transacao" value="hospedagem">
-                                <input type="hidden" id="tipo_transacao" value="pagamento">
+                                <input type="hidden" id="categoria_transacao" value="">
+                                <input type="hidden" id="tipo_transacao" value="">
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-success btn-sm"
                                         id="btn-salvar-transacao">Salvar</button>
                                     <button type="button" class="btn btn-secondary btn-sm"
                                         id="btn-cancelar-transacao">Cancelar</button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Formulário para adicionar produto -->
-                                <div id="form-transacao-produto" style="display: none;">
-                                    <hr>
-                                    <h6 id="titulo-form-produto">Adicionar Produto</h6>
-                                <div class="form-group">
-                                    <label for="produto_id">Produto</label>
-                                    <select class="form-control select2" id="produto_id">
-                                        <option value="">Selecione um produto</option>
-                                        @if (isset($produtos))
-                                            @foreach ($produtos as $produto)
-                                                <option value="{{ $produto->id }}" data-valor="{{ $produto->preco_venda }}" {{ old("produto_id") == $produto->id ? "selected" : "" }}>{{ $produto->descricao }} - R$ {{ number_format($produto->preco_venda, 2, ",", ".") }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="form-group row align-items-center">
-                                    <div class="col-md-4">
-                                        <label for="quantidade_produto">Quantidade</label>
-                                        <input type="number" class="form-control" id="quantidade_produto" value="1" min="1">
-                                    </div>
-                                    <div class="col-md-8">
-                                        <label for="total_item_produto">Total do Item</label>
-                                        <input type="text" class="form-control" id="total_item_produto" readonly value="0,00">
-                                    </div>
-                                </div>
-                                <button type="button" class="btn btn-info btn-sm mb-3" id="btn-adicionar-item-produto">Adicionar Item</button>
-
-                                <div id="lista-itens-produto">
-                                    <!-- Itens de produto adicionados dinamicamente aqui -->
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
-                                    <input type="text" class="form-control" id="total_produtos_adicionados" readonly value="0,00">
-                                </div>
-
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar Produtos</button>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-cancelar-produtos">Cancelar</button>
                                 </div>
                             </div>
                         </div>
@@ -422,7 +386,7 @@
     <div class="modal fade" id="modalCadastrarHospede" tabindex="-1" role="dialog"
         aria-labelledby="modalHospedeLabel" aria-hidden="true">
         <div class="modal-dialog " role="document">
-            <form method="POST" action="{{ route("hospede.store") }}">
+            <form method="POST" action="{{ route('hospede.store') }}">
                 @csrf
                 <div class="modal-content">
                     <div class="modal-header">
@@ -458,7 +422,7 @@
 
 
                     <div class="modal-footer">
-                        <a href="{{ route("hospede.create") }}" class="btn btn-secondary">Cadastro Completo</a>
+                        <a href="{{ route('hospede.create') }}">Cadastro Completo</a>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </div>
@@ -468,10 +432,10 @@
 @stop
 
 @section('css')
-    <link href='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css' rel='stylesheet' />
-    <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css' rel='stylesheet'>
-    <link href='https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css' rel='stylesheet' />
-    <link rel='stylesheet' type='text/css' href='https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css' />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <style>
         .label-control {
             text-align: right
@@ -495,11 +459,11 @@
             font-size: 1rem;
         }
 
-        .radio-option input[type='radio'] {
+        .radio-option input[type="radio"] {
             cursor: pointer;
         }
 
-        input[type='number'] {
+        input[type="number"] {
             max-width: 100%;
             padding: 6px 10px;
         }
@@ -592,7 +556,7 @@
             text-transform: uppercase !important;
         }
 
-        #form-transacao-pagamento, #form-transacao-produto {
+        #form-transacao {
             border-top: 1px solid #dee2e6;
             padding-top: 1rem;
             margin-top: 1rem;
@@ -688,20 +652,20 @@
 @stop
 
 @section('js')
-    <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/jquery/3.6.0/jquery.min.js'></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'></script>
-    <script src='https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/momentjs/latest/moment.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
-    <script src='{{ asset('js/endereco.js') }}'></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/cropperjs@1.5.13/dist/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/endereco.js') }}"></script>
 
     <script>
         $(document).ready(function() {
             $('.select2').select2({
-                placeholder: 'selecione...',
+                placeholder: "selecione...",
                 allowClear: true,
                 width: '100%'
             });
@@ -709,11 +673,11 @@
     </script>
     <script>
         $(document).ready(function() {
-            $("#telefone").mask("(00) 00000-0000");
-            $("#valor_diaria").mask("#.##0,00", {
+            $('#telefone').mask('(00) 00000-0000');
+            $('#valor_diaria').mask('#.##0,00', {
                 reverse: true
             });
-            $("#valor_transacao").mask("#.##0,00", {
+            $('#valor_transacao').mask('#.##0,00', {
                 reverse: true
             });
         })
@@ -721,16 +685,16 @@
 
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const modalHospede = document.getElementById("modalHospede");
-            modalHospede.addEventListener("hidden.bs.modal", function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalHospede = document.getElementById('modalHospede');
+            modalHospede.addEventListener('hidden.bs.modal', function() {
                 location.reload();
             });
         });
     </script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const dicas = [{
                     texto: "<strong>Situação:</strong> É o momento em que a reserva se encontra, ela pode estar como: <i>pré-reservado, reservado, hospedado, ou com bloqueio de data.</i> "
                 },
@@ -755,20 +719,20 @@
             ];
 
             let dicaAtual = 0;
-            const textoDica = document.getElementById("textoDica");
-            const indicadores = document.getElementById("indicadores");
-            const conteudoDicas = document.getElementById("conteudoDicas");
-            const btnToggle = document.getElementById("btnToggleDicas");
-            const iconeToggle = document.getElementById("iconeToggleDicas");
+            const textoDica = document.getElementById('textoDica');
+            const indicadores = document.getElementById('indicadores');
+            const conteudoDicas = document.getElementById('conteudoDicas');
+            const btnToggle = document.getElementById('btnToggleDicas');
+            const iconeToggle = document.getElementById('iconeToggleDicas');
 
             dicas.forEach((_, index) => {
-                const span = document.createElement("span");
-                span.classList.add("indicador");
-                span.style.width = "20px";
-                span.style.height = "4px";
-                span.style.margin = "0 3px";
-                span.style.borderRadius = "2px";
-                span.style.backgroundColor = index === 0 ? "#333" : "#e0e0e0";
+                const span = document.createElement('span');
+                span.classList.add('indicador');
+                span.style.width = '20px';
+                span.style.height = '4px';
+                span.style.margin = '0 3px';
+                span.style.borderRadius = '2px';
+                span.style.backgroundColor = index === 0 ? '#333' : '#e0e0e0';
                 indicadores.appendChild(span);
             });
 
@@ -783,7 +747,7 @@
 
             function atualizarIndicadores() {
                 [...indicadores.children].forEach((el, idx) => {
-                    el.style.backgroundColor = idx === dicaAtual ? "#333" : "#e0e0e0";
+                    el.style.backgroundColor = idx === dicaAtual ? '#333' : '#e0e0e0';
                 });
             }
 
@@ -792,15 +756,15 @@
 
             let expandido = true;
 
-            btnToggle.addEventListener("click", function() {
+            btnToggle.addEventListener('click', function() {
                 expandido = !expandido;
 
                 if (expandido) {
-                    conteudoDicas.classList.remove("collapsed");
-                    iconeToggle.classList = "fas fa-minus";
+                    conteudoDicas.classList.remove('collapsed');
+                    iconeToggle.classList = 'fas fa-minus';
                 } else {
-                    conteudoDicas.classList.add("collapsed");
-                    iconeToggle.classList = "fas fa-plus";
+                    conteudoDicas.classList.add('collapsed');
+                    iconeToggle.classList = 'fas fa-plus';
                 }
             });
         });
@@ -808,8 +772,8 @@
 
     <script>
         $(document).ready(function() {
-            const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? "" }}";
-            const diaria = $("#valor_diaria");
+            const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? '' }}";
+            const diaria = $('#valor_diaria');
             const valorDiariaArmazenado = diaria.val();
 
             function atualizarCampos() {
@@ -863,7 +827,6 @@
     <script>
         $(document).ready(function() {
             let transacoes = [];
-            let produtosAdicionados = []; // Array para armazenar os produtos adicionados
             const reservaId = $('#reserva_id').val();
 
             // Carregar transações existentes se estiver editando
@@ -1006,41 +969,49 @@
 
             // Mostrar formulário baseado no tipo
             window.mostrarFormulario = function(tipo) {
-                // Esconder todos os formulários de transação primeiro
-                $('#form-transacao-pagamento').slideUp();
-                $('#form-transacao-produto').slideUp();
+                let titulo, categoria, tipoTransacao;
 
-                if (tipo === 'pagamento') {
-                    $('#titulo-form-pagamento').text('Adicionar Pagamento');
-                    $('#categoria_transacao').val('hospedagem');
-                    $('#tipo_transacao').val('pagamento');
-                    $('#form-transacao-pagamento').slideDown();
-                } else if (tipo === 'produto') {
-                    $('#titulo-form-produto').text('Adicionar Produto');
-                    $('#form-transacao-produto').slideDown();
-                    // Limpar e inicializar campos do produto
-                    $('#produto_id').val('').trigger('change');
-                    $('#quantidade_produto').val(1);
-                    $('#total_item_produto').val('0,00');
-                    produtosAdicionados = [];
-                    atualizarListaItensProduto();
-                    atualizarTotalProdutosAdicionados();
+                switch (tipo) {
+                    case 'pagamento':
+                        titulo = 'Adicionar Pagamento';
+                        categoria = 'hospedagem';
+                        tipoTransacao = 'pagamento';
+                        break;
+                    case 'produto':
+                        titulo = 'Adicionar Produto';
+                        categoria = 'produtos';
+                        tipoTransacao = 'pagamento';
+                        break;
+                    case 'servico':
+                        titulo = 'Adicionar Serviço';
+                        categoria = 'servicos';
+                        tipoTransacao = 'pagamento';
+                        break;
+                    case 'alimento':
+                        titulo = 'Adicionar Alimento';
+                        categoria = 'alimentos';
+                        tipoTransacao = 'pagamento';
+                        break;
+                    case 'desconto':
+                        titulo = 'Adicionar Desconto';
+                        categoria = 'hospedagem';
+                        tipoTransacao = 'desconto';
+                        break;
                 }
+
+                $('#titulo-form').text(titulo);
+                $('#categoria_transacao').val(categoria);
+                $('#tipo_transacao').val(tipoTransacao);
+                $('#form-transacao').slideDown();
             };
 
             $('#btn-cancelar-transacao').click(function() {
-                $('#form-transacao-pagamento').slideUp();
+                $('#form-transacao').slideUp();
                 limparFormularioTransacao();
             });
 
-            $('#btn-cancelar-produtos').click(function() {
-                $('#form-transacao-produto').slideUp();
-                produtosAdicionados = [];
-                atualizarListaItensProduto();
-                atualizarTotalProdutosAdicionados();
-            });
+            // Salvar transação
 
-            // Salvar transação (pagamento)
             $('#btn-salvar-transacao').click(function() {
 
                 const descricao = $('#descricao_transacao').val();
@@ -1068,7 +1039,7 @@
                     return;
                 }
 
-                 const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+                const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
                 const dados = {
                     descricao: descricao,
@@ -1093,7 +1064,7 @@
                             transacoes.push(response.transacao);
                             atualizarListaAtividades();
                             atualizarResumo();
-                            $('#form-transacao-pagamento').slideUp();
+                            $('#form-transacao').slideUp();
                             limparFormularioTransacao();
 
                             Swal.fire({
@@ -1167,7 +1138,7 @@
 
                 Swal.fire({
                     title: 'Tem certeza?',
-                    text: 'Esta ação não pode ser desfeita!',
+                    text: "Esta ação não pode ser desfeita!",
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#3085d6',
@@ -1193,180 +1164,11 @@
                                         response.message,
                                         'success'
                                     );
-                                } else {
-                                    Swal.fire(
-                                        'Erro!',
-                                        response.message,
-                                        'error'
-                                    );
                                 }
                             },
                             error: function(xhr) {
-                                Swal.fire(
-                                    'Erro!',
-                                    'Erro ao remover transação: ' + xhr.responseJSON.message,
-                                    'error'
-                                );
-                            }
-                        });
-                    }
-                });
-            });
-
-            // Lógica para adicionar produtos
-            $('#produto_id').on('change', function() {
-                const valorProduto = parseFloat($('#produto_id option:selected').data('valor')) || 0;
-                const quantidade = parseInt($('#quantidade_produto').val()) || 0;
-                $('#total_item_produto').val((valorProduto * quantidade).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-            });
-
-            $('#quantidade_produto').on('input', function() {
-                const valorProduto = parseFloat($('#produto_id option:selected').data('valor')) || 0;
-                const quantidade = parseInt($(this).val()) || 0;
-                $('#total_item_produto').val((valorProduto * quantidade).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-            });
-
-            $('#btn-adicionar-item-produto').click(function() {
-                const produtoId = $('#produto_id').val();
-                const produtoNome = $('#produto_id option:selected').text().split(' - R$' )[0];
-                const quantidade = parseInt($('#quantidade_produto').val());
-                const valorUnitario = parseFloat($('#produto_id option:selected').data('valor'));
-                const totalItem = valorUnitario * quantidade;
-
-                if (!produtoId || quantidade <= 0 || isNaN(valorUnitario)) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erro',
-                        text: 'Selecione um produto e uma quantidade válida.',
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-
-                produtosAdicionados.push({
-                    produto_id: produtoId,
-                    nome: produtoNome,
-                    quantidade: quantidade,
-                    valor_unitario: valorUnitario,
-                    total: totalItem
-                });
-
-                atualizarListaItensProduto();
-                atualizarTotalProdutosAdicionados();
-
-                // Limpar campos após adicionar
-                $('#produto_id').val('').trigger('change');
-                $('#quantidade_produto').val(1);
-                $('#total_item_produto').val('0,00');
-            });
-
-            function atualizarListaItensProduto() {
-                const $listaItens = $('#lista-itens-produto');
-                $listaItens.empty();
-
-                if (produtosAdicionados.length === 0) {
-                    $listaItens.html('<p class="text-muted">Nenhum produto adicionado ainda.</p>');
-                    return;
-                }
-
-                produtosAdicionados.forEach((item, index) => {
-                    const html = `
-                        <div class="d-flex justify-content-between align-items-center mb-2 p-2 border rounded">
-                            <span>${item.nome} (x${item.quantidade}) - R$ ${item.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            <button type="button" class="btn btn-danger btn-sm btn-remover-item-produto" data-index="${index}">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    `;
-                    $listaItens.append(html);
-                });
-            }
-
-            $(document).on('click', '.btn-remover-item-produto', function() {
-                const index = $(this).data('index');
-                produtosAdicionados.splice(index, 1);
-                atualizarListaItensProduto();
-                atualizarTotalProdutosAdicionados();
-            });
-
-            function atualizarTotalProdutosAdicionados() {
-                const totalGeralProdutos = produtosAdicionados.reduce((sum, item) => sum + item.total, 0);
-                $('#total_produtos_adicionados').val(totalGeralProdutos.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-            }
-
-            $('#btn-salvar-produtos').click(function() {
-                if (produtosAdicionados.length === 0) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Nenhum Produto',
-                        text: 'Adicione pelo menos um produto para salvar.',
-                        confirmButtonText: 'OK'
-                    });
-                    return;
-                }
-
-                Swal.fire({
-                    title: 'Confirmar adição de produtos?',
-                    text: 'Os produtos serão adicionados à reserva.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sim, adicionar!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const dadosVenda = {
-                            reserva_id: reservaId,
-                            itens: produtosAdicionados,
-                            _token: $('meta[name="csrf-token"]').attr('content')
-                        };
-
-                        $.ajax({
-                            url: '/vendas', // Nova rota para salvar vendas
-                            method: 'POST',
-                            data: JSON.stringify(dadosVenda),
-                            contentType: 'application/json',
-                            headers: {
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                            },
-                            success: function(response) {
-                                if (response.success) {
-                                    // Adicionar a transação de venda (tipo produto) ao array de transações
-                                    transacoes.push(response.transacaoVenda);
-                                    atualizarListaAtividades();
-                                    atualizarResumo();
-                                    $('#form-transacao-produto').slideUp();
-                                    produtosAdicionados = [];
-                                    atualizarListaItensProduto();
-                                    atualizarTotalProdutosAdicionados();
-
-                                    Swal.fire({
-                                        title: 'Sucesso!',
-                                        text: response.message,
-                                        icon: 'success',
-                                        timer: 2000
-                                    });
-                                } else {
-                                    Swal.fire({
-                                        title: 'Erro!',
-                                        text: response.message,
-                                        icon: 'error'
-                                    });
-                                }
-                            },
-                            error: function(xhr) {
-                                Swal.fire({
-                                    title: 'Erro!',
-                                    text: 'Erro ao salvar produtos: ' + (xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText),
-                                    icon: 'error'
-                                });
+                                alert('Erro ao remover transação: ' + xhr.responseJSON
+                                    .message);
                             }
                         });
                     }
@@ -1470,7 +1272,7 @@
 
                         // Reinicializar o select2 para aplicar os novos optgroups
                         $select.select2({
-                            placeholder: 'Selecione um quarto...',
+                            placeholder: "Selecione um quarto...",
                             allowClear: true,
                             width: '100%'
                         });
@@ -1498,7 +1300,7 @@
         <script>
             Swal.fire({
                 title: 'Sucesso!',
-                text: '{{ session('success') }}',
+                text: "{{ session('success') }}",
                 icon: 'success',
                 confirmButtonText: 'OK'
             });
@@ -1509,7 +1311,7 @@
         <script>
             Swal.fire({
                 title: 'Erro!',
-                text: '{{ session('error') }}',
+                text: "{{ session('error') }}",
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
