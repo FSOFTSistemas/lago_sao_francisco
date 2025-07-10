@@ -18,6 +18,7 @@ class ParcelaContasAPagar extends Model
         'data_vencimento',
         'data_pagamento',
         'valor_pago',
+        'forma_pagamento',
         'status',
     ];
 

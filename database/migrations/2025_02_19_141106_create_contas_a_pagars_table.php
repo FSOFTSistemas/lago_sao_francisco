@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->decimal('valor_pago', 15, 2)->nullable()->default(0);
+            $table->string('forma_pagamento')->nullable();
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
             $table->enum('status', ['pendente', 'pago'])->default('pendente');

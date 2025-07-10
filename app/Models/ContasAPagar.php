@@ -17,6 +17,7 @@ class ContasAPagar extends Model
         'valor_pago',
         'data_vencimento',
         'data_pagamento',
+        'forma_pagamento',
         'status',
         'empresa_id',
         'plano_de_contas_id',

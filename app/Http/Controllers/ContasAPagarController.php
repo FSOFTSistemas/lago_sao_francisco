@@ -14,64 +14,102 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Services\CaixaService;
 use App\Services\ContaCorrenteService;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+use Throwable;
 
 class ContasAPagarController extends Controller
 {
+
 public function index(Request $request)
-{
-    $usuario = Auth::user();
-    $empresaSelecionada = session('empresa_id');
+    {
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
 
-    // Preparar a query base
-    if ($empresaSelecionada == null) {
-        $planoDeContas = PlanoDeConta::all();
-        $fornecedores = Fornecedor::all();
-        $contas_corrente = ContaCorrente::all();
-        $caixas = Caixa::all();
-        $query = ContasAPagar::query();
-    } else {
-        $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+        // Preparar a query base
+        if ($empresaSelecionada == null) {
+            $planoDeContas = PlanoDeConta::all();
+            $fornecedores = Fornecedor::all();
+            $contas_corrente = ContaCorrente::all();
+            $caixas = Caixa::all();
+            $query = ContasAPagar::query();
+        } else {
+            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
 
-        $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
-        $fornecedores = Fornecedor::all();
-        $contas_corrente = ContaCorrente::all();
-        $caixas = Caixa::where('empresa_id', $empresa_id)->get();
-        $query = ContasAPagar::where('empresa_id', $empresa_id);
-    }
+            $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
+            $fornecedores = Fornecedor::all();
+            $contas_corrente = ContaCorrente::all();
+            $caixas = Caixa::where('empresa_id', $empresa_id)->get();
+            $query = ContasAPagar::where('empresa_id', $empresa_id);
+        }
 
-    if ($request->filled('fornecedor_id')) {
-        $query->where('fornecedor_id', $request->input('fornecedor_id'));
-    }
+        // Adiciona o eager loading de parcelas para otimização
+        $query->with('parcelas');
 
-    // Adiciona o eager loading de parcelas antes de executar a query
-    $query->with('parcelas');
 
-    if ($request->filled('status')) {
-        $query->where('status', $request->input('status'));
-    }
+        // 1. Define o intervalo de datas a ser usado
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            // Se o usuário especificou um intervalo, use-o.
+            // Usamos startOfDay e endOfDay para garantir que o dia inteiro seja incluído.
+            $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
+            $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
+        } else {
+            // Se não, use o mês atual como padrão.
+            $inicio = \Carbon\Carbon::now()->startOfMonth();
+            $fim = \Carbon\Carbon::now()->endOfMonth();
+        }
 
-    $contasAPagar = $query->get();
-    $contasComParcelas = [];
+        // 2. Aplica o filtro de data (seja do request ou do mês atual) na consulta
+        $query->where(function ($q) use ($inicio, $fim) {
+            // Condição 1: Contas sem parcelas, com vencimento no intervalo definido
+            $q->whereBetween('data_vencimento', [$inicio, $fim]);
+            
+            // Condição 2: OU contas que tenham parcelas com vencimento no intervalo definido
+            $q->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
+                $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
+            });
+        });
 
-    // Intervalo de datas
-    $inicio = $request->input('data_inicio') ?? Carbon::now()->startOfYear()->toDateString();
-    $fim = $request->input('data_fim') ?? Carbon::now()->endOfYear()->toDateString();
+        // Aplica outros filtros do formulário
+        if ($request->filled('fornecedor_id')) {
+            $query->where('fornecedor_id', $request->input('fornecedor_id'));
+        }
 
-    foreach ($contasAPagar as $conta) {
-        if ($conta->parcelas->isEmpty()) {
-            // Conta sem parcelas
-            if ($conta->data_vencimento >= $inicio && $conta->data_vencimento <= $fim) {
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            $query->where(function ($q) use ($status) {
+                $q->where('status', $status)
+                  ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
+                      $parcelaQuery->where('status', $status);
+                  });
+            });
+        }
+
+        // Executa a consulta ao banco de dados SEM ORDENAÇÃO
+        $contasAPagar = $query->get();
+        
+        $contasComParcelas = [];
+
+        // Processa os resultados para criar uma lista plana de itens a serem exibidos
+        foreach ($contasAPagar as $conta) {
+            if ($conta->parcelas->isEmpty()) {
+                // A conta já foi filtrada pelo banco, então apenas a adicionamos
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $contasComParcelas[] = $conta;
-            }
-        } else {
-            // Conta com parcelas
-            $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
-            $totalParcelas = $conta->parcelas->count();
-            $valorTotal = $conta->parcelas->sum('valor');
+            } else {
+                $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
+                $totalParcelas = $conta->parcelas->count();
+                $valorTotal = $conta->parcelas->sum('valor');
 
-            foreach ($conta->parcelas as $parcela) {
-                if ($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim) {
+                foreach ($conta->parcelas as $parcela) {
+                    // Adicionamos à lista apenas as parcelas que vencem no mês atual
+                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
+                        continue;
+                    }
+                    if ($request->filled('status') && $parcela->status !== $request->input('status')) {
+                        continue;
+                    }
+
                     $contaClone = clone $conta;
                     $contaClone->id = $parcela->id;
                     $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
@@ -86,15 +124,19 @@ public function index(Request $request)
                     $contaClone->conta_descricao = $conta->descricao;
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
+                    $contaClone->forma_pagamento = $parcela->forma_pagamento;
                     $contasComParcelas[] = $contaClone;
                 }
             }
-            
         }
-    }
+        
+        $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
+            return Carbon::parse($item->data_vencimento);
+        })->values()->all();
 
-    return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente','caixas'));
-}
+        // Retorna a view com os dados processados e prontos para exibição
+        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
+    }
 
 
 
@@ -143,7 +185,6 @@ public function index(Request $request)
             for ($i = 1; $i <= $numParcelas; $i++) {
                 
                 if($i == $numParcelas){
-                    dump($numParcelas);
                     $valorParcela = $valor_total;
                 }
                 ParcelaContasAPagar::create([
@@ -225,207 +266,162 @@ public function index(Request $request)
     }
 
 
-public function pagar(Request $request)
-{
-    try {
+    /**
+     * Registra o pagamento de uma conta ou de uma parcela.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function pagar(Request $request)
+    {
+        // 1. Validação aprimorada
         $request->validate([
-            'data_pagamento' => 'required|date',
-            'valor_pago' => 'required|numeric|min:0.01',
-            'id' => 'nullable|exists:parcelas_contas_a_pagar,id',
-            'fonte_pagadora' => 'required|in:caixa,conta_corrente',
+            'data_pagamento'    => 'required|date',
+            'valor_pago'        => 'required|numeric|min:0.01',
+            'fonte_pagadora'    => 'required|in:caixa,conta_corrente',
+            // Valida 'id' da parcela OU 'conta_id' da conta principal
+            'id'                => 'nullable|exists:parcelas_contas_a_pagar,id',
+            'conta_id'          => 'required_without:id|exists:contas_a_pagar,id',
+            // Exige o ID da conta corrente se a fonte for 'conta_corrente'
+            'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
         ]);
 
-        $valorPago = $request->valor_pago;
-        $contasAPagar = null;
+        try {
+            // 2. Usar Transação para garantir a integridade dos dados
+            // Se algo falhar (ex: saldo insuficiente), todas as operações são revertidas.
+            $response = DB::transaction(function () use ($request) {
+                
+                $valorPago = $request->valor_pago;
+                $conta = null;
+                $parcela = null;
+                $description = '';
 
-        // Se for pagamento de parcela
-        if ($request->filled('id')) {
-            $parcela = \App\Models\ParcelaContasAPagar::findOrFail($request->id);
-            $valor_pago_total = $parcela->valor_pago + $valorPago;
+                // 3. Define qual entidade está sendo paga (Parcela ou Conta)
+                if ($request->filled('id')) {
+                    // Pagamento de Parcela
+                    $parcela = ParcelaContasAPagar::findOrFail($request->id);
+                    $conta = $parcela->conta;
+                    $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
+                } else {
+                    // Pagamento de Conta sem parcelamento
+                    $conta = ContasAPagar::findOrFail($request->conta_id);
+                    $description = 'Pagamento #' . $conta->descricao;
+                }
 
-            $conta = $parcela->conta;
-            
-            // 1. Verifica e registra a movimentação no caixa ANTES
-            if ($request->fonte_pagadora === 'caixa') {
-            // --- LÓGICA PARA PAGAMENTO COM O CAIXA (EXISTENTE E FUNCIONAL) ---
-            $usuario = Auth::user();
-            $empresaSelecionada = session('empresa_id');
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-            
-            // Procura por um caixa aberto para o usuário na data atual
-            $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
-                ->where('status', 'aberto')
-                ->where('empresa_id', $empresa_id)
-                ->where('usuario_id', $usuario->id)
-                ->first();
+                // 4. Executa a lógica de pagamento baseada na fonte (sem duplicação)
+                if ($request->fonte_pagadora === 'caixa') {
+                    $this->handleCaixaPayment($request, $conta, $description, $valorPago);
+                } elseif ($request->fonte_pagadora === 'conta_corrente') {
+                    $this->handleContaCorrentePayment($request, $conta, $description, $valorPago);
+                }
 
-            if (!$caixa) {
-                return redirect()
-                    ->route('contasAPagar.index')
-                    ->with('error', 'Nenhum caixa aberto encontrado para registrar a movimentação.');
-            }
-            
-            try {
-                // Tenta inserir a movimentação de saida no caixa
-                app(CaixaService::class)->inserirMovimentacao($caixa, [
-                    'descricao' => 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas,
-                    'valor' => $valorPago,
-                    'valor_total' => $valorPago,
-                    'tipo' => 'saida',
-                    'movimento_id' => 31, // ID para "Pagamento de Contas"
-                    'plano_de_conta_id' => $conta->plano_de_contas_id,
-                ]);
-            } catch (\InvalidArgumentException $e) {
-                // Captura erro específico de saldo insuficiente do CaixaService
-                return redirect()
-                    ->route('contasAPagar.index')
-                    ->with('error', $e->getMessage()); 
-            } catch (\Throwable $e) {
-                \Log::error('Erro ao inserir movimentação no caixa: ' . $e->getMessage());
+                // 5. Atualiza os modelos após o pagamento ser validado e registrado
+                if ($parcela) {
+                    // Atualiza a parcela
+                    $valor_pago_total = $parcela->valor_pago + $valorPago;
+                    $dadosUpdate = [
+                        'valor_pago' => $valor_pago_total,
+                        'data_pagamento' => $request->data_pagamento,
+                    ];
 
-                return redirect()
-                    ->route('contasAPagar.index')
-                    ->with('error', 'Erro inesperado ao registrar movimentação no caixa. Tente novamente mais tarde.');
-            }
+                    if ($valor_pago_total >= $parcela->valor) {
+                        $dadosUpdate['status'] = 'pago';
+                        $dadosUpdate['forma_pagamento'] = $request->fonte_pagadora;
+                    }
+                    $parcela->update($dadosUpdate);
 
-        } else if ($request->fonte_pagadora === 'conta_corrente') {
-            // --- LÓGICA AJUSTADA PARA PAGAMENTO COM CONTA CORRENTE ---
-            // 1. Validação: Verifica se uma conta corrente foi selecionada no request.
-            if (empty($request->conta_corrente_id)) {
-                return redirect()
-                    ->route('contasAPagar.index')
-                    ->with('error', 'Por favor, selecione a conta corrente para realizar o pagamento.');
-            }
-
-            $usuario = Auth::user();
-            $empresaSelecionada = session('empresa_id');
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-            
-            try {
-                // 2. Chama o serviço de Conta Corrente para registrar o lançamento
-                app(ContaCorrenteService::class)->registrarLancamento(
-                    // Dados do Lançamento
-                    [
-                        'banco_id'    => $request->conta_corrente_id, // ID da conta bancária
-                        'valor'       => $valorPago,
-                        'tipo'        => 'saida', // O tipo é 'saida' porque é um pagamento
-                        'descricao'   => 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas,
-                        // 'data'     => now(), // O service já assume a data atual se não for passada
-                    ],
-                    // Empresa ID
-                    $empresa_id
-                );
-
-            } catch (\InvalidArgumentException $e) {
-                // 3. Captura exceções do service, como "Saldo insuficiente"
-                return redirect()
-                    ->route('contasAPagar.index')
-                    ->with('error', $e->getMessage()); 
-            } catch (\Throwable $e) {
-                // 4. Captura qualquer outro erro inesperado
-                \Log::error('Erro ao registrar lançamento na conta corrente: ' . $e->getMessage());
+                    // Atualiza a conta principal com base em suas parcelas
+                    $conta->update([
+                        'valor_pago' => $conta->parcelas()->sum('valor_pago'),
+                        'status' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? 'pago' : $conta->status,
+                        'data_pagamento' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? now()->toDateString() : null,
+                    ]);
+                } else {
+                    // Atualiza a conta paga diretamente
+                    $conta->update([
+                        'status' => 'pago',
+                        'valor_pago' => $valorPago,
+                        'data_pagamento' => $request->data_pagamento,
+                        'forma_pagamento' => $request->fonte_pagadora,
+                    ]);
+                }
 
                 return redirect()
                     ->route('contasAPagar.index')
-                    ->with('error', 'Erro inesperado ao registrar o pagamento na conta corrente. Tente novamente mais tarde.');
-            }
+                    ->with('success', 'Pagamento registrado com sucesso!');
+            });
+
+            return $response;
+
+        } catch (InvalidArgumentException $e) {
+            // Captura erros de negócio (ex: Saldo insuficiente)
+            return redirect()
+                ->route('contasAPagar.index')
+                ->with('error', $e->getMessage());
+        } catch (Throwable $e) {
+            // Captura qualquer outro erro inesperado
+            Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
+
+            return redirect()
+                ->route('contasAPagar.index')
+                ->with('error', 'Erro inesperado ao registrar o pagamento. Tente novamente mais tarde.');
+        }
+    }
+
+    /**
+     * Lida com a lógica de pagamento via Caixa.
+     */
+    private function handleCaixaPayment(Request $request, ContasAPagar $conta, string $description, float $valorPago): void
+    {
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+
+        $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
+            ->where('status', 'aberto')
+            ->where('empresa_id', $empresa_id)
+            ->where('usuario_id', $usuario->id)
+            ->first();
+
+        if (!$caixa) {
+            // Lança uma exceção que será capturada pelo bloco principal
+            throw new InvalidArgumentException('Nenhum caixa aberto encontrado para registrar a movimentação.');
         }
 
+        app(CaixaService::class)->inserirMovimentacao($caixa, [
+            'descricao' => $description,
+            'valor' => $valorPago,
+            'valor_total' => $valorPago,
+            'tipo' => 'saida',
+            'movimento_id' => 31, // ID para "Pagamento de Contas"
+            'plano_de_conta_id' => $conta->plano_de_contas_id,
+        ]);
+    }
 
-            // 2. Agora sim, atualiza a parcela
-            $dadosUpdate = [
-                'valor_pago' => $valor_pago_total,
-                'data_pagamento' => $request->data_pagamento,
-            ];
+    /**
+     * Lida com a lógica de pagamento via Conta Corrente. (CORRIGIDO)
+     */
+    private function handleContaCorrentePayment(Request $request, ContasAPagar $conta, string $description, float $valorPago): void
+    {
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+        
+        // O ID da conta corrente já foi validado no início do método `pagar`
+        $contaCorrenteId = $request->conta_corrente_id;
 
-            if ($valor_pago_total == $parcela->valor) {
-                $dadosUpdate['status'] = 'pago';
-            }
-
-            $parcela->update($dadosUpdate);
-
-            // 3. Atualiza a conta principal
-            $conta->update([
-                'valor_pago' => $conta->parcelas->sum('valor_pago'),
-                'status' => $conta->parcelas->every(fn($p) => $p->status === 'pago') ? 'pago' : $conta->status,
-                'data_pagamento' => $conta->parcelas->every(fn($p) => $p->status === 'pago') ? now()->toDateString() : $conta->data_pagamento,
-            ]);
-        }else {
-            // Pagamento total direto (sem parcelamento)
-            $contasAPagar = \App\Models\ContasAPagar::findOrFail($request->conta_id);
-
-            if ($request->fonte_pagadora == 'caixa') {
-                $usuario = Auth::user();
-                $empresaSelecionada = session('empresa_id');
-                $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-
-                $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
-                    ->where('status', 'aberto')
-                    ->where('empresa_id', $empresa_id)
-                    ->where('usuario_id', Auth::id())
-                    ->first();
-                
-                if (!$caixa) {
-                    return redirect()
-                        ->route('contasAPagar.index')
-                        ->with('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
-                }
-                
-                app(CaixaService::class)->inserirMovimentacao($caixa, [
-                    'descricao' => 'Pagamento #' . $contasAPagar->descricao,
-                    'valor' => $valorPago,
-                    'valor_total' => $valorPago,
-                    'tipo' => 'saida',
-                    'movimento_id' => 31,
-                    'plano_de_conta_id' => $contasAPagar->plano_de_contas_id,
-                ]);
-            }else  if ($request->fonte_pagadora == 'conta-corrente') {
-                $usuario = Auth::user();
-                $empresaSelecionada = session('empresa_id');
-                $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-
-                $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
-                    ->where('status', 'aberto')
-                    ->where('empresa_id', $empresa_id)
-                    ->where('usuario_id', Auth::id())
-                    ->first();
-                
-                if (!$caixa) {
-                    return redirect()
-                        ->route('contasAPagar.index')
-                        ->with('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
-                }
-                
-                app(CaixaService::class)->inserirMovimentacao($caixa, [
-                    'descricao' => 'Pagamento #' . $contasAPagar->descricao,
-                    'valor' => $valorPago,
-                    'valor_total' => $valorPago,
-                    'tipo' => 'saida',
-                    'movimento_id' => 31,
-                    'plano_de_conta_id' => $contasAPagar->plano_de_contas_id,
-                ]);
-            }
-
-            // Atualiza conta
-            $contasAPagar->update([
-                'status' => 'pago',
-                'valor_pago' => $valorPago,
-                'data_pagamento' => $request->data_pagamento,
-            ]);
-        }
-
-        return redirect()
-            ->route('contasAPagar.index')
-            ->with('success', 'Pagamento registrado com sucesso!');
-    } catch (\Throwable $e) {
-        \Log::error('Erro ao registrar pagamento: ' . $e->getMessage());
-
-        return redirect()
-            ->route('contasAPagar.index')
-            ->with('error', 'Erro ao registrar o pagamento. Verifique os dados ou tente novamente.');
+        app(ContaCorrenteService::class)->registrarLancamento(
+            [
+                'banco_id'  => $contaCorrenteId,
+                'valor'     => $valorPago,
+                'tipo'      => 'saida',
+                'descricao' => $description,
+                'data'      => $request->data_pagamento // Usa a data de pagamento informada
+            ],
+            $empresa_id
+        );
     }
 }
 
 
 
-}

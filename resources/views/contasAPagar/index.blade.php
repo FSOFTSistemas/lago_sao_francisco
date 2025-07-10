@@ -77,11 +77,15 @@
         ['responsivePriority' => 2, 'targets' => 3],
         ['responsivePriority' => 2, 'targets' => 4],
         ['responsivePriority' => 2, 'targets' => 5],
+        ['responsivePriority' => 2, 'targets' => 6],
         ['responsivePriority' => 4, 'targets' => -1],
     ],
     'itemsPerPage' => 10,
     'showTotal' => false,
     'valueColumnIndex' => 3,
+     'order'=> [
+        [2, 'asc'] // Ordena pela 3ª coluna (índice 2), ascendente
+    ]
 ])
 <thead class="bg-primary text-white">
     <tr>
@@ -90,6 +94,7 @@
         <th>Data de Vencimento</th>
         <th>Valor</th>
         <th>Situação</th>
+        <th>Forma de pagamento</th>
         <th>Fornecedor</th>
         <th>Empresa</th>
         <th>Ações</th>
@@ -128,6 +133,13 @@
                     <span class="text-success">Pago <i class="fa-regular fa-circle-check"></i></span>
                 @else
                     <span class="text-warning">Pendente <i class="fa-solid fa-triangle-exclamation"></i></span>
+                @endif
+            </td>
+            <td>
+                @if($contasAPagar->status == "conta_corente")
+                    <span class="text-success">Conta Corrente</span>
+                @else
+                    <span class="text-success">Caixa</span>
                 @endif
             </td>
             <td>
