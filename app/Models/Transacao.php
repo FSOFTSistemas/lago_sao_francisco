@@ -28,7 +28,6 @@ class Transacao extends Model
         'status' => 'boolean',
         'data_pagamento' => 'date',
         'data_vencimento' => 'date',
-        'valor' => 'decimal:2',
     ];
 
     // Relacionamentos
@@ -69,10 +68,7 @@ class Transacao extends Model
     }
 
     // Accessors
-    public function getValorFormatadoAttribute()
-    {
-        return 'R$ ' . number_format($this->valor, 2, ',', '.');
-    }
+    
 
     public function getDataPagamentoFormatadaAttribute()
     {
@@ -84,13 +80,4 @@ class Transacao extends Model
         return $this->data_vencimento ? $this->data_vencimento->format('d/m/Y') : null;
     }
 
-    // Mutators
-    public function setValorAttribute($value)
-    {
-        // Remove formatação brasileira se presente
-        if (is_string($value)) {
-            $value = str_replace(['.', ','], ['', '.'], $value);
-        }
-        $this->attributes['valor'] = $value;
-    }
 }

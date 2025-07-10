@@ -8,13 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 class ReservaItem extends Model
 {
     use HasFactory;
+
+    protected $table = 'reserva_items';
+
     protected $fillable = [
-        'reserva_id',
         'produto_id',
-        'quantidade'
+        'reserva_id',
+        'quantidade',
     ];
 
-     public function produto()
+    protected $casts = [
+        'quantidade' => 'integer',
+    ];
+
+    // Relacionamentos
+    public function produto()
     {
         return $this->belongsTo(Produto::class);
     }

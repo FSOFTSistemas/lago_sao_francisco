@@ -19,7 +19,7 @@
                     </div>
                     <div class='card-body'>
                         <form id='createReservaForm'
-                            action='{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}
+                            action='{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}'
                             method='POST' enctype='multipart/form-data'>
                             @csrf
                             @if (isset($reserva))
@@ -52,10 +52,12 @@
                                             @checked(old('situacao', $reserva->situacao ?? '') === 'bloqueado')>
                                         <span class='badge badge-dark'>bloquear datas</span>
                                     </label>
+                                    <label class='radio-option'>
+                                        <input type='radio' name='situacao' value='finalizada'
+                                            @checked(old('situacao', $reserva->situacao ?? '') === 'finalizada') style ='display: none;'>
+                                    </label>
                                 </div>
                             </div>
-
-
 
                             <div>
                                 <hr>
@@ -97,10 +99,8 @@
                                     @endif
                                 </div>
 
-
-
                                 <div class="col-sm-2">
-                                    <button type="button" class="btn btn-primary" data-toggle="modal"
+                                    <button type="button" id="btn-addhospede" class="btn btn-primary" data-toggle="modal"
                                         data-target="#modalCadastrarHospede">
                                         <i class="fas fa-user-plus"></i>
                                     </button>
@@ -144,17 +144,16 @@
                             </div>
 
                             @if (isset($reserva))
-                                {{-- @php dd($reserva->quarto_id) @endphp --}}
                                 <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
                                 <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                             @endif
 
-
                             <div class="form-group row">
                                 <label class="col-md-3 label-control" for="valor_diaria">* Valor da diária:</label>
                                 <div class="col-md-4">
-                                    <div><input class="form-control" type="text" name="valor_diaria" id="valor_diaria"
-                                            value="{{ old('valor_diaria', $reserva->valor_diaria ?? '') }}">
+                                    <div><input class="form-control" type="text" name="valor_diaria"
+                                            id="valor_diaria"
+                                            value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}">
                                     </div>
                                 </div>
                             </div>
@@ -179,20 +178,24 @@
                             <div class="form-group row" id="campoObservacoes">
                                 <label for="observacao" class="col-md-3 label-control">Observações</label>
                                 <div class="col-md-9">
-                                    <textarea class="form-control" name="observacao" rows="3">{{ old('observacao', $reserva->observacao ?? '') }}</textarea>
+                                    <textarea class="form-control" name="observacao" rows="3" id="observacoes">{{ old('observacao', $reserva->observacao ?? '') }}</textarea>
                                 </div>
                             </div>
 
                             <div class="card-footer">
                                 @if (isset($reserva))
                                     <button type="button" class="btn btn-danger" data-toggle="modal"
-                                        data-target="#deleteReservaModal{{ $reserva->id }}">
+                                        id="btn-excluir-reserva" data-target="#deleteReservaModal{{ $reserva->id }}">
                                         Excluir 🗑️
                                     </button>
+                                    <button class="btn btn-dark" id="btn-finalizar"
+                                        data-reserva-id="{{ $reserva->id }}"><i
+                                            class="fa-solid fa-right-from-bracket"></i>Finalizar Reserva</button>
                                 @endif
-                                <a href="{{ route('reserva.index') }}" class="btn btn-secondary">Voltar</a>
-                                <button type="submit"
-                                    class="btn btn-primary">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
+                                <a href="{{ route('reserva.index') }}" class="btn btn-secondary"
+                                    id="btn-voltar">Voltar</a>
+                                <button type="submit" class="btn btn-primary"
+                                    id="btn-atualizar-criar">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
                             </div>
                         </form>
                         @if (isset($reserva))
@@ -236,14 +239,6 @@
                                 <span>Produtos</span>
                                 <span id='total-produtos'>R$ 0,00</span>
                             </div>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Serviços</span>
-                                <span id='total-servicos'>R$ 0,00</span>
-                            </div>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Alimentos</span>
-                                <span id='total-alimentos'>R$ 0,00</span>
-                            </div>
                             <hr>
                             <div class='d-flex justify-content-between mb-2'>
                                 <strong>Total</strong>
@@ -252,6 +247,7 @@
                             <div class='d-flex justify-content-between text-success'>
                                 <span>Recebido</span>
                                 <span id='total-recebido'>R$ 0,00</span>
+                                <input type='hidden' id='valor-recebido' name='recebido' value='0.00'>
                             </div>
                         </div>
                     </div>
@@ -267,7 +263,7 @@
                                     aria-expanded='false'>
                                     <i class='fas fa-plus'></i>
                                 </button>
-                                <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
+                                <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' >
                                     <a class='dropdown-item' href='#'
                                         onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
                                     <a class='dropdown-item' href='#'
@@ -299,7 +295,9 @@
                                         <option value=''>Selecione...</option>
                                         @if (isset($formasPagamento))
                                             @foreach ($formasPagamento as $forma)
-                                                <option value='{{ $forma->id }}' {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>{{ $forma->descricao }}</option>
+                                                <option value='{{ $forma->id }}'
+                                                    {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>
+                                                    {{ $forma->descricao }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -320,20 +318,24 @@
                                         id="btn-salvar-transacao">Salvar</button>
                                     <button type="button" class="btn btn-secondary btn-sm"
                                         id="btn-cancelar-transacao">Cancelar</button>
-                                    </div>
                                 </div>
-                                
-                                <!-- Formulário para adicionar produto -->
-                                <div id="form-transacao-produto" style="display: none;">
-                                    <hr>
-                                    <h6 id="titulo-form-produto">Adicionar Produto</h6>
+                            </div>
+
+                            <!-- Formulário para adicionar produto -->
+                            <div id="form-transacao-produto" style="display: none;">
+                                <hr>
+                                <h6 id="titulo-form-produto">Adicionar Produto</h6>
                                 <div class="form-group">
                                     <label for="produto_id">Produto</label>
                                     <select class="form-control select2" id="produto_id">
                                         <option value="">Selecione um produto</option>
                                         @if (isset($produtos))
                                             @foreach ($produtos as $produto)
-                                                <option value="{{ $produto->id }}" data-valor="{{ $produto->preco_venda }}" {{ old("produto_id") == $produto->id ? "selected" : "" }}>{{ $produto->descricao }} - R$ {{ number_format($produto->preco_venda, 2, ",", ".") }}</option>
+                                                <option value="{{ $produto->id }}"
+                                                    data-valor="{{ $produto->preco_venda }}"
+                                                    {{ old('produto_id') == $produto->id ? 'selected' : '' }}>
+                                                    {{ $produto->descricao }} - R$
+                                                    {{ number_format($produto->preco_venda, 2, ',', '.') }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -341,14 +343,17 @@
                                 <div class="form-group row align-items-center">
                                     <div class="col-md-4">
                                         <label for="quantidade_produto">Quantidade</label>
-                                        <input type="number" class="form-control" id="quantidade_produto" value="1" min="1">
+                                        <input type="number" class="form-control" id="quantidade_produto"
+                                            value="1" min="1">
                                     </div>
                                     <div class="col-md-8">
                                         <label for="total_item_produto">Total do Item</label>
-                                        <input type="text" class="form-control" id="total_item_produto" readonly value="0,00">
+                                        <input type="text" class="form-control" id="total_item_produto" readonly
+                                            value="0,00">
                                     </div>
                                 </div>
-                                <button type="button" class="btn btn-info btn-sm mb-3" id="btn-adicionar-item-produto">Adicionar Item</button>
+                                <button type="button" class="btn btn-info btn-sm mb-3"
+                                    id="btn-adicionar-item-produto">Adicionar Item</button>
 
                                 <div id="lista-itens-produto">
                                     <!-- Itens de produto adicionados dinamicamente aqui -->
@@ -356,12 +361,15 @@
 
                                 <div class="form-group mt-3">
                                     <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
-                                    <input type="text" class="form-control" id="total_produtos_adicionados" readonly value="0,00">
+                                    <input type="text" class="form-control" id="total_produtos_adicionados" readonly
+                                        value="0,00">
                                 </div>
 
                                 <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar Produtos</button>
-                                    <button type="button" class="btn btn-secondary btn-sm" id="btn-cancelar-produtos">Cancelar</button>
+                                    <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar
+                                        Produtos</button>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                        id="btn-cancelar-produtos">Cancelar</button>
                                 </div>
                             </div>
                         </div>
@@ -422,7 +430,7 @@
     <div class="modal fade" id="modalCadastrarHospede" tabindex="-1" role="dialog"
         aria-labelledby="modalHospedeLabel" aria-hidden="true">
         <div class="modal-dialog " role="document">
-            <form method="POST" action="{{ route("hospede.store") }}">
+            <form method="POST" action="{{ route('hospede.store') }}">
                 @csrf
                 <div class="modal-content">
                     <div class="modal-header">
@@ -456,9 +464,8 @@
                         </div>
                     </div>
 
-
                     <div class="modal-footer">
-                        <a href="{{ route("hospede.create") }}" class="btn btn-secondary">Cadastro Completo</a>
+                        <a href="{{ route('hospede.create') }}" class="btn btn-secondary">Cadastro Completo</a>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </div>
@@ -592,7 +599,8 @@
             text-transform: uppercase !important;
         }
 
-        #form-transacao-pagamento, #form-transacao-produto {
+        #form-transacao-pagamento,
+        #form-transacao-produto {
             border-top: 1px solid #dee2e6;
             padding-top: 1rem;
             margin-top: 1rem;
@@ -657,16 +665,6 @@
             color: #fff;
         }
 
-        .badge-servicos {
-            background-color: #ffc107;
-            color: #212529;
-        }
-
-        .badge-alimentos {
-            background-color: #fd7e14;
-            color: #fff;
-        }
-
         .badge-desconto {
             background-color: #dc3545;
             color: #fff;
@@ -719,7 +717,6 @@
         })
     </script>
 
-
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const modalHospede = document.getElementById("modalHospede");
@@ -750,7 +747,7 @@
                     texto: "<strong>Quartos por Categoria:</strong> Os quartos estão organizados por categoria para facilitar a seleção. Cada categoria agrupa quartos com características similares."
                 },
                 {
-                    texto: "<strong>Atividades na Reserva:</strong> Adicione pagamentos, produtos, serviços e alimentos à reserva. O resumo é atualizado automaticamente."
+                    texto: "<strong>Atividades na Reserva:</strong> Adicione pagamentos e produtos à reserva. O resumo é atualizado automaticamente."
                 },
             ];
 
@@ -808,9 +805,10 @@
 
     <script>
         $(document).ready(function() {
-            const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? "" }}";
+            const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? '' }}";
             const diaria = $("#valor_diaria");
             const valorDiariaArmazenado = diaria.val();
+
 
             function atualizarCampos() {
                 const situacao = $('input[name="situacao"]:checked').val();
@@ -841,6 +839,18 @@
                     $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
 
                     $('#valor_diaria').val(0);
+                } else if (situacao === 'finalizada') {
+                    $('#periodo, #hospede_id, #valor_diaria, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton,')
+                        .attr('disabled', true);
+                    $('#btn-atualizar-criar, #btn-excluir-reserva').hide()
+                    $(':radio:not(:checked)').attr('disabled', true);
+                    $('#btn-finalizar').html('<i class="fa-solid fa-right-from-bracket"></i> Finalizado').attr(
+                        'disabled', true)
+                    $('#btn-voltar').removeClass('btn-secondary')
+                        .addClass('btn-primary');
+
+
+
                 } else {
                     $('.form-group').slideDown(200);
                     $('#campoQuarto').hide()
@@ -870,6 +880,7 @@
             if (reservaId) {
                 carregarTransacoes();
                 carregarResumo();
+                carregarReservaItens(); // Carregar produtos já adicionados à reserva
             }
 
             function carregarTransacoes() {
@@ -888,14 +899,51 @@
                 });
             }
 
+            function carregarReservaItens() {
+                $.ajax({
+                    url: '/reserva-itens/reserva/' + reservaId,
+                    method: 'GET',
+                    success: function(response) {
+                        if (response.success && response.itens.length > 0) {
+                            // Adicionar os itens existentes à lista de atividades
+                            response.itens.forEach(function(item) {
+                                const atividade = {
+                                    id: 'item_' + item.id,
+                                    descricao: 'Produto: ' + item.produto.descricao,
+                                    valor: item.produto.preco_venda * item.quantidade,
+                                    categoria: 'produtos',
+                                    tipo: 'item',
+                                    data_pagamento: new Date().toISOString().split('T')[0],
+                                    status: true,
+                                    quantidade: item.quantidade,
+                                    produto_nome: item.produto.descricao
+                                };
+                                transacoes.push(atividade);
+                            });
+                            atualizarListaAtividades();
+                        }
+                    },
+                    error: function() {
+                        console.log('Erro ao carregar itens da reserva');
+                    }
+                });
+            }
+
             function atualizarInputFaltaLancar(valorNumerico) {
                 const valorFormatado = valorNumerico.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 });
                 $('#falta-lancar').text('R$ ' + valorFormatado);
-                $('#valor-falta-lancar').val(valorNumerico.toFixed(2)); // para POST no formato 999.99
+                $('#valor-falta-lancar').val(valorNumerico.toFixed(2));
             }
 
+            function atualizarInputRecebido(valor) {
+                const valorFormatadoR = valor.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2
+                });
+                $('#total-recebido').text('R$ ' + valorFormatadoR);
+                $('#valor-recebido').val(valor.toFixed(2));
+            }
 
             function carregarResumo() {
                 $.ajax({
@@ -925,32 +973,29 @@
                                 'pt-BR', {
                                     minimumFractionDigits: 2
                                 }));
-                            $('#total-servicos').text('R$ ' + resumo.total_servicos.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
-                            $('#total-alimentos').text('R$ ' + resumo.total_alimentos.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
                             $('#total-geral').text('R$ ' + resumo.total_geral.toLocaleString('pt-BR', {
                                 minimumFractionDigits: 2
                             }));
-                            $('#total-recebido').text('R$ ' + resumo.total_recebido.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
+                            // $('#total-recebido').text('R$ ' + resumo.total_recebido.toLocaleString(
+                            //     'pt-BR', {
+                            //         minimumFractionDigits: 2
+                            //     }));
+                            atualizarInputRecebido(resumo.total_recebido);
                             atualizarInputFaltaLancar(resumo.falta_lancar);
                         }
                     },
-                    error: function() {
+                    error: function(jqXHR, textStatus, errorThrown) {
                         console.log('Erro ao carregar resumo');
+                        console.log('Status:', textStatus);
+                        console.log('Erro retornado:', errorThrown);
+                        console.log('Resposta completa:', jqXHR.responseText);
                     }
+
                 });
             }
+
             // Função para atualizar o resumo (para reservas novas)
             function atualizarResumo() {
-
                 const checkin = $('#data_checkin').val();
                 const checkout = $('#data_checkout').val();
                 const valorDiaria = parseFloat($('#valor_diaria').val().replace(/\./g, '').replace(',', '.')) || 0;
@@ -962,13 +1007,11 @@
                 }
 
                 const totalDiarias = valorDiaria * numDiarias;
-                const totalProdutos = transacoes.filter(t => t.categoria === 'produtos' && t.status).reduce((sum,
+                const totalProdutos = transacoes.filter(t => (t.categoria === 'produtos' || t.tipo === 'item') && t
+                    .status).reduce((sum,
                     t) => sum + parseFloat(t.valor), 0);
-                const totalServicos = transacoes.filter(t => t.categoria === 'servicos' && t.status).reduce((sum,
-                    t) => sum + parseFloat(t.valor), 0);
-                const totalAlimentos = transacoes.filter(t => t.categoria === 'alimentos' && t.status).reduce((sum,
-                    t) => sum + parseFloat(t.valor), 0);
-                const totalGeral = totalDiarias + totalProdutos + totalServicos + totalAlimentos;
+
+                const totalGeral = totalDiarias + totalProdutos;
 
                 const totalRecebido = transacoes.filter(t => t.tipo === 'pagamento' && t.status).reduce((sum, t) =>
                     sum + parseFloat(t.valor), 0);
@@ -986,21 +1029,16 @@
                 $('#total-produtos').text('R$ ' + totalProdutos.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 }));
-                $('#total-servicos').text('R$ ' + totalServicos.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-                $('#total-alimentos').text('R$ ' + totalAlimentos.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
                 $('#total-geral').text('R$ ' + totalGeral.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 }));
-                $('#total-recebido').text('R$ ' + totalRecebido.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
+                // $('#total-recebido').text('R$ ' + totalRecebido.toLocaleString('pt-BR', {
+                //     minimumFractionDigits: 2
+                // }));
+                atualizarInputRecebido(totalRecebido)
                 atualizarInputFaltaLancar(faltaLancar);
-
             }
+
             // Atualizar resumo quando valor da diária mudar
             $('#valor_diaria').on('input', atualizarResumo);
 
@@ -1042,7 +1080,6 @@
 
             // Salvar transação (pagamento)
             $('#btn-salvar-transacao').click(function() {
-
                 const descricao = $('#descricao_transacao').val();
                 const valorStr = $('#valor_transacao').val();
                 const formaPagamentoId = $('#forma_pagamento_transacao').val();
@@ -1059,7 +1096,6 @@
                         text: 'O valor não pode ser maior do que o restante.',
                         confirmButtonText: 'Entendi'
                     });
-
                     return
                 }
 
@@ -1068,7 +1104,7 @@
                     return;
                 }
 
-                 const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
+                const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
                 const dados = {
                     descricao: descricao,
@@ -1141,21 +1177,43 @@
                     const formaPagamento = transacao.forma_pagamento ? transacao.forma_pagamento.descricao :
                         'N/A';
 
-                    const html = `
-                <div class="atividade-item" data-id="${transacao.id}">
-                    <div class="atividade-header">
-                        <span>${transacao.descricao}</span>
-                        <span class="text-${transacao.tipo === 'desconto' ? 'danger' : 'success'}">${transacao.tipo === 'desconto' ? '-' : ''}${valorFormatado}</span>
-                    </div>
-                    <div class="atividade-details">
-                        <span class="badge ${badgeClass}">${transacao.categoria}</span>
-                        ${formaPagamento} • ${dataFormatada}
-                        <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
+                    let html = '';
+                    if (transacao.tipo === 'item') {
+                        // Para itens de produto (ReservaItem)
+                        atualizarResumo();
+                        html = `
+                            <div class="atividade-item" data-id="${transacao.id}">
+                                <div class="atividade-header">
+                                    <span>${transacao.descricao} (x${transacao.quantidade})hello</span>
+                                    <span class="text-success">${valorFormatado}</span>
+                                </div>
+                                <div class="atividade-details">
+                                    <span class="badge ${badgeClass}">produtos</span>
+                                    Item da reserva • ${dataFormatada}
+                                    <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Para transações normais
+                        html = `
+                            <div class="atividade-item" data-id="${transacao.id}">
+                                <div class="atividade-header">
+                                    <span>${transacao.descricao}</span>
+                                    <span class="text-${transacao.tipo === 'desconto' ? 'danger' : 'success'}">${transacao.tipo === 'desconto' ? '-' : ''}${valorFormatado}</span>
+                                </div>
+                                <div class="atividade-details">
+                                    <span class="badge ${badgeClass}">${transacao.categoria}</span>
+                                    ${formaPagamento} • ${dataFormatada}
+                                    <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
 
                     $lista.append(html);
                 });
@@ -1204,7 +1262,63 @@
                             error: function(xhr) {
                                 Swal.fire(
                                     'Erro!',
-                                    'Erro ao remover transação: ' + xhr.responseJSON.message,
+                                    'Erro ao remover transação: ' + xhr.responseJSON
+                                    .message,
+                                    'error'
+                                );
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Remover item de produto (ReservaItem)
+            $(document).on('click', '.btn-remover-item', function() {
+                const id = $(this).data('id');
+                const itemId = id.replace('item_', ''); // Remove o prefixo 'item_'
+
+                Swal.fire({
+                    title: 'Tem certeza?',
+                    text: 'Este produto será removido da reserva!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, remover!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/reserva-itens/' + itemId,
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    transacoes = transacoes.filter(t => t.id !== id);
+                                    atualizarListaAtividades();
+                                    atualizarResumo();
+
+                                    Swal.fire(
+                                        'Removido!',
+                                        'Produto removido da reserva com sucesso!',
+                                        'success'
+                                    );
+                                } else {
+                                    Swal.fire(
+                                        'Erro!',
+                                        response.message,
+                                        'error'
+                                    );
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire(
+                                    'Erro!',
+                                    'Erro ao remover produto: ' + (xhr
+                                        .responseJSON ? xhr.responseJSON.message :
+                                        'Erro desconhecido'),
                                     'error'
                                 );
                             }
@@ -1232,7 +1346,7 @@
 
             $('#btn-adicionar-item-produto').click(function() {
                 const produtoId = $('#produto_id').val();
-                const produtoNome = $('#produto_id option:selected').text().split(' - R$' )[0];
+                const produtoNome = $('#produto_id option:selected').text().split(' - R$')[0];
                 const quantidade = parseInt($('#quantidade_produto').val());
                 const valorUnitario = parseFloat($('#produto_id option:selected').data('valor'));
                 const totalItem = valorUnitario * quantidade;
@@ -1322,24 +1436,44 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const dadosVenda = {
+                        const dadosProdutos = {
                             reserva_id: reservaId,
                             itens: produtosAdicionados,
                             _token: $('meta[name="csrf-token"]').attr('content')
                         };
 
                         $.ajax({
-                            url: '/vendas', // Nova rota para salvar vendas
+                            url: '/reserva-itens', // Nova rota para salvar ReservaItens
                             method: 'POST',
-                            data: JSON.stringify(dadosVenda),
+                            data: JSON.stringify(dadosProdutos),
                             contentType: 'application/json',
                             headers: {
                                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    // Adicionar a transação de venda (tipo produto) ao array de transações
-                                    transacoes.push(response.transacaoVenda);
+                                    // Adicionar os itens salvos à lista de atividades
+                                    response.itens.forEach(function(item) {
+                                        const atividade = {
+                                            id: 'item_' + item.id,
+                                            descricao: 'Produto: ' + item
+                                                .produto.descricao,
+                                            valor: item.produto
+                                                .preco_venda * item
+                                                .quantidade,
+                                            categoria: 'produtos',
+                                            tipo: 'item',
+                                            data_pagamento: new Date()
+                                                .toISOString().split('T')[
+                                                    0],
+                                            status: true,
+                                            quantidade: item.quantidade,
+                                            produto_nome: item.produto
+                                                .descricao
+                                        };
+                                        transacoes.push(atividade);
+                                    });
+
                                     atualizarListaAtividades();
                                     atualizarResumo();
                                     $('#form-transacao-produto').slideUp();
@@ -1364,7 +1498,9 @@
                             error: function(xhr) {
                                 Swal.fire({
                                     title: 'Erro!',
-                                    text: 'Erro ao salvar produtos: ' + (xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText),
+                                    text: 'Erro ao salvar produtos: ' + (xhr
+                                        .responseJSON ? xhr.responseJSON
+                                        .message : xhr.responseText),
                                     icon: 'error'
                                 });
                             }
@@ -1373,9 +1509,55 @@
                 });
             });
 
-            // Inicializar resumo
-            atualizarResumo();
+            $('#btn-finalizar').click(function(e) {
+                e.preventDefault();
+                const restante = parseFloat($('#valor-falta-lancar').val());
+                const recebido = parseFloat($('#valor-recebido').val());
+                const reservaId = $('#btn-finalizar').data('reserva-id');
+                console.log(reservaId)
 
+                if (recebido < restante) {
+                    Swal.fire({
+                        title: 'Ops!',
+                        text: 'Para finalizar a Reserva/Hospedagem você deve concluir o recebimento de todos os valores restantes.',
+                        icon: 'error',
+                        confirmButtonText: 'entendido',
+                        timer: 5000
+                    });
+                } else {
+                    $.ajax({
+                        url: `/reserva/${reservaId}/finalizar`,
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        contentType: 'application/json',
+                        data: JSON
+                            .stringify({}),
+                        success: function(response) {
+                            Swal.fire({
+                                title: 'Sucesso!',
+                                text: response.mensagem ||
+                                    'Reserva finalizada com sucesso!',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            Swal.fire({
+                                title: 'Erro!',
+                                text: 'Não foi possível finalizar a reserva.',
+                                icon: 'error',
+                                confirmButtonText: 'Tentar novamente'
+                            });
+                            console.error("Erro:", error);
+                        }
+                    });
+                }
+            })
+
+            // Inicializar
+            atualizarResumo();
 
 
             $('#periodo').daterangepicker({
@@ -1389,7 +1571,6 @@
                 },
                 opens: 'center',
             }, function(start, end) {
-                console.log('Callback do daterangepicker chamado');
 
                 $('input[name="data_checkin"]').val(start.format('YYYY-MM-DD'));
                 $('input[name="data_checkout"]').val(end.format('YYYY-MM-DD'));
