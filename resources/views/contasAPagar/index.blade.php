@@ -160,7 +160,6 @@
         </tr>
         @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
         @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
-        @include('contasAPagar.modals._edit', ['contasAPagar' => $contasAPagar])
         @push('modais')
             @include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
         @endpush
@@ -192,40 +191,38 @@
 @endpush
 
 @push('js')
-<!-- Then Select2 JS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{{-- 1. Carregue o jQuery PRIMEIRO --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+{{-- 2. Depois, carregue o JavaScript do Select2 --}}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-
+{{-- 3. Finalmente, seu script de inicialização --}}
 <script>
-    $(document).ready(function() {
-        console.log('Inicializando Select2...');
-        
-        $('#fornecedorSelect').select2({
-            placeholder: "Selecione um fornecedor",
-            allowClear: true,
-            minimumInputLength: 2,
-            language: "pt-BR",
-            ajax: {
-                url: '{{ route("fornecedores.search") }}',
-                dataType: 'json',
-                delay: 250,
-                processResults: function (data) {
-                    return {
-                        results: $.map(data, function (item) {
-                            return {
-                                text: item.nome_fantasia,
-                                id: item.id
-                            }
-                        })
-                    };
-                }
-            }
-        }).on('select2:open', () => {
-            console.log('Select2 aberto');
-        });
-        
-        console.log('Select2 inicializado');
+  $(document).ready(function() {
+    // Inicializa o Select2 no elemento correto
+    $('#fornecedorSelect').select2({
+        placeholder: "Selecione um fornecedor",
+        allowClear: true,
+        minimumInputLength: 2,
+        language: "pt-BR", // Adicionar tradução se necessário
+        ajax: {
+            url: '{{ route("fornecedores.search") }}',
+            dataType: 'json',
+            delay: 250,
+            processResults: function (data) {
+                return {
+                    results: $.map(data, function (item) {
+                        return {
+                            text: item.nome_fantasia,
+                            id: item.id
+                        }
+                    })
+                };
+            },
+            cache: true
+        }
     });
+  });
 </script>
 @endpush

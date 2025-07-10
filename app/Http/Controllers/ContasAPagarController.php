@@ -68,6 +68,7 @@ public function index(Request $request)
             // Conta com parcelas
             $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
             $totalParcelas = $conta->parcelas->count();
+            $valorTotal = $conta->parcelas->sum('valor');
 
             foreach ($conta->parcelas as $parcela) {
                 if ($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim) {
@@ -75,6 +76,7 @@ public function index(Request $request)
                     $contaClone->id = $parcela->id;
                     $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
                     $contaClone->valor = $parcela->valor;
+                    $contaClone->valor_total = $valorTotal;
                     $contaClone->data_vencimento = $parcela->data_vencimento;
                     $contaClone->status = $parcela->status;
                     $contaClone->data_pagamento = $parcela->data_pagamento;
@@ -136,8 +138,14 @@ public function index(Request $request)
         if ($numParcelas > 1) {
             $valorParcela = round($conta->valor / $numParcelas, 2);
             $dataBase = Carbon::parse($validatedData['data_vencimento']);
+            $valor_total=$conta->valor;
 
             for ($i = 1; $i <= $numParcelas; $i++) {
+                
+                if($i == $numParcelas){
+                    dump($numParcelas);
+                    $valorParcela = $valor_total;
+                }
                 ParcelaContasAPagar::create([
                     'contas_a_pagar_id' => $conta->id,
                     'numero_parcela' => $i,
@@ -145,6 +153,7 @@ public function index(Request $request)
                     'data_vencimento' => $dataBase->copy()->addMonths($i - 1),
                     'status' => 'pendente',
                 ]);
+                $valor_total -= $valorParcela;
             }
         }
 
