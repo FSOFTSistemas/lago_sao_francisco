@@ -85,7 +85,7 @@
 
                     <div class="mb-3">
                         <label for="planoDeConta">Plano de Contas</label>
-                        <select class="form-control" id="planoDeConta" name="plano_de_contas_id">
+                        <select class="form-control" id="planoDeConta" name="plano_de_contas_id" required>
                             <option value="">Selecione</option>
                             @foreach ($planoDeContas as $planoDeConta)
                                 <option value="{{ $planoDeConta->id }}">{{ $planoDeConta->descricao }}</option>

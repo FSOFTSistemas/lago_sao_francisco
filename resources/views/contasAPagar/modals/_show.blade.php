@@ -13,7 +13,7 @@
                 <p><strong>Parcela:</strong> {{ $contasAPagar->numero_parcela }} de {{ $contasAPagar->total_parcelas }}</p>
                 <p><strong>Valor:</strong> <span id="valor">R${{$contasAPagar->valor}}</span></p>
                 <p><strong>Valor Pago:</strong> <span id="valorPago">R${{$contasAPagar->valor_pago}}</span></p>
-                <p><strong>Valor Total da Compra:</strong> R$ {{ number_format($contasAPagar->valor * $contasAPagar->total_parcelas, 2, ',', '.') }}</p>
+                <p><strong>Valor Total da Compra:</strong> R$ {{ number_format($contasAPagar->valor_total, 2, ',', '.') }}</p>
                 <p><strong>Data de Vencimento:</strong> <span id="dataVencimento">{{ Illuminate\Support\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y')}}</span></p>
                 <p><strong>Data do Pagamento:</strong> <span id="dataPagamento">{{ Illuminate\Support\Carbon::parse($contasAPagar->data_pagamento)->format('d/m/Y')}}</span></p>
                 <p><strong>Situação:</strong> <span id="status">{{$contasAPagar->status}}</span></p>
