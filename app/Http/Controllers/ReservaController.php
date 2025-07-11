@@ -14,11 +14,22 @@ use Illuminate\Support\Carbon;
 
 class ReservaController extends Controller
 {
-    public function index()
-    {
-        $reservas = Reserva::with(['quarto', 'hospede'])->latest()->paginate(10);
-        return view('reserva.index', compact('reservas'));
+    public function index(Request $request)
+{
+    $situacao = $request->input('situacao', 'todos'); // 'todos' por padrão
+
+    $query = Reserva::with(['quarto', 'hospede'])->latest();
+
+    if ($situacao !== 'todos') {
+        $query->where('situacao', $situacao);
     }
+
+    $reservas = $query->paginate(10);
+
+    return view('reserva.index', compact('reservas', 'situacao'));
+}
+
+
 
     public function create(Request $request)
     {
@@ -105,9 +116,9 @@ class ReservaController extends Controller
         // Verificar se hoje é o dia do check-in
         $hoje = Carbon::today();
         $dataCheckin = Carbon::parse($reserva->data_checkin);
-        $podeHospedar = $hoje->equalTo($dataCheckin) && 
-                       in_array($reserva->situacao, ['reserva']) && 
-                       !in_array($reserva->situacao, ['finalizada', 'cancelado']);
+        $podeHospedar = $hoje->equalTo($dataCheckin) &&
+            in_array($reserva->situacao, ['reserva']) &&
+            !in_array($reserva->situacao, ['finalizada', 'cancelado']);
 
         return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar'));
     }
@@ -147,7 +158,7 @@ class ReservaController extends Controller
                     ->where('tipo', 'pagamento')
                     ->where('status', true)
                     ->exists();
-                
+
                 if (!$temPagamentos) {
                     return redirect()->back()->withInput()->with('error', 'Para alterar para "reserva", é necessário ter pelo menos um pagamento registrado.');
                 }
@@ -221,7 +232,7 @@ class ReservaController extends Controller
     {
         try {
             $reserva = Reserva::findOrFail($id);
-            
+
             // Verificar se a reserva pode ser finalizada
             if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
                 return response()->json([
@@ -237,7 +248,7 @@ class ReservaController extends Controller
 
             $totalRecebido = $transacoes->where('tipo', 'pagamento')->sum('valor');
             $totalDescontos = $transacoes->where('tipo', 'desconto')->sum('valor');
-            
+
             // Calcular total da reserva (incluindo produtos)
             $checkin = Carbon::parse($reserva->data_checkin);
             $checkout = Carbon::parse($reserva->data_checkout);
@@ -245,7 +256,7 @@ class ReservaController extends Controller
             $totalDiarias = $reserva->valor_diaria * $numDiarias;
             $totalProdutos = $transacoes->where('categoria', 'produtos')->sum('valor');
             $totalGeral = $totalDiarias + $totalProdutos;
-            
+
             $faltaLancar = $totalGeral - $totalRecebido - $totalDescontos;
 
             if ($faltaLancar > 0.01) { // Tolerância para diferenças de centavos
@@ -262,7 +273,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Reserva finalizada com sucesso!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -275,7 +285,7 @@ class ReservaController extends Controller
     {
         try {
             $reserva = Reserva::findOrFail($id);
-            
+
             // Verificar se a reserva pode ser cancelada
             if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
                 return response()->json([
@@ -291,7 +301,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Reserva cancelada com sucesso!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -304,11 +313,11 @@ class ReservaController extends Controller
     {
         try {
             $reserva = Reserva::findOrFail($id);
-            
+
             // Verificar se hoje é o dia do check-in
             $hoje = Carbon::today();
             $dataCheckin = Carbon::parse($reserva->data_checkin);
-            
+
             if (!$hoje->equalTo($dataCheckin)) {
                 return response()->json([
                     'success' => false,
@@ -339,7 +348,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Check-in realizado com sucesso!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -355,13 +363,13 @@ class ReservaController extends Controller
     public function verificarMudancaSituacao($reservaId)
     {
         $reserva = Reserva::find($reservaId);
-        
+
         if ($reserva && $reserva->situacao === 'pre-reserva') {
             $temPagamentos = Transacao::where('reserva_id', $reservaId)
                 ->where('tipo', 'pagamento')
                 ->where('status', true)
                 ->exists();
-            
+
             if ($temPagamentos) {
                 $reserva->situacao = 'reserva';
                 $reserva->save();
