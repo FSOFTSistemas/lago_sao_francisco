@@ -95,6 +95,7 @@ public function index(Request $request)
             if ($conta->parcelas->isEmpty()) {
                 // A conta já foi filtrada pelo banco, então apenas a adicionamos
                 $conta->pode_excluir = $conta->status !== 'pago';
+                $conta->conta_id = $conta->id;
                 $contasComParcelas[] = $conta;
             } else {
                 $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
@@ -125,6 +126,7 @@ public function index(Request $request)
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
+                    
                     $contasComParcelas[] = $contaClone;
                 }
             }
@@ -284,6 +286,7 @@ public function index(Request $request)
             'conta_id'          => 'required_without:id|exists:contas_a_pagar,id',
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
+            'e_parcela' => 'required|boolean'
         ]);
 
         try {
@@ -295,9 +298,10 @@ public function index(Request $request)
                 $conta = null;
                 $parcela = null;
                 $description = '';
-
+                dd($request);
                 // 3. Define qual entidade está sendo paga (Parcela ou Conta)
-                if ($request->filled('id')) {
+                if ($request->e_parcela) {
+                    
                     // Pagamento de Parcela
                     $parcela = ParcelaContasAPagar::findOrFail($request->id);
                     $conta = $parcela->conta;
@@ -354,7 +358,7 @@ public function index(Request $request)
                         'forma_pagamento' => $request->fonte_pagadora,
                     ]);
                 }
-
+                
                 return redirect()
                     ->route('contasAPagar.index')
                     ->with('success', 'Pagamento registrado com sucesso!');
@@ -408,7 +412,7 @@ public function index(Request $request)
     }
 
     /**
-     * Lida com a lógica de pagamento via Conta Corrente. (CORRIGIDO)
+     * Lida com a lógica de pagamento via Conta Corrente. 
      */
     private function handleContaCorrentePayment(Request $request, ContasAPagar $conta, string $description, float $valorPago): void
     {

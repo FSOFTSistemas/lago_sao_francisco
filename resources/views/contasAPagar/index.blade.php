@@ -168,7 +168,7 @@
 
                @if($contasAPagar->pode_excluir)
                     <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                        data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
+                            data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
                         🗑️
                     </button>
                 @endif

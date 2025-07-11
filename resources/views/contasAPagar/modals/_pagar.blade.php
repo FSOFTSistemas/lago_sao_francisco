@@ -2,7 +2,11 @@
 <div class="modal fade" id="pagarContasAPagarModal{{ $contasAPagar->id }}" tabindex="-1" role="dialog"
     aria-labelledby="pagarContasAPagarModalLabel{{ $contasAPagar->id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <form action="{{ route('contasAPagar.pagar', $contasAPagar->id) }}" method="POST">
+        @php
+        $e_parcela = ($contasAPagar->parcelas.isEmpty())
+        @endphp
+        @dd($contasAPagar)
+        <form action="{{ route('contasAPagar.pagar', $contasAPagar->id, $e_parcela) }}" method="POST">
             @csrf
             @method('POST')
             <input type="hidden" name="id" value="{{ $contasAPagar->id ?? '' }}">
