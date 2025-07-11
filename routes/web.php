@@ -235,3 +235,7 @@ Route::prefix('reserva-itens')->group(function () {
 });
 
 Route::put('/reserva/{id}/finalizar', [ReservaController::class, 'finalizar'])->name('reserva.finalizar');
+
+Route::put('/reserva/{id}/cancelar', [ReservaController::class, 'cancelar'])->name('reserva.cancelar');
+
+Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->name('reserva.hospedar');

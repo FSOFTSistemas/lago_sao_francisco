@@ -171,7 +171,7 @@ class TransacaoController extends Controller
             // Calcular número de diárias
             $checkin = Carbon::parse($reserva->data_checkin);
             $checkout = Carbon::parse($reserva->data_checkout);
-            $numDiarias = $checkout->diffInDays($checkin);
+            $numDiarias = $checkin->diffInDays($checkout);
             
             // Buscar transações da reserva
             $transacoes = Transacao::where('reserva_id', $reservaId)

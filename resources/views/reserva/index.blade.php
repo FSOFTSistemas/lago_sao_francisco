@@ -40,6 +40,12 @@
                         <div class="d-flex align-items-center me-3">
                             <span class="status-indicator" style="background-color: #343A40;"></span> Data bloqueada
                         </div>
+                        <div class="d-flex align-items-center me-3">
+                            <span class="status-indicator" style="background-color: #26A69A;"></span> Finalizado
+                        </div>
+                        <div class="d-flex align-items-center me-3">
+                            <span class="status-indicator" style="background-color: #6A1B9A;"></span> Cancelado
+                        </div>
                     </div>
             <thead class="bg-primary text-white">
                 <tr>
@@ -88,6 +94,10 @@
                 return '#FF0000';
             case 'pre-reserva':
                 return '#FFFF00';
+            case 'finalizada':
+                return '#26A69A';
+            case 'cancelado':
+                return '#6A1B9A';
             default:
                 return '#808080';
         }

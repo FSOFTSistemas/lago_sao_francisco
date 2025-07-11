@@ -29,33 +29,83 @@
                             <div class='form-group row' id='campoSituacao'>
                                 <label class='col-md-3 label-control'><strong>* Situação</strong></label>
                                 <div class='situacao-options'>
+                                    @php
+                                        $situacaoAtual = old('situacao', $reserva->situacao ?? '');
+                                        $isEdicao = isset($reserva);
+                                        $podeAlterarSituacao = true;
+                                        
+                                        // Regras para edição
+                                        if ($isEdicao) {
+                                            if (in_array($situacaoAtual, ['hospedado', 'finalizada', 'cancelado'])) {
+                                                $podeAlterarSituacao = false;
+                                            }
+                                        }
+                                    @endphp
 
                                     <label class='radio-option'>
                                         <input type='radio' name='situacao' value='pre-reserva'
-                                            @checked(old('situacao', $reserva->situacao ?? '') === 'pre-reserva') required>
+                                            @checked($situacaoAtual === 'pre-reserva') 
+                                            @if($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                            @if(!$podeAlterarSituacao) disabled @endif
+                                            required>
                                         <span class='badge badge-warning'>pré-reservar</span>
                                     </label>
 
                                     <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='reserva' @checked(old('situacao', $reserva->situacao ?? '') === 'reserva')>
+                                        <input type='radio' name='situacao' value='reserva' 
+                                            @checked($situacaoAtual === 'reserva')
+                                            @if($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                            @if(!$podeAlterarSituacao) disabled @endif>
                                         <span class='badge badge-primary'>reservar</span>
                                     </label>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='hospedado'
-                                            @checked(old('situacao', $reserva->situacao ?? '') === 'hospedado')>
-                                        <span class='badge badge-danger'>hospedar</span>
-                                    </label>
+                                    @if(!$isEdicao)
+                                        <label class='radio-option'>
+                                            <input type='radio' name='situacao' value='hospedado'
+                                                @checked($situacaoAtual === 'hospedado')>
+                                            <span class='badge badge-danger'>hospedar</span>
+                                        </label>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='bloqueado'
-                                            @checked(old('situacao', $reserva->situacao ?? '') === 'bloqueado')>
-                                        <span class='badge badge-dark'>bloquear datas</span>
-                                    </label>
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='finalizada'
-                                            @checked(old('situacao', $reserva->situacao ?? '') === 'finalizada') style ='display: none;'>
-                                    </label>
+                                        <label class='radio-option'>
+                                            <input type='radio' name='situacao' value='bloqueado'
+                                                @checked($situacaoAtual === 'bloqueado')>
+                                            <span class='badge badge-dark'>bloquear datas</span>
+                                        </label>
+                                    @else
+                                        @if($situacaoAtual === 'hospedado')
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='hospedado' checked disabled>
+                                                <span class='badge badge-danger'>hospedado</span>
+                                            </label>
+                                        @endif
+
+                                        @if($situacaoAtual === 'bloqueado')
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='bloqueado'
+                                                    @checked($situacaoAtual === 'bloqueado')>
+                                                <span class='badge badge-dark'>bloquear datas</span>
+                                            </label>
+                                        @endif
+
+                                        @if($situacaoAtual === 'finalizada')
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='finalizada' checked disabled>
+                                                <span class='badge badge-success'>finalizada</span>
+                                            </label>
+                                        @endif
+
+                                        @if($situacaoAtual === 'cancelado')
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='cancelado' checked disabled>
+                                                <span class='badge badge-secondary'>cancelado</span>
+                                            </label>
+                                        @endif
+                                    @endif
+
+                                    <!-- Input hidden para situações não editáveis -->
+                                    @if($isEdicao && !$podeAlterarSituacao)
+                                        <input type='hidden' name='situacao' value='{{ $situacaoAtual }}'>
+                                    @endif
                                 </div>
                             </div>
 
@@ -184,23 +234,53 @@
 
                             <div class="card-footer">
                                 @if (isset($reserva))
-                                    <button type="button" class="btn btn-danger" data-toggle="modal"
-                                        id="btn-excluir-reserva" data-target="#deleteReservaModal{{ $reserva->id }}">
-                                        Excluir 🗑️
-                                    </button>
-                                    <button class="btn btn-dark" id="btn-finalizar"
-                                        data-reserva-id="{{ $reserva->id }}"><i
-                                            class="fa-solid fa-right-from-bracket"></i>Finalizar Reserva</button>
+                                    <!-- Botão Cancelar (substitui o Excluir) -->
+                                    @if(!in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                                        <button type="button" class="btn"  id="btn-cancelar-reserva" 
+                                            data-reserva-id="{{ $reserva->id }}">
+                                            <i class="fas fa-ban"></i> Cancelar
+                                        </button>
+                                    @endif
+
+                                    <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
+                                    @if(isset($podeHospedar) && $podeHospedar)
+                                        <button type="button" class="btn btn-info" id="btn-hospedar" 
+                                            data-reserva-id="{{ $reserva->id }}">
+                                            <i class="fas fa-bed"></i> Hospedar
+                                        </button>
+                                    @endif
+
+                                    <!-- Botão Finalizar (aparece quando hospedado) -->
+                                    @if($reserva->situacao === 'hospedado')
+                                        <button type="button" class="btn btn-success" id="btn-finalizar"
+                                            data-reserva-id="{{ $reserva->id }}">
+                                            <i class="fa-solid fa-right-from-bracket"></i> Finalizar
+                                        </button>
+                                    @endif
+
+                                    <!-- Mostrar status se finalizada ou cancelada -->
+                                    @if($reserva->situacao === 'finalizada')
+                                        <span class="mr-3">
+                                            <i class="fas fa-check"></i> Reserva finalizada
+                                        </span>
+                                    @endif
+
+                                    @if($reserva->situacao === 'cancelado')
+                                        <span class="badge badge-secondary badge-lg">
+                                            <i class="fas fa-ban"></i> RESERVA CANCELADA
+                                        </span>
+                                    @endif
                                 @endif
+
                                 <a href="{{ route('reserva.index') }}" class="btn btn-secondary"
                                     id="btn-voltar">Voltar</a>
-                                <button type="submit" class="btn btn-primary"
-                                    id="btn-atualizar-criar">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
+                                
+                                @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                    <button type="submit" class="btn"
+                                        id="btn-atualizar-criar">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
+                                @endif
                             </div>
                         </form>
-                        @if (isset($reserva))
-                            @include('reserva.modals._delete')
-                        @endif
                     </div>
                 </div>
             </div>
@@ -253,127 +333,141 @@
                     </div>
 
                     <!-- Card de Atividades na Reserva -->
-                    <div class='card shadow-sm'>
-                        <div class='card-header bg-light d-flex justify-content-between align-items-center'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA RESERVA
-                            </h5>
-                            <div class='dropdown'>
-                                <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
-                                    id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true'
-                                    aria-expanded='false'>
-                                    <i class='fas fa-plus'></i>
-                                </button>
-                                <div class='dropdown-menu' aria-labelledby='dropdownMenuButton' >
-                                    <a class='dropdown-item' href='#'
-                                        onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
-                                    <a class='dropdown-item' href='#'
-                                        onclick="mostrarFormulario('produto')">Adicionar Produto</a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class='card-body'>
-                            <div id='lista-atividades'>
-                                <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
-                            </div>
-
-                            <!-- Formulário para adicionar transação (pagamento) -->
-                            <div id='form-transacao-pagamento' style='display: none;'>
-                                <hr>
-                                <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
-                                <div class='form-group'>
-                                    <label for='descricao_transacao'>Descrição</label>
-                                    <input type='text' class='form-control' id='descricao_transacao'
-                                        placeholder='Ex: Pagamento da diária'>
-                                </div>
-                                <div class='form-group'>
-                                    <label for='valor_transacao'>Valor</label>
-                                    <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
-                                </div>
-                                <div class='form-group'>
-                                    <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
-                                    <select class='form-control' id='forma_pagamento_transacao'>
-                                        <option value=''>Selecione...</option>
-                                        @if (isset($formasPagamento))
-                                            @foreach ($formasPagamento as $forma)
-                                                <option value='{{ $forma->id }}'
-                                                    {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>
-                                                    {{ $forma->descricao }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="data_transacao">Data</label>
-                                    <input type="date" class="form-control" id="data_transacao"
-                                        value="{{ date('Y-m-d') }}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="observacoes_transacao">Observações</label>
-                                    <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
-                                </div>
-                                <input type="hidden" id="categoria_transacao" value="hospedagem">
-                                <input type="hidden" id="tipo_transacao" value="pagamento">
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success btn-sm"
-                                        id="btn-salvar-transacao">Salvar</button>
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                        id="btn-cancelar-transacao">Cancelar</button>
-                                </div>
-                            </div>
-
-                            <!-- Formulário para adicionar produto -->
-                            <div id="form-transacao-produto" style="display: none;">
-                                <hr>
-                                <h6 id="titulo-form-produto">Adicionar Produto</h6>
-                                <div class="form-group">
-                                    <label for="produto_id">Produto</label>
-                                    <select class="form-control select2" id="produto_id">
-                                        <option value="">Selecione um produto</option>
-                                        @if (isset($produtos))
-                                            @foreach ($produtos as $produto)
-                                                <option value="{{ $produto->id }}"
-                                                    data-valor="{{ $produto->preco_venda }}"
-                                                    {{ old('produto_id') == $produto->id ? 'selected' : '' }}>
-                                                    {{ $produto->descricao }} - R$
-                                                    {{ number_format($produto->preco_venda, 2, ',', '.') }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="form-group row align-items-center">
-                                    <div class="col-md-4">
-                                        <label for="quantidade_produto">Quantidade</label>
-                                        <input type="number" class="form-control" id="quantidade_produto"
-                                            value="1" min="1">
+                    @if(!in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                        <div class='card shadow-sm'>
+                            <div class='card-header bg-light d-flex justify-content-between align-items-center'>
+                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA RESERVA
+                                </h5>
+                                <div class='dropdown'>
+                                    <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
+                                        id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true'
+                                        aria-expanded='false'>
+                                        <i class='fas fa-plus'></i>
+                                    </button>
+                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
+                                        <a class='dropdown-item' href='#'
+                                            onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
+                                        <a class='dropdown-item' href='#'
+                                            onclick="mostrarFormulario('produto')">Adicionar Produto</a>
                                     </div>
-                                    <div class="col-md-8">
-                                        <label for="total_item_produto">Total do Item</label>
-                                        <input type="text" class="form-control" id="total_item_produto" readonly
+                                </div>
+                            </div>
+                            <div class='card-body'>
+                                <div id='lista-atividades'>
+                                    <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
+                                </div>
+
+                                <!-- Formulário para adicionar transação (pagamento) -->
+                                <div id='form-transacao-pagamento' style='display: none;'>
+                                    <hr>
+                                    <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
+                                    <div class='form-group'>
+                                        <label for='descricao_transacao'>Descrição</label>
+                                        <input type='text' class='form-control' id='descricao_transacao'
+                                            placeholder='Ex: Pagamento da diária'>
+                                    </div>
+                                    <div class='form-group'>
+                                        <label for='valor_transacao'>Valor</label>
+                                        <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
+                                    </div>
+                                    <div class='form-group'>
+                                        <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
+                                        <select class='form-control' id='forma_pagamento_transacao'>
+                                            <option value=''>Selecione...</option>
+                                            @if (isset($formasPagamento))
+                                                @foreach ($formasPagamento as $forma)
+                                                    <option value='{{ $forma->id }}'
+                                                        {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>
+                                                        {{ $forma->descricao }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="data_transacao">Data</label>
+                                        <input type="date" class="form-control" id="data_transacao"
+                                            value="{{ date('Y-m-d') }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="observacoes_transacao">Observações</label>
+                                        <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
+                                    </div>
+                                    <input type="hidden" id="categoria_transacao" value="hospedagem">
+                                    <input type="hidden" id="tipo_transacao" value="pagamento">
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-success btn-sm"
+                                            id="btn-salvar-transacao">Salvar</button>
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                            id="btn-cancelar-transacao">Cancelar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Formulário para adicionar produto -->
+                                <div id="form-transacao-produto" style="display: none;">
+                                    <hr>
+                                    <h6 id="titulo-form-produto">Adicionar Produto</h6>
+                                    <div class="form-group">
+                                        <label for="produto_id">Produto</label>
+                                        <select class="form-control select2" id="produto_id">
+                                            <option value="">Selecione um produto</option>
+                                            @if (isset($produtos))
+                                                @foreach ($produtos as $produto)
+                                                    <option value="{{ $produto->id }}"
+                                                        data-valor="{{ $produto->preco_venda }}"
+                                                        {{ old('produto_id') == $produto->id ? 'selected' : '' }}>
+                                                        {{ $produto->descricao }} - R$
+                                                        {{ number_format($produto->preco_venda, 2, ',', '.') }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                    <div class="form-group row align-items-center">
+                                        <div class="col-md-4">
+                                            <label for="quantidade_produto">Quantidade</label>
+                                            <input type="number" class="form-control" id="quantidade_produto"
+                                                value="1" min="1">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <label for="total_item_produto">Total do Item</label>
+                                            <input type="text" class="form-control" id="total_item_produto" readonly
+                                                value="0,00">
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-info btn-sm mb-3"
+                                        id="btn-adicionar-item-produto">Adicionar Item</button>
+
+                                    <div id="lista-itens-produto">
+                                        <!-- Itens de produto adicionados dinamicamente aqui -->
+                                    </div>
+
+                                    <div class="form-group mt-3">
+                                        <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
+                                        <input type="text" class="form-control" id="total_produtos_adicionados" readonly
                                             value="0,00">
                                     </div>
-                                </div>
-                                <button type="button" class="btn btn-info btn-sm mb-3"
-                                    id="btn-adicionar-item-produto">Adicionar Item</button>
 
-                                <div id="lista-itens-produto">
-                                    <!-- Itens de produto adicionados dinamicamente aqui -->
-                                </div>
-
-                                <div class="form-group mt-3">
-                                    <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
-                                    <input type="text" class="form-control" id="total_produtos_adicionados" readonly
-                                        value="0,00">
-                                </div>
-
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar
-                                        Produtos</button>
-                                    <button type="button" class="btn btn-secondary btn-sm"
-                                        id="btn-cancelar-produtos">Cancelar</button>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar
+                                            Produtos</button>
+                                        <button type="button" class="btn btn-secondary btn-sm"
+                                            id="btn-cancelar-produtos">Cancelar</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    @else
+                        <!-- Card apenas de visualização para reservas finalizadas/canceladas -->
+                        <div class='card shadow-sm'>
+                            <div class='card-header bg-light'>
+                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA RESERVA</h5>
+                            </div>
+                            <div class='card-body'>
+                                <div id='lista-atividades'>
+                                    <p class='text-muted text-center'>Carregando atividades...</p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
 
                     <!-- Dicas -->
                     <div class="dicas mt-4">
@@ -504,6 +598,15 @@
 
         .radio-option input[type='radio'] {
             cursor: pointer;
+        }
+
+        .radio-option input[type='radio']:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .radio-option input[type='radio']:disabled + .badge {
+            opacity: 0.6;
         }
 
         input[type='number'] {
@@ -669,6 +772,25 @@
             background-color: #dc3545;
             color: #fff;
         }
+
+        .badge-lg {
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+        }
+        #btn-atualizar-criar{
+            background-color: #26C0C3;
+             color: #fff
+        }
+        #btn-atualizar-criar:hover{
+            background-color: #229fa1;
+        }
+        #btn-cancelar-reserva{
+            background-color: #6A1B9A;
+            color:#fff
+        }
+        #btn-cancelar-reserva:hover{
+            background-color: #4c0a7a;
+            }
     </style>
     <style>
         @media (max-width: 768px) {
@@ -749,6 +871,9 @@
                 {
                     texto: "<strong>Atividades na Reserva:</strong> Adicione pagamentos e produtos à reserva. O resumo é atualizado automaticamente."
                 },
+                {
+                    texto: "<strong>Botões de Ação:</strong> Use 'Hospedar' no dia do check-in, 'Finalizar' quando todos os valores forem recebidos, ou 'Cancelar' a qualquer momento."
+                },
             ];
 
             let dicaAtual = 0;
@@ -809,7 +934,6 @@
             const diaria = $("#valor_diaria");
             const valorDiariaArmazenado = diaria.val();
 
-
             function atualizarCampos() {
                 const situacao = $('input[name="situacao"]:checked').val();
                 if (!situacao) {
@@ -837,20 +961,14 @@
                     });
 
                     $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
-
                     $('#valor_diaria').val(0);
-                } else if (situacao === 'finalizada') {
-                    $('#periodo, #hospede_id, #valor_diaria, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton,')
+                } else if (situacao === 'finalizada' || situacao === 'cancelado') {
+                    // Desabilitar campos para reservas finalizadas ou canceladas
+                    $('#periodo, #hospede_id, #valor_diaria, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton')
                         .attr('disabled', true);
-                    $('#btn-atualizar-criar, #btn-excluir-reserva').hide()
+                    $('#btn-atualizar-criar').hide();
                     $(':radio:not(:checked)').attr('disabled', true);
-                    $('#btn-finalizar').html('<i class="fa-solid fa-right-from-bracket"></i> Finalizado').attr(
-                        'disabled', true)
-                    $('#btn-voltar').removeClass('btn-secondary')
-                        .addClass('btn-primary');
-
-
-
+                    $('#btn-voltar').removeClass('btn-secondary').addClass('btn-primary');
                 } else {
                     $('.form-group').slideDown(200);
                     $('#campoQuarto').hide()
@@ -864,7 +982,6 @@
             }
 
             $('input[name="situacao"]').on('change', atualizarCampos);
-
             atualizarCampos();
         });
     </script>
@@ -921,6 +1038,7 @@
                                 transacoes.push(atividade);
                             });
                             atualizarListaAtividades();
+                            atualizarResumo(); // Atualizar resumo após carregar itens
                         }
                     },
                     error: function() {
@@ -976,10 +1094,6 @@
                             $('#total-geral').text('R$ ' + resumo.total_geral.toLocaleString('pt-BR', {
                                 minimumFractionDigits: 2
                             }));
-                            // $('#total-recebido').text('R$ ' + resumo.total_recebido.toLocaleString(
-                            //     'pt-BR', {
-                            //         minimumFractionDigits: 2
-                            //     }));
                             atualizarInputRecebido(resumo.total_recebido);
                             atualizarInputFaltaLancar(resumo.falta_lancar);
                         }
@@ -990,7 +1104,6 @@
                         console.log('Erro retornado:', errorThrown);
                         console.log('Resposta completa:', jqXHR.responseText);
                     }
-
                 });
             }
 
@@ -1005,11 +1118,10 @@
                     const fim = moment(checkout);
                     numDiarias = fim.diff(inicio, 'days');
                 }
-
+                
                 const totalDiarias = valorDiaria * numDiarias;
                 const totalProdutos = transacoes.filter(t => (t.categoria === 'produtos' || t.tipo === 'item') && t
-                    .status).reduce((sum,
-                    t) => sum + parseFloat(t.valor), 0);
+                    .status).reduce((sum, t) => sum + parseFloat(t.valor), 0);
 
                 const totalGeral = totalDiarias + totalProdutos;
 
@@ -1032,9 +1144,6 @@
                 $('#total-geral').text('R$ ' + totalGeral.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 }));
-                // $('#total-recebido').text('R$ ' + totalRecebido.toLocaleString('pt-BR', {
-                //     minimumFractionDigits: 2
-                // }));
                 atualizarInputRecebido(totalRecebido)
                 atualizarInputFaltaLancar(faltaLancar);
             }
@@ -1132,6 +1241,9 @@
                             $('#form-transacao-pagamento').slideUp();
                             limparFormularioTransacao();
 
+                            // Verificar mudança de situação após adicionar pagamento
+                            verificarMudancaSituacao();
+
                             Swal.fire({
                                 title: 'Sucesso!',
                                 text: response.message,
@@ -1147,6 +1259,22 @@
                     }
                 });
             });
+
+            // Função para verificar mudança de situação
+            function verificarMudancaSituacao() {
+                const situacaoAtual = $('input[name="situacao"]:checked').val();
+                if (situacaoAtual === 'pre-reserva') {
+                    // Alterar automaticamente para 'reserva' se houver pagamentos
+                    $('input[name="situacao"][value="reserva"]').prop('checked', true);
+                    
+                    Swal.fire({
+                        title: 'Situação Atualizada!',
+                        text: 'A situação da reserva foi alterada para "Reserva" devido ao pagamento adicionado.',
+                        icon: 'info',
+                        timer: 3000
+                    });
+                }
+            }
 
             function limparFormularioTransacao() {
                 $('#descricao_transacao').val('');
@@ -1180,19 +1308,20 @@
                     let html = '';
                     if (transacao.tipo === 'item') {
                         // Para itens de produto (ReservaItem)
-                        atualizarResumo();
                         html = `
                             <div class="atividade-item" data-id="${transacao.id}">
                                 <div class="atividade-header">
-                                    <span>${transacao.descricao} (x${transacao.quantidade})hello</span>
+                                    <span>${transacao.descricao} (x${transacao.quantidade})</span>
                                     <span class="text-success">${valorFormatado}</span>
                                 </div>
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">produtos</span>
                                     Item da reserva • ${dataFormatada}
-                                    <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                        <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         `;
@@ -1207,9 +1336,11 @@
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                     ${formaPagamento} • ${dataFormatada}
-                                    <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                        <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                         `;
@@ -1234,6 +1365,17 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        const situacao = $('input[name="situacao"]:checked').val();
+
+                        if (situacao === 'finalizada') {
+                            Swal.fire(
+                                'Reserva Finalizada',
+                                'Essa ação não pode ser realizada',
+                                'info'
+                            );
+                            return;
+                        }
+
                         $.ajax({
                             url: '/transacoes/' + id,
                             method: 'DELETE',
@@ -1288,6 +1430,16 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        const situacao = $('input[name="situacao"]:checked').val();
+
+                        if (situacao === 'finalizada') {
+                            Swal.fire(
+                                'Reserva Finalizada',
+                                'Essa ação não pode ser realizada',
+                                'info'
+                            );
+                            return;
+                        }
                         $.ajax({
                             url: '/reserva-itens/' + itemId,
                             method: 'DELETE',
@@ -1509,12 +1661,12 @@
                 });
             });
 
+            // Botões de ação da reserva
             $('#btn-finalizar').click(function(e) {
                 e.preventDefault();
                 const restante = parseFloat($('#valor-falta-lancar').val());
                 const recebido = parseFloat($('#valor-recebido').val());
                 const reservaId = $('#btn-finalizar').data('reserva-id');
-                console.log(reservaId)
 
                 if (recebido < restante) {
                     Swal.fire({
@@ -1532,16 +1684,25 @@
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         contentType: 'application/json',
-                        data: JSON
-                            .stringify({}),
+                        data: JSON.stringify({}),
                         success: function(response) {
-                            Swal.fire({
-                                title: 'Sucesso!',
-                                text: response.mensagem ||
-                                    'Reserva finalizada com sucesso!',
-                                icon: 'success',
-                                confirmButtonText: 'OK'
-                            });
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Sucesso!',
+                                    text: response.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload(); // Recarregar para atualizar a interface
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: response.message,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
                         },
                         error: function(xhr, status, error) {
                             Swal.fire({
@@ -1554,11 +1715,122 @@
                         }
                     });
                 }
-            })
+            });
+
+            $('#btn-cancelar-reserva').click(function(e) {
+                e.preventDefault();
+                const reservaId = $(this).data('reserva-id');
+
+                Swal.fire({
+                    title: 'Tem certeza?',
+                    text: 'Esta ação cancelará a reserva permanentemente!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sim, cancelar reserva!',
+                    cancelButtonText: 'Não cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/reserva/${reservaId}/cancelar`,
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            contentType: 'application/json',
+                            data: JSON.stringify({}),
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'Cancelado!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        location.reload(); // Recarregar para atualizar a interface
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Erro!',
+                                        text: response.message,
+                                        icon: 'error',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: 'Não foi possível cancelar a reserva.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Tentar novamente'
+                                });
+                                console.error("Erro:", error);
+                            }
+                        });
+                    }
+                });
+            });
+
+            $('#btn-hospedar').click(function(e) {
+                e.preventDefault();
+                const reservaId = $(this).data('reserva-id');
+
+                Swal.fire({
+                    title: 'Realizar Check-in?',
+                    text: 'O hóspede será registrado como hospedado.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sim, hospedar!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: `/reserva/${reservaId}/hospedar`,
+                            method: 'PUT',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            contentType: 'application/json',
+                            data: JSON.stringify({}),
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        title: 'Check-in Realizado!',
+                                        text: response.message,
+                                        icon: 'success',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        location.reload(); // Recarregar para atualizar a interface
+                                    });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Erro!',
+                                        text: response.message,
+                                        icon: 'error',
+                                        confirmButtonText: 'OK'
+                                    });
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: 'Não foi possível realizar o check-in.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Tentar novamente'
+                                });
+                                console.error("Erro:", error);
+                            }
+                        });
+                    }
+                });
+            });
 
             // Inicializar
             atualizarResumo();
-
 
             $('#periodo').daterangepicker({
                 locale: {
