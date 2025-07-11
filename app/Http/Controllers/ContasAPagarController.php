@@ -322,11 +322,20 @@ public function index(Request $request)
                     $dadosUpdate = [
                         'valor_pago' => $valor_pago_total,
                         'data_pagamento' => $request->data_pagamento,
+                        'forma_pagamento' => $parcela->forma_pagamento
                     ];
+                    $fonte = $request->fonte_pagadora;
+                    $forma = $dadosUpdate['forma_pagamento'];
+                    //dd($forma );
+                    if (!str_contains($forma, $fonte)) {
+                        $dadosUpdate['forma_pagamento'] = trim($forma . "\n" . $fonte);
+                    }
 
+                    //dd($dadosUpdate);
+
+                    
                     if ($valor_pago_total >= $parcela->valor) {
                         $dadosUpdate['status'] = 'pago';
-                        $dadosUpdate['forma_pagamento'] = $request->fonte_pagadora;
                     }
                     $parcela->update($dadosUpdate);
 
@@ -361,7 +370,7 @@ public function index(Request $request)
         } catch (Throwable $e) {
             // Captura qualquer outro erro inesperado
             Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
-
+            dd($e);
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('error', 'Erro inesperado ao registrar o pagamento. Tente novamente mais tarde.');

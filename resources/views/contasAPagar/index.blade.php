@@ -84,7 +84,7 @@
     'showTotal' => false,
     'valueColumnIndex' => 3,
      'order'=> [
-        [2, 'asc'] // Ordena pela 3ª coluna (índice 2), ascendente
+        [] // Ordena pela 3ª coluna (índice 2), ascendente
     ]
 ])
 <thead class="bg-primary text-white">
@@ -127,7 +127,6 @@
             </td>
             <td>{{ \Carbon\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y') }}</td>
             <td>R${{ number_format($contasAPagar->valor, 2, ',', '.') }}</td>
-        
             <td>
                 @if($contasAPagar->status == "pago")
                     <span class="text-success">Pago <i class="fa-regular fa-circle-check"></i></span>
@@ -135,13 +134,20 @@
                     <span class="text-warning">Pendente <i class="fa-solid fa-triangle-exclamation"></i></span>
                 @endif
             </td>
-            <td>
-                @if($contasAPagar->status == "conta_corente")
-                    <span class="text-success">Conta Corrente</span>
-                @else
-                    <span class="text-success">Caixa</span>
+           <td>
+            @php
+                $formas = explode("\n", $contasAPagar->forma_pagamento);
+            @endphp
+
+            @foreach($formas as $forma)
+                @if(trim($forma) == 'conta_corrente')
+                    <span class="text-success">Conta Corrente</span><br>
+                @elseif(trim($forma) == 'caixa')
+                    <span class="text-success">Caixa</span><br>
                 @endif
-            </td>
+            @endforeach
+        </td>
+
             <td>
                 {{ $contasAPagar->fornecedor->nome_fantasia ?? ''}}
             </td>
