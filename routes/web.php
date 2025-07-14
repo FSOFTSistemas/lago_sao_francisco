@@ -170,7 +170,11 @@ Route::resource('adicionais', AdicionalController::class);
 
 Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
 
-Route::resource('dayuse', DayUseController::class)->middleware('caixa.aberto'); //esse é o middleware para impedir acesso caso o caixa esteja fechado
+Route::get('dayuse/create', [DayUseController::class, 'create'])
+->middleware('caixa.aberto')
+->name('dayuse.create');
+
+Route::resource('dayuse', DayUseController::class)->except(['create']);
 
 Route::resource('itemDayuse', ItensDayUseController::class);
 
