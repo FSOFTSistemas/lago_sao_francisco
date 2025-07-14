@@ -8,6 +8,7 @@ use App\Models\DayUsePag;
 use App\Models\FormaPagamento;
 use App\Services\CaixaService;
 use App\Models\Caixa;
+use App\Models\DayUseSouvenir;
 use App\Models\Movimento;
 use App\Models\Souvenir;
 use Illuminate\Support\Facades\Auth;
@@ -161,7 +162,7 @@ class DayUsePagamento extends Component
         ]);
 
         // Validação final: o valor restante deve ser zero (ou muito próximo de zero para evitar problemas de float)
-        if (abs($this->restante) > 0.01) { // Tolerância de 1 centavo
+        if (abs($this->restante) > 0.01) {
             $this->addError('restante', 'O valor restante a pagar deve ser zero.');
             return;
         }
@@ -178,8 +179,8 @@ class DayUsePagamento extends Component
             'desconto' => $this->desconto,
         ]);
 
-        // Salva os pagamentos na tabela DayUsePag
-        $dayUse->formaPag()->delete(); // Remove pagamentos antigos
+        // Remove e recria os pagamentos
+        $dayUse->formaPag()->delete();
         foreach ($this->pagamentosAtuais as $payment) {
             DayUsePag::create([
                 'dayuse_id' => $this->dayUseId,
@@ -188,14 +189,13 @@ class DayUsePagamento extends Component
             ]);
         }
 
-
         $empresaId = Auth::user()->empresa_id;
 
         $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
             ->where('status', 'aberto')
             ->where('empresa_id', $empresaId)
             ->where('usuario_id', Auth::id())
-            ->first();;
+            ->first();
 
         if (!$caixa) {
             session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
@@ -205,13 +205,10 @@ class DayUsePagamento extends Component
         // Criar movimentações no Fluxo de Caixa
         foreach ($this->pagamentosAtuais as $payment) {
             $formaPagamento = FormaPagamento::find($payment['pagamento_id']);
-
-            // Verifica tipo com base no nome da forma de pagamento
             $tipoMov = 'venda-' . strtolower(str_replace(' ', '-', $formaPagamento->descricao));
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
-            if (!$movimentoId) {
-                continue; // Pula se não tiver mapeado corretamente
-            }
+
+            if (!$movimentoId) continue;
 
             $this->caixaService->inserirMovimentacao($caixa, [
                 'descricao' => 'DayUse #' . $dayUse->id,
@@ -223,6 +220,7 @@ class DayUsePagamento extends Component
             ]);
         }
 
+        // Atualizar estoque dos souvenirs
         foreach ($this->souvenirsAdicionados as $souvenirItem) {
             $souvenir = Souvenir::find($souvenirItem['id']);
 
@@ -235,9 +233,19 @@ class DayUsePagamento extends Component
             }
         }
 
+        // ✅ Salvar souvenirs na tabela intermediária
+        DayUseSouvenir::where('dayuse_id', $this->dayUseId)->delete();
+        foreach ($this->souvenirsAdicionados as $souvenirItem) {
+            DayUseSouvenir::create([
+                'dayuse_id' => $this->dayUseId,
+                'souvenir_id' => $souvenirItem['id'],
+                'quantidade' => $souvenirItem['quantidade'],
+            ]);
+        }
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }
+
 
     public function render()
     {

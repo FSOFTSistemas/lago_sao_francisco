@@ -93,7 +93,7 @@ Route::resource('contaCorrente', ContaCorrenteController::class)->middleware('pe
 
 Route::resource('cliente', ClienteController::class)->middleware('permission:gerenciar cliente');
 
-Route::resource('fluxoCaixa', FluxoCaixaController::class)->middleware('permission:gerenciar fluxo de caixa');
+Route::resource('fluxoCaixa', FluxoCaixaController::class)->middleware('permission:gerenciar caixa');
 
 Route::resource('contasAReceber', ContasAReceberController::class)->middleware('permission:gerenciar contas a receber');
 
@@ -130,7 +130,9 @@ Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponivei
 
 Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
 
-Route::resource('aluguel', AluguelController::class);
+Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('caixa.aberto')->name('aluguel.create');
+
+Route::resource('aluguel', AluguelController::class)->except(['create']);
 
 Route::resource('cardapios', CardapioController::class);
 
