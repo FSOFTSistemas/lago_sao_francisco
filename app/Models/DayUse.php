@@ -36,4 +36,10 @@ class DayUse extends Model
     {
         return $this->belongsTo(Funcionario::class, 'vendedor_id');
     }
+    public function souvenirs()
+    {
+        return $this->belongsToMany(Souvenir::class, 'day_use_souvenir', 'dayuse_id', 'souvenir_id')
+            ->withPivot('quantidade')
+            ->withTimestamps();
+    }
 }

@@ -13,8 +13,11 @@ class VerificaCaixaAberto
     public function handle(Request $request, Closure $next)
     {
         $empresaId = Auth::user()->empresa_id ?? null;
+        $usuarioId = Auth::id();
+
 
         $caixaAberto = Caixa::where('empresa_id', $empresaId)
+        ->where('usuario_id', $usuarioId)
             ->where('status', 'aberto')
             ->latest('data_abertura')
             ->first();
@@ -25,7 +28,7 @@ class VerificaCaixaAberto
         }
 
         if (!Carbon::parse($caixaAberto->data_abertura)->isToday()) {
-            return redirect()->route('caixa.index')->with('sweet_error', 'O caixa aberto não é do dia atual. Feche-o para continuar.');
+            return redirect()->route('fluxoCaixa.index')->with('sweet_error', 'O caixa aberto não é do dia atual. Feche-o para continuar.');
         }
 
         return $next($request);

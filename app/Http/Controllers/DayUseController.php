@@ -42,10 +42,31 @@ class DayUseController extends Controller
         }
 
         // Recuperar DayUses do período
-        $dayuses = DayUse::with(['cliente', 'vendedor'])
+        $dayuses = DayUse::with([
+            'cliente',
+            'vendedor',
+            'itens.item',
+            'formaPag.formaPagamento',
+            'souvenirs'
+        ])
             ->whereBetween('data', [$dataInicio, $dataFim])
             ->orderByDesc('data')
-            ->get();
+            ->get()
+            ->map(function ($dayuse) {
+                $valorPago = $dayuse->formaPag->sum('valor') ?? 0;
+                $valorSouvenirs = $dayuse->souvenirs->sum(function ($souvenir) {
+                    return ($souvenir->valor ?? 0) * ($souvenir->pivot->quantidade ?? 0);
+                });
+
+                $valorLiquido = ($dayuse->total ?? 0)
+                    + ($dayuse->acrescimo ?? 0)
+                    - ($dayuse->desconto ?? 0)
+                    + $valorSouvenirs;
+                $dayuse->saldo = $valorLiquido - $valorPago;
+                return $dayuse;
+            });
+
+
 
         // Agrupar MovDayUse por item para contagem dos cards
         $movimentos = MovDayUse::with('item')

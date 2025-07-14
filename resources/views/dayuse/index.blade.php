@@ -131,6 +131,7 @@
                 <th>Data</th>
                 <th>Cliente</th>
                 <th>Vendedor</th>
+                <th>Status</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -142,6 +143,9 @@
                     <td>{{ $dayuse->cliente->tipo == 'PJ' ? $dayuse->cliente->apelido_nome_fantasia : $dayuse->cliente->nome_razao_social }}
                     </td>
                     <td>{{ $dayuse->vendedor->nome }}</td>
+                    <td><span class="badge bg-{{ $dayuse->saldo == 0 ? 'success' : 'warning' }}">
+                            {{ $dayuse->saldo == 0 ? 'Quitado' : 'Pendente' }}
+                        </span></td>
                     <td>
 
                         <form action="{{ route('dayuse.show', $dayuse->id) }}" method="GET" class="d-inline">
