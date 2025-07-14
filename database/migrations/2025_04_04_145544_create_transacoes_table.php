@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('transacoes', function (Blueprint $table) {
             $table->id();
             $table->string('descricao');
-            $table->boolean('status');
+            $table->boolean('status')->default(true);
             $table->unsignedBigInteger('forma_pagamento_id');
             $table->enum('categoria', ['hospedagem', 'alimentos', 'servicos', 'produtos']);
             $table->date('data_pagamento');
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transacaos');
+        Schema::dropIfExists('transacoes');
     }
 };
