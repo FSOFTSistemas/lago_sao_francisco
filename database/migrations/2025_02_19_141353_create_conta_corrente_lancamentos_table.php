@@ -15,7 +15,7 @@ return new class extends Migration {
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->date('data');
-            $table->enum('tipo', ['entrada', 'saída']);
+            $table->enum('tipo', ['entrada', 'saida']);
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
             $table->unsignedBigInteger('banco_id');
             $table->unsignedBigInteger('empresa_id');
