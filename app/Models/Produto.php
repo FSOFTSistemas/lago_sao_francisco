@@ -38,4 +38,26 @@ class Produto extends Model
     {
         return $this->belongsTo(CategoriaProduto::class, 'categoria_produto_id');
     }
+
+    public function reservaItens()
+    {
+        return $this->hasMany(ReservaItem::class);
+    }
+
+    public function vendaItens()
+    {
+        return $this->hasMany(VendaItem::class);
+    }
+
+    // Accessors
+    public function getPrecoVendaFormatadoAttribute()
+    {
+        return 'R$ ' . number_format($this->preco_venda, 2, ',', '.');
+    }
+
+    // Scopes
+    public function scopeAtivos($query)
+    {
+        return $query->where('ativo', true);
+    }
 }

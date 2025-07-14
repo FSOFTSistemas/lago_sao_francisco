@@ -43,6 +43,8 @@ class MovimentosSeeder extends Seeder
             'cancelamento-carteira',
             'cancelamento-cheque',
             'cancelamento-sympla',
+            'pagamento-conta-corrente',
+            'pagamento-caixa',
         ];
 
         foreach ($movimentos as $descricao) {

@@ -6,6 +6,7 @@ use App\Models\Caixa;
 use App\Models\Empresa;
 use App\Models\FluxoCaixa;
 use App\Services\CaixaService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -152,15 +153,19 @@ class CaixaController extends Controller
 
     public function getResumoFechamento(Caixa $caixa)
     {
+        $inicio = Carbon::parse($caixa->data_abertura)->startOfDay();
+        $fim = Carbon::parse($caixa->data_abertura)->endOfDay();
+
         $fluxos = FluxoCaixa::with('movimento')
             ->where('caixa_id', $caixa->id)
+            ->whereBetween('created_at', [$inicio, $fim])
             ->whereDoesntHave('movimento', function ($query) {
                 $query->whereIn('descricao', ['abertura de caixa', 'fechamento de caixa']);
             })
             ->get();
 
 
-        // Cálculo de saldo inclui todos os tipos (entrada, saída, cancelamento) e soma o fundo de caixa
+        // Cálculo de saldo inclui todos os tipos (entrada, saida, cancelamento) e soma o fundo de caixa
         $saldo = $fluxos
             ->filter(fn($fluxo) => optional($fluxo->movimento)->descricao !== 'fechamento de caixa')
             ->sum('valor') + $caixa->valor_inicial;
@@ -177,7 +182,6 @@ class CaixaController extends Controller
         })->map(function ($items) {
             return $items->sum('valor');
         });
-
         return [
             'saldo' => $saldo,
             'formas' => $formasPagamento,

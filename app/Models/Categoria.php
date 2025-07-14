@@ -15,7 +15,12 @@ class Categoria extends Model
         'status',
         'posicao'
     ];
-    public function quartos(){
+    public function quartos()
+    {
         return $this->hasMany(Quarto::class);
+    }
+    public function tarifa()
+    {
+        return $this->hasOne(Tarifa::class);
     }
 }

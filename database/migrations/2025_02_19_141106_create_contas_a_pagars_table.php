@@ -15,11 +15,12 @@ return new class extends Migration {
             $table->string('descricao');
             $table->decimal('valor', 15, 2);
             $table->decimal('valor_pago', 15, 2)->nullable()->default(0);
+            $table->string('forma_pagamento')->nullable();
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
             $table->enum('status', ['pendente', 'pago'])->default('pendente');
             $table->unsignedBigInteger('empresa_id');
-            $table->unsignedBigInteger('plano_de_contas_id')->nullable();
+            $table->unsignedBigInteger('plano_de_contas_id');
             $table->unsignedBigInteger('fornecedor_id')->nullable();
             
             // Novos campos de parcelamento

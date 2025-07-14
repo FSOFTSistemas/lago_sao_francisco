@@ -16,6 +16,7 @@ class ContaCorrenteLancamento extends Model
         'tipo',
         'status',
         'banco_id',
+        'empresa_id'
     ];
     public function daEmpresa()
     {

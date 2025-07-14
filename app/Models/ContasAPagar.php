@@ -17,10 +17,12 @@ class ContasAPagar extends Model
         'valor_pago',
         'data_vencimento',
         'data_pagamento',
+        'forma_pagamento',
         'status',
         'empresa_id',
-        'plano_de_conta_id',
-        'fornecedor_id'
+        'plano_de_contas_id',
+        'fornecedor_id',
+        'total_parcelas'
     ];
 
     public function empresa()

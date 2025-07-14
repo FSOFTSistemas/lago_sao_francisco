@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->date('data_vencimento');
             $table->date('data_pagamento')->nullable();
             $table->decimal('valor_pago', 15, 2)->default(0);
+            $table->string('forma_pagamento')->nullable();
             $table->enum('status', ['pendente', 'pago'])->default('pendente');
             $table->timestamps();
 

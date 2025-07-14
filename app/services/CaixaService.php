@@ -73,25 +73,37 @@ class CaixaService
     }
 
     public function inserirMovimentacao(Caixa $caixa, array $dados)
-    {
+{
+    try {
         // Ajusta dados obrigatórios
         $dados['caixa_id'] = $caixa->id;
         $dados['usuario_id'] = Auth::id();
         $dados['empresa_id'] = $caixa->empresa_id;
         $dados['data'] = $dados['data'] ?? Carbon::now();
 
-        // Validação do saldo para movimentação do tipo saída
+        // Validação do saldo para movimentação do tipo saida
         if (isset($dados['tipo']) && $dados['tipo'] === 'saida') {
             $saldoAtual = $this->saldoAtual($caixa);
             $valor = $dados['valor'] ?? 0;
 
             if ($valor > $saldoAtual) {
-                throw new InvalidArgumentException('Valor da saída não pode ser maior que o saldo atual do caixa (R$ ' . number_format($saldoAtual, 2, ',', '.') . ').');
+                throw new InvalidArgumentException(
+                    'Valor da saida não pode ser maior que o saldo atual do caixa (R$ ' .
+                    number_format($saldoAtual, 2, ',', '.') . ').'
+                );
             }
         }
 
         return FluxoCaixa::create($dados);
+
+    } catch (\InvalidArgumentException $e) {
+        throw $e;
+    } catch (\Throwable $e) {
+        \Log::error('Erro ao inserir movimentação no caixa: ' . $e->getMessage());
+        throw new \Exception('Erro inesperado ao registrar a movimentação no caixa.');
     }
+}
+
 
     public function removerMovimentacao(FluxoCaixa $movimentacao)
     {
