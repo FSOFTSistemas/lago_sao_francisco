@@ -93,8 +93,10 @@ public function index(Request $request)
         // Processa os resultados para criar uma lista plana de itens a serem exibidos
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
-                // A conta já foi filtrada pelo banco, então apenas a adicionamos
+                $conta->id = count($contasComParcelas)+1;
                 $conta->pode_excluir = $conta->status !== 'pago';
+                $conta->conta_descricao = $conta->descricao;
+                $conta->parcela_id = null;
                 $conta->conta_id = $conta->id;
                 $contasComParcelas[] = $conta;
             } else {
@@ -110,9 +112,10 @@ public function index(Request $request)
                     if ($request->filled('status') && $parcela->status !== $request->input('status')) {
                         continue;
                     }
-
+                    
                     $contaClone = clone $conta;
-                    $contaClone->id = $parcela->id;
+                    $contaClone->id = count($contasComParcelas)+1;
+                    $contaClone->conta_id = $conta->id;
                     $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
                     $contaClone->valor = $parcela->valor;
                     $contaClone->valor_total = $valorTotal;
@@ -121,7 +124,7 @@ public function index(Request $request)
                     $contaClone->data_pagamento = $parcela->data_pagamento;
                     $contaClone->numero_parcela = $parcela->numero_parcela;
                     $contaClone->total_parcelas = $totalParcelas;
-                    $contaClone->conta_id = $conta->id;
+                    $contaClone->parcela_id = $parcela->id;
                     $contaClone->conta_descricao = $conta->descricao;
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
@@ -131,6 +134,7 @@ public function index(Request $request)
                 }
             }
         }
+
         
         $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
             return Carbon::parse($item->data_vencimento);
@@ -276,17 +280,17 @@ public function index(Request $request)
      */
     public function pagar(Request $request)
     {
+        dd($request);
         // 1. Validação aprimorada
         $request->validate([
             'data_pagamento'    => 'required|date',
             'valor_pago'        => 'required|numeric|min:0.01',
             'fonte_pagadora'    => 'required|in:caixa,conta_corrente',
             // Valida 'id' da parcela OU 'conta_id' da conta principal
-            'id'                => 'nullable|exists:parcelas_contas_a_pagar,id',
+            'parcela_id'                => 'nullable|exists:parcelas_contas_a_pagar,id',
             'conta_id'          => 'required_without:id|exists:contas_a_pagar,id',
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
-            'e_parcela' => 'required|boolean'
         ]);
 
         try {
@@ -298,12 +302,11 @@ public function index(Request $request)
                 $conta = null;
                 $parcela = null;
                 $description = '';
-                dd($request);
                 // 3. Define qual entidade está sendo paga (Parcela ou Conta)
-                if ($request->e_parcela) {
+                if ($request->parcela_id) {
                     
                     // Pagamento de Parcela
-                    $parcela = ParcelaContasAPagar::findOrFail($request->id);
+                    $parcela = ParcelaContasAPagar::findOrFail($request->parcela_id);
                     $conta = $parcela->conta;
                     $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
                 } else {
@@ -330,12 +333,11 @@ public function index(Request $request)
                     ];
                     $fonte = $request->fonte_pagadora;
                     $forma = $dadosUpdate['forma_pagamento'];
-                    //dd($forma );
+
                     if (!str_contains($forma, $fonte)) {
                         $dadosUpdate['forma_pagamento'] = trim($forma . "\n" . $fonte);
                     }
 
-                    //dd($dadosUpdate);
 
                     
                     if ($valor_pago_total >= $parcela->valor) {
@@ -373,8 +375,8 @@ public function index(Request $request)
                 ->with('error', $e->getMessage());
         } catch (Throwable $e) {
             // Captura qualquer outro erro inesperado
+            
             Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
-            dd($e);
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('error', 'Erro inesperado ao registrar o pagamento. Tente novamente mais tarde.');
