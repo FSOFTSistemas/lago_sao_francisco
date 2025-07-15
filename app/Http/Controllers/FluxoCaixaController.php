@@ -132,10 +132,18 @@ class FluxoCaixaController extends Controller
             ->get();
 
         $totalGeral = $totaisPorMovimento
-    ->filter(function ($item) {
-        return optional($item->movimento)->descricao !== 'fechamento de caixa';
-    })
-    ->sum('total');
+            ->filter(function ($item) {
+                return optional($item->movimento)->descricao !== 'fechamento de caixa';
+            })
+            ->reduce(function ($total, $item) {
+                $descricao = optional($item->movimento)->descricao;
+                $valor = $item->total;
+
+                return str_starts_with($descricao, 'cancelamento-')
+                    ? $total - $valor
+                    : $total + $valor;
+            }, 0);
+
 
 
 
@@ -309,15 +317,15 @@ class FluxoCaixaController extends Controller
         $fluxos = $query->get();
 
         // Agrupa e soma os valores por movimento
-       $resumo = $fluxos
-        ->filter(function ($fluxo) {
-            $descricao = optional($fluxo->movimento)->descricao;
-            return !in_array($descricao, ['abertura de caixa', 'fechamento de caixa']);
-        })
-        ->groupBy('movimento.descricao')
-        ->map(function ($grupo) {
-            return $grupo->sum('valor');
-        });
+        $resumo = $fluxos
+            ->filter(function ($fluxo) {
+                $descricao = optional($fluxo->movimento)->descricao;
+                return !in_array($descricao, ['abertura de caixa', 'fechamento de caixa']);
+            })
+            ->groupBy('movimento.descricao')
+            ->map(function ($grupo) {
+                return $grupo->sum('valor');
+            });
 
 
 

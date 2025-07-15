@@ -10,7 +10,6 @@
 @section('content')
 
 <form method="GET" action="{{ route('contasAPagar.index') }}" class="mb-4">
-
     <div class="form-row">
         <div class="form-group col-md-3">
             <label for="data_inicio">Data Início</label>
@@ -32,17 +31,14 @@
             </select>
         </div>
 
-    <div class="col-md-6">
-        <label for="fornecedorSelect" class="form-label" style="font-size: 1.2rem">Fornecedor:</label>
-        <select id="fornecedorSelect" name="fornecedor_id" class="form-control w-100">
-            @if(old('fornecedor_id') && $fornecedor = \App\Models\Fornecedor::find(old('fornecedor_id')))
-                <option value="{{ $fornecedor->id }}" selected>{{ $fornecedor->nome_fantasia }}</option>
-            @endif
-        </select>
-    </div>
-
-
-
+        <div class="col-md-6">
+            <label for="fornecedorSelect" class="form-label" style="font-size: 1.2rem">Fornecedor:</label>
+            <select id="fornecedorSelect" name="fornecedor_id" class="form-control w-100">
+                @if(old('fornecedor_id') && $fornecedor = \App\Models\Fornecedor::find(old('fornecedor_id')))
+                    <option value="{{ $fornecedor->id }}" selected>{{ $fornecedor->nome_fantasia }}</option>
+                @endif
+            </select>
+        </div>
     </div>
 
     <div class="form-row">
@@ -53,15 +49,9 @@
             <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary">
                 <i class="fas fa-sync-alt"></i> Limpar
             </a>
-
         </div>
     </div>
-
 </form>
-
-
-
-
 
 <div class="d-flex justify-content-end mb-3">
     <button class="btn btn-success new" data-toggle="modal" data-target="#createContasAPagarModal">
@@ -83,9 +73,7 @@
     'itemsPerPage' => 10,
     'showTotal' => false,
     'valueColumnIndex' => 3,
-     'order'=> [
-        [] // Ordena pela 3ª coluna (índice 2), ascendente
-    ]
+    'order' => [[]]
 ])
 <thead class="bg-primary text-white">
     <tr>
@@ -101,40 +89,43 @@
     </tr>
 </thead>
 <tbody>
+
     @foreach ($contasComParcelas as $contasAPagar)
-        <tr>
-            <td>{{ $contasAPagar->id }}</td>
-            <td>
-                {{ $contasAPagar->descricao }}
-                @if($contasAPagar->total_parcelas > 1)
-                    <small class="text-muted d-block">
-                        Parcela {{ $contasAPagar->numero_parcela }} de {{ $contasAPagar->total_parcelas }}
-                    </small>
+    <tr>
+        <td>{{ $contasAPagar->id }}</td>
 
-                    @if(request('mes'))
-                        @php
-                            $mesFiltro = \Carbon\Carbon::createFromFormat('Y-m', request('mes'));
-                            $dataVencimento = \Carbon\Carbon::parse($contasAPagar->data_vencimento);
-                        @endphp
+        <td>
+            {{ $contasAPagar->descricao }}
+            @if($contasAPagar->total_parcelas > 1)
+                <small class="text-muted d-block">
+                    Parcela {{ $contasAPagar->numero_parcela }} de {{ $contasAPagar->total_parcelas }}
+                </small>
 
-                        @if($dataVencimento->format('Y-m') === $mesFiltro->format('Y-m'))
-                            <small class="text-primary d-block">
-                                📌 Parcela atual
-                            </small>
-                        @endif
+                @if(request('mes'))
+                    @php
+                        $mesFiltro = \Carbon\Carbon::createFromFormat('Y-m', request('mes'));
+                        $dataVencimento = \Carbon\Carbon::parse($contasAPagar->data_vencimento);
+                    @endphp
+
+                    @if($dataVencimento->format('Y-m') === $mesFiltro->format('Y-m'))
+                        <small class="text-primary d-block">📌 Parcela atual</small>
                     @endif
                 @endif
-            </td>
-            <td>{{ \Carbon\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y') }}</td>
-            <td>R${{ number_format($contasAPagar->valor, 2, ',', '.') }}</td>
-            <td>
-                @if($contasAPagar->status == "pago")
-                    <span class="text-success">Pago <i class="fa-regular fa-circle-check"></i></span>
-                @else
-                    <span class="text-warning">Pendente <i class="fa-solid fa-triangle-exclamation"></i></span>
-                @endif
-            </td>
-           <td>
+            @endif
+        </td>
+
+        <td>{{ \Carbon\Carbon::parse($contasAPagar->data_vencimento)->format('d/m/Y') }}</td>
+        <td>R${{ number_format($contasAPagar->valor, 2, ',', '.') }}</td>
+
+        <td>
+            @if($contasAPagar->status == "pago")
+                <span class="text-success">Pago <i class="fa-regular fa-circle-check"></i></span>
+            @else
+                <span class="text-warning">Pendente <i class="fa-solid fa-triangle-exclamation"></i></span>
+            @endif
+        </td>
+
+        <td>
             @php
                 $formas = explode("\n", $contasAPagar->forma_pagamento);
             @endphp
@@ -148,47 +139,41 @@
             @endforeach
         </td>
 
-            <td>
-                {{ $contasAPagar->fornecedor->nome_fantasia ?? ''}}
-            </td>
-            <td>
-                {{ $contasAPagar->empresa->nome_fantasia ?? ''}}
-            </td>
-            <td>
-                @if($contasAPagar->valor - $contasAPagar->valor_pago > 0)
-                    <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                        data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
-                        💰
-                    </button>
-                @endif
-                <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                    data-target="#showContasAPagar{{ $contasAPagar->id }}">
-                    👁️
+        <td>{{ $contasAPagar->fornecedor->nome_fantasia ?? '' }}</td>
+        <td>{{ $contasAPagar->empresa->nome_fantasia ?? '' }}</td>
+        <td>
+            @if($contasAPagar->valor - $contasAPagar->valor_pago > 0)
+                <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
+                    data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
+                    💰
                 </button>
+            @endif
 
-               @if($contasAPagar->pode_excluir)
-                    <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                            data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
-                        🗑️
-                    </button>
-                @endif
+            <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
+                data-target="#showContasAPagar{{ $contasAPagar->id }}">
+                👁️
+            </button>
 
-
-            </td>
-        </tr>
-        @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
-        @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
-        @push('modais')
+            @if($contasAPagar->pode_excluir)
+                <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
+                    data-target="#deleteContasAPagarModal{{ $contasAPagar->id }}">
+                    🗑️
+                </button>
+            @endif
+        </td>
+    </tr>
+    @push('modais')
+            @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
+            @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
             @include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
-        @endpush
-
-        @endforeach
-        
-    </tbody>
-
+    @endpush
+    @endforeach
+</tbody>
 @endcomponent
+
 @include('contasAPagar.modals._create')
 @stack('modais')
+
 @stop
 
 @push('css')
@@ -209,21 +194,16 @@
 @endpush
 
 @push('js')
-{{-- 1. Carregue o jQuery PRIMEIRO --}}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-{{-- 2. Depois, carregue o JavaScript do Select2 --}}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-{{-- 3. Finalmente, seu script de inicialização --}}
 <script>
   $(document).ready(function() {
-    // Inicializa o Select2 no elemento correto
     $('#fornecedorSelect').select2({
         placeholder: "Selecione um fornecedor",
         allowClear: true,
         minimumInputLength: 2,
-        language: "pt-BR", // Adicionar tradução se necessário
+        language: "pt-BR",
         ajax: {
             url: '{{ route("fornecedores.search") }}',
             dataType: 'json',

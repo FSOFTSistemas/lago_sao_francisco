@@ -9,6 +9,8 @@ use App\Services\CaixaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
 
 class CaixaController extends Controller
 {
@@ -167,8 +169,20 @@ class CaixaController extends Controller
 
         // Cálculo de saldo inclui todos os tipos (entrada, saida, cancelamento) e soma o fundo de caixa
         $saldo = $fluxos
-            ->filter(fn($fluxo) => optional($fluxo->movimento)->descricao !== 'fechamento de caixa')
-            ->sum('valor') + $caixa->valor_inicial;
+            ->filter(
+                fn($fluxo) =>
+                optional($fluxo->movimento)->descricao !== 'fechamento de caixa'
+            )
+            ->reduce(function ($total, $fluxo) {
+                $valor = $fluxo->valor;
+                $descricao = optional($fluxo->movimento)->descricao;
+
+                return Str::startsWith($descricao, 'cancelamento-')
+                    ? $total - $valor
+                    : $total + $valor;
+            }, 0) + $caixa->valor_inicial;
+
+
 
 
 
@@ -176,12 +190,19 @@ class CaixaController extends Controller
         $formasPagamento = $fluxos->filter(function ($fluxo) {
             return $fluxo->movimento && str_contains($fluxo->movimento->descricao, '-');
         })->groupBy(function ($fluxo) {
-            // Considera apenas o segundo termo como chave (ex: "venda-cartão-crédito" -> "cartão-crédito")
-            $partes = explode('-', $fluxo->movimento->descricao);
+            $descricao = $fluxo->movimento->descricao;
+
+            if (Str::startsWith($descricao, 'cancelamento-')) {
+                return 'cancelamento';
+            }
+
+            $partes = explode('-', $descricao);
             return $partes[1] ?? 'outro';
         })->map(function ($items) {
             return $items->sum('valor');
         });
+
+
         return [
             'saldo' => $saldo,
             'formas' => $formasPagamento,

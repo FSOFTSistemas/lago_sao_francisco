@@ -9,6 +9,7 @@ use App\Models\PlanoDeConta;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
 class CaixaService
@@ -99,7 +100,7 @@ class CaixaService
     } catch (\InvalidArgumentException $e) {
         throw $e;
     } catch (\Throwable $e) {
-        \Log::error('Erro ao inserir movimentação no caixa: ' . $e->getMessage());
+        Log::error('Erro ao inserir movimentação no caixa: ' . $e->getMessage());
         throw new \Exception('Erro inesperado ao registrar a movimentação no caixa.');
     }
 }
