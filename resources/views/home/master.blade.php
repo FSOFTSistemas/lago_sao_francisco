@@ -11,8 +11,10 @@
     <div class="card mb-4">
         <div class="card-header"><strong>Gráfico de Day Use - Mês Atual</strong></div>
         <div class="card-body">
-            <div class="chart-container">
-                <canvas id="graficoDayUse"></canvas>
+            <div class="overflow-auto">
+                <div class="chart-container">
+                    <canvas id="graficoDayUse"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -116,43 +118,53 @@
                     }
                 ]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Valores de Day Use por Dia'
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    datalabels: {
-                        anchor: 'center',
-                        align: 'center',
-                        color: '#000',
-                        font: {
-                            size: 12,
-                        },
-                        clamp: true
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Dia do Mês'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Valor em R$'
-                        }
-                    }
-                }
+           options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        title: {
+            display: true,
+            text: 'Valores de Day Use por Dia',
+            padding: {
+                bottom: 50,
             }
+        },
+        legend: {
+            position: 'bottom'
+        },
+        datalabels: {
+            anchor: 'end',
+            align: 'top',
+            color: '#000',
+            font: {
+                size: 11,
+                weight: 'bold'
+            },
+            clamp: true
+        }
+    },
+    scales: {
+        x: {
+            title: {
+                display: true,
+                text: 'Dia do Mês'
+            },
+            ticks: {
+                maxRotation: 45,
+                minRotation: 30,
+                autoSkip: false
+            }
+        },
+        y: {
+            beginAtZero: true,
+            title: {
+                display: true,
+                text: 'Valor em R$'
+            }
+        }
+    }
+}
+
         });
 
 
@@ -184,8 +196,8 @@
                     legend: {
                         position: 'bottom',
                         labels: {
-    padding: 40 // espaço entre o gráfico e a legenda
-  }
+                            padding: 40 // espaço entre o gráfico e a legenda
+                        }
 
                     },
                     tooltip: {
@@ -245,7 +257,7 @@
 
             fetch(
                     `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`
-                    )
+                )
                 .then(res => res.json())
                 .then(data => {
                     const labels = data.map(d => d.nome);
@@ -294,6 +306,7 @@
             width: 100%;
             height: auto;
             min-height: 300px;
+            min-width: 600px;
         }
 
         select.form-select {
