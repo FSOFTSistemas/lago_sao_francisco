@@ -68,6 +68,7 @@
         ['responsivePriority' => 2, 'targets' => 4],
         ['responsivePriority' => 2, 'targets' => 5],
         ['responsivePriority' => 2, 'targets' => 6],
+        ['responsivePriority' => 2, 'targets' => 7],
         ['responsivePriority' => 4, 'targets' => -1],
     ],
     'itemsPerPage' => 10,
@@ -77,7 +78,8 @@
 ])
 <thead class="bg-primary text-white">
     <tr>
-        <th>ID</th>
+        <th>Conta ID</th>
+        <th>Parcela ID</th>
         <th>Descrição</th>
         <th>Data de Vencimento</th>
         <th>Valor</th>
@@ -92,8 +94,8 @@
 
     @foreach ($contasComParcelas as $contasAPagar)
     <tr>
-        <td>{{ $contasAPagar->id }}</td>
-
+        <td>{{ $contasAPagar->conta_id }}</td>
+        <td>{{ $contasAPagar->parcela_id }}</td>
         <td>
             {{ $contasAPagar->descricao }}
             @if($contasAPagar->total_parcelas > 1)

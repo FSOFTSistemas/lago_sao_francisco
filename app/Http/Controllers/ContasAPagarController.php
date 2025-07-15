@@ -93,12 +93,13 @@ public function index(Request $request)
         // Processa os resultados para criar uma lista plana de itens a serem exibidos
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
+                $conta->conta_id = $conta->id;
                 $conta->id = count($contasComParcelas)+1;
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
-                $conta->conta_id = $conta->id;
                 $contasComParcelas[] = $conta;
+                $conta->valor_total = $conta->valor;
             } else {
                 $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
                 $totalParcelas = $conta->parcelas->count();
@@ -152,6 +153,7 @@ public function index(Request $request)
         $validatedData = $request->validate([
             'descricao' => 'required|string|max:255',
             'valor' => 'required|numeric|min:0.01',
+            'valor_pago' => 'required|numeric|min:0.01',
             'data_vencimento' => 'required|date|after_or_equal:today',
             'status' => 'required|in:pendente,finalizado',
             'plano_de_contas_id' => [
@@ -171,12 +173,13 @@ public function index(Request $request)
         ]);
 
         $validatedData['empresa_id'] = Auth::user()->empresa_id;
-        
+        if(((int) $validatedData['valor_pago']) == ((int) $validatedData['valor'])){
+                $validatedData['status'] = 'pago';
+        }
         $numParcelas = $request->input('parcelas', 1);
         $numParcelas = (int) $numParcelas;
         // Define o valor total e número de parcelas
         $validatedData['total_parcelas'] = $numParcelas > 1 ? $numParcelas : null;
-        $validatedData['numero_parcela'] = null;
         $validatedData['plano_de_contas_id'] = (int) $validatedData['plano_de_contas_id'];
 
         // Cria a conta principal
@@ -278,17 +281,14 @@ public function index(Request $request)
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function pagar(Request $request)
+    public function pagar(Request $request, $conta_id, $parcela_id = null)
     {
-        dd($request);
+        
         // 1. Validação aprimorada
         $request->validate([
             'data_pagamento'    => 'required|date',
             'valor_pago'        => 'required|numeric|min:0.01',
             'fonte_pagadora'    => 'required|in:caixa,conta_corrente',
-            // Valida 'id' da parcela OU 'conta_id' da conta principal
-            'parcela_id'                => 'nullable|exists:parcelas_contas_a_pagar,id',
-            'conta_id'          => 'required_without:id|exists:contas_a_pagar,id',
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
         ]);
@@ -296,22 +296,22 @@ public function index(Request $request)
         try {
             // 2. Usar Transação para garantir a integridade dos dados
             // Se algo falhar (ex: saldo insuficiente), todas as operações são revertidas.
-            $response = DB::transaction(function () use ($request) {
+            $response = DB::transaction(function () use ($request, $conta_id, $parcela_id) {
                 
                 $valorPago = $request->valor_pago;
                 $conta = null;
                 $parcela = null;
                 $description = '';
                 // 3. Define qual entidade está sendo paga (Parcela ou Conta)
-                if ($request->parcela_id) {
+                if ($parcela_id) {
                     
                     // Pagamento de Parcela
-                    $parcela = ParcelaContasAPagar::findOrFail($request->parcela_id);
+                    $parcela = ParcelaContasAPagar::findOrFail($parcela_id);
                     $conta = $parcela->conta;
                     $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
                 } else {
                     // Pagamento de Conta sem parcelamento
-                    $conta = ContasAPagar::findOrFail($request->conta_id);
+                    $conta = ContasAPagar::findOrFail($conta_id);
                     $description = 'Pagamento #' . $conta->descricao;
                 }
 

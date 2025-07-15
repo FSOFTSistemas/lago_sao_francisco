@@ -30,6 +30,12 @@ class ContasAPagar extends Model
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
+    public function planoDeContas()
+    {
+        return $this->belongsTo(PlanoDeConta::class, 'plano_de_contas_id');
+    }
+
+
     public function fornecedor()
     {
         return $this->belongsTo(Fornecedor::class, 'fornecedor_id');

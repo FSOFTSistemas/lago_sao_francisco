@@ -199,7 +199,8 @@ Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])
 Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');
 
 
-Route::post('contas-a-pagar/{contasAPagar}/pagar', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
+Route::post('contas-a-pagar/{conta_id}/{parcela_id?}', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
+
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/usuario/alterar-senha', [UsuarioSenhaController::class, 'form'])->name('usuario.senha.form');

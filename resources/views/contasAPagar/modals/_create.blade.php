@@ -112,3 +112,32 @@
         </div>
     </div>
 </div>
+
+@push('js')
+<script>
+    function validarValorPago(input) {
+        const valorInput = document.getElementById('valor');
+        const valorPago = parseFloat(input.value);
+        const valor = parseFloat(valorInput.value);
+
+        if (!isNaN(valorPago) && !isNaN(valor) && valorPago > valor) {
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    }
+
+    function validarValor(input) {
+        const valorPagoInput = document.getElementById('valorPago');
+        const valor = parseFloat(input.value);
+        const valorPago = parseFloat(valorPagoInput.value);
+
+        if (!isNaN(valorPago) && !isNaN(valor) && valorPago > valor) {
+            valorPagoInput.classList.add('is-invalid');
+        } else {
+            valorPagoInput.classList.remove('is-invalid');
+        }
+    }
+</script>
+@endpush
+
