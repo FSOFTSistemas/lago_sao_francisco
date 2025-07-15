@@ -130,7 +130,7 @@
                     datalabels: {
                         anchor: 'center',
                         align: 'center',
-                        color: '#fff',
+                        color: '#000',
                         font: {
                             size: 12,
                         },
