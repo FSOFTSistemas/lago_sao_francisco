@@ -43,6 +43,7 @@ use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
@@ -245,3 +246,5 @@ Route::put('/reserva/{id}/finalizar', [ReservaController::class, 'finalizar'])->
 Route::put('/reserva/{id}/cancelar', [ReservaController::class, 'cancelar'])->name('reserva.cancelar');
 
 Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->name('reserva.hospedar');
+
+Route::get('/grafico-fluxo-caixa', [HomeController::class, 'graficoFluxoCaixa']);
