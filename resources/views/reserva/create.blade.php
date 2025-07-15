@@ -1767,6 +1767,8 @@
                                     confirmButtonText: 'Tentar novamente'
                                 });
                                 console.error("Erro:", error);
+                                console.log(status)
+                                console.log(xhr)
                             }
                         });
                     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transacao;
 use App\Models\Reserva;
 use App\Models\Caixa;
+use App\Models\ContasAPagar;
 use App\Models\Movimento;
 use App\Services\CaixaService;
 use Illuminate\Http\Request;
@@ -113,13 +114,22 @@ class TransacaoController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Transacao $transacao)
     {
         try {
             DB::beginTransaction();
-            $transacao = Transacao::findOrFail($id);
-            // Criar movimentação de cancelamento no caixa
-            $this->cancelarMovimentacaoCaixa($transacao);
+
+            // Verificar se a transação é do mesmo dia ou de dias anteriores
+            $dataTransacao = Carbon::parse($transacao->data_pagamento);
+            $hoje = Carbon::today();
+
+            if ($dataTransacao->isSameDay($hoje)) {
+                // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
+                $this->cancelarMovimentacaoCaixa($transacao);
+            } else {
+                // Transação de dias anteriores: criar ContasAPagar
+                $this->criarContasAPagar($transacao);
+            }
 
             // Remover a transação
             $transacao->delete();
@@ -140,6 +150,7 @@ class TransacaoController extends Controller
             ], 500);
         }
     }
+
 
     public function getByReserva($reservaId)
     {
@@ -288,7 +299,7 @@ class TransacaoController extends Controller
     /**
      * Cancelar movimentação no caixa (criar movimentação de cancelamento)
      */
-    private function cancelarMovimentacaoCaixa(Transacao $transacao)
+    public function cancelarMovimentacaoCaixa(Transacao $transacao)
     {
         try {
             $empresaId = Auth::user()->empresa_id;
@@ -316,24 +327,20 @@ class TransacaoController extends Controller
             // Criar slug da forma de pagamento
             $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
             
-            // Tipo de movimento para cancelamento
-            $tipoMov = 'cancelamento-' . $slug;
-
-            // Buscar o movimento_id para cancelamento
-            $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
-
+            // Buscar movimento de cancelamento específico ou genérico
+            $tipoMovimentoCancelamento = 'cancelamento-' . $slug;
+            $movimentoId = Movimento::where('descricao', $tipoMovimentoCancelamento)->value('id');
             if (!$movimentoId) {
-                // Se não encontrar movimento específico de cancelamento, usar movimento genérico
                 $movimentoId = Movimento::where('descricao', 'cancelamento')->value('id');
-                
-                if (!$movimentoId) {
-                    return; // pula se não encontrar o movimento
-                }
+            }
+            if (!$movimentoId) {
+                Log::error("Movimento de cancelamento não encontrado para: {$tipoMovimentoCancelamento} ou cancelamento");
+                return;
             }
 
-            // Usar o CaixaService para inserir a movimentação de cancelamento
+            // Inserir movimentação de cancelamento via CaixaService
             app(CaixaService::class)->inserirMovimentacao($caixa, [
-                'descricao' => 'CANCELAMENTO - Reserva #' . $transacao->reserva_id . ' - ' . $transacao->descricao,
+                'descricao' => 'CANCELAMENTO: ' . $transacao->descricao . ' - Reserva #' . $transacao->reserva_id,
                 'valor' => $transacao->valor,
                 'valor_total' => $transacao->valor,
                 'tipo' => 'cancelamento',
@@ -342,8 +349,32 @@ class TransacaoController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            // Log do erro mas não interrompe o fluxo
             Log::error('Erro ao cancelar movimentação no caixa: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Criar ContasAPagar para transações de dias anteriores
+     */
+    public function criarContasAPagar(Transacao $transacao)
+    {
+        try {
+            ContasAPagar::create([
+                'descricao' => 'ESTORNO: ' . $transacao->descricao . ' - Reserva #' . $transacao->reserva_id,
+                'valor' => $transacao->valor,
+                'data_vencimento' => Carbon::today(), // Data de vencimento é o dia atual
+                'plano_de_contas_id' => 1, // Plano de conta padrão
+                'status' => 'pendente', // Status padrão
+                'empresa_id' => Auth::user()->empresa_id ?? 1,
+                'observacoes' => 'Estorno de transação cancelada em ' . Carbon::now()->format('d/m/Y H:i:s') . 
+                               '. Transação original de ' . Carbon::parse($transacao->data_pagamento)->format('d/m/Y'),
+            ]);
+
+            Log::info("ContasAPagar criada para estorno da transação ID: {$transacao->id}");
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar ContasAPagar: ' . $e->getMessage());
+            throw new \Exception('Erro ao criar conta a pagar para estorno: ' . $e->getMessage());
         }
     }
 }

@@ -11,6 +11,7 @@ use App\Models\Produto;
 use App\Models\Transacao;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReservaController extends Controller
 {
@@ -281,27 +282,53 @@ class ReservaController extends Controller
         }
     }
 
-    public function cancelar($id)
+       public function cancelar($id)
     {
         try {
+            DB::beginTransaction();
             $reserva = Reserva::findOrFail($id);
 
             // Verificar se a reserva pode ser cancelada
             if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'Esta reserva já foi finalizada ou cancelada.'
                 ], 400);
             }
 
+            // Obter todas as transações da reserva
+            $transacoes = Transacao::where('reserva_id', $reserva->id)->get();
+
+            // Instanciar o TransacaoController para usar seus métodos privados
+            $transacaoController = app(TransacaoController::class);
+
+            foreach ($transacoes as $transacao) {
+                $dataTransacao = Carbon::parse($transacao->data_pagamento);
+                $hoje = Carbon::today();
+
+                if ($dataTransacao->isSameDay($hoje)) {
+                    // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
+                    $transacaoController->cancelarMovimentacaoCaixa($transacao);
+                } else {
+                    // Transação de dias anteriores: criar ContasAPagar
+                    $transacaoController->criarContasAPagar($transacao);
+                }
+                // Remover a transação após processar seu cancelamento/estorno
+                $transacao->delete();
+            }
+
             $reserva->situacao = 'cancelado';
             $reserva->save();
 
+            DB::commit();
+
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva cancelada com sucesso!'
+                'message' => 'Reserva cancelada com sucesso! Todas as transações foram processadas.'
             ]);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao cancelar reserva: ' . $e->getMessage()
