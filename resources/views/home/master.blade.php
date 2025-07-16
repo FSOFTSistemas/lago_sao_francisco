@@ -7,6 +7,128 @@
 @stop
 
 @section('content')
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <form method="GET" action="{{ route('home.index') }}" class="d-flex align-items-end gap-2">
+                <div class="me-2">
+                    <label>Data Início:</label>
+                    <input type="date" name="data_inicio" class="form-control" value="{{ request('data_inicio') }}">
+                </div>
+                <div class="me-2">
+                    <label>Data Fim:</label>
+                    <input type="date" name="data_fim" class="form-control" value="{{ request('data_fim') }}">
+                </div>
+                <div class="me-2">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    <a href="{{ route('home.index') }}" class="btn btn-secondary">Limpar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Botão para abrir/fechar os cards -->
+    <div class="mb-3 d-flex justify-content-end">
+        <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#collapseCardsDayUse"
+            aria-expanded="false" aria-controls="collapseCardsDayUse">
+            <i class="fas fa-filter"></i> Mostrar Resumo de Itens
+        </button>
+        <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#graficoCollapse"
+            aria-expanded="false" aria-controls="graficoCollapse">
+            📈 Mostrar/Ocultar Gráfico
+        </button>
+    </div>
+
+    <!-- Conteúdo que aparece/oculta -->
+    <div class="collapse" id="collapseCardsDayUse">
+        <div class="mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <button class="btn btn-outline-primary" onclick="filtrarCards('passeio')">
+                    <i class="fas fa-umbrella-beach"></i> Mostrar Passeios
+                </button>
+                <button class="btn btn-outline-secondary" onclick="filtrarCards('outros')">
+                    <i class="fas fa-box"></i> Mostrar Outros Itens
+                </button>
+                <button class="btn btn-outline-info" onclick="filtrarCards('todos')">
+                    <i class="fas fa-list"></i> Mostrar Todos
+                </button>
+            </div>
+        </div>
+        <div class="row">
+            @php
+                $totalGeralMovimentos = $movimentos->sum('valor_total');
+            @endphp
+
+
+            @foreach ($movimentos as $mov)
+                @php
+                    $isPasseio = $mov->passeio ? 'passeio' : 'outros';
+                @endphp
+                <div class="col-md-3 mb-3 card-mov {{ $isPasseio }}">
+                    <div class="card border-left-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} shadow h-100 py-2">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6
+                                    class="text-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} font-weight-bold text-uppercase mb-1">
+                                    {{ $mov->item_nome ?? 'Item' }}
+                                </h6>
+                                <span class="text-dark">Qtd: {{ $mov->total_quantidade }}</span>
+                                <span class="text-dark">| Valor:
+                                    R${{ number_format($mov->valor_total, 2, ',', '.') }}</span>
+                            </div>
+                            <div class="icon text-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} ml-3">
+                                <i
+                                    class="fas {{ $isPasseio == 'passeio' ? 'fa-umbrella-beach' : 'fa-ticket-alt' }} fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+            <div class="col-md-3 mb-3 card-mov total-geral">
+    <div class="card border-left-dark shadow h-100 py-2">
+        <div class="card-body d-flex align-items-center justify-content-between">
+            <div>
+                <h6 class="text-dark font-weight-bold text-uppercase mb-1">
+                    Total Geral
+                </h6>
+                <span class="text-dark">R$ {{ number_format($totalGeralMovimentos, 2, ',', '.') }}</span>
+            </div>
+            <div class="icon text-dark ml-3">
+                <i class="fas fa-calculator fa-2x"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        </div>
+    </div>
+
+    <div class="collapse" id="graficoCollapse">
+        <div class="mb-3">
+            <button id="btn-passeio" class="btn btn-outline-primary filtro-btn" onclick="filtrarTipo('passeio')">
+                <i class="fas fa-umbrella-beach"></i> Mostrar Passeios
+            </button>
+            <button id="btn-outros" class="btn btn-outline-secondary filtro-btn" onclick="filtrarTipo('outros')">
+                <i class="fas fa-box"></i> Mostrar Outros Itens
+            </button>
+            <button id="btn-todos" class="btn btn-outline-dark filtro-btn" onclick="filtrarTipo('todos')">
+                <i class="fas fa-layer-group"></i> Mostrar Todos
+            </button>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+                Quantidade de Itens por Dia
+            </div>
+            <div class="card-body p-0" style="height: 400px;">
+                <div style="position: relative; height: 100%; width: 100%;">
+                    <canvas id="graficoPasseiosPorDia"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Gráfico de Day Use -->
     <div class="card mb-4">
         <div class="card-header"><strong>Gráfico de Day Use - Mês Atual</strong></div>
@@ -259,7 +381,7 @@
 
             fetch(
                     `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`
-                    )
+                )
                 .then(res => res.json())
                 .then(data => {
                     const labels = data.map(d => d.nome);
@@ -294,6 +416,155 @@
 
         // chama automaticamente ao carregar a página:
         window.addEventListener('load', carregarGraficoPizzaFluxo);
+    </script>
+    <script>
+        function filtrarCards(tipo) {
+            if (tipo === 'todos') {
+                $('.card-mov').show();
+            } else {
+                $('.card-mov').hide();
+                $('.' + tipo).show();
+            }
+        }
+
+        // Exibir todos por padrão
+        $(document).ready(function() {
+            filtrarCards('todos');
+        });
+
+        atualizarGrafico(tipo);
+    </script>
+    <script>
+        const labels = @json($labelsGrafico);
+        const dadosGrafico = @json($dadosGrafico);
+        const tiposItens = @json($tiposItens);
+
+        function filtrarCards(tipo) {
+            if (tipo === 'todos') {
+                $('.card-mov').show();
+            } else {
+                $('.card-mov').hide();
+                $('.' + tipo).show();
+            }
+        }
+
+
+        let lastHue = Math.floor(Math.random() * 360);
+
+        function getRandomColor() {
+            lastHue = (lastHue + Math.floor(Math.random() * 60) + 30) % 360;
+            return `hsl(${lastHue}, 70%, 50%)`;
+        }
+
+        let datasetsOriginais = [];
+
+        dadosGrafico.forEach((item) => {
+            const data = item.data;
+            const nome = item.nome;
+            datasetsOriginais.push({
+                label: nome,
+                data: data,
+                fill: false,
+                borderColor: getRandomColor(),
+                tension: 0.3,
+                passeio: tiposItens[nome] ? true : false
+            });
+        });
+
+        const ctx = document.getElementById('graficoPasseiosPorDia').getContext('2d');
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasetsOriginais
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        function atualizarGrafico(filtro) {
+            let novosDatasets;
+            if (filtro === 'passeio') {
+                novosDatasets = datasetsOriginais.filter(d => d.passeio);
+            } else if (filtro === 'outros') {
+                novosDatasets = datasetsOriginais.filter(d => !d.passeio);
+            } else {
+                novosDatasets = datasetsOriginais;
+            }
+
+            chart.data.datasets = novosDatasets;
+            chart.update();
+        }
+
+        $(document).ready(function() {
+            filtrarCards('todos');
+            atualizarGrafico('todos');
+        });
+    </script>
+    <script>
+        function filtrarTipo(tipo) {
+            filtrarCards(tipo);
+            atualizarGrafico(tipo);
+
+            // Remove classe ativa de todos os botões
+            document.querySelectorAll('.filtro-btn').forEach(btn => {
+                btn.classList.remove('btn-primary', 'btn-secondary', 'btn-dark', 'active');
+                btn.classList.add('btn-outline-' + btn.dataset.originalClass);
+            });
+
+            // Ativa o botão clicado
+            const btnId = '#btn-' + tipo;
+            const btn = document.querySelector(btnId);
+
+            if (btn) {
+                btn.classList.remove('btn-outline-' + tipoClass(tipo));
+                btn.classList.add('btn-' + tipoClass(tipo), 'active');
+            }
+        }
+
+        function tipoClass(tipo) {
+            switch (tipo) {
+                case 'passeio':
+                    return 'primary';
+                case 'outros':
+                    return 'secondary';
+                case 'todos':
+                    return 'dark';
+                default:
+                    return 'primary';
+            }
+        }
+
+        // Armazenar a classe original nos botões (apenas uma vez)
+        document.querySelectorAll('.filtro-btn').forEach(btn => {
+            if (!btn.dataset.originalClass) {
+                const classList = btn.className.split(' ');
+                const outlineClass = classList.find(c => c.startsWith('btn-outline-'));
+                if (outlineClass) {
+                    btn.dataset.originalClass = outlineClass.replace('btn-outline-', '');
+                }
+            }
+        });
+
+        // Selecionar por padrão 'outros'
+        document.addEventListener('DOMContentLoaded', () => {
+            filtrarTipo('todos');
+        });
     </script>
 @stop
 
@@ -365,6 +636,10 @@
             height: 14px;
             margin-right: 6px;
             border-radius: 3px;
+        }
+
+        .card-mov {
+            transition: all 0.3s ease-in-out;
         }
 
         @media (max-width: 768px) {

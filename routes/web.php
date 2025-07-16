@@ -48,6 +48,7 @@ use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
+use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\ReservaItemController;
@@ -248,3 +249,11 @@ Route::put('/reserva/{id}/cancelar', [ReservaController::class, 'cancelar'])->na
 Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->name('reserva.hospedar');
 
 Route::get('/grafico-fluxo-caixa', [HomeController::class, 'graficoFluxoCaixa']);
+
+Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index');
+
+Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.dados');
+
+Route::post('/mapa/criar-reserva', [MapaController::class, 'criarReservaRapida'])->name('mapa.criar-reserva');
+
+Route::get('/home', [HomeController::class, 'index'])->name('home.index');
