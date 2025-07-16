@@ -435,10 +435,30 @@ return [
 
 
                 [
-                    'text'  => 'Conta Corrente',
-                    'url'   => '/contaCorrente',
-                    'icon'  => 'fas fa-file-invoice',
-                    'can'   => 'gerenciar conta corrente',
+                    'text'    => 'Conta Corrente',
+                    'url'     => '#', // Alterado para '#' para que o item principal apenas abra o submenu.
+                    'icon'    => 'fas fa-landmark', // Ícone mais representativo para "contas".
+                    'can'     => 'gerenciar conta corrente',
+                    'submenu' => [
+                        [
+                            'text'  => 'Contas', // Texto simplificado e mais direto.
+                            'url'   => '/contas-corrente', // URL padronizada (plural, kebab-case).
+                            'icon'  => 'fas fa-university', // Ícone específico para a lista de contas.
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text'  => 'Lançamentos',
+                            'url'   => '/lancamentos', // URL padronizada e mais limpa.
+                            'icon'  => 'fas fa-list-ul',
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text'  => 'Novo Lançamento', // Adicionado um atalho comum e útil.
+                            'url'   => '/lancamentos/create',
+                            'icon'  => 'fas fa-plus', // Ícone de "adicionar".
+                            'shift' => 'ml-2'
+                        ],
+                    ],
                 ],
                 [
                     'text' => 'Contas a Pagar',

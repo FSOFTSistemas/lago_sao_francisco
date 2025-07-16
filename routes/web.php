@@ -13,6 +13,7 @@ use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Http\Controllers\CfopController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
+use App\Http\Controllers\ContaCorrenteLancamentoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\DayUseController;
@@ -212,3 +213,5 @@ Route::resource('souvenir', SouvenirController::class);
 Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])->name('preferencias.hotel');
 
 Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');
+
+Route::resource('/lancamentos', ContaCorrenteLancamentoController::class);

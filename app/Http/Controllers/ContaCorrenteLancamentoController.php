@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\ContaCorrente;
 use App\Models\ContaCorrenteLancamento;
 use Illuminate\Http\Request;
 
@@ -10,10 +10,30 @@ class ContaCorrenteLancamentoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+
+
+    public function index(Request $request)
     {
-        $contaCorrenteLancamentos = ContaCorrenteLancamento::all();
-        return view('conta_corrente_lancamentos.index', compact('contaCorrenteLancamentos'));
+        // Pega o ID da conta da URL (?conta_id=1), ou pega o ID da primeira conta como padrão.
+        $contaSelecionadaId = $request->input('conta_id') ?? ContaCorrente::query()->first()->id ?? null;
+
+        // Busca todas as contas para popular o dropdown.
+        $contasCorrente = ContaCorrente::orderBy('titular')->get();
+
+        // Busca os lançamentos apenas da conta selecionada.
+        $lancamentos = [];
+        if ($contaSelecionadaId) {
+            $lancamentos = ContaCorrenteLancamento::where('conta_corrente_id', $contaSelecionadaId) // Supondo que a coluna de relacionamento seja 'conta_corrente_id'
+                ->orderBy('data', 'desc')
+                ->get();
+        }
+
+        // Retorna a view com os dados necessários.
+        return view('lancamentos.index', [
+            'contasCorrente' => $contasCorrente,
+            'lancamentos' => $lancamentos,
+            'contaSelecionadaId' => $contaSelecionadaId,
+        ]);
     }
 
     /**

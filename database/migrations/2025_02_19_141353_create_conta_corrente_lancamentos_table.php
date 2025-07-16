@@ -19,10 +19,12 @@ return new class extends Migration {
             $table->enum('status', ['pendente', 'finalizado'])->default('pendente');
             $table->unsignedBigInteger('banco_id');
             $table->unsignedBigInteger('empresa_id');
+            $table->unsignedBigInteger('conta_corrente_id');
             $table->timestamps();
 
             $table->foreign('banco_id')->references('id')->on('bancos')->onDelete('cascade');
             $table->foreign('empresa_id')->references('id')->on('empresas')->onDelete('cascade');
+            $table->foreign('conta_corrente_id')->references('id')->on('contas_correntes')->onDelete('cascade');
         });
     }
 
