@@ -258,7 +258,8 @@
             const data_fim = document.getElementById('data_fim').value;
 
             fetch(
-                    `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`)
+                    `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`
+                    )
                 .then(res => res.json())
                 .then(data => {
                     const labels = data.map(d => d.nome);
@@ -299,79 +300,79 @@
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-    .select2-container .select2-selection--single {
-        height: 38px !important;
-        padding: 6px 12px;
-        font-size: 1rem;
-    }
-
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 24px;
-    }
-
-    select.form-select {
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.375rem;
-        border: 1px solid #ced4da;
-        font-size: 1rem;
-    }
-
-    .chart-bar-container {
-        position: relative;
-        min-width: 700px;
-        height: 350px;
-    }
-
-    .overflow-auto {
-        overflow-x: auto;
-    }
-
-    .chart-pizza-wrapper {
-        position: relative;
-        width: 100%;
-        height: auto;
-        min-height: 300px;
-    }
-
-    #graficoPizzaFluxo {
-        width: 100% !important;
-        height: auto !important;
-        max-height: 350px;
-    }
-
-    .grafico-legenda {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        max-height: 150px;
-        overflow-y: auto;
-        padding-top: 1rem;
-    }
-
-    .legenda-item {
-        display: flex;
-        align-items: center;
-        font-size: 14px;
-        background-color: #f8f9fa;
-        padding: 6px 10px;
-        border-radius: 6px;
-        white-space: nowrap;
-    }
-
-    .legenda-cor {
-        display: inline-block;
-        width: 14px;
-        height: 14px;
-        margin-right: 6px;
-        border-radius: 3px;
-    }
-
-    @media (max-width: 768px) {
-        .grafico-legenda {
-            max-height: 200px;
+        .select2-container .select2-selection--single {
+            height: 38px !important;
+            padding: 6px 12px;
+            font-size: 1rem;
         }
-    }
-</style>
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 24px;
+        }
+
+        select.form-select {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            border: 1px solid #ced4da;
+            font-size: 1rem;
+        }
+
+        .chart-bar-container {
+            position: relative;
+            min-width: 700px;
+            height: 350px;
+        }
+
+        .overflow-auto {
+            overflow-x: auto;
+        }
+
+        .chart-pizza-wrapper {
+            position: relative;
+            width: 100%;
+            height: auto;
+            min-height: 300px;
+        }
+
+        #graficoPizzaFluxo {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 350px;
+        }
+
+        .grafico-legenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            padding-top: 1rem;
+        }
+
+        .legenda-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            padding: 6px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+
+        .legenda-cor {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .grafico-legenda {
+                max-height: 200px;
+            }
+        }
+    </style>
 
 
 
