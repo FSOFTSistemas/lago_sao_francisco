@@ -255,3 +255,5 @@ Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index');
 Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.dados');
 
 Route::post('/mapa/criar-reserva', [MapaController::class, 'criarReservaRapida'])->name('mapa.criar-reserva');
+
+Route::get('/home', [HomeController::class, 'index'])->name('home.index');
