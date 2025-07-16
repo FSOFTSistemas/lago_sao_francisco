@@ -11,8 +11,10 @@
     <div class="card mb-4">
         <div class="card-header"><strong>Gráfico de Day Use - Mês Atual</strong></div>
         <div class="card-body">
-            <div class="chart-container">
-                <canvas id="graficoDayUse"></canvas>
+            <div class="overflow-auto">
+                <div class="chart-bar-container" style="min-width: 900px;">
+                    <canvas id="graficoDayUse"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -55,8 +57,9 @@
                     <input type="date" class="form-control" id="data_fim">
                 </div>
             </form>
-            <div class="chart-container">
+            <div class="chart-pizza-wrapper">
                 <canvas id="graficoPizzaFluxo"></canvas>
+                <div class="grafico-legenda mt-3" id="legendaPizzaFluxo"></div>
             </div>
         </div>
     </div>
@@ -122,17 +125,21 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Valores de Day Use por Dia'
+                        text: 'Valores de Day Use por Dia',
+                        padding: {
+                            bottom: 50,
+                        }
                     },
                     legend: {
                         position: 'bottom'
                     },
                     datalabels: {
-                        anchor: 'center',
-                        align: 'center',
+                        anchor: 'end',
+                        align: 'top',
                         color: '#000',
                         font: {
-                            size: 12,
+                            size: 11,
+                            weight: 'bold'
                         },
                         clamp: true
                     }
@@ -142,6 +149,11 @@
                         title: {
                             display: true,
                             text: 'Dia do Mês'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 30,
+                            autoSkip: false
                         }
                     },
                     y: {
@@ -153,6 +165,7 @@
                     }
                 }
             }
+
         });
 
 
@@ -172,6 +185,11 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        bottom: 0
+                    }
+                },
                 plugins: {
                     title: {
                         display: true,
@@ -182,11 +200,7 @@
 
                     },
                     legend: {
-                        position: 'bottom',
-                        labels: {
-    padding: 40 // espaço entre o gráfico e a legenda
-  }
-
+                        display: false
                     },
                     tooltip: {
                         callbacks: {
@@ -244,8 +258,7 @@
             const data_fim = document.getElementById('data_fim').value;
 
             fetch(
-                    `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`
-                    )
+                    `/grafico-fluxo-caixa?modo_data=${modo}&caixa_id=${caixa_id}&data_inicio=${data_inicio}&data_fim=${data_fim}`)
                 .then(res => res.json())
                 .then(data => {
                     const labels = data.map(d => d.nome);
@@ -254,8 +267,23 @@
                     graficoPizzaFluxo.data.labels = labels;
                     graficoPizzaFluxo.data.datasets[0].data = valores;
                     graficoPizzaFluxo.update();
+
+                    const legendaDiv = document.getElementById('legendaPizzaFluxo');
+                    legendaDiv.innerHTML = ''; // limpa antes
+
+                    labels.forEach((label, index) => {
+                        const color = graficoPizzaFluxo.data.datasets[0].backgroundColor[index];
+                        const valor = valores[index].toFixed(2);
+
+                        const item = document.createElement('div');
+                        item.classList.add('legenda-item');
+                        item.innerHTML =
+                            `<span class="legenda-cor" style="background-color: ${color};"></span> ${label} - R$ ${valor}`;
+                        legendaDiv.appendChild(item);
+                    });
                 });
         }
+
 
         // chama no clique:
         document.getElementById('atualizarGrafico').addEventListener('click', function(e) {
@@ -271,45 +299,80 @@
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        .select2-container .select2-selection--single {
-            height: 38px !important;
-            padding: 6px 12px;
-            font-size: 1rem;
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        padding: 6px 12px;
+        font-size: 1rem;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 24px;
+    }
+
+    select.form-select {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
+        border: 1px solid #ced4da;
+        font-size: 1rem;
+    }
+
+    .chart-bar-container {
+        position: relative;
+        min-width: 700px;
+        height: 350px;
+    }
+
+    .overflow-auto {
+        overflow-x: auto;
+    }
+
+    .chart-pizza-wrapper {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+    }
+
+    #graficoPizzaFluxo {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 350px;
+    }
+
+    .grafico-legenda {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+        padding-top: 1rem;
+    }
+
+    .legenda-item {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        background-color: #f8f9fa;
+        padding: 6px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+
+    .legenda-cor {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        margin-right: 6px;
+        border-radius: 3px;
+    }
+
+    @media (max-width: 768px) {
+        .grafico-legenda {
+            max-height: 200px;
         }
+    }
+</style>
 
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 24px;
-        }
-    </style>
-
-
-    <style>
-        #graficoPizzaFluxo {
-            height: 300px !important;
-            max-height: 400px;
-        }
-
-        .chart-container {
-            position: relative;
-            width: 100%;
-            height: auto;
-            min-height: 300px;
-        }
-
-        select.form-select {
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            border: 1px solid #ced4da;
-            font-size: 1rem;
-        }
-
-
-        @media (max-width: 768px) {
-            .chart-container {
-                min-height: 250px;
-            }
-        }
-    </style>
 
 
 @stop
