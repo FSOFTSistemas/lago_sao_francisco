@@ -61,10 +61,9 @@
                         <span class="badge badge-warning mr-2">pré-reservado</span>
                         <span class="badge badge-info mr-2">reservado</span>
                         <span class="badge badge-success mr-2">hospedado</span>
-                        <span class="badge badge-secondary mr-2">em limpeza</span>
+                        {{-- <span class="badge badge-secondary mr-2">em limpeza</span> --}}
                         <span class="badge badge-dark mr-2">finalizado</span>
                         <span class="badge badge-primary mr-2">bloqueado</span>
-                        <span class="badge badge-danger mr-2">em espera</span>
                     </div>
                 </div>
             </div>
@@ -107,6 +106,30 @@
                 </div>
                 <form id="formReserva">
                     <div class="modal-body">
+
+                        <div class="form-group row">
+                            <label for="hospede_id">Hóspede</label>
+                            <div class="col-sm-6">
+                                <select class='form-control select2' name='hospede_id' id='hospede_id'>
+                                                <option value="">Selecione um hóspede</option>
+                                                @foreach ($hospedes as $hospede)
+                                                    @if ($hospede->nome !== 'Bloqueado')
+                                                        <option value="{{ $hospede->id }}"
+                                                            {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
+                                                            {{ $hospede->nome }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+                            </div>
+                            <div class="col-sm-2">
+                                    <button type="button" id="btn-addhospede" class="btn btn-primary" data-toggle="modal"
+                                        data-target="#modalCadastrarHospede">
+                                        <i class="fas fa-user-plus"></i>
+                                    </button>
+                                </div>
+                        </div>
+
                         <div class="form-group">
                             <label>Quarto</label>
                             <input type="text" id="quarto_selecionado" class="form-control" readonly>
@@ -153,7 +176,7 @@
 
                         <div class="form-group">
                             <label>Valor da Diária</label>
-                            <input type="text" name="valor_diaria" class="form-control money" value="0,00" required>
+                            <input type="text" name="valor_diaria" class="form-control money" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -164,9 +187,57 @@
             </div>
         </div>
     </div>
+
+     <!-- Modal de Cadastro de Hóspede -->
+    <div class="modal fade" id="modalCadastrarHospede" tabindex="-1" role="dialog"
+        aria-labelledby="modalHospedeLabel" aria-hidden="true">
+        <div class="modal-dialog " role="document">
+            <form method="POST" action="{{ route('hospede.store') }}">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalHospedeLabel">Cadastrar Hóspede</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <label class="col-md-2 label-control" for="nome">* Nome completo:</label>
+                            <div class="col-md-6">
+                                <div><input class="form-control" required="required" type="text" name="nome"
+                                        id="nome" autocomplete="off"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-md-2 label-control" for="email">Email:</label>
+                            <div class="col-md-6">
+                                <div><input class="form-control" type="email" name="email" id="email"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-md-2 label-control" for="telefone">Telefone:</label>
+                            <div class="col-md-6">
+                                <div><input class="form-control" type="tel" name="telefone" id="telefone"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <a href="{{ route('hospede.create') }}" class="btn btn-secondary">Cadastro Completo</a>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 @stop
 
 @section('css')
+<link href='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css' rel='stylesheet' />
 <style>
 .mapa-header {
     background-color: #f8f9fa;
@@ -340,6 +411,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js'></script>
 <script>
 let dadosMapa = {};
 let quartoSelecionado = null;
@@ -577,32 +649,57 @@ $('#formReserva').on('submit', function(e) {
     
     const formData = new FormData(this);
     formData.append('_token', '{{ csrf_token() }}');
+    formData.append('tipo', 'reserva');
     
     // Converter valor da diária
     const valorDiaria = $('input[name="valor_diaria"]').val().replace(/\./g, '').replace(',', '.');
+    console.log('[INFO] Valor da diária bruto:', $('input[name="valor_diaria"]').val());
+console.log('[INFO] Valor da diária convertido:', valorDiaria);
     formData.set('valor_diaria', valorDiaria);
+    console.log('[INFO] Conteúdo do FormData:');
+for (let pair of formData.entries()) {
+    console.log(`  ${pair[0]}: ${pair[1]}`);
+}
     
     $.ajax({
-        url: '{{ route("reserva.store") }}',
+        url: '{{ route("mapa.criar-reserva") }}',
         method: 'POST',
         data: formData,
         processData: false,
         contentType: false,
         success: function(response) {
+            console.log('[RESPOSTA COMPLETA]', response);
+
             $('#modalReserva').modal('hide');
             
             if (response.success || response.redirect) {
                 alert('Reserva criada com sucesso!');
                 carregarMapa(); // Recarregar mapa
             } else {
-                alert('Erro ao criar reserva');
+                console.warn('[ERRO AJAX] Resposta com success: false');
+        console.warn('[ERRO AJAX] Mensagem:', response.message);
+        alert(response.message || 'Erro ao criar reserva');
+
             }
         },
-        error: function() {
-            alert('Erro ao criar reserva');
-        }
+        error: function(xhr, status, error) {
+    console.error('[ERRO] Status da requisição:', status);
+    console.error('[ERRO] Código HTTP:', xhr.status);
+    console.error('[ERRO] Mensagem:', error);
+    console.error('[ERRO] Resposta completa:', xhr.responseText);
+    alert('Erro ao criar reserva. Veja o console para mais detalhes.');
+}
     });
 });
 </script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: 'selecione...',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
 @stop
 

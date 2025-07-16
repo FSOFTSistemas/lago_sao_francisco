@@ -10,6 +10,7 @@ use App\Models\Hospede;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MapaController extends Controller
 {
@@ -17,8 +18,9 @@ class MapaController extends Controller
     {
         $dataInicio = $request->get('data_inicio', Carbon::now()->startOfWeek()->format('Y-m-d'));
         $dataFim = $request->get('data_fim', Carbon::parse($dataInicio)->addDays(13)->format('Y-m-d'));
+        $hospedes = Hospede::all();
         
-        return view('mapa.index', compact('dataInicio', 'dataFim'));
+        return view('mapa.index', compact('dataInicio', 'dataFim', 'hospedes'));
     }
 
     public function getDadosMapa(Request $request)
@@ -165,56 +167,65 @@ class MapaController extends Controller
         return $ocupacao;
     }
 
-    public function criarReservaRapida(Request $request)
-    {
-        try {
-            $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'data_checkin' => 'required|date',
-                'data_checkout' => 'required|date|after:data_checkin',
-                'tipo' => 'required|in:reserva,bloqueio'
-            ]);
+public function criarReservaRapida(Request $request)
+{
+    try {
+        Log::debug('Dados recebidos:', $request->all());
+        $request->validate([
+            'quarto_id' => 'required|exists:quartos,id',
+            'data_checkin' => 'required|date',
+            'data_checkout' => 'required|date|after:data_checkin',
+            'tipo' => 'required|in:reserva,bloqueio',
+            'valor_diaria' => 'nullable|numeric',
+            'hospede_id' => 'required'
+        ]);
 
-            $dadosReserva = [
-                'quarto_id' => $request->quarto_id,
-                'data_checkin' => $request->data_checkin,
-                'data_checkout' => $request->data_checkout,
-                'valor_diaria' => 0,
-                'n_adultos' => 1,
-                'n_criancas' => 0,
-            ];
+        $valorFormatado = str_replace(['.', ','], ['', '.'], $request->valor_diaria); // Ex: "350,00" → "350.00"
 
-            if ($request->tipo === 'bloqueio') {
-                // Para bloqueio, usar hóspede "Bloqueado" e situação "bloqueado"
-                $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
-                if (!$hospedeBloqueado) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Hóspede "Bloqueado" não encontrado. Crie um hóspede com este nome.'
-                    ], 400);
-                }
-                
-                $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
-                $dadosReserva['situacao'] = 'bloqueado';
-            } else {
-                // Para reserva normal, deixar sem hóspede e situação pré-reserva
-                $dadosReserva['situacao'] = 'pre-reserva';
+        $dadosReserva = [
+            'quarto_id' => $request->quarto_id,
+            'data_checkin' => $request->data_checkin,
+            'data_checkout' => $request->data_checkout,
+            'valor_diaria' => $valorFormatado ?? 0,
+            'n_adultos' => 1,
+            'n_criancas' => 0,
+            'hospede_id' => $request->hospede_id
+        ];
+
+        if ($request->tipo === 'bloqueio') {
+            $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+
+            if (!$hospedeBloqueado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hóspede "Bloqueado" não encontrado. Crie um hóspede com este nome.'
+                ], 400);
             }
 
-            $reserva = Reserva::create($dadosReserva);
-
-            return response()->json([
-                'success' => true,
-                'message' => $request->tipo === 'bloqueio' ? 'Bloqueio criado com sucesso!' : 'Reserva criada com sucesso!',
-                'reserva_id' => $reserva->id
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao criar ' . ($request->tipo === 'bloqueio' ? 'bloqueio' : 'reserva') . ': ' . $e->getMessage()
-            ], 500);
+            $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
+            $dadosReserva['situacao'] = 'bloqueado';
+        } else {
+            $dadosReserva['situacao'] = $request->situacao;
         }
+
+        $reserva = Reserva::create($dadosReserva);
+
+        return response()->json([
+            'success' => true,
+            'message' => $request->tipo === 'bloqueio'
+                ? 'Bloqueio criado com sucesso!'
+                : 'Reserva criada com sucesso!',
+            'reserva_id' => $reserva->id
+        ]);
+        
+    } catch (\Exception $e) {
+        Log::error('Erro ao criar reserva rápida', ['erro' => $e->getMessage()]);
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage() ?: 'Erro inesperado ao criar reserva.'
+        ], 500);
     }
+}
 }
 
