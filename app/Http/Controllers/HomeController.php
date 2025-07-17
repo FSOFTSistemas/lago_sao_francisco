@@ -81,6 +81,23 @@ class HomeController extends Controller
                     return $mov;
                 });
 
+            // Card resumo de souvenirs no intervalo
+            $movimentosSouvenir = DB::table('day_use_souvenir')
+                ->join('souvenirs', 'day_use_souvenir.souvenir_id', '=', 'souvenirs.id')
+                ->join('day_uses', 'day_use_souvenir.dayuse_id', '=', 'day_uses.id')
+                ->whereBetween('day_uses.data', [$dataInicio, $dataFim])
+                ->select(
+                    'souvenirs.id as souvenir_id',
+                    'souvenirs.descricao as souvenir_nome',
+                    'souvenirs.valor as valor_unitario',
+                    DB::raw('SUM(day_use_souvenir.quantidade) as total_quantidade'),
+                    DB::raw('SUM(day_use_souvenir.quantidade * souvenirs.valor) as valor_total')
+                )
+                ->groupBy('souvenirs.id', 'souvenirs.descricao', 'souvenirs.valor')
+                ->get();
+
+
+
             // Gráfico por dia do mês atual
             $inicioMes = Carbon::now()->startOfMonth();
             $fimMes = Carbon::now()->endOfMonth();
@@ -120,6 +137,9 @@ class HomeController extends Controller
             $entradaQtd = [];
             $qtdSouvenir = [];
             $valorSouvenir = [];
+            $labelsSouvenir = $movimentosSouvenir->pluck('souvenir_nome');
+            $valoresSouvenir = $movimentosSouvenir->pluck('valor_total');
+            $qtdSouvenir = $movimentosSouvenir->pluck('total_quantidade');
 
 
             foreach ($resultados as $r) {
@@ -193,7 +213,11 @@ class HomeController extends Controller
                 'entradaQtd',
                 'caixas',
                 'qtdSouvenir',
-                'valorSouvenir'
+                'valorSouvenir',
+                'movimentosSouvenir',
+                'labelsSouvenir',
+                'valoresSouvenir',
+                'qtdSouvenir'
 
             ));
         }
