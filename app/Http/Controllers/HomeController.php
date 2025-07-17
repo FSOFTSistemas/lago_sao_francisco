@@ -139,7 +139,7 @@ class HomeController extends Controller
             $valorSouvenir = [];
             $labelsSouvenir = $movimentosSouvenir->pluck('souvenir_nome');
             $valoresSouvenir = $movimentosSouvenir->pluck('valor_total');
-            $qtdSouvenir = $movimentosSouvenir->pluck('total_quantidade');
+            $qtdSouvenirG = $movimentosSouvenir->pluck('total_quantidade');
 
 
             foreach ($resultados as $r) {
@@ -217,7 +217,7 @@ class HomeController extends Controller
                 'movimentosSouvenir',
                 'labelsSouvenir',
                 'valoresSouvenir',
-                'qtdSouvenir'
+                'qtdSouvenirG'
 
             ));
         }

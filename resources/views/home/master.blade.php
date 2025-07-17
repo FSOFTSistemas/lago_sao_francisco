@@ -204,7 +204,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Gráfico Pizza Fluxo de Caixa -->
     <div class="card">
         <div class="card-header"><strong>Fluxo de Caixa (Formas de Pagamento)</strong></div>
@@ -338,15 +338,30 @@
                         position: 'bottom'
                     },
                     datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        color: '#000',
-                        font: {
-                            size: 11,
-                            weight: 'bold'
-                        },
-                        clamp: true
-                    }
+        display: false
+    },
+    tooltip: {
+    callbacks: {
+        label: function(context) {
+            const i = context.dataIndex;
+            const tipo = context.dataset.label;
+            const valor = context.parsed.y;
+            let qtd;
+
+            if (tipo === 'Passeio (R$)') {
+                qtd = passeioQtd[i];
+            } else if (tipo === 'Entrada (R$)') {
+                qtd = entradaQtd[i];
+            } else if (tipo === 'Souvenir (R$)') {
+                qtd = qtdSouvenir[i];
+            }
+
+            return `${tipo}\nQtd: ${qtd} | R$: ${valor.toFixed(2).replace('.', ',')}`;
+        }
+    }
+}
+
+
                 },
                 scales: {
                     x: {
@@ -649,14 +664,11 @@
 
     
     <script> //Gráfico de Souvenirs
-        console.log("Labels:", @json($labelsSouvenir));
-        console.log("Qtd:", @json($qtdSouvenir));
-
         Chart.register(ChartDataLabels);
 
         const labelsGraficoSouvenir = @json($labelsSouvenir);
         const valoresOriginaisGraficoSouvenir = @json($valoresSouvenir);
-        const qtdOriginaisGraficoSouvenir = @json($qtdSouvenir);
+        const qtdOriginaisGraficoSouvenir = @json($qtdSouvenirG);
 
         // Conversão isolada
         const valoresConvertidosGraficoSouvenir = valoresOriginaisGraficoSouvenir.map(v => parseFloat(v));
@@ -669,7 +681,7 @@
         const graficoResumoSouvenirs = new Chart(document.getElementById('graficoResumoSouvenirs').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: labelsSouvenir,
+                labels: labelsGraficoSouvenir,
                 datasets: [{
                     label: 'Souvenir (R$)',
                     data: valoresConvertidosGraficoSouvenir,
@@ -679,7 +691,7 @@
                             const i = context.dataIndex;
                             const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
                             console.log(valorFormatado)
-                            return `R$${valorFormatado}\nQtd: ${qtdSouvenir[i]}`;
+                            return `R$${valorFormatado}\nQtd: ${qtdConvertidaGraficoSouvenir[i]}`;
                         }
                     }
                 }]
@@ -714,7 +726,7 @@
                                 const i = context.dataIndex;
                                 const nome = context.label;
                                 const valor = context.parsed.y;
-                                const qtd = qtdSouvenir[i];
+                                const qtd = qtdConvertidaGraficoSouvenir[i];
                                 return `Souvenir: ${nome}\nQtd: ${qtd} | R$: ${valor.toFixed(2).replace('.', ',')}`;
                             }
                         }
