@@ -7,8 +7,10 @@ use App\Models\Quarto;
 use App\Models\Hospede;
 use App\Models\Categoria;
 use App\Models\FormaPagamento;
+use App\Models\PreferenciasHotel;
 use App\Models\Produto;
 use App\Models\Transacao;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,19 +18,19 @@ use Illuminate\Support\Facades\DB;
 class ReservaController extends Controller
 {
     public function index(Request $request)
-{
-    $situacao = $request->input('situacao', 'todos'); // 'todos' por padrão
+    {
+        $situacao = $request->input('situacao', 'todos'); // 'todos' por padrão
 
-    $query = Reserva::with(['quarto', 'hospede'])->latest();
+        $query = Reserva::with(['quarto', 'hospede'])->latest();
 
-    if ($situacao !== 'todos') {
-        $query->where('situacao', $situacao);
+        if ($situacao !== 'todos') {
+            $query->where('situacao', $situacao);
+        }
+
+        $reservas = $query->paginate(10);
+
+        return view('reserva.index', compact('reservas', 'situacao'));
     }
-
-    $reservas = $query->paginate(10);
-
-    return view('reserva.index', compact('reservas', 'situacao'));
-}
 
 
 
@@ -71,31 +73,67 @@ class ReservaController extends Controller
     }
 
     public function store(Request $request)
-    {
-        try {
-            $validatedData = $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'hospede_id' => 'nullable|exists:hospedes,id',
-                'data_checkin' => 'required|date',
-                'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'required',
-                'valor_total' => 'numeric',
-                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
-                'n_adultos' => 'required',
-                'n_criancas' => 'required',
-            ]);
+{
+    try {
+        $validatedData = $request->validate([
+            'quarto_id' => 'required|exists:quartos,id',
+            'hospede_id' => 'nullable|exists:hospedes,id',
+            'data_checkin' => 'required|date',
+            'data_checkout' => 'required|date|after_or_equal:data_checkin',
+            'valor_diaria' => 'nullable',
+            'valor_total' => 'numeric',
+            'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
+            'n_adultos' => 'required',
+            'n_criancas' => 'required',
+        ]);
+        
+        $preferencia = PreferenciasHotel::first();
+        // Lógica para valor_diaria com base em tarifas diárias
+        if ($preferencia->valor_diaria === 'tarifario' || empty($validatedData['valor_diaria'])) {
+            $quarto = Quarto::with('categoria.tarifa')->find($validatedData['quarto_id']);
+            $tarifa = $quarto->categoria->tarifa;
 
-            // Remover a máscara do valor_diaria antes de salvar
+            $checkin = Carbon::parse($validatedData['data_checkin']);
+            $checkout = Carbon::parse($validatedData['data_checkout']);
+
+            $periodo = CarbonPeriod::create($checkin, $checkout->subDay());
+
+            $total = 0;
+            $quantidadeDias = 0;
+
+            foreach ($periodo as $dia) {
+                $campo = match ($dia->dayOfWeek) {
+                    0 => 'dom',
+                    1 => 'seg',
+                    2 => 'ter',
+                    3 => 'qua',
+                    4 => 'qui',
+                    5 => 'sex',
+                    6 => 'sab',
+                };
+
+                $valorDia = (float) $tarifa->$campo ?? 0;
+                $total += $valorDia;
+                $quantidadeDias++;
+            }
+
+            // Média proporcional da tarifa
+            $mediaTarifa = $quantidadeDias > 0 ? $total / $quantidadeDias : 0;
+            $validatedData['valor_diaria'] = number_format($mediaTarifa, 2, '.', '');
+        } else {
+            // Remove máscara se foi preenchido manualmente
             $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
-
-            $reserva = Reserva::create($validatedData);
-
-            return redirect()->route('reserva.edit', $reserva->id)->with('success', 'Reserva criada com sucesso!');
-        } catch (\Exception $e) {
-            // Redirecionar de volta com os inputs para que old() funcione
-            return redirect()->back()->withInput()->with('error', 'Erro ao criar reserva!: ' . $e->getMessage());
         }
+
+        $reserva = Reserva::create($validatedData);
+
+        return redirect()->route('reserva.edit', $reserva->id)
+                         ->with('success', 'Reserva criada com sucesso!');
+    } catch (\Exception $e) {
+        return redirect()->back()->withInput()
+                         ->with('error', 'Erro ao criar reserva!: ' . $e->getMessage());
     }
+}
 
     public function edit(Reserva $reserva)
     {
@@ -282,7 +320,7 @@ class ReservaController extends Controller
         }
     }
 
-       public function cancelar($id)
+    public function cancelar($id)
     {
         try {
             DB::beginTransaction();

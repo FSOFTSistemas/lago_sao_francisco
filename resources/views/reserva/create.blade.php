@@ -235,7 +235,7 @@
                             <div class="card-footer">
                                 @if (isset($reserva))
                                     <!-- Botão Cancelar (substitui o Excluir) -->
-                                    @if(!in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                                    @if(in_array($reserva->situacao, ['pre-reserva']))
                                         <button type="button" class="btn"  id="btn-cancelar-reserva" 
                                             data-reserva-id="{{ $reserva->id }}">
                                             <i class="fas fa-ban"></i> Cancelar

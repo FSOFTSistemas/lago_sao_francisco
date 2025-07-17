@@ -353,7 +353,7 @@ return [
                 [
                     'text' => 'Mapa',
                     'icon' => 'fas fa-map',
-                    'url'  => '/mapa-reservas',
+                    'url'  => '/mapa',
                 ],
                 [
                     'text' => 'Reservas',

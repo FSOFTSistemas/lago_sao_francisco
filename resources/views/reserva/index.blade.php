@@ -21,7 +21,7 @@
                     'todos' => ['label' => 'Todos', 'color' => '#679A4C'],
                     'pre-reserva' => ['label' => 'Pré-reserva', 'color' => '#FFFF00'],
                     'hospedado' => ['label' => 'Hospedado', 'color' => '#FF0000'],
-                    'reservado' => ['label' => 'Reservado', 'color' => '#007BFF'],
+                    'reserva' => ['label' => 'Reservado', 'color' => '#007BFF'],
                     'bloqueado' => ['label' => 'Data bloqueada', 'color' => '#343A40'],
                     'finalizada' => ['label' => 'Finalizado', 'color' => '#26A69A'],
                     'cancelado' => ['label' => 'Cancelado', 'color' => '#6A1B9A'],

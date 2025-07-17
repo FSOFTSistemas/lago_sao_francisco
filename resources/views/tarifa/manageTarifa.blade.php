@@ -100,7 +100,7 @@
                                     type="number"
                                     class="form-control"
                                     name="{{ $key }}"
-                                    value="{{ old($key, $tarifa->$key ?? '') }}"
+                                    value="{{ old($key, $tarifa->$key ?? 0) }}"
                                 >
                             </div>
                         </div>

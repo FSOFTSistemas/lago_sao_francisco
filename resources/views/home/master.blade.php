@@ -27,16 +27,26 @@
         </div>
     </div>
     <!-- Botão para abrir/fechar os cards -->
-    <div class="mb-3 d-flex justify-content-end">
+    <div class="mb-3 d-flex justify-content-end flex-wrap gap-2">
         <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#collapseCardsDayUse"
             aria-expanded="false" aria-controls="collapseCardsDayUse">
-            <i class="fas fa-filter"></i> Mostrar Resumo de Itens
+            🎟️ Mostrar DayUse
+        </button>
+        <button class="btn btn-outline-info" type="button" data-toggle="collapse" data-target="#collapseCardsSouvenir"
+            aria-expanded="false" aria-controls="collapseCardsSouvenir">
+            🎁 Mostrar Souvenirs
         </button>
         <button class="btn btn-outline-secondary" type="button" data-toggle="collapse" data-target="#graficoCollapse"
             aria-expanded="false" aria-controls="graficoCollapse">
             📈 Mostrar/Ocultar Gráfico
         </button>
     </div>
+
+    @php
+        $totalGeralMovimentos = $movimentos->sum('valor_total');
+        $totalSouvenir = $movimentosSouvenir->sum('valor_total');
+        $totalCombinado = $totalGeralMovimentos + $totalSouvenir;
+    @endphp
 
     <!-- Conteúdo que aparece/oculta -->
     <div class="collapse" id="collapseCardsDayUse">
@@ -53,16 +63,10 @@
                 </button>
             </div>
         </div>
+
         <div class="row">
-            @php
-                $totalGeralMovimentos = $movimentos->sum('valor_total');
-            @endphp
-
-
             @foreach ($movimentos as $mov)
-                @php
-                    $isPasseio = $mov->passeio ? 'passeio' : 'outros';
-                @endphp
+                @php $isPasseio = $mov->passeio ? 'passeio' : 'outros'; @endphp
                 <div class="col-md-3 mb-3 card-mov {{ $isPasseio }}">
                     <div class="card border-left-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} shadow h-100 py-2">
                         <div class="card-body d-flex align-items-center justify-content-between">
@@ -72,8 +76,8 @@
                                     {{ $mov->item_nome ?? 'Item' }}
                                 </h6>
                                 <span class="text-dark">Qtd: {{ $mov->total_quantidade }}</span>
-                                <span class="text-dark">| Valor:
-                                    R${{ number_format($mov->valor_total, 2, ',', '.') }}</span>
+                                <span class="text-dark">| Valor: R$
+                                    {{ number_format($mov->valor_total, 2, ',', '.') }}</span>
                             </div>
                             <div class="icon text-{{ $isPasseio == 'passeio' ? 'info' : 'success' }} ml-3">
                                 <i
@@ -83,23 +87,20 @@
                     </div>
                 </div>
             @endforeach
+
             <div class="col-md-3 mb-3 card-mov total-geral">
-    <div class="card border-left-dark shadow h-100 py-2">
-        <div class="card-body d-flex align-items-center justify-content-between">
-            <div>
-                <h6 class="text-dark font-weight-bold text-uppercase mb-1">
-                    Total Geral
-                </h6>
-                <span class="text-dark">R$ {{ number_format($totalGeralMovimentos, 2, ',', '.') }}</span>
+                <div class="card border-left-dark shadow h-100 py-2">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-dark font-weight-bold text-uppercase mb-1">Total DayUse</h6>
+                            <span class="text-dark">R$ {{ number_format($totalGeralMovimentos, 2, ',', '.') }}</span>
+                        </div>
+                        <div class="icon text-dark ml-3">
+                            <i class="fas fa-calculator fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="icon text-dark ml-3">
-                <i class="fas fa-calculator fa-2x"></i>
-            </div>
-        </div>
-    </div>
-</div>
-
-
         </div>
     </div>
 
@@ -129,6 +130,58 @@
         </div>
     </div>
 
+    <div class="collapse" id="collapseCardsSouvenir">
+        <div class="row">
+            @foreach ($movimentosSouvenir as $sou)
+                <div class="col-md-3 mb-3 card-mov souvenir">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-warning font-weight-bold text-uppercase mb-1">
+                                    {{ $sou->souvenir_nome ?? 'Souvenir' }}
+                                </h6>
+                                <span class="text-dark">Qtd: {{ $sou->total_quantidade }}</span>
+                                <span class="text-dark">| Valor: R$
+                                    {{ number_format($sou->valor_total, 2, ',', '.') }}</span>
+                            </div>
+                            <div class="icon text-warning ml-3">
+                                <i class="fas fa-gift fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+
+            <div class="col-md-3 mb-3 card-mov total-geral">
+                <div class="card border-left-dark shadow h-100 py-2">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-dark font-weight-bold text-uppercase mb-1">Total Souvenir</h6>
+                            <span class="text-dark">R$ {{ number_format($totalSouvenir, 2, ',', '.') }}</span>
+                        </div>
+                        <div class="icon text-dark ml-3">
+                            <i class="fas fa-gift fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3 card-mov total-geral">
+                <div class="card border-left-dark shadow h-100 py-2">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-dark font-weight-bold text-uppercase mb-1">Total Souvenir + Day Use</h6>
+                            <span class="text-dark">R$ {{ number_format($totalCombinado, 2, ',', '.') }}</span>
+                        </div>
+                        <div class="icon text-dark ml-3">
+                            <i class="fas fa-calculator fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Gráfico de Day Use -->
     <div class="card mb-4">
         <div class="card-header"><strong>Gráfico de Day Use - Mês Atual</strong></div>
@@ -140,7 +193,18 @@
             </div>
         </div>
     </div>
-
+    <!-- Gráfico Souvernirs -->
+    <div class="card mb-4">
+        <div class="card-header"><strong>Gráfico de Souvernirs</strong></div>
+        <div class="card-body">
+            <div class="overflow-auto">
+                <div class="chart-bar-container" style="min-width: 900px;">
+                    <canvas id="graficoResumoSouvenirs"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Gráfico Pizza Fluxo de Caixa -->
     <div class="card">
         <div class="card-header"><strong>Fluxo de Caixa (Formas de Pagamento)</strong></div>
@@ -205,9 +269,12 @@
 
 
         Chart.register(ChartDataLabels);
+
         const passeioQtd = @json($passeioQtd);
         const entradaQtd = @json($entradaQtd);
-
+        const qtdSouvenir = @json($qtdSouvenir);
+        const valorSouvenir = @json($valorSouvenir);
+        const labelsSouvenir = @json($labelsSouvenir);
 
 
         // DAY USE
@@ -222,10 +289,11 @@
                         datalabels: {
                             formatter: (value, context) => {
                                 const i = context.dataIndex;
-                                return `R$ ${value.toFixed(2)}\nQtd: ${passeioQtd[i]}`;
+                                const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
+
+                                return `R$${valorFormatado}\nQtd: ${passeioQtd[i]}`;
                             }
                         }
-
                     },
                     {
                         label: 'Entrada (R$)',
@@ -234,10 +302,24 @@
                         datalabels: {
                             formatter: (value, context) => {
                                 const i = context.dataIndex;
-                                return `R$ ${value.toFixed(2)}\nQtd: ${entradaQtd[i]}`;
+                                const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
+
+                                return `R$${valorFormatado}\nQtd: ${entradaQtd[i]}`;
                             }
                         }
+                    },
+                    {
+                        label: 'Souvenir (R$)',
+                        data: valorSouvenir,
+                        backgroundColor: '#C87E39',
+                        datalabels: {
+                            formatter: (value, context) => {
+                                const i = context.dataIndex;
+                                const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
 
+                                return `R$${valorFormatado}\nQtd: ${qtdSouvenir[i]}`;
+                            }
+                        }
                     }
                 ]
             },
@@ -287,7 +369,6 @@
                     }
                 }
             }
-
         });
 
 
@@ -432,9 +513,7 @@
             filtrarCards('todos');
         });
 
-        atualizarGrafico(tipo);
-    </script>
-    <script>
+
         const labels = @json($labelsGrafico);
         const dadosGrafico = @json($dadosGrafico);
         const tiposItens = @json($tiposItens);
@@ -510,6 +589,7 @@
             chart.data.datasets = novosDatasets;
             chart.update();
         }
+        atualizarGrafico(tipo);
 
         $(document).ready(function() {
             filtrarCards('todos');
@@ -566,6 +646,107 @@
             filtrarTipo('todos');
         });
     </script>
+
+    
+    <script> //Gráfico de Souvenirs
+        console.log("Labels:", @json($labelsSouvenir));
+        console.log("Qtd:", @json($qtdSouvenir));
+
+        Chart.register(ChartDataLabels);
+
+        const labelsGraficoSouvenir = @json($labelsSouvenir);
+        const valoresOriginaisGraficoSouvenir = @json($valoresSouvenir);
+        const qtdOriginaisGraficoSouvenir = @json($qtdSouvenir);
+
+        // Conversão isolada
+        const valoresConvertidosGraficoSouvenir = valoresOriginaisGraficoSouvenir.map(v => parseFloat(v));
+        const qtdConvertidaGraficoSouvenir = qtdOriginaisGraficoSouvenir.map(q => parseInt(q));
+
+        console.log("Valores:", @json($valoresSouvenir));
+        console.log("Valores novos:", valoresConvertidosGraficoSouvenir);
+
+
+        const graficoResumoSouvenirs = new Chart(document.getElementById('graficoResumoSouvenirs').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labelsSouvenir,
+                datasets: [{
+                    label: 'Souvenir (R$)',
+                    data: valoresConvertidosGraficoSouvenir,
+                    backgroundColor: '#C87E39',
+                    datalabels: {
+                        formatter: (value, context) => {
+                            const i = context.dataIndex;
+                            const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
+                            console.log(valorFormatado)
+                            return `R$${valorFormatado}\nQtd: ${qtdSouvenir[i]}`;
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Resumo de Souvenirs no Período',
+                        padding: {
+                            bottom: 50
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        color: '#000',
+                        font: {
+                            size: 11,
+                            weight: 'bold'
+                        },
+                        clamp: true
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const i = context.dataIndex;
+                                const nome = context.label;
+                                const valor = context.parsed.y;
+                                const qtd = qtdSouvenir[i];
+                                return `Souvenir: ${nome}\nQtd: ${qtd} | R$: ${valor.toFixed(2).replace('.', ',')}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Souvenir'
+                        },
+                        ticks: {
+                            maxRotation: 45,
+                            minRotation: 30,
+                            autoSkip: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Valor em R$'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+
+
+
 @stop
 
 @section('css')
