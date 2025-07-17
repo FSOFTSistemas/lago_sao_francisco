@@ -205,90 +205,106 @@
 
 
         Chart.register(ChartDataLabels);
-        const passeioQtd = @json($passeioQtd);
-        const entradaQtd = @json($entradaQtd);
 
+const passeioQtd = @json($passeioQtd);
+const entradaQtd = @json($entradaQtd);
+const qtdSouvenir = @json($qtdSouvenir);
+const valorSouvenir = @json($valorSouvenir);
 
+// DAY USE
+const graficoDayUse = new Chart(document.getElementById('graficoDayUse').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: @json($labels),
+        datasets: [
+            {
+                label: 'Passeio (R$)',
+                data: @json($passeioValor),
+                backgroundColor: '#79A551',
+                datalabels: {
+                    formatter: (value, context) => {
+                        const i = context.dataIndex;
+                        const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
 
-        // DAY USE
-        const graficoDayUse = new Chart(document.getElementById('graficoDayUse').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: @json($labels),
-                datasets: [{
-                        label: 'Passeio (R$)',
-                        data: @json($passeioValor),
-                        backgroundColor: '#79A551',
-                        datalabels: {
-                            formatter: (value, context) => {
-                                const i = context.dataIndex;
-                                return `R$ ${value.toFixed(2)}\nQtd: ${passeioQtd[i]}`;
-                            }
-                        }
-
-                    },
-                    {
-                        label: 'Entrada (R$)',
-                        data: @json($entradaValor),
-                        backgroundColor: '#2B82BF',
-                        datalabels: {
-                            formatter: (value, context) => {
-                                const i = context.dataIndex;
-                                return `R$ ${value.toFixed(2)}\nQtd: ${entradaQtd[i]}`;
-                            }
-                        }
-
+                        return `R$${valorFormatado}\nQtd: ${passeioQtd[i]}`;
                     }
-                ]
+                }
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Valores de Day Use por Dia',
-                        padding: {
-                            bottom: 50,
-                        }
-                    },
-                    legend: {
-                        position: 'bottom'
-                    },
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        color: '#000',
-                        font: {
-                            size: 11,
-                            weight: 'bold'
-                        },
-                        clamp: true
+            {
+                label: 'Entrada (R$)',
+                data: @json($entradaValor),
+                backgroundColor: '#2B82BF',
+                datalabels: {
+                    formatter: (value, context) => {
+                        const i = context.dataIndex;
+                        const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
+
+                        return `R$${valorFormatado}\nQtd: ${entradaQtd[i]}`;
                     }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Dia do Mês'
-                        },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 30,
-                            autoSkip: false
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Valor em R$'
-                        }
+                }
+            },
+            {
+                label: 'Souvenir (R$)',
+                data: valorSouvenir,
+                backgroundColor: '#C87E39',
+                datalabels: {
+                    formatter: (value, context) => {
+                        const i = context.dataIndex;
+                        const valorFormatado = Number.isInteger(value) ? value : value.toFixed(2);
+
+                        return `R$${valorFormatado}\nQtd: ${qtdSouvenir[i]}`;
                     }
                 }
             }
-
-        });
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            title: {
+                display: true,
+                text: 'Valores de Day Use por Dia',
+                padding: {
+                    bottom: 50,
+                }
+            },
+            legend: {
+                position: 'bottom'
+            },
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                color: '#000',
+                font: {
+                    size: 11,
+                    weight: 'bold'
+                },
+                clamp: true
+            }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: 'Dia do Mês'
+                },
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 30,
+                    autoSkip: false
+                }
+            },
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Valor em R$'
+                }
+            }
+        }
+    }
+});
 
 
         // PIZZA
@@ -432,9 +448,7 @@
             filtrarCards('todos');
         });
 
-        atualizarGrafico(tipo);
-    </script>
-    <script>
+
         const labels = @json($labelsGrafico);
         const dadosGrafico = @json($dadosGrafico);
         const tiposItens = @json($tiposItens);
@@ -510,6 +524,7 @@
             chart.data.datasets = novosDatasets;
             chart.update();
         }
+        atualizarGrafico(tipo);
 
         $(document).ready(function() {
             filtrarCards('todos');
