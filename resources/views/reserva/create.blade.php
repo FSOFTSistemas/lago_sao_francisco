@@ -33,7 +33,7 @@
                                         $situacaoAtual = old('situacao', $reserva->situacao ?? '');
                                         $isEdicao = isset($reserva);
                                         $podeAlterarSituacao = true;
-                                        
+
                                         // Regras para edição
                                         if ($isEdicao) {
                                             if (in_array($situacaoAtual, ['hospedado', 'finalizada', 'cancelado'])) {
@@ -44,22 +44,19 @@
 
                                     <label class='radio-option'>
                                         <input type='radio' name='situacao' value='pre-reserva'
-                                            @checked($situacaoAtual === 'pre-reserva') 
-                                            @if($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
-                                            @if(!$podeAlterarSituacao) disabled @endif
-                                            required>
+                                            @checked($situacaoAtual === 'pre-reserva') @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                            @if (!$podeAlterarSituacao) disabled @endif required>
                                         <span class='badge badge-warning'>pré-reservar</span>
                                     </label>
 
                                     <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='reserva' 
-                                            @checked($situacaoAtual === 'reserva')
-                                            @if($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
-                                            @if(!$podeAlterarSituacao) disabled @endif>
+                                        <input type='radio' name='situacao' value='reserva' @checked($situacaoAtual === 'reserva')
+                                            @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                            @if (!$podeAlterarSituacao) disabled @endif>
                                         <span class='badge badge-primary'>reservar</span>
                                     </label>
 
-                                    @if(!$isEdicao)
+                                    @if (!$isEdicao)
                                         <label class='radio-option'>
                                             <input type='radio' name='situacao' value='hospedado'
                                                 @checked($situacaoAtual === 'hospedado')>
@@ -72,14 +69,14 @@
                                             <span class='badge badge-dark'>bloquear datas</span>
                                         </label>
                                     @else
-                                        @if($situacaoAtual === 'hospedado')
+                                        @if ($situacaoAtual === 'hospedado')
                                             <label class='radio-option'>
                                                 <input type='radio' name='situacao' value='hospedado' checked disabled>
                                                 <span class='badge badge-danger'>hospedado</span>
                                             </label>
                                         @endif
 
-                                        @if($situacaoAtual === 'bloqueado')
+                                        @if ($situacaoAtual === 'bloqueado')
                                             <label class='radio-option'>
                                                 <input type='radio' name='situacao' value='bloqueado'
                                                     @checked($situacaoAtual === 'bloqueado')>
@@ -87,14 +84,14 @@
                                             </label>
                                         @endif
 
-                                        @if($situacaoAtual === 'finalizada')
+                                        @if ($situacaoAtual === 'finalizada')
                                             <label class='radio-option'>
                                                 <input type='radio' name='situacao' value='finalizada' checked disabled>
                                                 <span class='badge badge-success'>finalizada</span>
                                             </label>
                                         @endif
 
-                                        @if($situacaoAtual === 'cancelado')
+                                        @if ($situacaoAtual === 'cancelado')
                                             <label class='radio-option'>
                                                 <input type='radio' name='situacao' value='cancelado' checked disabled>
                                                 <span class='badge badge-secondary'>cancelado</span>
@@ -103,7 +100,7 @@
                                     @endif
 
                                     <!-- Input hidden para situações não editáveis -->
-                                    @if($isEdicao && !$podeAlterarSituacao)
+                                    @if ($isEdicao && !$podeAlterarSituacao)
                                         <input type='hidden' name='situacao' value='{{ $situacaoAtual }}'>
                                     @endif
                                 </div>
@@ -234,24 +231,31 @@
 
                             <div class="card-footer">
                                 @if (isset($reserva))
+                                    <!-- Botão Gerar Voucher (apenas para reserva ou pre-reserva) -->
+                                    @if (isset($reserva) && in_array($reserva->situacao, ['reserva', 'pre-reserva']))
+                                        <a href="{{ route('reservas.voucher', $reserva->id) }}" class="btn btn-info"
+                                            target="_blank">
+                                            <i class="fa fa-file-pdf-o"></i> Gerar Voucher
+                                        </a>
+                                    @endif
                                     <!-- Botão Cancelar (substitui o Excluir) -->
-                                    @if(in_array($reserva->situacao, ['pre-reserva']))
-                                        <button type="button" class="btn"  id="btn-cancelar-reserva" 
+                                    @if (in_array($reserva->situacao, ['pre-reserva']))
+                                        <button type="button" class="btn" id="btn-cancelar-reserva"
                                             data-reserva-id="{{ $reserva->id }}">
                                             <i class="fas fa-ban"></i> Cancelar
                                         </button>
                                     @endif
 
                                     <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
-                                    @if(isset($podeHospedar) && $podeHospedar)
-                                        <button type="button" class="btn btn-info" id="btn-hospedar" 
+                                    @if (isset($podeHospedar) && $podeHospedar)
+                                        <button type="button" class="btn btn-info" id="btn-hospedar"
                                             data-reserva-id="{{ $reserva->id }}">
                                             <i class="fas fa-bed"></i> Hospedar
                                         </button>
                                     @endif
 
                                     <!-- Botão Finalizar (aparece quando hospedado) -->
-                                    @if($reserva->situacao === 'hospedado')
+                                    @if ($reserva->situacao === 'hospedado')
                                         <button type="button" class="btn btn-success" id="btn-finalizar"
                                             data-reserva-id="{{ $reserva->id }}">
                                             <i class="fa-solid fa-right-from-bracket"></i> Finalizar
@@ -259,13 +263,13 @@
                                     @endif
 
                                     <!-- Mostrar status se finalizada ou cancelada -->
-                                    @if($reserva->situacao === 'finalizada')
+                                    @if ($reserva->situacao === 'finalizada')
                                         <span class="mr-3">
                                             <i class="fas fa-check"></i> Reserva finalizada
                                         </span>
                                     @endif
 
-                                    @if($reserva->situacao === 'cancelado')
+                                    @if ($reserva->situacao === 'cancelado')
                                         <span class="badge badge-secondary badge-lg">
                                             <i class="fas fa-ban"></i> RESERVA CANCELADA
                                         </span>
@@ -274,8 +278,8 @@
 
                                 <a href="{{ route('reserva.index') }}" class="btn btn-secondary"
                                     id="btn-voltar">Voltar</a>
-                                
-                                @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+
+                                @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
                                     <button type="submit" class="btn"
                                         id="btn-atualizar-criar">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
                                 @endif
@@ -333,10 +337,11 @@
                     </div>
 
                     <!-- Card de Atividades na Reserva -->
-                    @if(!in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                    @if (!in_array($reserva->situacao, ['finalizada', 'cancelado']))
                         <div class='card shadow-sm'>
                             <div class='card-header bg-light d-flex justify-content-between align-items-center'>
-                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA RESERVA
+                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA
+                                    RESERVA
                                 </h5>
                                 <div class='dropdown'>
                                     <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
@@ -368,7 +373,8 @@
                                     </div>
                                     <div class='form-group'>
                                         <label for='valor_transacao'>Valor</label>
-                                        <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
+                                        <input type='text' class='form-control' id='valor_transacao'
+                                            placeholder='0,00'>
                                     </div>
                                     <div class='form-group'>
                                         <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
@@ -442,12 +448,13 @@
 
                                     <div class="form-group mt-3">
                                         <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
-                                        <input type="text" class="form-control" id="total_produtos_adicionados" readonly
-                                            value="0,00">
+                                        <input type="text" class="form-control" id="total_produtos_adicionados"
+                                            readonly value="0,00">
                                     </div>
 
                                     <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-success btn-sm" id="btn-salvar-produtos">Salvar
+                                        <button type="button" class="btn btn-success btn-sm"
+                                            id="btn-salvar-produtos">Salvar
                                             Produtos</button>
                                         <button type="button" class="btn btn-secondary btn-sm"
                                             id="btn-cancelar-produtos">Cancelar</button>
@@ -459,7 +466,8 @@
                         <!-- Card apenas de visualização para reservas finalizadas/canceladas -->
                         <div class='card shadow-sm'>
                             <div class='card-header bg-light'>
-                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA RESERVA</h5>
+                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA
+                                    RESERVA</h5>
                             </div>
                             <div class='card-body'>
                                 <div id='lista-atividades'>
@@ -605,7 +613,7 @@
             opacity: 0.6;
         }
 
-        .radio-option input[type='radio']:disabled + .badge {
+        .radio-option input[type='radio']:disabled+.badge {
             opacity: 0.6;
         }
 
@@ -777,20 +785,24 @@
             font-size: 1rem;
             padding: 0.5rem 1rem;
         }
-        #btn-atualizar-criar{
+
+        #btn-atualizar-criar {
             background-color: #26C0C3;
-             color: #fff
+            color: #fff
         }
-        #btn-atualizar-criar:hover{
+
+        #btn-atualizar-criar:hover {
             background-color: #229fa1;
         }
-        #btn-cancelar-reserva{
+
+        #btn-cancelar-reserva {
             background-color: #6A1B9A;
-            color:#fff
+            color: #fff
         }
-        #btn-cancelar-reserva:hover{
+
+        #btn-cancelar-reserva:hover {
             background-color: #4c0a7a;
-            }
+        }
     </style>
     <style>
         @media (max-width: 768px) {
@@ -1118,7 +1130,7 @@
                     const fim = moment(checkout);
                     numDiarias = fim.diff(inicio, 'days');
                 }
-                
+
                 const totalDiarias = valorDiaria * numDiarias;
                 const totalProdutos = transacoes.filter(t => (t.categoria === 'produtos' || t.tipo === 'item') && t
                     .status).reduce((sum, t) => sum + parseFloat(t.valor), 0);
@@ -1266,7 +1278,7 @@
                 if (situacaoAtual === 'pre-reserva') {
                     // Alterar automaticamente para 'reserva' se houver pagamentos
                     $('input[name="situacao"][value="reserva"]').prop('checked', true);
-                    
+
                     Swal.fire({
                         title: 'Situação Atualizada!',
                         text: 'A situação da reserva foi alterada para "Reserva" devido ao pagamento adicionado.',
@@ -1317,7 +1329,7 @@
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">produtos</span>
                                     Item da reserva • ${dataFormatada}
-                                    @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
                                         <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -1336,7 +1348,7 @@
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                     ${formaPagamento} • ${dataFormatada}
-                                    @if(!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
                                         <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -1693,7 +1705,8 @@
                                     icon: 'success',
                                     confirmButtonText: 'OK'
                                 }).then(() => {
-                                    location.reload(); // Recarregar para atualizar a interface
+                                    location
+                                .reload(); // Recarregar para atualizar a interface
                                 });
                             } else {
                                 Swal.fire({
@@ -1748,7 +1761,8 @@
                                         icon: 'success',
                                         confirmButtonText: 'OK'
                                     }).then(() => {
-                                        location.reload(); // Recarregar para atualizar a interface
+                                        location
+                                    .reload(); // Recarregar para atualizar a interface
                                     });
                                 } else {
                                     Swal.fire({
@@ -1806,7 +1820,8 @@
                                         icon: 'success',
                                         confirmButtonText: 'OK'
                                     }).then(() => {
-                                        location.reload(); // Recarregar para atualizar a interface
+                                        location
+                                    .reload(); // Recarregar para atualizar a interface
                                     });
                                 } else {
                                     Swal.fire({
