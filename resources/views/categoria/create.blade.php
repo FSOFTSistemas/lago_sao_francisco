@@ -29,14 +29,14 @@
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="ocupantes">* Ocupantes:</label>
                   <div class="col-md-3">
-                    <div><input class="form-control"  type="text" name="ocupantes" id="ocupantes" value="{{ old('ocupantes', $quarto->ocupantes ?? '') }}"></div>
+                    <div><input class="form-control"  type="text" name="ocupantes" id="ocupantes" value="{{ old('ocupantes', $categoria->ocupantes ?? '') }}"></div>
                   </div>
                 </div>
 
                 <div class="form-group row">
                   <label class="col-md-3 label-control"  for="posicao">Posição:</label>
                   <div class="col-md-3">
-                    <div><input class="form-control"  type="text" name="posicao" id="posicao" value="{{ old('posicao', $quarto->posicao ?? '') }}"></div>
+                    <div><input class="form-control"  type="text" name="posicao" id="posicao" value="{{ old('posicao', $categoria->posicao ?? '') }}"></div>
                   </div>
                 </div>
 
