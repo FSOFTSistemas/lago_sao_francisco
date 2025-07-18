@@ -9,108 +9,121 @@
 
 @section('content')
 
-{{-- Filtro por Conta Corrente --}}
-<form method="GET" action="{{ route('lancamentos.index') }}" class="mb-4">
-    <div class="form-row align-items-end">
-        <div class="form-group col-md-6">
-            <label for="conta_id">Conta Corrente:</label>
-            <select name="conta_id" id="conta_id" class="form-control">
-                @foreach ($contasCorrente as $conta)
-                    <option value="{{ $conta->id }}" {{ request('conta_id') == $conta->id ? 'selected' : '' }}>
-                        {{ $conta->titular }} - Conta: {{ $conta->numero_conta }} 
-                        (Saldo: R$ {{ number_format($conta->saldo, 2, ',', '.') }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
+    {{-- Filtro por Conta Corrente --}}
+    <form method="GET" action="{{ route('lancamentos.index') }}" class="mb-4">
+        <div class="form-row align-items-end">
+            {{-- Conta Corrente --}}
+            <div class="form-group col-md-6">
+                <label for="conta_id">Conta Corrente:</label>
+                <select name="conta_id" id="conta_id" class="form-control">
+                    @foreach ($contasCorrente as $conta)
+                        <option value="{{ $conta->id }}" {{ request('conta_id') == $conta->id ? 'selected' : '' }}>
+                            {{ $conta->titular }} - Conta: {{ $conta->numero_conta }} 
+                            (Saldo: R$ {{ number_format($conta->saldo, 2, ',', '.') }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-        <div class="form-group col-md-6 d-flex justify-content-end">
-            <button type="submit" class="btn btn-primary mr-2">
-                <i class="fas fa-filter"></i> Filtrar
-            </button>
-            <a href="{{ route('lancamentos.index') }}" class="btn btn-secondary">
-                <i class="fas fa-sync-alt"></i> Limpar
-            </a>
-        </div>
-    </div>
-</form>
+            {{-- Data Início --}}
+            <div class="form-group col-md-3">
+                <label for="data_inicio">Data Início</label>
+                <input type="date" name="data_inicio" id="data_inicio" class="form-control"
+                       value="{{ request('data_inicio') }}">
+            </div>
 
-@component('components.data-table', [
-    'responsive' => [
-        ['responsivePriority' => 1, 'targets' => 0],
-        ['responsivePriority' => 2, 'targets' => 1],
-        ['responsivePriority' => 2, 'targets' => 2],
-        ['responsivePriority' => 2, 'targets' => 3],
-        ['responsivePriority' => 2, 'targets' => 4],
-        ['responsivePriority' => 2, 'targets' => 5],
-        ['responsivePriority' => 2, 'targets' => 6],
-        ['responsivePriority' => 2, 'targets' => 7],
-        ['responsivePriority' => 2, 'targets' => 8],
-        ['responsivePriority' => 2, 'targets' => 9],
-        ['responsivePriority' => 2, 'targets' => 10],
-        ['responsivePriority' => 4, 'targets' => -1],
-    ],
-    'itemsPerPage' => 10,
-    'valueColumnIndex' => 8
-])
-    <thead class="bg-primary text-white">
-        <tr>
-            <th>ID</th>
-            <th>Data</th>
-            <th>Descrição</th>
-            <th>Conta</th>
-            <th>Banco</th>
-            <th>Empresa</th>
-            <th>Tipo</th>
-            <th>Status</th>
-            <th class="text-right">Valor (R$)</th>
-            <th>Criado em</th>
-            <th>Atualizado em</th>
-            <th class="text-center">Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        @if($lancamentos->count())
-            @foreach($lancamentos as $lancamento)
-                <tr>
-                    <td>{{ $lancamento->id }}</td>
-                    <td>{{ \Carbon\Carbon::parse($lancamento->data)->format('d/m/Y') }}</td>
-                    <td>{{ $lancamento->descricao }}</td>
-                    <td>{{ $lancamento->contaCorrente->numero_conta ?? 'N/A' }}</td>
-                    <td>{{ $lancamento->banco->nome ?? 'N/A' }}</td>
-                    <td>{{ $lancamento->empresa->nome_fantasia ?? 'N/A' }}</td>
-                    <td>
-                        <span class="badge {{ $lancamento->tipo == 'entrada' ? 'badge-success' : 'badge-danger' }}">
-                            {{ ucfirst($lancamento->tipo) }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge {{ $lancamento->status == 'finalizado' ? 'badge-primary' : 'badge-warning' }}">
-                            {{ ucfirst($lancamento->status) }}
-                        </span>
-                    </td>
-                    <td class="text-right font-weight-bold {{ $lancamento->tipo == 'entrada' ? 'text-success' : 'text-danger' }}">
-                        {{ number_format($lancamento->valor, 2, ',', '.') }}
-                    </td>
-                    <td>{{ \Carbon\Carbon::parse($lancamento->created_at)->format('d/m/Y H:i') }}</td>
-                    <td>{{ \Carbon\Carbon::parse($lancamento->updated_at)->format('d/m/Y H:i') }}</td>
-                    <td class="text-center">
-                        <button class="btn btn-info btn-sm" data-toggle="modal"
-                            data-target="#showLancamentoModal{{ $lancamento->id }}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                    </td>
-                </tr>
-                @include('lancamentos.modals._show', ['lancamento' => $lancamento])
-            @endforeach
-        @else
+            {{-- Data Fim --}}
+            <div class="form-group col-md-3">
+                <label for="data_fim">Data Fim</label>
+                <input type="date" name="data_fim" id="data_fim" class="form-control"
+                       value="{{ request('data_fim') }}">
+            </div>
+
+            {{-- Status --}}
+            <div class="form-group col-md-3">
+                <label for="status">Status</label>
+                <select name="status" id="status" class="form-control">
+                    <option value="">Todos</option>
+                    <option value="pendente" {{ request('status') == 'pendente' ? 'selected' : '' }}>Pendente</option>
+                    <option value="finalizado" {{ request('status') == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                </select>
+            </div>
+
+            {{-- Tipo --}}
+            <div class="form-group col-md-3">
+                <label for="tipo">Tipo</label>
+                <select name="tipo" id="tipo" class="form-control">
+                    <option value="">Todos</option>
+                    <option value="entrada" {{ request('tipo') == 'entrada' ? 'selected' : '' }}>Entrada</option>
+                    <option value="saida" {{ request('tipo') == 'saida' ? 'selected' : '' }}>Saída</option>
+                </select>
+            </div>
+
+            {{-- Botões --}}
+            <div class="form-group col-md-6 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary mr-2">
+                    <i class="fas fa-filter"></i> Filtrar
+                </button>
+                <a href="{{ route('lancamentos.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-sync-alt"></i> Limpar
+                </a>
+            </div>
+        </div>
+    </form>
+
+    {{-- Tabela de Lançamentos --}}
+    @component('components.data-table', [
+        'responsive' => [
+            ['responsivePriority' => 1, 'targets' => 0],
+            ['responsivePriority' => 2, 'targets' => 1],
+            ['responsivePriority' => 2, 'targets' => 2],
+            ['responsivePriority' => 2, 'targets' => 3],
+            ['responsivePriority' => 2, 'targets' => 4],
+            ['responsivePriority' => 2, 'targets' => 5],
+            ['responsivePriority' => 2, 'targets' => 6],
+            ['responsivePriority' => 4, 'targets' => -1],
+        ],
+        'itemsPerPage' => 10,
+        'valueColumnIndex' => 8
+    ])
+        <thead class="bg-primary text-white">
             <tr>
-                <td colspan="12" class="text-center text-muted">Nenhum lançamento encontrado para esta conta.</td>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Conta</th>
+                <th>Empresa</th>
+                <th>Tipo</th>
+                <th>Status</th>
+                <th>Valor (R$)</th>
             </tr>
-        @endif
-    </tbody>
-@endcomponent
+        </thead>
+        <tbody>
+            @if($lancamentos->count())
+                @foreach($lancamentos as $lancamento)
+                    <tr>
+                        <td>{{ $lancamento->id }}</td>
+                        <td>{{ \Carbon\Carbon::parse($lancamento->data)->format('d/m/Y') }}</td>
+                        <td>{{ $lancamento->descricao }}</td>
+                        <td>{{ $lancamento->contaCorrente->numero_conta ?? 'N/A' }}</td>
+                        <td>{{ $lancamento->empresa->nome_fantasia ?? 'N/A' }}</td>
+                        <td>
+                            <span class="badge {{ $lancamento->tipo == 'entrada' ? 'badge-success' : 'badge-danger' }}">
+                                {{ ucfirst($lancamento->tipo) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {{ $lancamento->status == 'finalizado' ? 'badge-success' : 'badge-warning' }}">
+                                {{ ucfirst($lancamento->status) }}
+                            </span>
+                        </td>
+                        <td>{{ number_format($lancamento->valor, 2, ',', '.') }}</td>
+                    </tr>
+                @endforeach
 
+            @endif
+        </tbody>
+    @endcomponent
 
 @stop
 

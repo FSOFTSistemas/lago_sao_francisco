@@ -442,7 +442,7 @@ return [
                     'submenu' => [
                         [
                             'text'  => 'Contas', // Texto simplificado e mais direto.
-                            'url'   => '/contas-corrente', // URL padronizada (plural, kebab-case).
+                            'url'   => '/contaCorrente', 
                             'icon'  => 'fas fa-university', // Ícone específico para a lista de contas.
                             'shift' => 'ml-2'
                         ],
@@ -450,12 +450,6 @@ return [
                             'text'  => 'Lançamentos',
                             'url'   => '/lancamentos', // URL padronizada e mais limpa.
                             'icon'  => 'fas fa-list-ul',
-                            'shift' => 'ml-2'
-                        ],
-                        [
-                            'text'  => 'Novo Lançamento', // Adicionado um atalho comum e útil.
-                            'url'   => '/lancamentos/create',
-                            'icon'  => 'fas fa-plus', // Ícone de "adicionar".
                             'shift' => 'ml-2'
                         ],
                     ],

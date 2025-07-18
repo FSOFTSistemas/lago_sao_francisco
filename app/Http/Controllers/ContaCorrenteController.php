@@ -35,8 +35,7 @@ class ContaCorrenteController extends Controller
             ContaCorrente::create($request->all());
             return redirect()->route('contaCorrente.index')->with('success', 'Conta corrente cadastrada com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao cadastrar conta corrente!');
+            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao cadastrar conta corrente!' . $e->getMessage());
 
         }
     }
@@ -53,13 +52,12 @@ class ContaCorrenteController extends Controller
                 'numero_conta' => 'required|string',
                 'titular' => 'nullable|string',
                 'saldo' => 'nullable|numeric',
-                'banco_id' => 'required|exists:bancos,id',
+                'conta_corrente_id' => 'required|exists:bancos,id',
             ]);
             $contaCorrente->update($request->all());
             return redirect()->route('contaCorrente.index')->with('success', 'Conta corrente atualizada com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao atualizar conta corrente!');
+            return redirect()->route('contaCorrente.index')->with('error', 'Erro ao atualizar conta corrente!'. $e->getMessage());
         }
     }
 

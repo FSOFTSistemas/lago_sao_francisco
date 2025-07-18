@@ -26,8 +26,8 @@ class ContaCorrenteService
     {   
 
         // **MELHORIA:** Validação inicial dos dados de entrada
-        if (empty($dados['banco_id']) || empty($dados['tipo']) || !isset($dados['valor'])) {
-            throw new InvalidArgumentException('Os campos banco_id, tipo e valor são obrigatórios.');
+        if (empty($dados['conta_corrente_id']) || empty($dados['tipo']) || !isset($dados['valor'])) {
+            throw new InvalidArgumentException('Os campos conta_corrente_id, tipo e valor são obrigatórios.');
         }
 
         if (!is_numeric($dados['valor']) || $dados['valor'] <= 0) {
@@ -44,7 +44,7 @@ class ContaCorrenteService
 
         try {
             
-            $conta = ContaCorrente::lockForUpdate()->findOrFail($dados['banco_id']);
+            $conta = ContaCorrente::lockForUpdate()->findOrFail($dados['conta_corrente_id']);
 
             if ($tipo === 'saida') {
                 if ($conta->saldo < $dados['valor']) {
@@ -60,7 +60,7 @@ class ContaCorrenteService
             
             $dadosParaCriar = [
                 'empresa_id'   => $empresaId,
-                'banco_id'     => $conta->id,
+                'conta_corrente_id'     => $conta->id,
                 'valor'        => $dados['valor'],
                 'tipo'         => $tipo,
                 'descricao'    => $dados['descricao'] ?? null,
@@ -77,7 +77,6 @@ class ContaCorrenteService
             return $lancamento;
         } catch (Throwable $e) {
             DB::rollBack();
-            dd($e);
             throw $e;
         }
     }

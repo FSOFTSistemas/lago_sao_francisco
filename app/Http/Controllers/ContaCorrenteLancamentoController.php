@@ -4,6 +4,13 @@ namespace App\Http\Controllers;
 use App\Models\ContaCorrente;
 use App\Models\ContaCorrenteLancamento;
 use Illuminate\Http\Request;
+use App\Models\Caixa;
+use App\Models\ContasAPagar;
+use App\Models\Fornecedor;
+use App\Models\PlanoDeConta;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+
 
 class ContaCorrenteLancamentoController extends Controller
 {
@@ -13,28 +20,55 @@ class ContaCorrenteLancamentoController extends Controller
 
 
     public function index(Request $request)
-    {
-        // Pega o ID da conta da URL (?conta_id=1), ou pega o ID da primeira conta como padrão.
-        $contaSelecionadaId = $request->input('conta_id') ?? ContaCorrente::query()->first()->id ?? null;
+{
+    $usuario = Auth::user();
+    $empresaSelecionada = session('empresa_id');
 
-        // Busca todas as contas para popular o dropdown.
-        $contasCorrente = ContaCorrente::orderBy('titular')->get();
+    $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada
+        ? $empresaSelecionada
+        : $usuario->empresa_id;
 
-        // Busca os lançamentos apenas da conta selecionada.
-        $lancamentos = [];
-        if ($contaSelecionadaId) {
-            $lancamentos = ContaCorrenteLancamento::where('conta_corrente_id', $contaSelecionadaId) // Supondo que a coluna de relacionamento seja 'conta_corrente_id'
-                ->orderBy('data', 'desc')
-                ->get();
+    // Datas padrão: mês atual
+    $inicio = $request->filled('data_inicio') 
+        ? \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay() 
+        : \Carbon\Carbon::now()->startOfMonth();
+
+    $fim = $request->filled('data_fim') 
+        ? \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay() 
+        : \Carbon\Carbon::now()->endOfMonth();
+
+    // Contas disponíveis
+    $contasCorrente = ContaCorrente::orderBy('titular')->get();
+    $contaSelecionadaId = $request->input('conta_id') ?? $contasCorrente->first()->id ?? null;
+
+    // Filtros extras
+    $status = $request->input('status');
+    $tipo = $request->input('tipo');
+
+    // Buscar lançamentos da conta selecionada
+    $lancamentos = [];
+    if ($contaSelecionadaId) {
+        $query = ContaCorrenteLancamento::where('conta_corrente_id', $contaSelecionadaId)
+            ->whereBetween('data', [$inicio, $fim]);
+
+        if ($status) {
+            $query->where('status', $status);
         }
 
-        // Retorna a view com os dados necessários.
-        return view('lancamentos.index', [
-            'contasCorrente' => $contasCorrente,
-            'lancamentos' => $lancamentos,
-            'contaSelecionadaId' => $contaSelecionadaId,
-        ]);
+        if ($tipo) {
+            $query->where('tipo', $tipo);
+        }
+
+        $lancamentos = $query->orderBy('data', 'desc')->get();
     }
+
+    return view('lancamentos.index', [
+        'contasCorrente' => $contasCorrente,
+        'lancamentos' => $lancamentos,
+        'contaSelecionadaId' => $contaSelecionadaId,
+    ]);
+}
+
 
     /**
      * Show the form for creating a new resource.
@@ -56,14 +90,13 @@ class ContaCorrenteLancamentoController extends Controller
                 'data' => 'required|date',
                 'tipo' => 'required|in:entrada,saida',
                 'status' => 'required|in:pendente,concluído',
-                'banco_id' => 'required|exists:bancos,id',
+                'conta_corrente_id' => 'required|exists:bancos,id',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
             ContaCorrenteLancamento::create($request->all());
             return redirect()->route('conta_corrente_lancamentos.index')->with('success', 'Lançamento cadastrado com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('conta_corrente_lancamentos.index')->with('error', 'Erro ao cadastrar lançamento!');
+            return redirect()->route('conta_corrente_lancamentos.index')->with('error', 'Erro ao cadastrar lançamento!'. $e->getMessage());
         }
     }
 
@@ -98,14 +131,13 @@ class ContaCorrenteLancamentoController extends Controller
                 'data' => 'required|date',
                 'tipo' => 'required|in:entrada,saida',
                 'status' => 'required|in:pendente,concluído',
-                'banco_id' => 'required|exists:bancos,id',
+                'conta_corrente_id' => 'required|exists:bancos,id',
                 'empresa_id' => 'required|exists:empresas,id',
             ]);
             $contaCorrenteLancamento->update($request->all());
             return redirect()->route('conta_corrente_lancamentos.index')->with('success', 'Lançamento atualizado com sucesso!');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->route('conta_corrente_lancamentos.index')->with('error', 'Erro ao atualizar lançamento!');
+            return redirect()->route('conta_corrente_lancamentos.index')->with('error', 'Erro ao atualizar lançamento!'. $e->getMessage());
         }
     }
 

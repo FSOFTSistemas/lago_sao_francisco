@@ -153,7 +153,7 @@ public function index(Request $request)
         $validatedData = $request->validate([
             'descricao' => 'required|string|max:255',
             'valor' => 'required|numeric|min:0.01',
-            'valor_pago' => 'required|numeric|min:0.01',
+            'valor_pago' => 'numeric|min:0.00',
             'data_vencimento' => 'required|date|after_or_equal:today',
             'status' => 'required|in:pendente,finalizado',
             'plano_de_contas_id' => [
@@ -292,6 +292,7 @@ public function index(Request $request)
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
         ]);
+        $request->empresa_id = Auth::user()->empresa_id;
 
         try {
             // 2. Usar Transação para garantir a integridade dos dados
@@ -427,7 +428,7 @@ public function index(Request $request)
 
         app(ContaCorrenteService::class)->registrarLancamento(
             [
-                'banco_id'  => $contaCorrenteId,
+                'conta_corrente_id'  => $contaCorrenteId,
                 'valor'     => $valorPago,
                 'tipo'      => 'saida',
                 'descricao' => $description,

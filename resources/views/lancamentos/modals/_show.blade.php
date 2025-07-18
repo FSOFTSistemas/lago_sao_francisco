@@ -50,8 +50,6 @@
                             <dt>ID da Conta Corrente</dt>
                             <dd>{{ $lancamento->conta_corrente_id }}</dd>
 
-                            <dt>ID do Banco</dt>
-                            <dd>{{ $lancamento->banco_id }}</dd>
                         </dl>
                     </div>
                 </div>

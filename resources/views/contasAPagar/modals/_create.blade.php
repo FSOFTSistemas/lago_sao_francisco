@@ -46,6 +46,7 @@
                                 name="valor_pago"
                                 step="0.01"
                                 min="0"
+                                value="0" 
                                 oninput="validarValorPago(this)"
                             >
                             <div class="invalid-feedback">
