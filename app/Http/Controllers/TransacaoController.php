@@ -29,7 +29,7 @@ class TransacaoController extends Controller
             ->latest()
             ->paginate(10);
         
-        return view('transacao.index', compact('transacoes'));
+        return view('transacoes.index', compact('transacoes'));
     }
 
     public function store(Request $request)

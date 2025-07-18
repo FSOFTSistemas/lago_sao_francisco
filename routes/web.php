@@ -56,6 +56,7 @@ use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TransacaoController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
+use App\Http\Controllers\VoucherController;
 use App\Livewire\Dayuse\ShowDayuse;
 
 Route::get('/', function () {
@@ -257,3 +258,7 @@ Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.d
 Route::post('/mapa/criar-reserva', [MapaController::class, 'criarReservaRapida'])->name('mapa.criar-reserva');
 
 Route::get('/home', [HomeController::class, 'index'])->name('home.index');
+
+Route::get('/reservas/{id}/voucher', [VoucherController::class, 'gerarVoucher'])->name('reservas.voucher');
+
+Route::get('/transacao', [TransacaoController::class, 'index'])->name('transacao.index');
