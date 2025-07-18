@@ -62,6 +62,25 @@
             </div>
         </div>
     </div>
+    <div class="card shadow-sm mb-4 w-100">
+        <div class="card-header bg-verde text-white">
+            <h4 class="mb-0">Suvenirs</h4>
+        </div>
+        <div class="card-body">
+    @if(count($souvenirsRelacionados))
+    <h5>Souvenirs Relacionados:</h5>
+    <ul class="list-group">
+        @foreach($souvenirsRelacionados as $s)
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ $s['descricao'] }} (x{{ $s['quantidade'] }})
+                <span>R$ {{ number_format($s['valor_total'], 2, ',', '.') }}</span>
+            </li>
+        @endforeach
+    </ul>
+@endif
+
+        </div>
+    </div>
 
     <!-- Card de Pagamentos -->
     <div class="card shadow-sm mb-4 w-100">

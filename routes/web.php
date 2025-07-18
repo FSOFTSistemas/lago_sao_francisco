@@ -44,15 +44,20 @@ use App\Http\Controllers\VendaItemController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
+use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
+use App\Http\Controllers\ReservaItemController;
 use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\TransacaoController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
+use App\Http\Controllers\VoucherController;
 use App\Livewire\Dayuse\ShowDayuse;
 
 Route::get('/', function () {
@@ -92,7 +97,7 @@ Route::resource('contaCorrente', ContaCorrenteController::class)->middleware('pe
 
 Route::resource('cliente', ClienteController::class)->middleware('permission:gerenciar cliente');
 
-Route::resource('fluxoCaixa', FluxoCaixaController::class)->middleware('permission:gerenciar fluxo de caixa');
+Route::resource('fluxoCaixa', FluxoCaixaController::class)->middleware('permission:gerenciar caixa');
 
 Route::resource('contasAReceber', ContasAReceberController::class)->middleware('permission:gerenciar contas a receber');
 
@@ -112,7 +117,7 @@ Route::resource('tarifa', TarifaController::class); //->middleware('permission:g
 
 Route::resource('hospede', HospedeController::class);
 
-Route::resource('reserva', ReservaController::class);
+Route::resource('reserva', ReservaController::class)->middleware('caixa.aberto');
 
 Route::resource('quarto', QuartoController::class);
 
@@ -129,7 +134,9 @@ Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponivei
 
 Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
 
-Route::resource('aluguel', AluguelController::class);
+Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('caixa.aberto')->name('aluguel.create');
+
+Route::resource('aluguel', AluguelController::class)->except(['create']);
 
 Route::resource('cardapios', CardapioController::class);
 
@@ -169,7 +176,11 @@ Route::resource('adicionais', AdicionalController::class);
 
 Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
 
-Route::resource('dayuse', DayUseController::class)->middleware('caixa.aberto'); //esse é o middleware para impedir acesso caso o caixa esteja fechado
+Route::get('dayuse/create', [DayUseController::class, 'create'])
+->middleware('caixa.aberto')
+->name('dayuse.create');
+
+Route::resource('dayuse', DayUseController::class)->except(['create']);
 
 Route::resource('itemDayuse', ItensDayUseController::class);
 
@@ -215,3 +226,44 @@ Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])-
 Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');
 
 Route::resource('/lancamentos', ContaCorrenteLancamentoController::class);
+
+Route::get('/transacoes/resumo/{reservaId}', [TransacaoController::class, 'getResumoByReserva'])->name('transacoes.resumo');
+
+Route::get('/transacoes/reserva/{reservaId}', [TransacaoController::class, 'getByReserva'])->name('transacoes.reserva');
+
+Route::post('/transacoes', [TransacaoController::class, 'store'])->name('transacoes.store');
+
+Route::delete('/transacoes/{id}', [TransacaoController::class, 'destroy'])->name('transacoes.destroy');
+
+Route::post('/vendas', [VendaController::class, 'store'])->name('vendas.store');
+
+Route::prefix('reserva-itens')->group(function () {
+    Route::get('/', [ReservaItemController::class, 'index'])->name('reserva-item.index');
+    Route::post('/', [ReservaItemController::class, 'store'])->name('reserva-item.store');
+    Route::get('/{reservaItem}', [ReservaItemController::class, 'show'])->name('reserva-item.show');
+    Route::put('/{reservaItem}', [ReservaItemController::class, 'update'])->name('reserva-item.update');
+    Route::delete('/{reservaItem}', [ReservaItemController::class, 'destroy'])->name('reserva-item.destroy');
+    Route::get('/reserva/{reservaId}', [ReservaItemController::class, 'getByReserva'])->name('reserva-item.by-reserva');
+    Route::get('/total/{reservaId}', [ReservaItemController::class, 'getTotalByReserva'])->name('reserva-item.total');
+});
+
+Route::put('/reserva/{id}/finalizar', [ReservaController::class, 'finalizar'])->name('reserva.finalizar');
+
+Route::put('/reserva/{id}/cancelar', [ReservaController::class, 'cancelar'])->name('reserva.cancelar');
+
+Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->name('reserva.hospedar');
+
+Route::get('/grafico-fluxo-caixa', [HomeController::class, 'graficoFluxoCaixa']);
+
+Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index')->middleware('caixa.aberto');
+
+Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.dados');
+
+Route::post('/mapa/criar-reserva', [MapaController::class, 'criarReservaRapida'])->name('mapa.criar-reserva');
+
+Route::get('/home', [HomeController::class, 'index'])->name('home.index');
+
+Route::get('/reservas/{id}/voucher', [VoucherController::class, 'gerarVoucher'])->name('reservas.voucher');
+
+Route::get('/transacao', [TransacaoController::class, 'index'])->name('transacao.index');
+

@@ -215,7 +215,9 @@ class FuncionarioController extends Controller
         $enderecos = Endereco::all();
         $setores = $this->setores;
         $cargos = $this->cargos;
-        return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos', 'setores', 'cargos'));
+        $roles = Role::all();
+        $permissoes = Permission::all();
+        return view('funcionario.form', compact('funcionario', 'empresas', 'enderecos','roles', 'setores', 'cargos', 'permissoes'));
     }
 
     /**

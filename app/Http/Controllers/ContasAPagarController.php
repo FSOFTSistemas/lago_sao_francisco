@@ -283,7 +283,6 @@ public function index(Request $request)
      */
     public function pagar(Request $request, $conta_id, $parcela_id = null)
     {
-        
         // 1. Validação aprimorada
         $request->validate([
             'data_pagamento'    => 'required|date',
