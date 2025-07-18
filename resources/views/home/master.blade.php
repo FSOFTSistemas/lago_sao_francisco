@@ -510,8 +510,36 @@
             carregarGraficoPizzaFluxo();
         });
 
-        // chama automaticamente ao carregar a página:
-        window.addEventListener('load', carregarGraficoPizzaFluxo);
+       window.addEventListener('load', function() {
+        const dataInicioRequest = "{{ request('data_inicio') }}";
+        const dataFimRequest = "{{ request('data_fim') }}";
+
+        if (dataInicioRequest && dataFimRequest) {
+            document.getElementById('data_inicio').value = dataInicioRequest;
+            document.getElementById('data_fim').value = dataFimRequest;
+            document.getElementById('modo_data').value = 'periodo';
+
+            // Exibe os campos de período
+            document.querySelectorAll('.periodo-filtro').forEach(el => el.classList.remove('d-none'));
+        } else {
+            // Mantém o valor padrão (dia atual ou outro)
+            document.getElementById('modo_data').value = 'dia';
+
+            // Garante que os campos de período fiquem ocultos
+            document.querySelectorAll('.periodo-filtro').forEach(el => el.classList.add('d-none'));
+        }
+
+
+
+        // Agora sim, chama o gráfico com os dados sincronizados
+        carregarGraficoPizzaFluxo();
+    });
+
+
+
+
+
+
     </script>
     <script>
         function filtrarCards(tipo) {
