@@ -261,3 +261,4 @@ Route::get('/home', [HomeController::class, 'index'])->name('home.index');
 
 Route::get('/reservas/{id}/voucher', [VoucherController::class, 'gerarVoucher'])->name('reservas.voucher');
 
+Route::get('/transacao', [TransacaoController::class, 'index'])->name('transacao.index');

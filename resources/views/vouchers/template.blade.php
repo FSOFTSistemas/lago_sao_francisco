@@ -305,8 +305,8 @@
         <p style="text-align: center; color:#679A4C">Este voucher deve ser apresentado no momento do check-in.</p>
         <div class="footer">
             <p>Hotel Estação Chico - Fazenda Lago São Francisco | Turistica & Lazer em Garanhuns 09, Garanhuns-PE</p>
-            <p>Telefone: (00) 0000-0000 - Email: contato@hotelreserva.com.br</p>
-            <p>CNPJ: 00.000.000/0001-00</p>
+            <p>Telefone: (87)9 8141-1088 - Email: hplagosaofrancisco@gmail.com</p>
+            <p>CNPJ: 60.922.645/0001-03</p>
         </div>
     </div>
 </body>
