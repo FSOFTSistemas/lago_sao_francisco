@@ -114,8 +114,8 @@
     </div>
 </div>
 
-@push('js')
 <script>
+    
     function validarValorPago(input) {
         const valorInput = document.getElementById('valor');
         const valorPago = parseFloat(input.value);
@@ -140,5 +140,4 @@
         }
     }
 </script>
-@endpush
 

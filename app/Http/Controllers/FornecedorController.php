@@ -17,13 +17,13 @@ class FornecedorController extends Controller
     }
 
     public function search(Request $request)
-{
-    $term = $request->get('q');
+    {
+        $term = $request->get('q');
 
-    return Fornecedor::where('nome_fantasia', 'like', "%{$term}%")
-        ->limit(20)
-        ->get(['id', 'nome_fantasia']);
-}
+        return Fornecedor::where('nome_fantasia', 'like', "%{$term}%")
+            ->limit(20)
+            ->get(['id', 'nome_fantasia']);
+    }
 
 
 
@@ -32,7 +32,7 @@ class FornecedorController extends Controller
      */
     public function store(Request $request)
     {
-        try{
+        try {
             $request->validate([
                 'razao_social' => 'required|string',
                 'nome_fantasia' => 'nullable|string',
@@ -54,7 +54,7 @@ class FornecedorController extends Controller
      */
     public function update(Request $request, Fornecedor $fornecedor)
     {
-        try{
+        try {
             $fornecedor = Fornecedor::findOrFail($fornecedor->id);
             $request->validate([
                 'razao_social' => 'required|string',
