@@ -14,12 +14,6 @@
           <i class="fas fa-arrow-left"></i> Voltar
       </a>
   </div>
-
-  <div class="col d-flex justify-content-end">
-      <a href="{{ route('tarifa.create') }}" class="btn btn-success new">
-          <i class="fas fa-plus"></i> Nova Tarifa
-      </a>
-  </div>
 </div>
 
     @component('components.data-table', [
