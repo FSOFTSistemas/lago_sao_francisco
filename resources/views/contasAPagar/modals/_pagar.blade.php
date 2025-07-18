@@ -2,9 +2,6 @@
 <div class="modal fade" id="pagarContasAPagarModal{{ $contasAPagar->id }}" tabindex="-1" role="dialog"
     aria-labelledby="pagarContasAPagarModalLabel{{ $contasAPagar->id }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-    @php
-    @dump($contasAPagar->numero_parcela)
-    @endphp
         <form action="{{ route('contasAPagar.pagar', $contasAPagar->conta_id, $contasAPagar->parcela_id) }}" method="POST">
             @csrf
             @method('POST')

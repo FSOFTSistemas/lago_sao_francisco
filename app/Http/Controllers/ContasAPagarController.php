@@ -280,7 +280,6 @@ public function index(Request $request)
      */
     public function pagar(Request $request)
     {
-        dd($request);
         // 1. Validação aprimorada
         $request->validate([
             'data_pagamento'    => 'required|date',

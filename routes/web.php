@@ -116,7 +116,7 @@ Route::resource('tarifa', TarifaController::class); //->middleware('permission:g
 
 Route::resource('hospede', HospedeController::class);
 
-Route::resource('reserva', ReservaController::class);
+Route::resource('reserva', ReservaController::class)->middleware('caixa.aberto');
 
 Route::resource('quarto', QuartoController::class);
 
@@ -251,7 +251,7 @@ Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->na
 
 Route::get('/grafico-fluxo-caixa', [HomeController::class, 'graficoFluxoCaixa']);
 
-Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index');
+Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index')->middleware('caixa.aberto');
 
 Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.dados');
 
