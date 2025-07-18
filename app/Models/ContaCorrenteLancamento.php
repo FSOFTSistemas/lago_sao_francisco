@@ -15,11 +15,15 @@ class ContaCorrenteLancamento extends Model
         'data',
         'tipo',
         'status',
-        'banco_id',
+        'conta_corrente_id',
         'empresa_id'
     ];
-    public function daEmpresa()
+    public function Empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+    public function ContaCorrente()
+    {
+        return $this->belongsTo(ContaCorrente::class, 'conta_corrente_id');
     }
 }
