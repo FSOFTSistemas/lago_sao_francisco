@@ -36,6 +36,7 @@ class DayUsePagamento extends Component
     public $subtotalSouvenir = 0;
     public $estoqueDisponivel;
     public $subtotalOriginal = 0;
+    public bool $pagamentoFinalizado = false;
 
     protected CaixaService $caixaService;
 
@@ -242,6 +243,8 @@ class DayUsePagamento extends Component
                 'quantidade' => $souvenirItem['quantidade'],
             ]);
         }
+
+        $this->pagamentoFinalizado = true;
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }

@@ -175,5 +175,19 @@
         </div>
     </div>
 
-    <button type="submit" class="btn btn-primary mt-3 p-2 w-100">Finalizar Pagamento</button>
+    <div x-data="{ carregando: false }">
+    <button 
+        type="button" 
+        class="btn btn-primary mt-3 p-2 w-100"
+        :disabled="carregando"
+        x-on:click="carregando = true; $wire.savePayments()"
+    >
+        <template x-if="!carregando">
+            <span>Finalizar Pagamento</span>
+        </template>
+        <template x-if="carregando">
+            <span><i class="fas fa-spinner fa-spin me-2"></i> Processando...</span>
+        </template>
+    </button>
+</div>
 </form>
