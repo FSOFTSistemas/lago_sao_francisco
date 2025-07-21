@@ -136,10 +136,6 @@ class ContasAPagarController extends Controller
             }
         }
 
-        $fornecedorSelecionado = null;
-        if ($request->filled('fornecedor_id')) {
-            $fornecedorSelecionado = Fornecedor::find($request->input('fornecedor_id'));
-        }
 
 
 
@@ -149,7 +145,7 @@ class ContasAPagarController extends Controller
         })->values()->all();
 
         // Retorna a view com os dados processados e prontos para exibição
-        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas','fornecedorSelecionado'));
+        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
 
 

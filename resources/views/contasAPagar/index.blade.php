@@ -31,24 +31,13 @@
                 </select>
             </div>
 
-        </div>
-        {{-- Busca do fornecedor --}}
-        @php
-            $fornecedorId = request('fornecedor_id');
-            $fornecedorNome = $fornecedorId ? \App\Models\Fornecedor::find($fornecedorId)?->nome_fantasia : '';
-        @endphp
-
-        <div class="form-group row">
-            <label for="fornecedor_id" class="col-md-3 label-control">* Fornecedor</label>
-            <div class="col-sm-4">
-                <select class="form-control select2" name="fornecedor_id" id="fornecedor_id" style="width: 100%;">
-                    @if ($fornecedorId && $fornecedorNome)
-                        <option value="{{ $fornecedorId }}" selected>{{ $fornecedorNome }}</option>
-                    @endif
-                </select>
+            <div class="form-group row">
+                <label for="fornecedor_id">* Fornecedor</label>
+                    <select class="form-control" name="fornecedor_id" id="fornecedor_id" style="width: 100%;">
+                        <option value="">Selecione</option>
+                    </select>
             </div>
         </div>
-
 
 
 
@@ -187,99 +176,56 @@
     @include('contasAPagar.modals._create')
     @stack('modais')
 
+
+
 @stop
 
-@push('js')
-        <script>console.log('aqui1')</script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-        <script>console.log('aqui2')</script>
-        <script>
-            $(document).ready(function() {
-                console.log('aqui3')
-                console.log($.fn.jquery)
-                
-            const select = $('#fornecedor_id');
-
-            if (!select) {
-                console.warn("⚠️ Campo #fornecedor_id não encontrado no DOM.");
-                return;
-            }
-
-            if (typeof $ === 'undefined') {
-                console.error("❌ jQuery não está disponível.");
-                return;
-            }
-
-            if (typeof $.fn.select2 === 'undefined') {
-                console.error("❌ Select2 não foi carregado corretamente.");
-                return;
-            }
-
-
-
-            $('#fornecedor_id').select2({
-                placeholder: 'Selecione um Fornecedor',
-                minimumInputLength: 3,
-                ajax: {
-                    url: '{{ route('fornecedores.search') }}',
-                    dataType: 'json',
-                    delay: 250,
-                    data: function(params) {
-                        return {
-                            q: params.term
-                        };
-                    },
-                    processResults: function(data) {
-                        console.log("Dados recebidos do backend:", data);
-
-                        return {
-                            results: data.map(function(fornecedor) {
-                                return {
-                                    id: fornecedor.id,
-                                    text: fornecedor.nome_fantasia
-                                };
-                            })
-                        };
-                    },
-                    cache: true
-                },
-                width: '100%',
-                language: {
-                    noResults: function() {
-                        return "Nenhum resultado encontrado";
-                    },
-                    searching: function() {
-                        return "Buscando...";
-                    },
-                    inputTooShort: function(args) {
-                        var remainingChars = args.minimum - args.input.length;
-                        return 'Digite mais ' + remainingChars + ' caractere' + (remainingChars !== 1 ?
-                            's' : '') + ' para buscar';
-                    },
-                    loadingMore: function() {
-                        return "Carregando mais resultados...";
-                    }
-                }
-            });
-        });
-    </script>
-@endpush
-
 @section('css')
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
-        .select2-container--default .select2-selection--single {
-            height: calc(2.25rem + 2px);
-            padding: .375rem .75rem;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: calc(2.25rem + 2px);
-        }
-
         .new {
             background-color: #679A4C !important;
             border: none !important;
         }
+
+        .test {
+            color: rebeccapurple !important
+        }
     </style>
+@stop
+
+@section('js')
+    <script>
+        console.log('amigo estou aqui')
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#fornecedor_id').select2({
+                placeholder: 'Digite para buscar um fornecedor',
+                minimumInputLength: 3,
+                ajax: {
+                    url: '/fornecedores/busca',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term // termo digitado
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(fornecedor => ({
+                                id: fornecedor.id,
+                                text: fornecedor.razao_social
+                            }))
+                        };
+                    },
+                    cache: true
+                }
+            });
+        });
+    </script>
+
+@stop

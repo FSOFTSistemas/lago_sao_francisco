@@ -188,7 +188,7 @@ Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clie
 
 Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
 
-Route::get('/fornecedores/search', [FornecedorController::class, 'search'])->name('fornecedores.search');
+Route::get('/fornecedores/busca', [FornecedorController::class, 'buscar']);
 
 Route::resource('parceiros', ParceiroController::class);
 

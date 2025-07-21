@@ -80,4 +80,17 @@ class FornecedorController extends Controller
         $fornecedor->delete();
         return redirect()->route('fornecedor.index')->with('success', 'Fornecedor deletado com sucesso');
     }
+
+    public function buscar(Request $request)
+{
+    $termo = $request->input('q');
+
+    $fornecedores = Fornecedor::where('razao_social', 'LIKE', $termo . '%')
+        ->orderBy('razao_social')
+        ->limit(20)
+        ->get(['id', 'razao_social']);
+
+    return response()->json($fornecedores);
+}
+
 }
