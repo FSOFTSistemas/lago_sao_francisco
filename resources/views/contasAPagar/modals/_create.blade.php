@@ -46,6 +46,7 @@
                                 name="valor_pago"
                                 step="0.01"
                                 min="0"
+                                value="0" 
                                 oninput="validarValorPago(this)"
                             >
                             <div class="invalid-feedback">
@@ -112,3 +113,31 @@
         </div>
     </div>
 </div>
+
+<script>
+    
+    function validarValorPago(input) {
+        const valorInput = document.getElementById('valor');
+        const valorPago = parseFloat(input.value);
+        const valor = parseFloat(valorInput.value);
+
+        if (!isNaN(valorPago) && !isNaN(valor) && valorPago > valor) {
+            input.classList.add('is-invalid');
+        } else {
+            input.classList.remove('is-invalid');
+        }
+    }
+
+    function validarValor(input) {
+        const valorPagoInput = document.getElementById('valorPago');
+        const valor = parseFloat(input.value);
+        const valorPago = parseFloat(valorPagoInput.value);
+
+        if (!isNaN(valorPago) && !isNaN(valor) && valorPago > valor) {
+            valorPagoInput.classList.add('is-invalid');
+        } else {
+            valorPagoInput.classList.remove('is-invalid');
+        }
+    }
+</script>
+

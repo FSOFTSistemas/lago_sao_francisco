@@ -21,7 +21,7 @@ use Throwable;
 class ContasAPagarController extends Controller
 {
 
-public function index(Request $request)
+    public function index(Request $request)
     {
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
@@ -63,7 +63,7 @@ public function index(Request $request)
         $query->where(function ($q) use ($inicio, $fim) {
             // Condição 1: Contas sem parcelas, com vencimento no intervalo definido
             $q->whereBetween('data_vencimento', [$inicio, $fim]);
-            
+
             // Condição 2: OU contas que tenham parcelas com vencimento no intervalo definido
             $q->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
                 $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
@@ -79,28 +79,29 @@ public function index(Request $request)
             $status = $request->input('status');
             $query->where(function ($q) use ($status) {
                 $q->where('status', $status)
-                  ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
-                      $parcelaQuery->where('status', $status);
-                  });
+                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
+                        $parcelaQuery->where('status', $status);
+                    });
             });
         }
 
         // Executa a consulta ao banco de dados SEM ORDENAÇÃO
         $contasAPagar = $query->get();
-        
+
         $contasComParcelas = [];
 
         // Processa os resultados para criar uma lista plana de itens a serem exibidos
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
-                $conta->id = count($contasComParcelas)+1;
+                $conta->conta_id = $conta->id;
+                $conta->id = count($contasComParcelas) + 1;
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
-                $conta->conta_id = $conta->id;
                 $contasComParcelas[] = $conta;
+                $conta->valor_total = $conta->valor;
             } else {
-                $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
+                $temParcelaPaga = $conta->parcelas->contains(fn($p) => $p->status === 'pago');
                 $totalParcelas = $conta->parcelas->count();
                 $valorTotal = $conta->parcelas->sum('valor');
 
@@ -112,9 +113,9 @@ public function index(Request $request)
                     if ($request->filled('status') && $parcela->status !== $request->input('status')) {
                         continue;
                     }
-                    
+
                     $contaClone = clone $conta;
-                    $contaClone->id = count($contasComParcelas)+1;
+                    $contaClone->id = count($contasComParcelas) + 1;
                     $contaClone->conta_id = $conta->id;
                     $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
                     $contaClone->valor = $parcela->valor;
@@ -129,13 +130,16 @@ public function index(Request $request)
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
-                    
+
                     $contasComParcelas[] = $contaClone;
                 }
             }
         }
 
-        
+
+
+
+
         $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
             return Carbon::parse($item->data_vencimento);
         })->values()->all();
@@ -147,93 +151,16 @@ public function index(Request $request)
 
 
     public function store(Request $request)
-{
-    try {
-        $validatedData = $request->validate([
-            'descricao' => 'required|string|max:255',
-            'valor' => 'required|numeric|min:0.01',
-            'data_vencimento' => 'required|date|after_or_equal:today',
-            'status' => 'required|in:pendente,finalizado',
-            'plano_de_contas_id' => [
-                'exists:plano_de_contas,id',
-                function ($attribute, $value, $fail) {
-                    if ($value && !PlanoDeConta::where('id', $value)
-                        ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
-                        $fail('O plano de contas selecionado não pertence à sua empresa.');
-                    }
-                }
-            ],
-            'fornecedor_id' => [
-                'nullable',
-                'exists:fornecedors,id',
-            ],
-            'parcelas' => 'nullable|integer|min:1'
-        ]);
-
-        $validatedData['empresa_id'] = Auth::user()->empresa_id;
-        
-        $numParcelas = $request->input('parcelas', 1);
-        $numParcelas = (int) $numParcelas;
-        // Define o valor total e número de parcelas
-        $validatedData['total_parcelas'] = $numParcelas > 1 ? $numParcelas : null;
-        $validatedData['numero_parcela'] = null;
-        $validatedData['plano_de_contas_id'] = (int) $validatedData['plano_de_contas_id'];
-
-        // Cria a conta principal
-        $conta = ContasAPagar::create($validatedData);
-
-        // Se for parcelada, cria as parcelas
-        if ($numParcelas > 1) {
-            $valorParcela = round($conta->valor / $numParcelas, 2);
-            $dataBase = Carbon::parse($validatedData['data_vencimento']);
-            $valor_total=$conta->valor;
-
-            for ($i = 1; $i <= $numParcelas; $i++) {
-                
-                if($i == $numParcelas){
-                    $valorParcela = $valor_total;
-                }
-                ParcelaContasAPagar::create([
-                    'contas_a_pagar_id' => $conta->id,
-                    'numero_parcela' => $i,
-                    'valor' => $valorParcela,
-                    'data_vencimento' => $dataBase->copy()->addMonths($i - 1),
-                    'status' => 'pendente',
-                ]);
-                $valor_total -= $valorParcela;
-            }
-        }
-
-        return redirect()
-            ->route('contasAPagar.index')
-            ->with('success', 'Conta a pagar cadastrada com sucesso!');
-    } catch (\Exception $e) {
-        return redirect()
-            ->route('contasAPagar.index')
-            ->with('error', 'Erro ao cadastrar conta: ' . $e->getMessage());
-    }
-}
-
-
-    public function update(Request $request, ContasAPagar $contasAPagar)
     {
         try {
             $validatedData = $request->validate([
                 'descricao' => 'required|string|max:255',
-                'valor' => [
-                    'required', 'numeric', 'min:0.01',
-                    function ($attribute, $value, $fail) use ($contasAPagar) {
-                        if ($contasAPagar->valor_pago > 0 && $value < $contasAPagar->valor) {
-                            $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
-                        }
-                    }
-                ],
-                'data_vencimento' => 'required|date',
-                'status' => [
-                    'required', 'in:pendente,finalizado',
-                ],
+                'valor' => 'required|numeric|min:0.01',
+                'valor_pago' => 'numeric|min:0.00',
+                'data_vencimento' => 'required|date|after_or_equal:today',
+                'status' => 'required|in:pendente,finalizado',
                 'plano_de_contas_id' => [
-                    'nullable', 'exists:plano_de_contas,id',
+                    'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
                         if ($value && !PlanoDeConta::where('id', $value)
                             ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
@@ -242,7 +169,91 @@ public function index(Request $request)
                     }
                 ],
                 'fornecedor_id' => [
-                    'nullable', 'exists:fornecedors,id',
+                    'nullable',
+                    'exists:fornecedors,id',
+                ],
+                'parcelas' => 'nullable|integer|min:1'
+            ]);
+
+            $validatedData['empresa_id'] = Auth::user()->empresa_id;
+            if (((int) $validatedData['valor_pago']) == ((int) $validatedData['valor'])) {
+                $validatedData['status'] = 'pago';
+            }
+            $numParcelas = $request->input('parcelas', 1);
+            $numParcelas = (int) $numParcelas;
+            // Define o valor total e número de parcelas
+            $validatedData['total_parcelas'] = $numParcelas > 1 ? $numParcelas : null;
+            $validatedData['plano_de_contas_id'] = (int) $validatedData['plano_de_contas_id'];
+
+            // Cria a conta principal
+            $conta = ContasAPagar::create($validatedData);
+
+            // Se for parcelada, cria as parcelas
+            if ($numParcelas > 1) {
+                $valorParcela = round($conta->valor / $numParcelas, 2);
+                $dataBase = Carbon::parse($validatedData['data_vencimento']);
+                $valor_total = $conta->valor;
+
+                for ($i = 1; $i <= $numParcelas; $i++) {
+
+                    if ($i == $numParcelas) {
+                        $valorParcela = $valor_total;
+                    }
+                    ParcelaContasAPagar::create([
+                        'contas_a_pagar_id' => $conta->id,
+                        'numero_parcela' => $i,
+                        'valor' => $valorParcela,
+                        'data_vencimento' => $dataBase->copy()->addMonths($i - 1),
+                        'status' => 'pendente',
+                    ]);
+                    $valor_total -= $valorParcela;
+                }
+            }
+
+            return redirect()
+                ->route('contasAPagar.index')
+                ->with('success', 'Conta a pagar cadastrada com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('contasAPagar.index')
+                ->with('error', 'Erro ao cadastrar conta: ' . $e->getMessage());
+        }
+    }
+
+
+    public function update(Request $request, ContasAPagar $contasAPagar)
+    {
+        try {
+            $validatedData = $request->validate([
+                'descricao' => 'required|string|max:255',
+                'valor' => [
+                    'required',
+                    'numeric',
+                    'min:0.01',
+                    function ($attribute, $value, $fail) use ($contasAPagar) {
+                        if ($contasAPagar->valor_pago > 0 && $value < $contasAPagar->valor) {
+                            $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
+                        }
+                    }
+                ],
+                'data_vencimento' => 'required|date',
+                'status' => [
+                    'required',
+                    'in:pendente,finalizado',
+                ],
+                'plano_de_contas_id' => [
+                    'nullable',
+                    'exists:plano_de_contas,id',
+                    function ($attribute, $value, $fail) {
+                        if ($value && !PlanoDeConta::where('id', $value)
+                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
+                            $fail('O plano de contas selecionado não pertence à sua empresa.');
+                        }
+                    }
+                ],
+                'fornecedor_id' => [
+                    'nullable',
+                    'exists:fornecedors,id',
                     function ($attribute, $value, $fail) {
                         if ($value && !Fornecedor::where('id', $value)
                             ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
@@ -257,7 +268,6 @@ public function index(Request $request)
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('success', 'Conta a pagar atualizada com sucesso!');
-
         } catch (\Exception $e) {
             return redirect()
                 ->route('contasAPagar.index')
@@ -278,40 +288,37 @@ public function index(Request $request)
      * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function pagar(Request $request)
+    public function pagar(Request $request, $conta_id, $parcela_id = null)
     {
-        dd($request);
         // 1. Validação aprimorada
         $request->validate([
             'data_pagamento'    => 'required|date',
             'valor_pago'        => 'required|numeric|min:0.01',
             'fonte_pagadora'    => 'required|in:caixa,conta_corrente',
-            // Valida 'id' da parcela OU 'conta_id' da conta principal
-            'parcela_id'                => 'nullable|exists:parcelas_contas_a_pagar,id',
-            'conta_id'          => 'required_without:id|exists:contas_a_pagar,id',
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
         ]);
+        $request->empresa_id = Auth::user()->empresa_id;
 
         try {
             // 2. Usar Transação para garantir a integridade dos dados
             // Se algo falhar (ex: saldo insuficiente), todas as operações são revertidas.
-            $response = DB::transaction(function () use ($request) {
-                
+            $response = DB::transaction(function () use ($request, $conta_id, $parcela_id) {
+
                 $valorPago = $request->valor_pago;
                 $conta = null;
                 $parcela = null;
                 $description = '';
                 // 3. Define qual entidade está sendo paga (Parcela ou Conta)
-                if ($request->parcela_id) {
-                    
+                if ($parcela_id) {
+
                     // Pagamento de Parcela
-                    $parcela = ParcelaContasAPagar::findOrFail($request->parcela_id);
+                    $parcela = ParcelaContasAPagar::findOrFail($parcela_id);
                     $conta = $parcela->conta;
                     $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
                 } else {
                     // Pagamento de Conta sem parcelamento
-                    $conta = ContasAPagar::findOrFail($request->conta_id);
+                    $conta = ContasAPagar::findOrFail($conta_id);
                     $description = 'Pagamento #' . $conta->descricao;
                 }
 
@@ -339,7 +346,7 @@ public function index(Request $request)
                     }
 
 
-                    
+
                     if ($valor_pago_total >= $parcela->valor) {
                         $dadosUpdate['status'] = 'pago';
                     }
@@ -360,14 +367,13 @@ public function index(Request $request)
                         'forma_pagamento' => $request->fonte_pagadora,
                     ]);
                 }
-                
+
                 return redirect()
                     ->route('contasAPagar.index')
                     ->with('success', 'Pagamento registrado com sucesso!');
             });
 
             return $response;
-
         } catch (InvalidArgumentException $e) {
             // Captura erros de negócio (ex: Saldo insuficiente)
             return redirect()
@@ -375,7 +381,7 @@ public function index(Request $request)
                 ->with('error', $e->getMessage());
         } catch (Throwable $e) {
             // Captura qualquer outro erro inesperado
-            
+
             Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
             return redirect()
                 ->route('contasAPagar.index')
@@ -421,13 +427,13 @@ public function index(Request $request)
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
         $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-        
+
         // O ID da conta corrente já foi validado no início do método `pagar`
         $contaCorrenteId = $request->conta_corrente_id;
 
         app(ContaCorrenteService::class)->registrarLancamento(
             [
-                'banco_id'  => $contaCorrenteId,
+                'conta_corrente_id'  => $contaCorrenteId,
                 'valor'     => $valorPago,
                 'tipo'      => 'saida',
                 'descricao' => $description,
@@ -437,6 +443,3 @@ public function index(Request $request)
         );
     }
 }
-
-
-

@@ -13,6 +13,7 @@ use App\Http\Controllers\CategoriasDeItensCardapioController;
 use App\Http\Controllers\CfopController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ContaCorrenteController;
+use App\Http\Controllers\ContaCorrenteLancamentoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\DayUseController;
@@ -116,7 +117,7 @@ Route::resource('tarifa', TarifaController::class); //->middleware('permission:g
 
 Route::resource('hospede', HospedeController::class);
 
-Route::resource('reserva', ReservaController::class);
+Route::resource('reserva', ReservaController::class)->middleware('caixa.aberto');
 
 Route::resource('quarto', QuartoController::class);
 
@@ -187,7 +188,7 @@ Route::get('/clientes/search', [ClienteController::class, 'search'])->name('clie
 
 Route::get('/vendedors/search', [FuncionarioController::class, 'search'])->name('vendedors.search');
 
-Route::get('/fornecedores/search', [FornecedorController::class, 'search'])->name('fornecedores.search');
+Route::get('/fornecedores/busca', [FornecedorController::class, 'buscar']);
 
 Route::resource('parceiros', ParceiroController::class);
 
@@ -210,7 +211,8 @@ Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])
 Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');
 
 
-Route::post('contas-a-pagar/{contasAPagar}/pagar', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
+Route::post('contas-a-pagar/{conta_id}/{parcela_id?}', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
+
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/usuario/alterar-senha', [UsuarioSenhaController::class, 'form'])->name('usuario.senha.form');
@@ -222,6 +224,8 @@ Route::resource('souvenir', SouvenirController::class);
 Route::get('/preferencias/hotel', [PreferenciasHotelController::class, 'show'])->name('preferencias.hotel');
 
 Route::post('/preferencias/hotel', [PreferenciasHotelController::class, 'store'])->name('preferencias.store');
+
+Route::resource('/lancamentos', ContaCorrenteLancamentoController::class);
 
 Route::get('/transacoes/resumo/{reservaId}', [TransacaoController::class, 'getResumoByReserva'])->name('transacoes.resumo');
 
@@ -251,7 +255,7 @@ Route::put('/reserva/{id}/hospedar', [ReservaController::class, 'hospedar'])->na
 
 Route::get('/grafico-fluxo-caixa', [HomeController::class, 'graficoFluxoCaixa']);
 
-Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index');
+Route::get('/mapa', [MapaController::class, 'index'])->name('mapa.index')->middleware('caixa.aberto');
 
 Route::get('/mapa/dados', [MapaController::class, 'getDadosMapa'])->name('mapa.dados');
 
@@ -262,3 +266,4 @@ Route::get('/home', [HomeController::class, 'index'])->name('home.index');
 Route::get('/reservas/{id}/voucher', [VoucherController::class, 'gerarVoucher'])->name('reservas.voucher');
 
 Route::get('/transacao', [TransacaoController::class, 'index'])->name('transacao.index');
+

@@ -22,9 +22,6 @@ return new class extends Migration {
             $table->unsignedBigInteger('empresa_id');
             $table->unsignedBigInteger('plano_de_contas_id');
             $table->unsignedBigInteger('fornecedor_id')->nullable();
-            
-            // Novos campos de parcelamento
-            $table->unsignedInteger('numero_parcela')->nullable();
             $table->unsignedInteger('total_parcelas')->nullable();
 
             $table->timestamps();

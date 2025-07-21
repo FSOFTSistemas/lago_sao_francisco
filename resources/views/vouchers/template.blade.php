@@ -15,7 +15,7 @@
         .container {
             max-width: 800px;
             margin: 0 auto;
-            border: 1px solid #ccc;
+            border: 1px solid #679A4C;
             padding: 20px;
         }
 
@@ -294,7 +294,7 @@
         padding: 10px;
         font-size: 16px;
         font-weight: bold;
-        border: 2px solid #000;
+        border: 2px solid #679A4C;
         text-align: center;
         background-color: #f5f5f5;
     ">
