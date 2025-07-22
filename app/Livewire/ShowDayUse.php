@@ -32,73 +32,77 @@ class ShowDayUse extends Component
     }
 
     public function loadDayUse()
-{
-    if ($this->dayUseId) {
-        // Carrega o DayUse com todos os relacionamentos necessários
-        $this->dayUse = DayUse::with([
-            'cliente',
-            'vendedor',
-            'itens.item',
-            'formaPag.formaPagamento',
-            'souvenirs'
-        ])->findOrFail($this->dayUseId);
-        
-        $this->dataformatada = $this->getDataFormatadaProperty();
+    {
+        if ($this->dayUseId) {
+            // Carrega o DayUse com todos os relacionamentos necessários
+            $this->dayUse = DayUse::with([
+                'cliente',
+                'vendedor',
+                'itens.item',
+                'formaPag.formaPagamento',
+                'souvenirs'
+            ])->findOrFail($this->dayUseId);
 
-        // Processa os souvenirs relacionados
-        $this->souvenirsRelacionados = $this->dayUse->souvenirs->map(function ($souvenir) {
-            return [
-                'descricao' => $souvenir->descricao,
-                'quantidade' => $souvenir->pivot->quantidade,
-                'valor_unitario' => $souvenir->valor,
-                'valor_total' => $souvenir->valor * $souvenir->pivot->quantidade,
-            ];
-        });
+            $this->dataformatada = $this->getDataFormatadaProperty();
 
-        // Processa os itens
-        $this->itens = $this->dayUse->itens->map(function ($item) {
-            $itemRelacionado = $item->item;
-            return [
-                'id' => $item->id,
-                'quantidade' => $item->quantidade,
-                'descricao' => $itemRelacionado->descricao ?? 'Descrição não disponível',
-                'valor' => $itemRelacionado->valor ?? 0,
-                'passeio' => $itemRelacionado->passeio ?? false,
-                'valor_total' => $item->quantidade * ($itemRelacionado->valor ?? 0)
-            ];
-        });
+            // Processa os souvenirs relacionados
+            $this->souvenirsRelacionados = $this->dayUse->souvenirs->map(function ($souvenir) {
+                $valorUnitario = $souvenir->pivot->valor_unitario ?? $souvenir->valor;
 
-        // Processa os pagamentos
-        $this->pagamentos = $this->dayUse->formaPag->map(function ($pag) {
-            $pagRelacionado = $pag->formaPagamento;
-            return [
-                'id' => $pag->id,
-                'valor' => $pagRelacionado->valor ?? 0,
-                "descricao" => $pagRelacionado->descricao
-            ];
-        });
+                return [
+                    'descricao' => $souvenir->descricao,
+                    'quantidade' => $souvenir->pivot->quantidade,
+                    'valor_unitario' => $valorUnitario,
+                    'valor_total' => $valorUnitario * $souvenir->pivot->quantidade,
+                ];
+            });
 
-        // Soma o valor total dos souvenirs
-        $totalSouvenirs = $this->souvenirsRelacionados->sum('valor_total');
+            // Processa os itens
+            $this->itens = $this->dayUse->itens->map(function ($item) {
+                $itemRelacionado = $item->item;
 
-        // Calcula os valores financeiros
-        $this->valorPago = $this->dayUse->formaPag->sum('valor') ?? 0;
-        $this->valorLiquido = ($this->dayUse->total ?? 0) +
-                              ($this->dayUse->acrescimo ?? 0) -
-                              ($this->dayUse->desconto ?? 0) +
-                              $totalSouvenirs;
+                $valorUnitario = $item->valor_unitario ?? $itemRelacionado->valor ?? 0;
 
-        $this->saldo = $this->valorLiquido - $this->valorPago;
+                return [
+                    'id' => $item->id,
+                    'quantidade' => $item->quantidade,
+                    'descricao' => $itemRelacionado->descricao ?? 'Descrição não disponível',
+                    'valor' => $valorUnitario,
+                    'passeio' => $itemRelacionado->passeio ?? false,
+                    'valor_total' => $item->quantidade * $valorUnitario
+                ];
+            });
 
-    } else {
-        $this->dayUse = null;
-        $this->itens = [];
-        $this->valorPago = 0;
-        $this->valorLiquido = 0;
-        $this->saldo = 0;
-        $this->souvenirsRelacionados = collect();
+            // Processa os pagamentos
+            $this->pagamentos = $this->dayUse->formaPag->map(function ($pag) {
+                $pagRelacionado = $pag->formaPagamento;
+                return [
+                    'id' => $pag->id,
+                    'valor' => $pagRelacionado->valor ?? 0,
+                    "descricao" => $pagRelacionado->descricao
+                ];
+            });
+
+            // Soma o valor total dos souvenirs
+            $totalSouvenirs = $this->souvenirsRelacionados->sum('valor_total');
+
+            // Calcula os valores financeiros
+            $this->valorPago = $this->dayUse->formaPag->sum('valor') ?? 0;
+            $this->valorLiquido = ($this->dayUse->total ?? 0) +
+                ($this->dayUse->acrescimo ?? 0) -
+                ($this->dayUse->desconto ?? 0) +
+                $totalSouvenirs;
+
+            $this->saldo = $this->valorLiquido - $this->valorPago;
+        } else {
+            $this->dayUse = null;
+            $this->itens = [];
+            $this->valorPago = 0;
+            $this->valorLiquido = 0;
+            $this->saldo = 0;
+            $this->souvenirsRelacionados = collect();
+        }
     }
-}
 
 
     public function render()

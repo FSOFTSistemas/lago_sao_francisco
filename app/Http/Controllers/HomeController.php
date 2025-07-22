@@ -49,8 +49,10 @@ class HomeController extends Controller
                 ->get()
                 ->map(function ($dayuse) {
                     $valorPago = $dayuse->formaPag->sum('valor') ?? 0;
+
                     $valorSouvenirs = $dayuse->souvenirs->sum(function ($souvenir) {
-                        return ($souvenir->valor ?? 0) * ($souvenir->pivot->quantidade ?? 0);
+                        $valorUnitario = $souvenir->pivot->valor_unitario ?? $souvenir->valor;
+                        return $valorUnitario * ($souvenir->pivot->quantidade ?? 0);
                     });
 
                     $valorLiquido = ($dayuse->total ?? 0)
@@ -61,26 +63,29 @@ class HomeController extends Controller
                     $dayuse->saldo = $valorLiquido - $valorPago;
                     return $dayuse;
                 });
-
             // Card resumo por item
             $movimentos = MovDayUse::with('item')
                 ->whereHas('dayuse', function ($q) use ($dataInicio, $dataFim) {
                     $q->whereBetween('data', [$dataInicio, $dataFim]);
                 })
-                ->select('item_dayuse_id', DB::raw('SUM(quantidade) as total_quantidade'))
-                ->groupBy('item_dayuse_id')
                 ->get()
-                ->map(function ($mov) {
-                    $mov->item_nome = $mov->item->descricao ?? 'Item';
-                    $mov->passeio = $mov->item->passeio ?? false;
+                ->groupBy('item_dayuse_id')
+                ->map(function ($grupo) {
+                    $item = $grupo->first()->item;
+                    $totalQuantidade = $grupo->sum('quantidade');
 
-                    // Calcular valor total do item movimentado
-                    $valorUnitario = $mov->item->valor ?? 0;
-                    $mov->valor_total = $valorUnitario * $mov->total_quantidade;
+                    $valorTotal = $grupo->sum(function ($mov) {
+                        $unitario = $mov->valor_unitario ?? $mov->item->valor ?? 0;
+                        return $unitario * $mov->quantidade;
+                    });
 
-                    return $mov;
+                    return (object) [
+                        'item_nome' => $item->descricao ?? 'Item',
+                        'passeio' => $item->passeio ?? false,
+                        'total_quantidade' => $totalQuantidade,
+                        'valor_total' => $valorTotal,
+                    ];
                 });
-
             // Card resumo de souvenirs no intervalo
             $movimentosSouvenir = DB::table('day_use_souvenir')
                 ->join('souvenirs', 'day_use_souvenir.souvenir_id', '=', 'souvenirs.id')
@@ -89,11 +94,15 @@ class HomeController extends Controller
                 ->select(
                     'souvenirs.id as souvenir_id',
                     'souvenirs.descricao as souvenir_nome',
-                    'souvenirs.valor as valor_unitario',
                     DB::raw('SUM(day_use_souvenir.quantidade) as total_quantidade'),
-                    DB::raw('SUM(day_use_souvenir.quantidade * souvenirs.valor) as valor_total')
+                    DB::raw('COALESCE(day_use_souvenir.valor_unitario, souvenirs.valor) as valor_unitario'),
+                    DB::raw('SUM(day_use_souvenir.quantidade * COALESCE(day_use_souvenir.valor_unitario, souvenirs.valor)) as valor_total')
                 )
-                ->groupBy('souvenirs.id', 'souvenirs.descricao', 'souvenirs.valor')
+                ->groupBy(
+                    'souvenirs.id',
+                    'souvenirs.descricao',
+                    DB::raw('COALESCE(day_use_souvenir.valor_unitario, souvenirs.valor)')
+                )
                 ->get();
 
 
@@ -107,10 +116,38 @@ class HomeController extends Controller
                 ->join('itens_day_uses', 'mov_day_uses.item_dayuse_id', '=', 'itens_day_uses.id')
                 ->select(
                     DB::raw('DATE(day_uses.data) as dia'),
-                    DB::raw("SUM(CASE WHEN itens_day_uses.passeio = 1 THEN mov_day_uses.quantidade * itens_day_uses.valor ELSE 0 END) as passeio_valor"),
-                    DB::raw("SUM(CASE WHEN itens_day_uses.passeio != 1 AND LOWER(itens_day_uses.descricao) LIKE '%entrada%' THEN mov_day_uses.quantidade * itens_day_uses.valor ELSE 0 END) as entrada_valor"),
-                    DB::raw("SUM(CASE WHEN itens_day_uses.passeio = 1 THEN mov_day_uses.quantidade ELSE 0 END) as passeio_qtd"),
-                    DB::raw("SUM(CASE WHEN itens_day_uses.passeio != 1 AND LOWER(itens_day_uses.descricao) LIKE '%entrada%' THEN mov_day_uses.quantidade ELSE 0 END) as entrada_qtd")
+                    DB::raw("
+            SUM(
+                CASE 
+                    WHEN itens_day_uses.passeio = 1 
+                    THEN mov_day_uses.quantidade * COALESCE(mov_day_uses.valor_unitario, itens_day_uses.valor) 
+                    ELSE 0 
+                END
+            ) as passeio_valor
+        "),
+                    DB::raw("
+            SUM(
+                CASE 
+                    WHEN itens_day_uses.passeio != 1 
+                         AND LOWER(itens_day_uses.descricao) LIKE '%entrada%' 
+                    THEN mov_day_uses.quantidade * COALESCE(mov_day_uses.valor_unitario, itens_day_uses.valor) 
+                    ELSE 0 
+                END
+            ) as entrada_valor
+        "),
+                    DB::raw("
+            SUM(CASE WHEN itens_day_uses.passeio = 1 THEN mov_day_uses.quantidade ELSE 0 END) as passeio_qtd
+        "),
+                    DB::raw("
+            SUM(
+                CASE 
+                    WHEN itens_day_uses.passeio != 1 
+                         AND LOWER(itens_day_uses.descricao) LIKE '%entrada%' 
+                    THEN mov_day_uses.quantidade 
+                    ELSE 0 
+                END
+            ) as entrada_qtd
+        ")
                 )
                 ->whereBetween('day_uses.data', [$inicioMes, $fimMes])
                 ->groupBy(DB::raw('DATE(day_uses.data)'))
@@ -123,7 +160,7 @@ class HomeController extends Controller
                 ->select(
                     DB::raw('DATE(day_uses.data) as dia'),
                     DB::raw('SUM(day_use_souvenir.quantidade) as qtd_souvenir'),
-                    DB::raw('SUM(day_use_souvenir.quantidade * souvenirs.valor) as valor_souvenir')
+                    DB::raw('SUM(day_use_souvenir.quantidade * COALESCE(day_use_souvenir.valor_unitario, souvenirs.valor)) as valor_souvenir')
                 )
                 ->whereBetween('day_uses.data', [$inicioMes, $fimMes])
                 ->groupBy(DB::raw('DATE(day_uses.data)'))

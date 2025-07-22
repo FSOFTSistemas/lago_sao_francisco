@@ -14,6 +14,7 @@ class DayUseSouvenir extends Model
         'dayuse_id',
         'souvenir_id',
         'quantidade',
+        'valor_unitario'
     ];
 
     public function dayUse()

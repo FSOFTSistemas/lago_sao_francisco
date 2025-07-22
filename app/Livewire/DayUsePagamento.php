@@ -234,15 +234,20 @@ class DayUsePagamento extends Component
             }
         }
 
-        // ✅ Salvar souvenirs na tabela intermediária
+        // ✅ Salvar souvenirs na tabela intermediária com valor_unitario
         DayUseSouvenir::where('dayuse_id', $this->dayUseId)->delete();
         foreach ($this->souvenirsAdicionados as $souvenirItem) {
+            $souvenir = Souvenir::find($souvenirItem['id']);
+
             DayUseSouvenir::create([
                 'dayuse_id' => $this->dayUseId,
                 'souvenir_id' => $souvenirItem['id'],
                 'quantidade' => $souvenirItem['quantidade'],
+                'valor_unitario' => optional($souvenir)->valor, // valor diretamente do souvenir
             ]);
         }
+
+
 
         $this->pagamentoFinalizado = true;
 
