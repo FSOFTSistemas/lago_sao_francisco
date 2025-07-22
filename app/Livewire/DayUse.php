@@ -6,18 +6,19 @@ use Livewire\Component;
 use App\Models\DayUse as DayUseModel;
 use App\Models\Cliente;
 use App\Models\Funcionario;
-use App\Models\Vendedor; 
-use App\Models\ItensDayUse as Item; 
+use App\Models\Vendedor;
+use App\Models\ItensDayUse as Item;
+use App\Models\ItensDayUse;
 use App\Models\MovDayUse;
 use Illuminate\Support\Facades\Auth;
 
 class DayUse extends Component
 {
     public $abaAtual = 'geral';
-    public $dayUse; 
-   
+    public $dayUse;
+
     public $data;
-    public $valor_total; 
+    public $valor_total;
 
     public $clientes;
     public $vendedores;
@@ -64,7 +65,6 @@ class DayUse extends Component
             foreach ($this->dayUse->itens as $item) {
                 $this->quantidade[$item->item_id] = $item->quantity;
             }
-
         } else {
             $this->dayUse = new DayUseModel();
             $this->data = now()->format('Y-m-d');
@@ -136,12 +136,14 @@ class DayUse extends Component
         // Em seguida, cria novas entradas para os itens com quantidade > 0
         foreach ($this->quantidade as $itemId => $quantity) {
             if ($quantity > 0) {
-                // Opcional: buscar o item para pegar o valor no momento da venda, se MovDayUse tiver campo 'price'
-                // $item = Item::find($itemId);
+                // Busca o item para pegar o valor atual
+                $item = ItensDayUse::find($itemId); // Certifique-se que esse é o modelo correto
+
                 MovDayUse::create([
                     'dayuse_id' => $this->dayUse->id,
                     'item_dayuse_id' => $itemId,
                     'quantidade' => $quantity,
+                    'valor_unitario' => $item ? $item->valor : 0, // Captura o valor do item ou 0 se não encontrado
                 ]);
             }
         }
@@ -167,7 +169,7 @@ class DayUse extends Component
 
     public function saveCliente()
     {
-        
+
         $this->tipo = 'PF';
         $this->validate([
             'nome_razao_social' => 'string|required',
@@ -179,12 +181,12 @@ class DayUse extends Component
                 function ($attribute, $value, $fail) {
                     // Remove todos os caracteres não numéricos
                     $cleanNumber = preg_replace('/[^0-9]/', '', $value);
-                    
+
                     // Validação para telefone brasileiro
                     if (strlen($cleanNumber) < 10 || strlen($cleanNumber) > 11) {
                         $fail('O número de telefone deve conter 10 ou 11 dígitos (DDD + número).');
                     }
-                    
+
                     // Valida DDD válido (11 a 99)
                     $ddd = substr($cleanNumber, 0, 2);
                     if ($ddd < 11 || $ddd > 99) {

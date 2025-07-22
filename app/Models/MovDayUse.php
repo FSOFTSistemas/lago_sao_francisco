@@ -11,7 +11,8 @@ class MovDayUse extends Model
     protected $fillable = [
         'dayuse_id',
         'item_dayuse_id',
-        'quantidade'
+        'quantidade',
+        'valor_unitario'
     ];
 
     public function item()
