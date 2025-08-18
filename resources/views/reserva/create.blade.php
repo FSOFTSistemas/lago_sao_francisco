@@ -18,515 +18,626 @@
                         </h3>
                     </div>
                     <div class='card-body'>
-                        <form id='createReservaForm'
-                            action='{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}'
-                            method='POST' enctype='multipart/form-data'>
-                            @csrf
-                            @if (isset($reserva))
-                                @method('PUT')
-                            @endif
+                        <!-- Abas de navegação -->
+                        <ul class="nav nav-tabs mb-3" id="reservaTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="dados-tab" data-toggle="tab" href="#dados" role="tab"
+                                    aria-controls="dados" aria-selected="true">Dados da Reserva</a>
+                            </li>
+<?php if (isset($reserva) && $reserva->situacao !== 'cancelado'): ?>
+    <li class="nav-item">
+        <a class="nav-link" id="produtos-tab" data-toggle="tab" href="#produtos" role="tab"
+            aria-controls="produtos" aria-selected="false">Produtos</a>
+    </li>
+<?php endif; ?>
 
-                            <div class='form-group row' id='campoSituacao'>
-                                <label class='col-md-3 label-control'><strong>* Situação</strong></label>
-                                <div class='situacao-options'>
-                                    @php
-                                        $situacaoAtual = old('situacao', $reserva->situacao ?? '');
-                                        $isEdicao = isset($reserva);
-                                        $podeAlterarSituacao = true;
 
-                                        // Regras para edição
-                                        if ($isEdicao) {
-                                            if (in_array($situacaoAtual, ['hospedado', 'finalizada', 'cancelado'])) {
-                                                $podeAlterarSituacao = false;
-                                            }
-                                        }
-                                    @endphp
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='pre-reserva'
-                                            @checked($situacaoAtual === 'pre-reserva') @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
-                                            @if (!$podeAlterarSituacao) disabled @endif required>
-                                        <span class='badge badge-warning'>pré-reservar</span>
-                                    </label>
+                        </ul>
 
-                                    <label class='radio-option'>
-                                        <input type='radio' name='situacao' value='reserva' @checked($situacaoAtual === 'reserva')
-                                            @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
-                                            @if (!$podeAlterarSituacao) disabled @endif>
-                                        <span class='badge badge-primary'>reservar</span>
-                                    </label>
-
-                                    @if (!$isEdicao)
-                                        <label class='radio-option'>
-                                            <input type='radio' name='situacao' value='hospedado'
-                                                @checked($situacaoAtual === 'hospedado')>
-                                            <span class='badge badge-danger'>hospedar</span>
-                                        </label>
-
-                                        <label class='radio-option'>
-                                            <input type='radio' name='situacao' value='bloqueado'
-                                                @checked($situacaoAtual === 'bloqueado')>
-                                            <span class='badge badge-dark'>bloquear datas</span>
-                                        </label>
-                                    @else
-                                        @if ($situacaoAtual === 'hospedado')
-                                            <label class='radio-option'>
-                                                <input type='radio' name='situacao' value='hospedado' checked disabled>
-                                                <span class='badge badge-danger'>hospedado</span>
-                                            </label>
-                                        @endif
-
-                                        @if ($situacaoAtual === 'bloqueado')
-                                            <label class='radio-option'>
-                                                <input type='radio' name='situacao' value='bloqueado'
-                                                    @checked($situacaoAtual === 'bloqueado')>
-                                                <span class='badge badge-dark'>bloquear datas</span>
-                                            </label>
-                                        @endif
-
-                                        @if ($situacaoAtual === 'finalizada')
-                                            <label class='radio-option'>
-                                                <input type='radio' name='situacao' value='finalizada' checked disabled>
-                                                <span class='badge badge-success'>finalizada</span>
-                                            </label>
-                                        @endif
-
-                                        @if ($situacaoAtual === 'cancelado')
-                                            <label class='radio-option'>
-                                                <input type='radio' name='situacao' value='cancelado' checked disabled>
-                                                <span class='badge badge-secondary'>cancelado</span>
-                                            </label>
-                                        @endif
+                        <!-- Conteúdo das abas -->
+                        <div class="tab-content" id="reservaTabsContent">
+                            <!-- Aba 1: Dados da Reserva -->
+                            <div class="tab-pane fade show active" id="dados" role="tabpanel"
+                                aria-labelledby="dados-tab">
+                                <form id='createReservaForm'
+                                    action='{{ isset($reserva) ? route('reserva.update', $reserva->id) : route('reserva.store') }}'
+                                    method='POST' enctype='multipart/form-data'>
+                                    @csrf
+                                    @if (isset($reserva))
+                                        @method('PUT')
                                     @endif
 
-                                    <!-- Input hidden para situações não editáveis -->
-                                    @if ($isEdicao && !$podeAlterarSituacao)
-                                        <input type='hidden' name='situacao' value='{{ $situacaoAtual }}'>
+                                    <div class='form-group row' id='campoSituacao'>
+                                        <label class='col-md-3 label-control'><strong>* Situação</strong></label>
+                                        <div class='situacao-options'>
+                                            @php
+                                                $situacaoAtual = old('situacao', $reserva->situacao ?? '');
+                                                $isEdicao = isset($reserva);
+                                                $podeAlterarSituacao = true;
+
+                                                // Regras para edição
+                                                if ($isEdicao) {
+                                                    if (
+                                                        in_array($situacaoAtual, [
+                                                            'hospedado',
+                                                            'finalizada',
+                                                            'cancelado',
+                                                        ])
+                                                    ) {
+                                                        $podeAlterarSituacao = false;
+                                                    }
+                                                }
+                                            @endphp
+
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='pre-reserva'
+                                                    @checked($situacaoAtual === 'pre-reserva')
+                                                    @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                                    @if (!$podeAlterarSituacao) disabled @endif required>
+                                                <span class='badge badge-warning'>pré-reservar</span>
+                                            </label>
+
+                                            <label class='radio-option'>
+                                                <input type='radio' name='situacao' value='reserva'
+                                                    @checked($situacaoAtual === 'reserva')
+                                                    @if ($isEdicao && !in_array($situacaoAtual, ['pre-reserva', 'reserva']) && $podeAlterarSituacao) disabled @endif
+                                                    @if (!$podeAlterarSituacao) disabled @endif>
+                                                <span class='badge badge-primary'>reservar</span>
+                                            </label>
+
+                                            @if (!$isEdicao)
+                                                <label class='radio-option'>
+                                                    <input type='radio' name='situacao' value='hospedado'
+                                                        @checked($situacaoAtual === 'hospedado')>
+                                                    <span class='badge badge-danger'>hospedar</span>
+                                                </label>
+
+                                                <label class='radio-option'>
+                                                    <input type='radio' name='situacao' value='bloqueado'
+                                                        @checked($situacaoAtual === 'bloqueado')>
+                                                    <span class='badge badge-dark'>bloquear datas</span>
+                                                </label>
+                                            @else
+                                                @if ($situacaoAtual === 'hospedado')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='hospedado' checked
+                                                            disabled>
+                                                        <span class='badge badge-danger'>hospedado</span>
+                                                    </label>
+                                                @endif
+
+                                                @if ($situacaoAtual === 'bloqueado')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='bloqueado'
+                                                            @checked($situacaoAtual === 'bloqueado')>
+                                                        <span class='badge badge-dark'>bloquear datas</span>
+                                                    </label>
+                                                @endif
+
+                                                @if ($situacaoAtual === 'finalizada')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='finalizada' checked
+                                                            disabled>
+                                                        <span class='badge badge-success'>finalizada</span>
+                                                    </label>
+                                                @endif
+
+                                                @if ($situacaoAtual === 'cancelado')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='cancelado' checked
+                                                            disabled>
+                                                        <span class='badge badge-secondary'>cancelado</span>
+                                                    </label>
+                                                @endif
+                                            @endif
+
+                                            <!-- Input hidden para situações não editáveis -->
+                                            @if ($isEdicao && !$podeAlterarSituacao)
+                                                <input type='hidden' name='situacao' value='{{ $situacaoAtual }}'>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <hr>
+                                    </div>
+
+                                    <div class='form-group row'>
+                                        <label for='hospede_id' class='col-md-3 label-control'>* Hóspede</label>
+                                        <div class='col-sm-4'>
+                                            @php
+                                                $hospedeSelecionado = old('hospede_id', $reserva->hospede_id ?? '');
+                                            @endphp
+
+                                            @if ($hospedeSelecionado)
+                                                <select class='form-control select2' name='hospede_id_disabled'
+                                                    id='hospede_id' disabled>
+                                                    <option value=''>Selecione um hóspede</option>
+                                                    @foreach ($hospedes as $hospede)
+                                                        @if ($hospede->nome !== 'Bloqueado')
+                                                            <option value="{{ $hospede->id }}"
+                                                                {{ $hospedeSelecionado == $hospede->id ? 'selected' : '' }}>
+                                                                {{ $hospede->nome }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                                <input type='hidden' name='hospede_id' value="{{ $hospedeSelecionado }}">
+                                            @else
+                                                <select class='form-control select2' name='hospede_id' id='hospede_id'>
+                                                    <option value="">Selecione um hóspede</option>
+                                                    @foreach ($hospedes as $hospede)
+                                                        @if ($hospede->nome !== 'Bloqueado')
+                                                            <option value="{{ $hospede->id }}"
+                                                                {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
+                                                                {{ $hospede->nome }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            @endif
+                                        </div>
+
+                                        <div class="col-sm-2">
+                                            <button type="button" id="btn-addhospede" class="btn btn-primary"
+                                                data-toggle="modal" data-target="#modalCadastrarHospede">
+                                                <i class="fas fa-user-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- Campo do período -->
+                                    <div class="form-group row" id="campoPeriodo">
+                                        <label class="col-md-3 label-control" for="periodo">* Período</label>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" id="periodo" name="periodo"
+                                                value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
+                                            <small style="color: red">Selecione um período antes de escolher o
+                                                quarto</small>
+                                        </div>
+                                    </div>
+
+                                    <input type="hidden" name="data_checkin" id="data_checkin"
+                                        value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
+                                    <input type="hidden" name="data_checkout" id="data_checkout"
+                                        value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
+
+                                    <!-- Select de quartos agrupados por categoria -->
+                                    <div class="form-group row" id="campoQuarto">
+                                        <label class="col-md-3 label-control" for="quarto">* Quarto</label>
+                                        <div class="col-md-4">
+                                            <select class="form-control select2" id="quarto" name="quarto_id"
+                                                disabled>
+                                                <option value="">Selecione um quarto</option>
+                                                @if (isset($quartosAgrupados))
+                                                    @foreach ($quartosAgrupados as $categoria => $quartos)
+                                                        <optgroup label="{{ $categoria }}">
+                                                            @foreach ($quartos as $quarto)
+                                                                <option value="{{ $quarto->id }}"
+                                                                    {{ old('quarto_id', $reserva->quarto_id ?? '') == $quarto->id ? 'selected' : '' }}>
+                                                                    {{ $quarto->nome }}
+                                                                </option>
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    @if (isset($reserva))
+                                        <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
+                                        <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                                     @endif
-                                </div>
+
+                                    <div class="form-group row">
+                                        <label class="col-md-3 label-control" for="valor_diaria">* Valor da
+                                            diária:</label>
+                                        <div class="col-md-4">
+                                            <div><input class="form-control" type="text" name="valor_diaria"
+                                                    id="valor_diaria"
+                                                    value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group row">
+                                        <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
+                                        <div class="row col-md-6">
+                                            <div class="col-md-3">
+                                                <label for="n_adultos">* Nº adultos</label>
+                                                <input type="number" name="n_adultos" id="n_adultos"
+                                                    class="form-control"
+                                                    value="{{ old('n_adultos', $reserva->n_adultos ?? 1) }}"
+                                                    min="1">
+                                            </div>
+
+                                            <div class="col-md-3">
+                                                <label for="n_criancas">* Nº crianças</label>
+                                                <input type="number" name="n_criancas" id="n_criancas"
+                                                    class="form-control"
+                                                    value="{{ old('n_criancas', $reserva->n_criancas ?? 0) }}"
+                                                    min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group row" id="campoObservacoes">
+                                        <label for="observacao" class="col-md-3 label-control">Observações</label>
+                                        <div class="col-md-9">
+                                            <textarea class="form-control" name="observacao" rows="3" id="observacoes">{{ old('observacao', $reserva->observacao ?? '') }}</textarea>
+                                        </div>
+                                    </div>
+
+                                    <!-- Área de Logs -->
+                                    <div class="card mt-4">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">LOGS
+                                                DE ATIVIDADES</h5>
+                                        </div>
+                                        <div class="card-body p-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-striped table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Data/Hora</th>
+                                                            <th>Usuário</th>
+                                                            <th>Ação</th>
+                                                            <th>Detalhes</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="logs-table-body">
+                                                        @isset($logs)
+
+                                                        @php
+                                                            $logsDaReserva = collect($logs)->filter(function (
+                                                                $log,
+                                                            ) use ($reserva) {
+                                                                return $log->reserva_id == $reserva->id;
+                                                            });
+                                                        @endphp
+                                                        @endisset
+
+                                                        @if (isset($reserva) && $logsDaReserva->isNotEmpty())
+                                                            {{-- @dd($logs) --}}
+                                                            @foreach ($logs as $log)
+                                                                <tr>
+                                                                    <td>{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
+                                                                    <td>{{ $log->usuario->name ?? 'Sistema' }}</td>
+                                                                    <td>
+                                                                        <span
+                                                                            class="badge 
+                                                                            @if ($log->tipo == 'criacao') badge-success
+                                                                            @elseif($log->tipo == 'edicao') badge-info
+                                                                            @elseif($log->tipo == 'exclusao') badge-danger
+                                                                            @else badge-secondary @endif">
+                                                                            {{ ucfirst($log->tipo) }}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td>{{ $log->descricao }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            <tr>
+                                                                <td colspan="4" class="text-center">Nenhum log
+                                                                    disponível</td>
+                                                            </tr>
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-footer">
+                                        @if (isset($reserva))
+                                            <!-- Botão Gerar Voucher (apenas para reserva ou pre-reserva) -->
+                                            @if (isset($reserva) && in_array($reserva->situacao, ['reserva', 'pre-reserva']))
+                                                <a href="{{ route('reservas.voucher', $reserva->id) }}"
+                                                    class="btn btn-info" target="_blank">
+                                                    <i class="fa fa-file-pdf-o"></i> Gerar Voucher
+                                                </a>
+                                            @endif
+                                            <!-- Botão Cancelar (substitui o Excluir) -->
+                                            @if (in_array($reserva->situacao, ['pre-reserva']))
+                                                
+<button 
+  type="button" 
+  class="btn btn-danger btn-excluir-reserva-super"
+  data-url="{{ route('reservas.cancelar.supervisor', $reserva->id) }}">
+  <i class="fas fa-trash-alt"></i> Cancelar Reserva
+</button>
+
+@endif
+
+                                            <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
+                                            @if (isset($reserva) && $reserva->situacao === 'reserva' && $reserva->data_checkin === date('Y-m-d'))
+                                                <button type="button" class="btn btn-danger" id="btn-hospedar"
+                                                    data-reserva-id="{{ $reserva->id }}">
+                                                    <i class="fas fa-bed"></i> Hospedar
+                                                </button>
+                                            @endif
+
+                                            <!-- Botão Finalizar (aparece quando está hospedado) -->
+                                            @if (isset($reserva) && $reserva->situacao === 'hospedado')
+                                                <button type="button" class="btn btn-success" id="btn-finalizar-reserva"
+                                                    data-reserva-id="{{ $reserva->id }}">
+                                                    <i class="fas fa-check-circle"></i> Finalizar
+                                                </button>
+                                            @endif
+
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Atualizar
+                                            </button>
+                                        @else
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save"></i> Salvar
+                                            </button>
+                                        @endif
+                                    </div>
+                                </form>
                             </div>
 
-                            <div>
-                                <hr>
-                            </div>
-
-                            <div class='form-group row'>
-                                <label for='hospede_id' class='col-md-3 label-control'>* Hóspede</label>
-                                <div class='col-sm-4'>
-                                    @php
-                                        $hospedeSelecionado = old('hospede_id', $reserva->hospede_id ?? '');
-                                    @endphp
-
-                                    @if ($hospedeSelecionado)
-                                        <select class='form-control select2' name='hospede_id_disabled' id='hospede_id'
-                                            disabled>
-                                            <option value=''>Selecione um hóspede</option>
-                                            @foreach ($hospedes as $hospede)
-                                                @if ($hospede->nome !== 'Bloqueado')
-                                                    <option value="{{ $hospede->id }}"
-                                                        {{ $hospedeSelecionado == $hospede->id ? 'selected' : '' }}>
-                                                        {{ $hospede->nome }}
-                                                    </option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                        <input type='hidden' name='hospede_id' value="{{ $hospedeSelecionado }}">
-                                    @else
-                                        <select class='form-control select2' name='hospede_id' id='hospede_id'>
-                                            <option value="">Selecione um hóspede</option>
-                                            @foreach ($hospedes as $hospede)
-                                                @if ($hospede->nome !== 'Bloqueado')
-                                                    <option value="{{ $hospede->id }}"
-                                                        {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
-                                                        {{ $hospede->nome }}
-                                                    </option>
-                                                @endif
-                                            @endforeach
-                                        </select>
-                                    @endif
-                                </div>
-
-                                <div class="col-sm-2">
-                                    <button type="button" id="btn-addhospede" class="btn btn-primary" data-toggle="modal"
-                                        data-target="#modalCadastrarHospede">
-                                        <i class="fas fa-user-plus"></i>
+                            <!-- Aba 2: Produtos -->
+                            <div class="tab-pane fade" id="produtos" role="tabpanel" aria-labelledby="produtos-tab">
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-primary" id="btn-adicionar-produto-card"
+                                        onclick="mostrarFormulario('produto')">
+                                        <i class="fas fa-plus"></i> Adicionar Produto
                                     </button>
                                 </div>
-                            </div>
-                            <!-- Campo do período -->
-                            <div class="form-group row" id="campoPeriodo">
-                                <label class="col-md-3 label-control" for="periodo">* Período</label>
-                                <div class="col-md-4">
-                                    <input type="text" class="form-control" id="periodo" name="periodo"
-                                        value="{{ old('periodo', isset($reserva) ? \Carbon\Carbon::parse($reserva->data_checkin)->format('d/m/Y') . ' a ' . \Carbon\Carbon::parse($reserva->data_checkout)->format('d/m/Y') : '') }}" />
-                                    <small style="color: red">Selecione um período antes de escolher o quarto</small>
+
+                                <div class="row" id="produtos-container">
+                                    @if (isset($reserva) && isset($produtos_reserva))
+                                        @foreach ($produtos_reserva as $produto)
+                                            <div class="col-md-4 mb-3">
+                                                <div class="card produto-card">
+                                                    <div class="card-body">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <div class="produto-icon mr-3">
+                                                                <i class="fas fa-box fa-2x text-primary"></i>
+                                                            </div>
+                                                            <h5 class="card-title mb-0">{{ $produto->descricao }}</h5>
+                                                        </div>
+                                                        <div class="produto-info">
+                                                            <p class="card-text mb-1">
+                                                                <strong>Quantidade:</strong> {{ $produto->quantidade }}
+                                                            </p>
+                                                            <p class="card-text mb-1">
+                                                                <strong>Valor unitário:</strong> R$
+                                                                {{ number_format($produto->valor_unitario, 2, ',', '.') }}
+                                                            </p>
+                                                            <p class="card-text mb-1">
+                                                                <strong>Total:</strong> R$
+                                                                {{ number_format($produto->valor_total, 2, ',', '.') }}
+                                                            </p>
+                                                            <p class="card-text mb-0 text-muted">
+                                                                <small>Adicionado em:
+                                                                    {{ $produto->created_at->format('d/m/Y H:i') }}</small>
+                                                            </p>
+                                                        </div>
+                                                        <div class="mt-3 text-right">
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-outline-danger btn-remover-item"
+                                                                data-id="item_{{ $produto->id }}">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
-                            </div>
 
-                            <input type="hidden" name="data_checkin" id="data_checkin"
-                                value="{{ old('data_checkin', $reserva->data_checkin ?? '') }}">
-                            <input type="hidden" name="data_checkout" id="data_checkout"
-                                value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
-
-                            <!-- Select de quartos agrupados por categoria -->
-                            <div class="form-group row" id="campoQuarto">
-                                <label class="col-md-3 label-control" for="quarto">* Quarto</label>
-                                <div class="col-md-4">
-                                    <select class="form-control select2" id="quarto" name="quarto_id" disabled>
-                                        <option value="">Selecione um quarto</option>
-                                        @if (isset($quartosAgrupados))
-                                            @foreach ($quartosAgrupados as $categoria => $quartos)
-                                                <optgroup label="{{ $categoria }}">
-                                                    @foreach ($quartos as $quarto)
-                                                        <option value="{{ $quarto->id }}"
-                                                            {{ old('quarto_id', $reserva->quarto_id ?? '') == $quarto->id ? 'selected' : '' }}>
-                                                            {{ $quarto->nome }}
+                                <!-- Formulário para adicionar produto (movido da coluna lateral para a aba) -->
+                                <div id="form-transacao-produto" style="display: none;" class="card mt-3">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0" id="titulo-form-produto">Adicionar Produto</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="produto_id">Produto</label>
+                                            <select class="form-control select2" id="produto_id">
+                                                <option value="">Selecione um produto</option>
+                                                @if (isset($produtos))
+                                                    @foreach ($produtos as $produto)
+                                                        <option value="{{ $produto->id }}"
+                                                            data-valor="{{ $produto->preco_venda }}"
+                                                            {{ old('produto_id') == $produto->id ? 'selected' : '' }}>
+                                                            {{ $produto->descricao }} - R$
+                                                            {{ number_format($produto->preco_venda, 2, ',', '.') }}
                                                         </option>
                                                     @endforeach
-                                                </optgroup>
+                                                @endif
+                                            </select>
+                                        </div>
+                                        <div class="form-group row align-items-center">
+                                            <div class="col-md-4">
+                                                <label for="quantidade_produto">Quantidade</label>
+                                                <input type="number" class="form-control" id="quantidade_produto"
+                                                    value="1" min="1">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label for="total_item_produto">Total do Item</label>
+                                                <input type="text" class="form-control" id="total_item_produto"
+                                                    readonly value="0,00">
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-info btn-sm mb-3"
+                                            id="btn-adicionar-item-produto">Adicionar Item</button>
+
+                                        <div id="lista-itens-produto">
+                                            <!-- Itens de produto adicionados dinamicamente aqui -->
+                                        </div>
+
+                                        <div class="form-group mt-3">
+                                            <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
+                                            <input type="text" class="form-control" id="total_produtos_adicionados"
+                                                readonly value="0,00">
+                                        </div>
+
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-success btn-sm"
+                                                id="btn-salvar-produtos">Salvar Produtos</button>
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                id="btn-cancelar-produtos">Cancelar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coluna Lateral (Resumo e Atividades) -->
+            <div class='col-lg-4'>
+                <!-- Card de Resumo Detalhado -->
+                <div class='card shadow-sm mb-4'>
+                    <div class='card-header bg-light'>
+                        <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>RESUMO</h5>
+                    </div>
+                    <div class='card-body'>
+                        <div class='d-flex justify-content-between mb-2'>
+                            <span>Nº diárias</span>
+                            <span id='num-diarias'>1</span>
+                        </div>
+                        <div class='d-flex justify-content-between mb-2'>
+                            <span>Diária Média</span>
+                            <span id='diaria-media'>R$ 0,00</span>
+                        </div>
+                        <div class='d-flex justify-content-between mb-2'>
+                            <span>Diárias</span>
+                            <span id='total-diarias'>R$ 0,00</span>
+                        </div>
+                        <div class='d-flex justify-content-between mb-2'>
+                            <span>Produtos</span>
+                            <span id='total-produtos'>R$ 0,00</span>
+                        </div>
+                        <hr>
+                        <div class='d-flex justify-content-between mb-2'>
+                            <strong>Total</strong>
+                            <strong id='total-geral'>R$ 0,00</strong>
+                        </div>
+                        <div class='d-flex justify-content-between text-success'>
+                            <span>Recebido</span>
+                            <span id='total-recebido'>R$ 0,00</span>
+                            <input type='hidden' id='valor-recebido' name='recebido' value='0.00'>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card de Atividades na Reserva -->
+                @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                    <div class='card shadow-sm'>
+                        <div class='card-header bg-light d-flex justify-content-between align-items-center'>
+                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA
+                                RESERVA
+                            </h5>
+                            <div class='dropdown'>
+                                <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
+                                    id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true'
+                                    aria-expanded='false'>
+                                    <i class='fas fa-plus'></i>
+                                </button>
+                                <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
+                                    <a class='dropdown-item' href='#'
+                                        onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='card-body'>
+                            <div id='lista-atividades'>
+                                <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
+                            </div>
+
+                            <!-- Formulário para adicionar transação (pagamento) -->
+                            <div id='form-transacao-pagamento' style='display: none;'>
+                                <hr>
+                                <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
+                                <div class='form-group'>
+                                    <label for='descricao_transacao'>Descrição</label>
+                                    <input type='text' class='form-control' id='descricao_transacao'
+                                        placeholder='Ex: Pagamento da diária'>
+                                </div>
+                                <div class='form-group'>
+                                    <label for='valor_transacao'>Valor</label>
+                                    <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
+                                </div>
+                                <div class='form-group'>
+                                    <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
+                                    <select class='form-control' id='forma_pagamento_transacao'>
+                                        <option value=''>Selecione...</option>
+                                        @if (isset($formasPagamento))
+                                            @foreach ($formasPagamento as $forma)
+                                                <option value='{{ $forma->id }}'
+                                                    {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>
+                                                    {{ $forma->descricao }}</option>
                                             @endforeach
                                         @endif
                                     </select>
                                 </div>
-                            </div>
-
-                            @if (isset($reserva))
-                                <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
-                                <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
-                            @endif
-
-                            <div class="form-group row">
-                                <label class="col-md-3 label-control" for="valor_diaria">* Valor da diária:</label>
-                                <div class="col-md-4">
-                                    <div><input class="form-control" type="text" name="valor_diaria"
-                                            id="valor_diaria"
-                                            value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}">
-                                    </div>
+                                <div class="form-group">
+                                    <label for="data_transacao">Data</label>
+                                    <input type="date" class="form-control" id="data_transacao"
+                                        value="{{ date('Y-m-d') }}">
+                                </div>
+                                <div class="form-group">
+                                    <label for="observacoes_transacao">Observações</label>
+                                    <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
+                                </div>
+                                <input type="hidden" id="categoria_transacao" value="hospedagem">
+                                <input type="hidden" id="tipo_transacao" value="pagamento">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success btn-sm"
+                                        id="btn-salvar-transacao">Salvar</button>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                        id="btn-cancelar-transacao">Cancelar</button>
                                 </div>
                             </div>
-
-                            <div class="form-group row">
-                                <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
-                                <div class="row col-md-6">
-                                    <div class="col-md-3">
-                                        <label for="n_adultos">* Nº adultos</label>
-                                        <input type="number" name="n_adultos" id="n_adultos" class="form-control"
-                                            value="{{ old('n_adultos', $reserva->n_adultos ?? 1) }}" min="1">
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label for="n_criancas">* Nº crianças</label>
-                                        <input type="number" name="n_criancas" id="n_criancas" class="form-control"
-                                            value="{{ old('n_criancas', $reserva->n_criancas ?? 0) }}" min="0">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="form-group row" id="campoObservacoes">
-                                <label for="observacao" class="col-md-3 label-control">Observações</label>
-                                <div class="col-md-9">
-                                    <textarea class="form-control" name="observacao" rows="3" id="observacoes">{{ old('observacao', $reserva->observacao ?? '') }}</textarea>
-                                </div>
-                            </div>
-
-                            <div class="card-footer">
-                                @if (isset($reserva))
-                                    <!-- Botão Gerar Voucher (apenas para reserva ou pre-reserva) -->
-                                    @if (isset($reserva) && in_array($reserva->situacao, ['reserva', 'pre-reserva']))
-                                        <a href="{{ route('reservas.voucher', $reserva->id) }}" class="btn btn-info"
-                                            target="_blank">
-                                            <i class="fa fa-file-pdf-o"></i> Gerar Voucher
-                                        </a>
-                                    @endif
-                                    <!-- Botão Cancelar (substitui o Excluir) -->
-                                    @if (in_array($reserva->situacao, ['pre-reserva']))
-                                        <button type="button" class="btn" id="btn-cancelar-reserva"
-                                            data-reserva-id="{{ $reserva->id }}">
-                                            <i class="fas fa-ban"></i> Cancelar
-                                        </button>
-                                    @endif
-
-                                    <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
-                                    @if (isset($podeHospedar) && $podeHospedar)
-                                        <button type="button" class="btn btn-info" id="btn-hospedar"
-                                            data-reserva-id="{{ $reserva->id }}">
-                                            <i class="fas fa-bed"></i> Hospedar
-                                        </button>
-                                    @endif
-
-                                    <!-- Botão Finalizar (aparece quando hospedado) -->
-                                    @if ($reserva->situacao === 'hospedado')
-                                        <button type="button" class="btn btn-success" id="btn-finalizar"
-                                            data-reserva-id="{{ $reserva->id }}">
-                                            <i class="fa-solid fa-right-from-bracket"></i> Finalizar
-                                        </button>
-                                    @endif
-
-                                    <!-- Mostrar status se finalizada ou cancelada -->
-                                    @if ($reserva->situacao === 'finalizada')
-                                        <span class="mr-3">
-                                            <i class="fas fa-check"></i> Reserva finalizada
-                                        </span>
-                                    @endif
-
-                                    @if ($reserva->situacao === 'cancelado')
-                                        <span class="badge badge-secondary badge-lg">
-                                            <i class="fas fa-ban"></i> RESERVA CANCELADA
-                                        </span>
-                                    @endif
-                                @endif
-
-                                <a href="{{ route('reserva.index') }}" class="btn btn-secondary"
-                                    id="btn-voltar">Voltar</a>
-
-                                @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
-                                    <button type="submit" class="btn"
-                                        id="btn-atualizar-criar">{{ isset($reserva) ? 'Atualizar Reserva' : 'Adicionar Reserva' }}</button>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Coluna Lateral (Resumo e Pagamentos) -->
-            @if (isset($reserva))
-                <div class='col-lg-4'>
-                    <!-- Card de Resumo -->
-                    <div class='card shadow-sm mb-4'>
-                        <div class='card-header bg-light'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>FALTA LANÇAR</h5>
-                            <h2 class='text-danger mb-0' id='falta-lancar'>R$ 0,00</h2>
-                            <input type='hidden' id='valor-falta-lancar' name='falta_lancar' value='0.00'>
                         </div>
                     </div>
-
-                    <!-- Card de Resumo Detalhado -->
-                    <div class='card shadow-sm mb-4'>
+                @elseif (isset($reserva))
+                    <!-- Card apenas de visualização para reservas finalizadas/canceladas -->
+                    <div class='card shadow-sm'>
                         <div class='card-header bg-light'>
-                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>RESUMO</h5>
+                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA
+                                RESERVA</h5>
                         </div>
                         <div class='card-body'>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Nº diárias</span>
-                                <span id='num-diarias'>1</span>
-                            </div>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Diária Média</span>
-                                <span id='diaria-media'>R$ 0,00</span>
-                            </div>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Diárias</span>
-                                <span id='total-diarias'>R$ 0,00</span>
-                            </div>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <span>Produtos</span>
-                                <span id='total-produtos'>R$ 0,00</span>
-                            </div>
-                            <hr>
-                            <div class='d-flex justify-content-between mb-2'>
-                                <strong>Total</strong>
-                                <strong id='total-geral'>R$ 0,00</strong>
-                            </div>
-                            <div class='d-flex justify-content-between text-success'>
-                                <span>Recebido</span>
-                                <span id='total-recebido'>R$ 0,00</span>
-                                <input type='hidden' id='valor-recebido' name='recebido' value='0.00'>
+                            <div id='lista-atividades'>
+                                <p class='text-muted text-center'>Carregando atividades...</p>
                             </div>
                         </div>
                     </div>
+                @endif
 
-                    <!-- Card de Atividades na Reserva -->
-                    @if (!in_array($reserva->situacao, ['finalizada', 'cancelado']))
-                        <div class='card shadow-sm'>
-                            <div class='card-header bg-light d-flex justify-content-between align-items-center'>
-                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA
-                                    RESERVA
-                                </h5>
-                                <div class='dropdown'>
-                                    <button class='btn btn-sm btn-outline-primary dropdown-toggle' type='button'
-                                        id='dropdownMenuButton' data-toggle='dropdown' aria-haspopup='true'
-                                        aria-expanded='false'>
-                                        <i class='fas fa-plus'></i>
-                                    </button>
-                                    <div class='dropdown-menu' aria-labelledby='dropdownMenuButton'>
-                                        <a class='dropdown-item' href='#'
-                                            onclick="mostrarFormulario('pagamento')">Adicionar Pagamento</a>
-                                        <a class='dropdown-item' href='#'
-                                            onclick="mostrarFormulario('produto')">Adicionar Produto</a>
-                                    </div>
+                <!-- Dicas -->
+                <div class="dicas mt-4">
+                    <div id="quadroDicas" class="card shadow-sm transition-all">
+                        <div class="card-body pb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">DICAS</h6>
+                                <button id="btnToggleDicas" class="btn btn-sm text-muted p-0" style="font-size: 18px;">
+                                    <i id="iconeToggleDicas" class="fas fa-minus"></i>
+                                </button>
+                            </div>
+
+                            <div id="conteudoDicas">
+                                <div id="textoDica" class="text-dark mb-3">
+                                </div>
+
+                                <div class="d-flex justify-content-center mb-2">
+                                    <div id="indicadores" class="d-flex gap-1"></div>
                                 </div>
                             </div>
-                            <div class='card-body'>
-                                <div id='lista-atividades'>
-                                    <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
-                                </div>
-
-                                <!-- Formulário para adicionar transação (pagamento) -->
-                                <div id='form-transacao-pagamento' style='display: none;'>
-                                    <hr>
-                                    <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
-                                    <div class='form-group'>
-                                        <label for='descricao_transacao'>Descrição</label>
-                                        <input type='text' class='form-control' id='descricao_transacao'
-                                            placeholder='Ex: Pagamento da diária'>
-                                    </div>
-                                    <div class='form-group'>
-                                        <label for='valor_transacao'>Valor</label>
-                                        <input type='text' class='form-control' id='valor_transacao'
-                                            placeholder='0,00'>
-                                    </div>
-                                    <div class='form-group'>
-                                        <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
-                                        <select class='form-control' id='forma_pagamento_transacao'>
-                                            <option value=''>Selecione...</option>
-                                            @if (isset($formasPagamento))
-                                                @foreach ($formasPagamento as $forma)
-                                                    <option value='{{ $forma->id }}'
-                                                        {{ old('forma_pagamento_id') == $forma->id ? 'selected' : '' }}>
-                                                        {{ $forma->descricao }}</option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="data_transacao">Data</label>
-                                        <input type="date" class="form-control" id="data_transacao"
-                                            value="{{ date('Y-m-d') }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="observacoes_transacao">Observações</label>
-                                        <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
-                                    </div>
-                                    <input type="hidden" id="categoria_transacao" value="hospedagem">
-                                    <input type="hidden" id="tipo_transacao" value="pagamento">
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-success btn-sm"
-                                            id="btn-salvar-transacao">Salvar</button>
-                                        <button type="button" class="btn btn-secondary btn-sm"
-                                            id="btn-cancelar-transacao">Cancelar</button>
-                                    </div>
-                                </div>
-
-                                <!-- Formulário para adicionar produto -->
-                                <div id="form-transacao-produto" style="display: none;">
-                                    <hr>
-                                    <h6 id="titulo-form-produto">Adicionar Produto</h6>
-                                    <div class="form-group">
-                                        <label for="produto_id">Produto</label>
-                                        <select class="form-control select2" id="produto_id">
-                                            <option value="">Selecione um produto</option>
-                                            @if (isset($produtos))
-                                                @foreach ($produtos as $produto)
-                                                    <option value="{{ $produto->id }}"
-                                                        data-valor="{{ $produto->preco_venda }}"
-                                                        {{ old('produto_id') == $produto->id ? 'selected' : '' }}>
-                                                        {{ $produto->descricao }} - R$
-                                                        {{ number_format($produto->preco_venda, 2, ',', '.') }}</option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                    </div>
-                                    <div class="form-group row align-items-center">
-                                        <div class="col-md-4">
-                                            <label for="quantidade_produto">Quantidade</label>
-                                            <input type="number" class="form-control" id="quantidade_produto"
-                                                value="1" min="1">
-                                        </div>
-                                        <div class="col-md-8">
-                                            <label for="total_item_produto">Total do Item</label>
-                                            <input type="text" class="form-control" id="total_item_produto" readonly
-                                                value="0,00">
-                                        </div>
-                                    </div>
-                                    <button type="button" class="btn btn-info btn-sm mb-3"
-                                        id="btn-adicionar-item-produto">Adicionar Item</button>
-
-                                    <div id="lista-itens-produto">
-                                        <!-- Itens de produto adicionados dinamicamente aqui -->
-                                    </div>
-
-                                    <div class="form-group mt-3">
-                                        <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
-                                        <input type="text" class="form-control" id="total_produtos_adicionados"
-                                            readonly value="0,00">
-                                    </div>
-
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-success btn-sm"
-                                            id="btn-salvar-produtos">Salvar
-                                            Produtos</button>
-                                        <button type="button" class="btn btn-secondary btn-sm"
-                                            id="btn-cancelar-produtos">Cancelar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @else
-                        <!-- Card apenas de visualização para reservas finalizadas/canceladas -->
-                        <div class='card shadow-sm'>
-                            <div class='card-header bg-light'>
-                                <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA
-                                    RESERVA</h5>
-                            </div>
-                            <div class='card-body'>
-                                <div id='lista-atividades'>
-                                    <p class='text-muted text-center'>Carregando atividades...</p>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Dicas -->
-                    <div class="dicas mt-4">
-                        <div id="quadroDicas" class="card shadow-sm transition-all">
-                            <div class="card-body pb-2">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">DICAS</h6>
-                                    <button id="btnToggleDicas" class="btn btn-sm text-muted p-0"
-                                        style="font-size: 18px;">
-                                        <i id="iconeToggleDicas" class="fas fa-minus"></i>
-                                    </button>
-                                </div>
-
-                                <div id="conteudoDicas">
-                                    <div id="textoDica" class="text-dark mb-3">
-                                    </div>
-
-                                    <div class="d-flex justify-content-center mb-2">
-                                        <div id="indicadores" class="d-flex gap-1"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-    @if (!isset($reserva))
-        <div class="dicas mt-4">
-            <div id="quadroDicas" class="card shadow-sm transition-all">
-                <div class="card-body pb-2">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h6 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">DICAS</h6>
-                        <button id="btnToggleDicas" class="btn btn-sm text-muted p-0" style="font-size: 18px;">
-                            <i id="iconeToggleDicas" class="fas fa-minus"></i>
-                        </button>
-                    </div>
-
-                    <div id="conteudoDicas">
-                        <div id="textoDica" class="text-dark mb-3">
-                        </div>
-
-                        <div class="d-flex justify-content-center mb-2">
-                            <div id="indicadores" class="d-flex gap-1"></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 
     <!-- Modal de Cadastro de Hóspede -->
     <div class="modal fade" id="modalCadastrarHospede" tabindex="-1" role="dialog"
@@ -698,16 +809,29 @@
             margin-bottom: 1.5rem !important;
         }
 
-        .mt-4 {
-            margin-top: 1.5rem !important;
+        /* Estilos para os cards de produtos */
+        .produto-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
         }
 
-        .text-center {
-            text-align: center !important;
+        .produto-card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
         }
 
-        .text-uppercase {
-            text-transform: uppercase !important;
+        .produto-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(0, 123, 255, 0.1);
+        }
+
+        .produto-info {
+            margin-top: 1rem;
         }
 
         #form-transacao-pagamento,
@@ -1051,6 +1175,7 @@
                             });
                             atualizarListaAtividades();
                             atualizarResumo(); // Atualizar resumo após carregar itens
+                            atualizarProdutosCards(); // Atualizar cards de produtos
                         }
                     },
                     error: function() {
@@ -1184,6 +1309,9 @@
                     produtosAdicionados = [];
                     atualizarListaItensProduto();
                     atualizarTotalProdutosAdicionados();
+
+                    // Mudar para a aba de produtos
+                    $('#produtos-tab').tab('show');
                 }
             };
 
@@ -1359,6 +1487,75 @@
                     }
 
                     $lista.append(html);
+                });
+
+                // Atualizar os cards de produtos na aba de produtos
+                atualizarProdutosCards();
+            }
+
+            // Função para atualizar os cards de produtos na aba de produtos
+            function atualizarProdutosCards() {
+                const $produtosContainer = $('#produtos-container');
+                $produtosContainer.empty();
+
+                // Filtrar apenas os itens de produto
+                const produtosItens = transacoes.filter(t => t.tipo === 'item' && t.status);
+
+                if (produtosItens.length === 0) {
+                    $produtosContainer.html(
+                        '<div class="col-12"><div class="alert alert-info">Nenhum produto adicionado à reserva.</div></div>'
+                    );
+                    return;
+                }
+
+                produtosItens.forEach(function(item) {
+                    const valorUnitario = parseFloat(item.valor) / parseInt(item.quantidade);
+                    const valorFormatado = valorUnitario.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2
+                    });
+                    const totalFormatado = parseFloat(item.valor).toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2
+                    });
+                    const dataFormatada = moment(item.data_pagamento).format('DD/MM/YYYY HH:mm');
+
+                    const cardHtml = `
+                        <div class="col-md-4 mb-3">
+                            <div class="card produto-card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="produto-icon mr-3">
+                                            <i class="fas fa-box fa-2x text-primary"></i>
+                                        </div>
+                                        <h5 class="card-title mb-0">${item.produto_nome || item.descricao.replace('Produto: ', '')}</h5>
+                                    </div>
+                                    <div class="produto-info">
+                                        <p class="card-text mb-1">
+                                            <strong>Quantidade:</strong> ${item.quantidade}
+                                        </p>
+                                        <p class="card-text mb-1">
+                                            <strong>Valor unitário:</strong> R$ ${valorFormatado}
+                                        </p>
+                                        <p class="card-text mb-1">
+                                            <strong>Total:</strong> R$ ${totalFormatado}
+                                        </p>
+                                        <p class="card-text mb-0 text-muted">
+                                            <small>Adicionado em: ${dataFormatada}</small>
+                                        </p>
+                                    </div>
+                                    <div class="mt-3 text-right">
+                                        @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remover-item" 
+                                                    data-id="${item.id}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    $produtosContainer.append(cardHtml);
                 });
             }
 
@@ -1703,28 +1900,25 @@
                                     title: 'Sucesso!',
                                     text: response.message,
                                     icon: 'success',
-                                    confirmButtonText: 'OK'
+                                    timer: 2000
                                 }).then(() => {
-                                    location
-                                .reload(); // Recarregar para atualizar a interface
+                                    window.location.href = '/reserva';
                                 });
                             } else {
                                 Swal.fire({
                                     title: 'Erro!',
                                     text: response.message,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
+                                    icon: 'error'
                                 });
                             }
                         },
-                        error: function(xhr, status, error) {
+                        error: function(xhr) {
                             Swal.fire({
                                 title: 'Erro!',
-                                text: 'Não foi possível finalizar a reserva.',
-                                icon: 'error',
-                                confirmButtonText: 'Tentar novamente'
+                                text: 'Erro ao finalizar reserva: ' + xhr.responseJSON
+                                    .message,
+                                icon: 'error'
                             });
-                            console.error("Erro:", error);
                         }
                     });
                 }
@@ -1762,7 +1956,7 @@
                                         confirmButtonText: 'OK'
                                     }).then(() => {
                                         location
-                                    .reload(); // Recarregar para atualizar a interface
+                                            .reload(); // Recarregar para atualizar a interface
                                     });
                                 } else {
                                     Swal.fire({
@@ -1821,7 +2015,7 @@
                                         confirmButtonText: 'OK'
                                     }).then(() => {
                                         location
-                                    .reload(); // Recarregar para atualizar a interface
+                                            .reload(); // Recarregar para atualizar a interface
                                     });
                                 } else {
                                     Swal.fire({
@@ -1962,7 +2156,61 @@
                 $('#periodo').val(start.format('DD/MM/YYYY') + ' a ' + end.format('DD/MM/YYYY'));
             }
         });
-    </script>
+
+
+
+        // Inicialização das abas
+        $('#reservaTabs a').on('click', function(e) {
+            e.preventDefault();
+            $(this).tab('show');
+        });
+
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.btn-excluir-reserva-super');
+  if (!btn) return;
+
+  const alvoURL = btn.dataset.url;
+  const token   = document.querySelector('meta[name="csrf-token"]')?.content;
+
+  const result = await Swal.fire({
+    title: 'Autorização do Supervisor',
+    input: 'password',
+    inputLabel: 'Senha do supervisor',
+    inputAttributes: { autocapitalize:'off', autocomplete:'new-password' },
+    showCancelButton: true,
+    confirmButtonText: 'Autorizar',
+    cancelButtonText: 'Cancelar',
+    reverseButtons: true,
+    showLoaderOnConfirm: true,
+    preConfirm: async (senha) => {
+      try {
+        const resp = await fetch(alvoURL, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({ senha_supervisor: senha })
+        });
+        const data = await resp.json();
+        if (!resp.ok || !data.success) throw new Error(data?.message || 'Falha na autorização.');
+        return data; // passa para result.value
+      } catch (err) {
+        Swal.showValidationMessage(err.message);
+      }
+    },
+    allowOutsideClick: () => !Swal.isLoading()
+  });
+
+  if (result.isConfirmed) {
+    // sucesso: recarrega, ou remova a linha via JS
+    Swal.fire({ icon:'success', title:'Autorizado', timer:1000, showConfirmButton:false })
+      .then(() => location.reload());
+  }
+});
+
+</script>
 
     @if (session('success'))
         <script>
@@ -1985,5 +2233,4 @@
             });
         </script>
     @endif
-
 @stop

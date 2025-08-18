@@ -49,6 +49,7 @@ use App\Http\Controllers\ItensDayUseController;
 use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
+use App\Http\Controllers\LogReservaController;
 use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
@@ -267,3 +268,10 @@ Route::get('/reservas/{id}/voucher', [VoucherController::class, 'gerarVoucher'])
 
 Route::get('/transacao', [TransacaoController::class, 'index'])->name('transacao.index');
 
+Route::get('/reserva/{reserva}/logs', [LogReservaController::class, 'showLogs'])->name('reserva.logs');
+
+Route::get('/api/reserva/{reserva}/logs', [LogReservaController::class, 'getLogsPorReserva']);
+
+Route::post('/reservas/{id}/cancelar-supervisor', [ReservaController::class, 'cancelarComSupervisor'])
+    ->name('reservas.cancelar.supervisor')
+    ->middleware(['auth','throttle:10,1']);
