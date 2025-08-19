@@ -274,4 +274,8 @@ Route::get('/api/reserva/{reserva}/logs', [LogReservaController::class, 'getLogs
 
 Route::post('/reservas/{id}/cancelar-supervisor', [ReservaController::class, 'cancelarComSupervisor'])
     ->name('reservas.cancelar.supervisor')
-    ->middleware(['auth','throttle:10,1']);
+    ->middleware(['auth','throttle:5,1']);
+
+Route::post('/reservas/{id}/noshow-supervisor', [ReservaController::class, 'marcarNoShowComSupervisor'])
+    ->name('reservas.noshow.supervisor')
+    ->middleware(['auth','throttle:5,1']);

@@ -274,6 +274,7 @@
                                             <i class="fas fa-ban"></i> RESERVA CANCELADA
                                         </span>
                                     @endif
+                                    
                                 @endif
 
                                 <a href="{{ route('reserva.index') }}" class="btn btn-secondary"

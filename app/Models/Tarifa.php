@@ -22,6 +22,10 @@ class Tarifa extends Model
         'sab',
         'dom',
         'tarifa_hospede_id',
+        'padrao_adultos',
+        'padrao_criancas',
+        'adicional_adulto',
+        'adicional_crianca'
     ];
     public function tarifaHospede()
     {

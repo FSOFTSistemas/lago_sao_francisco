@@ -7,6 +7,7 @@ use App\Models\Quarto;
 use App\Models\Hospede;
 use App\Models\Categoria;
 use App\Models\FormaPagamento;
+use App\Models\Funcionario;
 use App\Models\LogReserva;
 use App\Models\PreferenciasHotel;
 use App\Models\Produto;
@@ -95,7 +96,8 @@ class ReservaController extends Controller
             // Lógica para valor_diaria com base em tarifas diárias
             if ($preferencia->valor_diaria === 'tarifario' || empty($validatedData['valor_diaria'])) {
                 $quarto = Quarto::with('categoria.tarifa')->find($validatedData['quarto_id']);
-                $tarifa = $quarto->categoria->tarifa;
+                $categoria = $quarto->categoria;
+                $tarifa = $categoria->tarifa;
 
                 $checkin = Carbon::parse($validatedData['data_checkin']);
                 $checkout = Carbon::parse($validatedData['data_checkout']);
@@ -124,6 +126,18 @@ class ReservaController extends Controller
                 // Média proporcional da tarifa
                 $mediaTarifa = $quantidadeDias > 0 ? $total / $quantidadeDias : 0;
                 $validatedData['valor_diaria'] = number_format($mediaTarifa, 2, '.', '');
+                $padraoAdultos = $tarifa->padrao_adultos ?? 0;
+                $padraoCriancas = $tarifa->padrao_criancas ?? 0;
+                $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
+                $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
+
+                $extrasAdultos = max(0, $validatedData['n_adultos'] - $padraoAdultos);
+                $extrasCriancas = max(0, $validatedData['n_criancas'] - $padraoCriancas);
+
+                $valorDiariaBase = (float) $validatedData['valor_diaria'];
+                $valorDiariaFinal = $valorDiariaBase + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+
+                $validatedData['valor_diaria'] = number_format($valorDiariaFinal, 2, '.', '');
             } else {
                 // Remove máscara se foi preenchido manualmente
                 $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
@@ -416,46 +430,75 @@ class ReservaController extends Controller
     public function cancelarComSupervisor(Request $request, $id)
     {
         $request->validate([
-            'senha_supervisor' => ['required','string','min:4'],
+            'senha_supervisor' => ['required', 'string', 'min:4'],
         ]);
 
         $reserva = Reserva::findOrFail($id);
 
-        // 1) Descobrir supervisor válido (setor = 'Gerência') pela senha
-        $supervisores = User::whereIn('setor', ['Gerência', 'Gerencia'])
-            ->whereNotNull('senha_supervisor')
-            ->get();
+        if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta reserva já foi finalizada ou cancelada.'
+            ], 400);
+        }
 
-        $supervisorAutorizador = null;
-        foreach ($supervisores as $sup) {
-            if (Hash::check($request->senha_supervisor, $sup->senha_supervisor)) {
-                $supervisorAutorizador = $sup;
-                break;
+        $funcionarios = Funcionario::whereNotNull('senha_supervisor')->get();
+
+        $supervisor = null;
+        foreach ($funcionarios as $f) {
+            $senhaDigitada = (string) $request->input('senha_supervisor');
+
+            // Busca quem tem senha_supervisor
+            $funcionarios = Funcionario::whereNotNull('senha_supervisor')->get();
+
+            $supervisor = null;
+            foreach ($funcionarios as $f) {
+                $hashBanco = trim((string) $f->senha_supervisor);
+                if ($hashBanco === '') continue;
+
+
+                if (hash_equals($hashBanco, md5($senhaDigitada))) {
+                    $supervisor = $f;
+                    break;
+                }
+
+                if (str_starts_with($hashBanco, '$2') || str_starts_with($hashBanco, '$argon')) {
+                    $hashNorm = preg_replace('/^\$2b\$/', '$2y$', $hashBanco);
+                    if (password_verify($senhaDigitada, $hashNorm)) {
+                        $supervisor = $f;
+                        break;
+                    }
+                }
+            }
+
+            if (!$supervisor) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Senha de supervisor inválida.'
+                ], 403);
             }
         }
 
-        if (!$supervisorAutorizador) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Senha de supervisor inválida.'
-            ], 403);
+        if (!$supervisor) {
+            return response()->json(['success' => false, 'message' => 'Senha de supervisor inválida.'], 403);
         }
 
         try {
             DB::beginTransaction();
 
-            // Guarda estado antigo e snapshot para log
-            $statusAntigo  = $reserva->situacao;
-            $dadosAntigos  = $reserva->toArray();
+            // snapshot antes de alterar (para log)
+            $statusAntigo = $reserva->situacao;
+            $dadosAntigos = $reserva->toArray();
 
+            // Processa transações da reserva (mesmo dia -> cancelar no caixa; dias anteriores -> contas a pagar)
             $transacoes = Transacao::where('reserva_id', $reserva->id)->get();
             $transacaoController = app(TransacaoController::class);
+            $hoje = Carbon::today();
 
             foreach ($transacoes as $transacao) {
-                $dataTransacao = Carbon::parse($transacao->data_pagamento);
-                $hoje = Carbon::today();
+                $data = $transacao->data_pagamento ? Carbon::parse($transacao->data_pagamento) : null;
 
-                if ($dataTransacao->isSameDay($hoje)) {
+                if ($data && $data->isSameDay($hoje)) {
                     $transacaoController->cancelarMovimentacaoCaixa($transacao);
                 } else {
                     $transacaoController->criarContasAPagar($transacao);
@@ -464,20 +507,29 @@ class ReservaController extends Controller
                 $transacao->delete();
             }
 
+            // Atualiza reserva
             $reserva->situacao = 'cancelado';
             $reserva->save();
 
-            // Log 1: status alterado (mantém compatibilidade com seu padrão atual)
+            // Log 1: alteração de status (mantém seu padrão)
             LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
 
-            // Log 2: exclusão/cancelamento com supervisor (detalhado)
-            LogReserva::registrarExclusaoAutorizada(
-                reserva: $reserva,
-                usuarioExecutorId: Auth::id(),
-                dadosAntigos: $dadosAntigos,
-                supervisor: $supervisorAutorizador,
-                mensagem: "Exclusão da reserva #{$reserva->id}"
-            );
+            // Log 2: detalhado (executor + supervisor)
+            LogReserva::create([
+                'reserva_id'   => $reserva->id,
+                'usuario_id'   => Auth::id(),
+                'tipo'         => 'exclusao',
+                'descricao'    => "Exclusão da reserva #{$reserva->id}",
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'  => [
+                    'acao'            => "Exclusão da reserva #{$reserva->id}",
+                    'executante_id'   => Auth::id(),
+                    'executante_nome' => Auth::user()->name ?? Auth::user()->nome,
+                    'supervisor_id'   => $supervisor->id,
+                    'supervisor_nome' => $supervisor->nome ?? $supervisor->name,
+                    'data_hora'       => now()->toDateTimeString(),
+                ],
+            ]);
 
             DB::commit();
 
@@ -568,4 +620,99 @@ class ReservaController extends Controller
         }
     }
     public function show() {}
+
+
+    public function marcarNoShowComSupervisor(Request $request, $id)
+    {
+        $request->validate([
+            'senha_supervisor' => ['required', 'string', 'min:1'],
+        ]);
+
+        $reserva = Reserva::findOrFail($id);
+
+        // Só permite marcar no-show quando ainda é "reserva"
+        if ($reserva->situacao !== 'reserva') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Apenas reservas em situação "reserva" podem ser marcadas como No Show.'
+            ], 400);
+        }
+
+        // === Verificação simples como na outra tela ===
+        $senhaDigitada = (string) $request->input('senha_supervisor');
+
+        $funcionarios = Funcionario::whereNotNull('senha_supervisor')->get();
+        $supervisor = null;
+
+        foreach ($funcionarios as $f) {
+            $hashBanco = trim((string) $f->senha_supervisor);
+            if ($hashBanco === '') continue;
+
+            // Compare com o mesmo algoritmo da outra tela (ex.: MD5)
+            if (hash_equals($hashBanco, md5($senhaDigitada))) { // <-- troque md5 por sha1 se for o caso
+                $supervisor = $f;
+                break;
+            }
+
+            // (Opcional) se alguns já estiverem em bcrypt/argon, aceite também:
+            if (preg_match('/^\$(2[aby]|argon)/', $hashBanco)) {
+                $hashNorm = preg_replace('/^\$2b\$/', '$2y$', $hashBanco);
+                if (password_verify($senhaDigitada, $hashNorm)) {
+                    $supervisor = $f;
+                    break;
+                }
+            }
+        }
+
+        if (!$supervisor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Senha de supervisor inválida.'
+            ], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $statusAntigo = $reserva->situacao;
+            $dadosAntigos = $reserva->toArray();
+
+            // Atualiza status para noshow
+            $reserva->situacao = 'noshow';
+            $reserva->save();
+
+            // Log 1: mantém o padrão que você já usa
+            LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
+
+            // Log 2: detalhado (executor + supervisor)
+            LogReserva::create([
+                'reserva_id'    => $reserva->id,
+                'usuario_id'    => Auth::id(),
+                'tipo'          => 'status_alterado',
+                'descricao'     => "No Show da reserva #{$reserva->id}",
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'   => [
+                    'acao'            => "No Show da reserva #{$reserva->id}",
+                    'executante_id'   => Auth::id(),
+                    'executante_nome' => Auth::user()->name ?? Auth::user()->nome,
+                    'supervisor_id'   => $supervisor->id,
+                    'supervisor_nome' => $supervisor->nome ?? $supervisor->name,
+                    'data_hora'       => now()->toDateTimeString(),
+                ],
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reserva marcada como No Show com sucesso!'
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao marcar No Show: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -24,12 +24,12 @@
                                 <a class="nav-link active" id="dados-tab" data-toggle="tab" href="#dados" role="tab"
                                     aria-controls="dados" aria-selected="true">Dados da Reserva</a>
                             </li>
-<?php if (isset($reserva) && $reserva->situacao !== 'cancelado'): ?>
-    <li class="nav-item">
-        <a class="nav-link" id="produtos-tab" data-toggle="tab" href="#produtos" role="tab"
-            aria-controls="produtos" aria-selected="false">Produtos</a>
-    </li>
-<?php endif; ?>
+                            <?php if (isset($reserva) && !in_array($reserva->situacao, ['cancelado', 'noshow'])): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" id="produtos-tab" data-toggle="tab" href="#produtos" role="tab"
+                                    aria-controls="produtos" aria-selected="false">Produtos</a>
+                            </li>
+                            <?php endif; ?>
 
 
 
@@ -63,6 +63,7 @@
                                                             'hospedado',
                                                             'finalizada',
                                                             'cancelado',
+                                                            'noshow',
                                                         ])
                                                     ) {
                                                         $podeAlterarSituacao = false;
@@ -128,6 +129,14 @@
                                                         <input type='radio' name='situacao' value='cancelado' checked
                                                             disabled>
                                                         <span class='badge badge-secondary'>cancelado</span>
+                                                    </label>
+                                                @endif
+
+                                                @if ($situacaoAtual === 'noshow')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='cancelado' checked
+                                                            disabled>
+                                                        <span class='badge badge-noshow'>No Show</span>
                                                     </label>
                                                 @endif
                                             @endif
@@ -230,7 +239,7 @@
                                         <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                                     @endif
 
-                                    <div class="form-group row">
+                                    <div class="form-group row" style="display: none !important" id="esconder">
                                         <label class="col-md-3 label-control" for="valor_diaria">* Valor da
                                             diária:</label>
                                         <div class="col-md-4">
@@ -244,16 +253,16 @@
                                     <div class="form-group row">
                                         <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
                                         <div class="row col-md-6">
-                                            <div class="col-md-3">
-                                                <label for="n_adultos">* Nº adultos</label>
+                                            <div class="col-md-5">
+                                                <label for="n_adultos">* Nº adultos/adolescentes</label>
                                                 <input type="number" name="n_adultos" id="n_adultos"
                                                     class="form-control"
                                                     value="{{ old('n_adultos', $reserva->n_adultos ?? 1) }}"
                                                     min="1">
                                             </div>
 
-                                            <div class="col-md-3">
-                                                <label for="n_criancas">* Nº crianças</label>
+                                            <div class="col-md-5">
+                                                <label for="n_criancas">* Nº crianças (6 a 12 anos)</label>
                                                 <input type="number" name="n_criancas" id="n_criancas"
                                                     class="form-control"
                                                     value="{{ old('n_criancas', $reserva->n_criancas ?? 0) }}"
@@ -288,14 +297,13 @@
                                                     </thead>
                                                     <tbody id="logs-table-body">
                                                         @isset($logs)
-
-                                                        @php
-                                                            $logsDaReserva = collect($logs)->filter(function (
-                                                                $log,
-                                                            ) use ($reserva) {
-                                                                return $log->reserva_id == $reserva->id;
-                                                            });
-                                                        @endphp
+                                                            @php
+                                                                $logsDaReserva = collect($logs)->filter(function (
+                                                                    $log,
+                                                                ) use ($reserva) {
+                                                                    return $log->reserva_id == $reserva->id;
+                                                                });
+                                                            @endphp
                                                         @endisset
 
                                                         @if (isset($reserva) && $logsDaReserva->isNotEmpty())
@@ -330,6 +338,9 @@
                                     </div>
 
                                     <div class="card-footer">
+                                        <a href="{{ route('reserva.index') }}" class="btn btn-secondary">
+                                            <i class="fas fa-arrow-left"></i> Voltar
+                                        </a>
                                         @if (isset($reserva))
                                             <!-- Botão Gerar Voucher (apenas para reserva ou pre-reserva) -->
                                             @if (isset($reserva) && in_array($reserva->situacao, ['reserva', 'pre-reserva']))
@@ -338,17 +349,22 @@
                                                     <i class="fa fa-file-pdf-o"></i> Gerar Voucher
                                                 </a>
                                             @endif
+                                            <!-- Botão No Show -->
+                                            @if (isset($reserva) && $reserva->situacao === 'reserva')
+                                                <button type="button" class="btn btn-cancelar-noshow" id="btn-noshow"
+                                                    data-reserva-id="{{ $reserva->id }}"
+                                                    data-url="{{ route('reservas.noshow.supervisor', $reserva->id) }}">
+                                                    <i class="fas fa-user-slash"></i> No Show
+                                                </button>
+                                            @endif
                                             <!-- Botão Cancelar (substitui o Excluir) -->
                                             @if (in_array($reserva->situacao, ['pre-reserva']))
-                                                
-<button 
-  type="button" 
-  class="btn btn-danger btn-excluir-reserva-super"
-  data-url="{{ route('reservas.cancelar.supervisor', $reserva->id) }}">
-  <i class="fas fa-trash-alt"></i> Cancelar Reserva
-</button>
-
-@endif
+                                                <button type="button" class="btn btn-danger btn-excluir-reserva-super"
+                                                    data-url="{{ route('reservas.cancelar.supervisor', $reserva->id) }}"
+                                                    data-row="#reserva-{{ $reserva->id }}">
+                                                    Cancelar Reserva
+                                                </button>
+                                            @endif
 
                                             <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
                                             @if (isset($reserva) && $reserva->situacao === 'reserva' && $reserva->data_checkin === date('Y-m-d'))
@@ -529,7 +545,7 @@
                 </div>
 
                 <!-- Card de Atividades na Reserva -->
-                @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado']))
+                @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow']))
                     <div class='card shadow-sm'>
                         <div class='card-header bg-light d-flex justify-content-between align-items-center'>
                             <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA
@@ -905,6 +921,11 @@
             color: #fff;
         }
 
+        .badge-noshow {
+            background-color: #F48FB1;
+            color: #fff;
+        }
+
         .badge-lg {
             font-size: 1rem;
             padding: 0.5rem 1rem;
@@ -924,8 +945,17 @@
             color: #fff
         }
 
+        .btn-cancelar-noshow {
+            background-color: #6A1B9A;
+            color: #fff
+        }
+
         #btn-cancelar-reserva:hover {
             background-color: #4c0a7a;
+        }
+
+        #esconder {
+            display: none !important;
         }
     </style>
     <style>
@@ -1098,7 +1128,7 @@
 
                     $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
                     $('#valor_diaria').val(0);
-                } else if (situacao === 'finalizada' || situacao === 'cancelado') {
+                } else if (situacao === 'finalizada' || situacao === 'cancelado' || situacao === 'noshow') {
                     // Desabilitar campos para reservas finalizadas ou canceladas
                     $('#periodo, #hospede_id, #valor_diaria, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton')
                         .attr('disabled', true);
@@ -1457,7 +1487,7 @@
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">produtos</span>
                                     Item da reserva • ${dataFormatada}
-                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
                                         <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -1476,7 +1506,7 @@
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                     ${formaPagamento} • ${dataFormatada}
-                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
                                         <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
                                             <i class="fas fa-trash"></i>
                                         </button>
@@ -1543,7 +1573,7 @@
                                         </p>
                                     </div>
                                     <div class="mt-3 text-right">
-                                        @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado']))
+                                        @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-remover-item" 
                                                     data-id="${item.id}">
                                                 <i class="fas fa-trash"></i>
@@ -2165,52 +2195,162 @@
             $(this).tab('show');
         });
 
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('.btn-excluir-reserva-super');
-  if (!btn) return;
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-excluir-reserva-super');
+            if (!btn) return;
 
-  const alvoURL = btn.dataset.url;
-  const token   = document.querySelector('meta[name="csrf-token"]')?.content;
+            const alvoURL = btn.dataset.url; // ex.: /reservas/123/cancelar-supervisor
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            const rowSel = btn.dataset.row || null; // opcional: seletor da linha/card pra remover sem reload
 
-  const result = await Swal.fire({
-    title: 'Autorização do Supervisor',
-    input: 'password',
-    inputLabel: 'Senha do supervisor',
-    inputAttributes: { autocapitalize:'off', autocomplete:'new-password' },
-    showCancelButton: true,
-    confirmButtonText: 'Autorizar',
-    cancelButtonText: 'Cancelar',
-    reverseButtons: true,
-    showLoaderOnConfirm: true,
-    preConfirm: async (senha) => {
-      try {
-        const resp = await fetch(alvoURL, {
-          method: 'POST',
-          headers: {
-            'X-CSRF-TOKEN': token,
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: new URLSearchParams({ senha_supervisor: senha })
+            if (!alvoURL) {
+                console.error('data-url ausente no botão .btn-excluir-reserva-super');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Autorização do Supervisor',
+                input: 'password',
+                inputLabel: 'Senha do supervisor',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocomplete: 'new-password'
+                },
+                inputValidator: (value) => {
+                    if (!value) return 'Informe a senha do supervisor.';
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Autorizar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: async (senha) => {
+                    try {
+                        const resp = await fetch(alvoURL, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                senha_supervisor: senha
+                            })
+                        });
+
+                        // tenta parsear sempre p/ capturar msg do backend
+                        let data = {};
+                        try {
+                            data = await resp.json();
+                        } catch (_) {}
+
+                        if (!resp.ok || data.success === false) {
+                            const msg = data?.message || (resp.status === 403 ? 'Senha inválida.' :
+                                resp.status === 419 ? 'Sessão expirada. Atualize a página.' :
+                                'Falha na autorização.');
+                            throw new Error(msg);
+                        }
+                        return data; // passa pro then em result.value
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                    }
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            });
+
+            if (result.isConfirmed) {
+                const okMsg = result.value?.message || 'Operação realizada com sucesso.';
+                // sucesso — ou remove a linha/card, ou recarrega
+                if (rowSel) {
+                    const row = document.querySelector(rowSel);
+                    if (row) row.remove();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Cancelada!',
+                        text: okMsg,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                            icon: 'success',
+                            title: 'Cancelada!',
+                            text: okMsg
+                        })
+                        .then(() => location.reload());
+                }
+            }
         });
-        const data = await resp.json();
-        if (!resp.ok || !data.success) throw new Error(data?.message || 'Falha na autorização.');
-        return data; // passa para result.value
-      } catch (err) {
-        Swal.showValidationMessage(err.message);
-      }
-    },
-    allowOutsideClick: () => !Swal.isLoading()
-  });
 
-  if (result.isConfirmed) {
-    // sucesso: recarrega, ou remova a linha via JS
-    Swal.fire({ icon:'success', title:'Autorizado', timer:1000, showConfirmButton:false })
-      .then(() => location.reload());
-  }
-});
 
-</script>
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-cancelar-noshow');
+            if (!btn) return;
+
+            const alvoURL = btn.dataset.url || `/reservas/${btn.dataset.reservaId}/noshow-supervisor`;
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+
+            const result = await Swal.fire({
+                title: 'Autorização do Supervisor',
+                text: 'Digite a senha do supervisor para marcar No Show.',
+                input: 'password',
+                inputLabel: 'Senha do supervisor',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocomplete: 'new-password'
+                },
+                inputValidator: (v) => {
+                    if (!v) return 'Informe a senha.';
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Autorizar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true,
+                showLoaderOnConfirm: true,
+                preConfirm: async (senha) => {
+                    try {
+                        const resp = await fetch(alvoURL, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': token,
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                senha_supervisor: senha
+                            })
+                        });
+
+                        let data = {};
+                        try {
+                            data = await resp.json();
+                        } catch (_) {}
+
+                        if (!resp.ok || data.success === false) {
+                            const msg = data?.message || (resp.status === 403 ? 'Senha inválida.' :
+                                resp.status === 419 ? 'Sessão expirada, atualize a página.' :
+                                'Falha na autorização.');
+                            throw new Error(msg);
+                        }
+                        return data;
+                    } catch (err) {
+                        Swal.showValidationMessage(err.message);
+                    }
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            });
+
+            if (result.isConfirmed) {
+                const okMsg = result.value?.message || 'Operação realizada com sucesso.';
+                Swal.fire({
+                        icon: 'success',
+                        title: 'No Show!',
+                        text: okMsg
+                    })
+                    .then(() => location.reload());
+            }
+        });
+    </script>
 
     @if (session('success'))
         <script>

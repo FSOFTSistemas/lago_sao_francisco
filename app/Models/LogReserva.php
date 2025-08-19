@@ -93,7 +93,7 @@ class LogReserva extends Model
             'reserva_id' => $reserva_id,
             'usuario_id' => $usuario_id,
             'tipo' => 'produto_adicionado',
-            'descricao' => "Produto adicionado: {$produto['nome']} (x{$produto['quantidade']})",
+            'descricao' => "Produto adicionado: {$produto->produto['descricao']} (x{$produto['quantidade']})",
             'dados_novos' => $produto,
         ]);
     }
@@ -107,7 +107,7 @@ class LogReserva extends Model
             'reserva_id' => $reserva_id,
             'usuario_id' => $usuario_id,
             'tipo' => 'produto_removido',
-            'descricao' => "Produto removido: {$produto['nome']} (x{$produto['quantidade']})",
+            'descricao' => "Produto removido: {$produto->produto['descricao']} (x{$produto['quantidade']})",
             'dados_antigos' => $produto,
         ]);
     }
@@ -121,7 +121,7 @@ class LogReserva extends Model
             'reserva_id' => $reserva_id,
             'usuario_id' => $usuario_id,
             'tipo' => 'pagamento_adicionado',
-            'descricao' => "Pagamento adicionado: {$pagamento['descricao']} - R$ {$pagamento['valor']}",
+            'descricao' => "Pagamento adicionado: {$pagamento['descricao']} - {$pagamento->formaPagamento['descricao']} - R$ {$pagamento['valor']}",
             'dados_novos' => $pagamento,
         ]);
     }
@@ -135,7 +135,7 @@ class LogReserva extends Model
             'reserva_id' => $reserva_id,
             'usuario_id' => $usuario_id,
             'tipo' => 'pagamento_removido',
-            'descricao' => "Pagamento removido: {$pagamento['descricao']} - R$ {$pagamento['valor']}",
+            'descricao' => "Pagamento removido: {$pagamento['descricao']} - {$pagamento->formaPagamento['descricao']} - R$ {$pagamento['valor']}",
             'dados_antigos' => $pagamento,
         ]);
     }
