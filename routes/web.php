@@ -53,6 +53,7 @@ use App\Http\Controllers\LogReservaController;
 use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
+use App\Http\Controllers\RelatorioProdutosController;
 use App\Http\Controllers\ReservaItemController;
 use App\Http\Controllers\SouvenirController;
 use App\Http\Controllers\TransacaoController;
@@ -82,7 +83,7 @@ Route::resource('bancos', BancoController::class)->middleware('permission:gerenc
 
 Route::resource('fornecedor', FornecedorController::class)->middleware('permission:gerenciar fornecedor');
 
-Route::resource('contasAPagar', ContasAPagarController::class)->middleware(['permission:gerenciar contas a pagar', 'caixa.aberto' ]);
+Route::resource('contasAPagar', ContasAPagarController::class)->middleware(['permission:gerenciar contas a pagar', 'caixa.aberto']);
 
 Route::get('endereco/{cep}', [EnderecoController::class, 'buscarEnderecoPorCep'])->name('buscarCep');
 
@@ -178,8 +179,8 @@ Route::resource('adicionais', AdicionalController::class);
 Route::resource('vendedor', VendedorController::class)->middleware('permission:gerenciar adiantamento');
 
 Route::get('dayuse/create', [DayUseController::class, 'create'])
-->middleware('caixa.aberto')
-->name('dayuse.create');
+    ->middleware('caixa.aberto')
+    ->name('dayuse.create');
 
 Route::resource('dayuse', DayUseController::class)->except(['create']);
 
@@ -274,8 +275,12 @@ Route::get('/api/reserva/{reserva}/logs', [LogReservaController::class, 'getLogs
 
 Route::post('/reservas/{id}/cancelar-supervisor', [ReservaController::class, 'cancelarComSupervisor'])
     ->name('reservas.cancelar.supervisor')
-    ->middleware(['auth','throttle:5,1']);
+    ->middleware(['auth', 'throttle:5,1']);
 
 Route::post('/reservas/{id}/noshow-supervisor', [ReservaController::class, 'marcarNoShowComSupervisor'])
     ->name('reservas.noshow.supervisor')
-    ->middleware(['auth','throttle:5,1']);
+    ->middleware(['auth', 'throttle:5,1']);
+
+Route::get('/relatorios/produtos', [RelatorioProdutosController::class, 'index'])->name('relatorio.produtos');
+Route::get('/relatorios/produtos/filtrar', [RelatorioProdutosController::class, 'filtrar'])->name('relatorio.produtos.filtrar');
+Route::get('/relatorios/produtos/pdf', [RelatorioProdutosController::class, 'gerarPdf'])->name('relatorio.produtos.pdf');

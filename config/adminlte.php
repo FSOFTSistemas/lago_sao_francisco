@@ -370,6 +370,11 @@ return [
                     'icon' => 'fas fa-credit-card',
                     'url'  => '/transacao',
                 ],
+                [
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-alt',
+                    'url'  => '/relatorios/produtos',
+                ],
             ],
         ],
         [
