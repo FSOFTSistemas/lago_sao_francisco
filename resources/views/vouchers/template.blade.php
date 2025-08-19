@@ -199,7 +199,7 @@
             <div class="section-title">DADOS DA RESERVA</div>
             <table class="info-table">
                 <tr>
-                    <td><span class="info-label">Quarto:</span> {{ $reserva->quarto->nome ?? 'Não informado' }}</td>
+                    <td><span class="info-label">Quarto:</span></td>
                     <td><span class="info-label">Categoria:</span>
                         {{ $reserva->quarto->categoria->titulo ?? 'Não informado' }}</td>
                 </tr>

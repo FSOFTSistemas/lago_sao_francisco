@@ -6,6 +6,7 @@ use App\Models\Transacao;
 use App\Models\Reserva;
 use App\Models\Caixa;
 use App\Models\ContasAPagar;
+use App\Models\LogReserva;
 use App\Models\Movimento;
 use App\Services\CaixaService;
 use Illuminate\Http\Request;
@@ -61,6 +62,7 @@ class TransacaoController extends Controller
                 'observacoes' => $request->observacoes,
                 'reserva_id' => $request->reserva_id,
             ]);
+            LogReserva::registrarPagamentoAdicionado($request->reserva_id, Auth::id(), $transacao);
 
             // Integrar com FluxoCaixa via CaixaService
             $this->criarMovimentacaoCaixa($transacao);
@@ -114,10 +116,11 @@ class TransacaoController extends Controller
         }
     }
 
-    public function destroy(Transacao $transacao)
+    public function destroy($id)
     {
         try {
             DB::beginTransaction();
+            $transacao = Transacao::findOrFail($id);
 
             // Verificar se a transação é do mesmo dia ou de dias anteriores
             $dataTransacao = Carbon::parse($transacao->data_pagamento);
@@ -130,6 +133,7 @@ class TransacaoController extends Controller
                 // Transação de dias anteriores: criar ContasAPagar
                 $this->criarContasAPagar($transacao);
             }
+            LogReserva::registrarPagamentoRemovido($transacao->reserva->id, Auth::id(), $transacao);
 
             // Remover a transação
             $transacao->delete();

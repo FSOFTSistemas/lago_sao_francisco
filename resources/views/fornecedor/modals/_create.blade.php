@@ -33,6 +33,10 @@
             <label for="inscricaoEstadual">Inscrição Estadual:</label>
             <input type="number" class="form-control" id="inscricaoEstadual" name="inscricao_estadual">
           </div>
+                    <div class="mb-3">
+            <label for="formaPagamento">Forma de Pagamento:</label>
+            <input type="text" class="form-control" id="formaPagamento" name="forma_pagamento">
+          </div>
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>

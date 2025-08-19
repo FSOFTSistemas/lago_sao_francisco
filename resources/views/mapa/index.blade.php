@@ -64,6 +64,7 @@
                         {{-- <span class="badge badge-secondary mr-2">em limpeza</span> --}}
                         <span class="badge badge-info mr-2">finalizado</span>
                         <span class="badge badge-dark mr-2">bloqueado</span>
+                        <span class="badge badge-noshow mr-2">no show</span>
                     </div>
                 </div>
             </div>
@@ -402,6 +403,15 @@
 
         .situacao-cancelado {
             background-color: #6A1B9A;
+        }
+
+        .situacao-noshow {
+            background-color: #F48FB1;
+        }
+
+        .badge-noshow {
+            background-color: *;
+            color: #fff;
         }
 
         .mapa-container {

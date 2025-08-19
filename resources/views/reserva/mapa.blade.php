@@ -50,6 +50,7 @@
                             'reserva' => 'bg-primary',
                             'hospedado' => 'bg-danger',
                             'bloqueado' => 'bg-dark',
+                            'noshow' => '#F48FB1'
                             default => 'bg-success',
                         };
 
@@ -94,6 +95,9 @@
   </div>
   <div class="d-flex align-items-center me-3">
       <span class="status-indicator" style="background-color: #343A40;"></span> Data bloqueada
+  </div>
+  <div class="d-flex align-items-center me-3">
+      <span class="status-indicator" style="background-color: #F48FB1;"></span> No Show
   </div>
 </div>
 @stop

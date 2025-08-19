@@ -23,6 +23,9 @@
     <div class="d-flex align-items-center me-3">
         <span class="status-indicator" style="background-color: #343A40;"></span> Data bloqueada
     </div>
+    <div class="d-flex align-items-center me-3">
+        <span class="status-indicator" style="background-color: #F48FB1;"></span> No Show
+    </div>
 </div>
     <div class="row">
         @foreach ($quartos as $quarto)
@@ -35,7 +38,8 @@
                     'reserva' => 'primary',
                     'hospedado' => 'danger',
                     'bloqueado' => 'dark',
-                    'disponivel' => 'success'
+                    'disponivel' => 'success',
+                    'noshow' => '#F48FB1'
                 ];
 
                 $badge = $cores[$situacao] ?? 'secondary';

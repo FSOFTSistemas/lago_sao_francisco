@@ -11,6 +11,7 @@
                 <p><strong>Nome Fantasia:</strong> <span id="nomeFantasia"></span>{{$fornecedor->nome_fantasia}}</p>
                 <p><strong>CNPJ:</strong> <span id="cnpj"></span>{{$fornecedor->cnpj}}</p>
                 <p><strong>Inscrição Estadual:</strong> <span id="inscricaoEstadual"></span>{{$fornecedor->inscricao_estadual}}</p>
+                <p><strong>Forma de Pagamento:</strong> <span id="formaPagamento"></span>{{$fornecedor->forma_pagamento}}</p>
             </div>
         </div>
     </div>

@@ -25,6 +25,7 @@
                     'bloqueado' => ['label' => 'Data bloqueada', 'color' => '#343A40'],
                     'finalizada' => ['label' => 'Finalizado', 'color' => '#26A69A'],
                     'cancelado' => ['label' => 'Cancelado', 'color' => '#6A1B9A'],
+                    'noshow' => ['label' => 'No Show', 'color' => '#F48FB1']
                 ];
             @endphp
 
@@ -119,6 +120,8 @@
                     return '#26A69A';
                 case 'cancelado':
                     return '#6A1B9A';
+                case 'noshow':
+                    return '#F48FB1';
                 default:
                     return '#808080';
             }
