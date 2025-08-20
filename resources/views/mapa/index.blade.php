@@ -410,7 +410,7 @@
         }
 
         .badge-noshow {
-            background-color: *;
+            background-color: #F48FB1;
             color: #fff;
         }
 

@@ -376,7 +376,7 @@
 
                                             <!-- Botão Finalizar (aparece quando está hospedado) -->
                                             @if (isset($reserva) && $reserva->situacao === 'hospedado')
-                                                <button type="button" class="btn btn-success" id="btn-finalizar-reserva"
+                                                <button type="button" class="btn btn-success" id="btn-finalizar"
                                                     data-reserva-id="{{ $reserva->id }}">
                                                     <i class="fas fa-check-circle"></i> Finalizar
                                                 </button>
@@ -513,6 +513,13 @@
                 <div class='card shadow-sm mb-4'>
                     <div class='card-header bg-light'>
                         <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>RESUMO</h5>
+                    </div>
+                    <div class='card shadow-sm mb-4'>
+                        <div class='card-header bg-light'>
+                            <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>FALTA LANÇAR</h5>
+                            <h2 class='text-danger mb-0' id='falta-lancar'>R$ 0,00</h2>
+                            <input type='hidden' id='valor-falta-lancar' name='falta_lancar' value='0.00'>
+                        </div>
                     </div>
                     <div class='card-body'>
                         <div class='d-flex justify-content-between mb-2'>
@@ -1906,6 +1913,8 @@
                 const restante = parseFloat($('#valor-falta-lancar').val());
                 const recebido = parseFloat($('#valor-recebido').val());
                 const reservaId = $('#btn-finalizar').data('reserva-id');
+                console.log("valor recebido", recebido)
+                console.log("valor restante", restante)
 
                 if (recebido < restante) {
                     Swal.fire({
