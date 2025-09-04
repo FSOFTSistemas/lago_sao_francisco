@@ -12,25 +12,25 @@
         <form id="createFornecedorForm" action="{{route('fornecedor.store')}}" method="POST">
           @csrf
           <div class="mb-3">
-            <label for="nomeRazaoSocial">Razão Social:</label>
+            <label for="nomeRazaoSocial">Razão Social/Nome:</label>
             <input type="text" class="form-control" id="nomeRazaoSocial" name="razao_social" required>
           </div>
           <div class="mb-3">
-            <label for="apelidoNomeFantasia">Nome Fantasia:</label>
+            <label for="apelidoNomeFantasia">Nome Fantasia/Apelido:</label>
             <input type="text" class="form-control" id="apelidoNomeFantasia" name="nome_fantasia">
           </div>
           <div class="mb-3">
-            <label for="cnpj">CNPJ:</label>
+            <label for="cnpj">CNPJ/CPF:</label>
             <div class="input-group">
-              <input type="text" class="form-control cnpjteste" id="cnpj" name="cnpj">
+              <input type="text" class="form-control cnpjteste cnpj-cpf-field" id="cnpj" name="cnpj">
               <div class="input-group-append">
-                <button class="btn btn-outline-primary" type="button" id="btnBuscarCnpj">
+                <button class="btn btn-outline-primary btn-buscar-doc" type="button" id="btnBuscarCnpj">
                             <i class="bi bi-search"></i> Buscar CNPJ
               </div>
             </div>
           </div>
           <div class="mb-3">
-            <label for="inscricaoEstadual">Inscrição Estadual:</label>
+            <label for="inscricaoEstadual">Inscrição Estadual/RG:</label>
             <input type="number" class="form-control" id="inscricaoEstadual" name="inscricao_estadual">
           </div>
                     <div class="mb-3">

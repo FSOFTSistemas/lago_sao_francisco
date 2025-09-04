@@ -49,6 +49,9 @@
                 <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary">
                     <i class="fas fa-sync-alt"></i> Limpar
                 </a>
+                <button type="button" class="btn btn-pdf" id="btn-gerar-relatorio">
+                    <i class="fas fa-file-pdf"></i> Gerar Relatório
+                </button>
             </div>
         </div>
     </form>
@@ -191,13 +194,15 @@
         .test {
             color: rebeccapurple !important
         }
+        .btn-pdf {
+            background-color: red;
+            color: #fff;
+            margin-left: 5px;
+        }
     </style>
 @stop
 
 @section('js')
-    <script>
-        console.log('amigo estou aqui')
-    </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
@@ -224,6 +229,14 @@
                     },
                     cache: true
                 }
+            });
+            $('#btn-gerar-relatorio').on('click', function() {
+                var form = $('#filtro-form');
+                var url = "{{ route('contasAPagar.gerarRelatorioPDF') }}";
+                var params = form.serialize(); // Pega todos os dados do formulário
+
+                // Abre o PDF em uma nova aba com os parâmetros do filtro
+                window.open(url + '?' + params, '_blank');
             });
         });
     </script>
