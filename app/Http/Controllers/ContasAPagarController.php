@@ -14,59 +14,49 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Services\CaixaService;
 use App\Services\ContaCorrenteService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Throwable;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContasAPagarController extends Controller
 {
 
-    public function index(Request $request)
+    /**
+     * Método privado para centralizar a lógica de busca e filtragem de contas a pagar.
+     *
+     * @param Request $request
+     * @return array
+     */
+    private function getContasFiltradas(Request $request)
     {
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
 
         // Preparar a query base
         if ($empresaSelecionada == null) {
-            $planoDeContas = PlanoDeConta::all();
-            $fornecedores = Fornecedor::all();
-            $contas_corrente = ContaCorrente::all();
-            $caixas = Caixa::all();
             $query = ContasAPagar::query();
         } else {
             $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-
-            $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
-            $fornecedores = Fornecedor::all();
-            $contas_corrente = ContaCorrente::all();
-            $caixas = Caixa::where('empresa_id', $empresa_id)->get();
             $query = ContasAPagar::where('empresa_id', $empresa_id);
         }
 
-        // Adiciona o eager loading de parcelas para otimização
-        $query->with('parcelas');
-
+        // Adiciona o eager loading para otimização
+        $query->with('parcelas', 'fornecedor', 'empresa');
 
         // 1. Define o intervalo de datas a ser usado
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            // Se o usuário especificou um intervalo, use-o.
-            // Usamos startOfDay e endOfDay para garantir que o dia inteiro seja incluído.
             $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
             $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
         } else {
-            // Se não, use o mês atual como padrão.
             $inicio = \Carbon\Carbon::now()->startOfMonth();
             $fim = \Carbon\Carbon::now()->endOfMonth();
         }
 
-        // 2. Aplica o filtro de data (seja do request ou do mês atual) na consulta
+        // 2. Aplica o filtro de data na consulta
         $query->where(function ($q) use ($inicio, $fim) {
-            // Condição 1: Contas sem parcelas, com vencimento no intervalo definido
-            $q->whereBetween('data_vencimento', [$inicio, $fim]);
-
-            // Condição 2: OU contas que tenham parcelas com vencimento no intervalo definido
-            $q->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
+            $q->whereBetween('data_vencimento', [$inicio, $fim])
+              ->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
                 $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
             });
         });
@@ -80,165 +70,94 @@ class ContasAPagarController extends Controller
             $status = $request->input('status');
             $query->where(function ($q) use ($status) {
                 $q->where('status', $status)
-                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
-                        $parcelaQuery->where('status', $status);
-                    });
+                  ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
+                    $parcelaQuery->where('status', $status);
+                });
             });
         }
 
-        // Executa a consulta ao banco de dados SEM ORDENAÇÃO
         $contasAPagar = $query->get();
-
         $contasComParcelas = [];
 
         // Processa os resultados para criar uma lista plana de itens a serem exibidos
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
+                if ($request->filled('status') && $conta->status !== $request->input('status')) continue;
+
                 $conta->conta_id = $conta->id;
-                $conta->id = count($contasComParcelas) + 1;
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
+                $conta->total_parcelas = 1;
+                $conta->numero_parcela = 1;
                 $contasComParcelas[] = $conta;
-                $conta->valor_total = $conta->valor;
             } else {
                 $temParcelaPaga = $conta->parcelas->contains(fn($p) => $p->status === 'pago');
                 $totalParcelas = $conta->parcelas->count();
                 $valorTotal = $conta->parcelas->sum('valor');
 
                 foreach ($conta->parcelas as $parcela) {
-                    // Adicionamos à lista apenas as parcelas que vencem no mês atual
-                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
-                        continue;
-                    }
-                    if ($request->filled('status') && $parcela->status !== $request->input('status')) {
-                        continue;
-                    }
+                    $dataVencimentoParcela = Carbon::parse($parcela->data_vencimento);
+                    if (!$dataVencimentoParcela->between($inicio, $fim)) continue;
+                    if ($request->filled('status') && $parcela->status !== $request->input('status')) continue;
 
                     $contaClone = clone $conta;
-                    $contaClone->id = count($contasComParcelas) + 1;
                     $contaClone->conta_id = $conta->id;
-                    $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$totalParcelas}";
+                    $contaClone->parcela_id = $parcela->id;
+                    $contaClone->descricao = $conta->descricao;
                     $contaClone->valor = $parcela->valor;
-                    $contaClone->valor_total = $valorTotal;
                     $contaClone->data_vencimento = $parcela->data_vencimento;
                     $contaClone->status = $parcela->status;
                     $contaClone->data_pagamento = $parcela->data_pagamento;
                     $contaClone->numero_parcela = $parcela->numero_parcela;
                     $contaClone->total_parcelas = $totalParcelas;
-                    $contaClone->parcela_id = $parcela->id;
-                    $contaClone->conta_descricao = $conta->descricao;
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
-
                     $contasComParcelas[] = $contaClone;
                 }
             }
         }
 
-
-
-
-
         $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
             return Carbon::parse($item->data_vencimento);
         })->values()->all();
 
-        // Retorna a view com os dados processados e prontos para exibição
+        return [$contasComParcelas, $inicio, $fim];
+    }
+
+    /**
+     * Exibe a lista de contas a pagar com base nos filtros.
+     */
+    public function index(Request $request)
+    {
+        list($contasComParcelas) = $this->getContasFiltradas($request);
+        
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        
+        if ($empresaSelecionada == null) {
+            $planoDeContas = PlanoDeConta::all();
+            $fornecedores = Fornecedor::all();
+            $contas_corrente = ContaCorrente::all();
+            $caixas = Caixa::all();
+        } else {
+            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+            $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
+            $fornecedores = Fornecedor::all();
+            $contas_corrente = ContaCorrente::all();
+            $caixas = Caixa::where('empresa_id', $empresa_id)->get();
+        }
+
         return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
 
+    /**
+     * Gera e exibe um relatório em PDF com base nos filtros.
+     */
     public function gerarRelatorioPDF(Request $request)
     {
-        $usuario = Auth::user();
-        $empresaSelecionada = session('empresa_id');
-
-        // Preparar a query base
-        if ($empresaSelecionada == null) {
-            $query = ContasAPagar::query();
-        } else {
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
-            $query = ContasAPagar::where('empresa_id', $empresa_id);
-        }
-
-        $query->with('parcelas');
-
-        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
-            $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
-        } else {
-            $inicio = \Carbon\Carbon::now()->startOfMonth();
-            $fim = \Carbon\Carbon::now()->endOfMonth();
-        }
-
-        $query->where(function ($q) use ($inicio, $fim) {
-            $q->whereBetween('data_vencimento', [$inicio, $fim]);
-            $q->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
-                $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
-            });
-        });
-
-        if ($request->filled('fornecedor_id')) {
-            $query->where('fornecedor_id', $request->input('fornecedor_id'));
-        }
-
-        if ($request->filled('status')) {
-            $status = $request->input('status');
-            $query->where(function ($q) use ($status) {
-                $q->where('status', $status)
-                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
-                        $parcelaQuery->where('status', $status);
-                    });
-            });
-        }
-
-        $contasAPagar = $query->get();
-        $contasComParcelas = [];
-
-        foreach ($contasAPagar as $conta) {
-            if ($conta->parcelas->isEmpty()) {
-                $conta->conta_id = $conta->id;
-                $conta->id = count($contasComParcelas) + 1;
-                $conta->pode_excluir = $conta->status !== 'pago';
-                $conta->conta_descricao = $conta->descricao;
-                $conta->parcela_id = null;
-                $contasComParcelas[] = $conta;
-                $conta->valor_total = $conta->valor;
-            } else {
-                foreach ($conta->parcelas as $parcela) {
-                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
-                        continue;
-                    }
-                    if ($request->filled('status') && $parcela->status !== $request->input('status')) {
-                        continue;
-                    }
-
-                    $contaClone = clone $conta;
-                    $contaClone->id = count($contasComParcelas) + 1;
-                    $contaClone->conta_id = $conta->id;
-                    $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$conta->parcelas->count()}";
-                    $contaClone->valor = $parcela->valor;
-                    $contaClone->valor_total = $conta->parcelas->sum('valor');
-                    $contaClone->data_vencimento = $parcela->data_vencimento;
-                    $contaClone->status = $parcela->status;
-                    $contaClone->data_pagamento = $parcela->data_pagamento;
-                    $contaClone->numero_parcela = $parcela->numero_parcela;
-                    $contaClone->total_parcelas = $conta->parcelas->count();
-                    $contaClone->parcela_id = $parcela->id;
-                    $contaClone->conta_descricao = $conta->descricao;
-                    $contaClone->pode_excluir = !$conta->parcelas->contains(fn ($p) => $p->status === 'pago');
-                    $contaClone->valor_pago = $parcela->valor_pago;
-                    $contaClone->forma_pagamento = $parcela->forma_pagamento;
-
-                    $contasComParcelas[] = $contaClone;
-                }
-            }
-        }
-
-        $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
-            return Carbon::parse($item->data_vencimento);
-        })->values()->all();
+        list($contasComParcelas, $inicio, $fim) = $this->getContasFiltradas($request);
 
         $dadosFiltro = [
             'periodo' => 'De ' . $inicio->format('d/m/Y') . ' a ' . $fim->format('d/m/Y'),
@@ -252,8 +171,6 @@ class ContasAPagarController extends Controller
 
         return $pdf->stream('relatorio_contas_a_pagar.pdf');
     }
-
-
 
     public function store(Request $request)
     {
@@ -407,7 +324,6 @@ class ContasAPagarController extends Controller
 
         try {
             // 2. Usar Transação para garantir a integridade dos dados
-            // Se algo falhar (ex: saldo insuficiente), todas as operações são revertidas.
             $response = DB::transaction(function () use ($request, $conta_id, $parcela_id) {
 
                 $valorPago = $request->valor_pago;
@@ -416,27 +332,21 @@ class ContasAPagarController extends Controller
                 $description = '';
                 // 3. Define qual entidade está sendo paga (Parcela ou Conta)
                 if ($parcela_id) {
-
-                    // Pagamento de Parcela
                     $parcela = ParcelaContasAPagar::findOrFail($parcela_id);
                     $conta = $parcela->conta;
                     $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
                 } else {
-                    // Pagamento de Conta sem parcelamento
                     $conta = ContasAPagar::findOrFail($conta_id);
                     $description = 'Pagamento #' . $conta->descricao;
                 }
 
-                // 4. Executa a lógica de pagamento baseada na fonte (sem duplicação)
                 if ($request->fonte_pagadora === 'caixa') {
                     $this->handleCaixaPayment($request, $conta, $description, $valorPago);
                 } elseif ($request->fonte_pagadora === 'conta_corrente') {
                     $this->handleContaCorrentePayment($request, $conta, $description, $valorPago);
                 }
 
-                // 5. Atualiza os modelos após o pagamento ser validado e registrado
                 if ($parcela) {
-                    // Atualiza a parcela
                     $valor_pago_total = $parcela->valor_pago + $valorPago;
                     $dadosUpdate = [
                         'valor_pago' => $valor_pago_total,
@@ -450,21 +360,17 @@ class ContasAPagarController extends Controller
                         $dadosUpdate['forma_pagamento'] = trim($forma . "\n" . $fonte);
                     }
 
-
-
                     if ($valor_pago_total >= $parcela->valor) {
                         $dadosUpdate['status'] = 'pago';
                     }
                     $parcela->update($dadosUpdate);
 
-                    // Atualiza a conta principal com base em suas parcelas
                     $conta->update([
                         'valor_pago' => $conta->parcelas()->sum('valor_pago'),
                         'status' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? 'pago' : $conta->status,
                         'data_pagamento' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? now()->toDateString() : null,
                     ]);
                 } else {
-                    // Atualiza a conta paga diretamente
                     $conta->update([
                         'status' => 'pago',
                         'valor_pago' => $valorPago,
@@ -480,13 +386,10 @@ class ContasAPagarController extends Controller
 
             return $response;
         } catch (InvalidArgumentException $e) {
-            // Captura erros de negócio (ex: Saldo insuficiente)
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('error', $e->getMessage());
         } catch (Throwable $e) {
-            // Captura qualquer outro erro inesperado
-
             Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
             return redirect()
                 ->route('contasAPagar.index')
@@ -510,7 +413,6 @@ class ContasAPagarController extends Controller
             ->first();
 
         if (!$caixa) {
-            // Lança uma exceção que será capturada pelo bloco principal
             throw new InvalidArgumentException('Nenhum caixa aberto encontrado para registrar a movimentação.');
         }
 
@@ -533,7 +435,6 @@ class ContasAPagarController extends Controller
         $empresaSelecionada = session('empresa_id');
         $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
 
-        // O ID da conta corrente já foi validado no início do método `pagar`
         $contaCorrenteId = $request->conta_corrente_id;
 
         app(ContaCorrenteService::class)->registrarLancamento(
@@ -542,9 +443,10 @@ class ContasAPagarController extends Controller
                 'valor'     => $valorPago,
                 'tipo'      => 'saida',
                 'descricao' => $description,
-                'data'      => $request->data_pagamento // Usa a data de pagamento informada
+                'data'      => $request->data_pagamento
             ],
             $empresa_id
         );
     }
 }
+

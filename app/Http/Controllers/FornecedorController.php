@@ -92,5 +92,32 @@ class FornecedorController extends Controller
 
     return response()->json($fornecedores);
 }
+    public function busca(Request $request)
+    {
+        $termo = $request->query('q');
+
+        if (empty($termo)) {
+            return response()->json([]);
+        }
+
+        $fornecedores = Fornecedor::where('razao_social', 'LIKE', "%{$termo}%")
+            ->orWhere('nome_fantasia', 'LIKE', "%{$termo}%")
+            ->limit(10)
+            ->get(['id', 'razao_social']);
+
+        return response()->json($fornecedores);
+    }
+
+    /**
+     * Retorna um fornecedor específico em formato JSON.
+     * Usado para manter o valor do filtro após o recarregamento da página.
+     */
+    public function showJson(Fornecedor $fornecedor)
+    {
+        return response()->json([
+            'id' => $fornecedor->id,
+            'text' => $fornecedor->razao_social // O Select2 espera a chave 'text'
+        ]);
+    }
 
 }

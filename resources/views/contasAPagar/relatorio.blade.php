@@ -70,7 +70,7 @@
             @php $valorTotal = 0; @endphp
             @forelse ($contas as $conta)
                 <tr>
-                    <td>{{ $conta->fornecedor->nome_fantasia ?? 'N/A' }}</td>
+                    <td>{{ $conta->fornecedor->nome_fantasia ?? 'Não informado' }}</td>
                     <td>{{ \Carbon\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
                     <td>
                         @php
