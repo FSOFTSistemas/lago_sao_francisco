@@ -33,7 +33,6 @@ class ContasAPagarController extends Controller
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
 
-        // Preparar a query base
         if ($empresaSelecionada == null) {
             $query = ContasAPagar::query();
         } else {
@@ -41,10 +40,8 @@ class ContasAPagarController extends Controller
             $query = ContasAPagar::where('empresa_id', $empresa_id);
         }
 
-        // Adiciona o eager loading para otimização
-        $query->with('parcelas', 'fornecedor', 'empresa');
+        $query->with(['parcelas', 'fornecedor', 'empresa']);
 
-        // 1. Define o intervalo de datas a ser usado
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
             $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
@@ -53,15 +50,13 @@ class ContasAPagarController extends Controller
             $fim = \Carbon\Carbon::now()->endOfMonth();
         }
 
-        // 2. Aplica o filtro de data na consulta
         $query->where(function ($q) use ($inicio, $fim) {
             $q->whereBetween('data_vencimento', [$inicio, $fim])
               ->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
-                $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
-            });
+                  $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
+              });
         });
 
-        // Aplica outros filtros do formulário
         if ($request->filled('fornecedor_id')) {
             $query->where('fornecedor_id', $request->input('fornecedor_id'));
         }
@@ -71,25 +66,27 @@ class ContasAPagarController extends Controller
             $query->where(function ($q) use ($status) {
                 $q->where('status', $status)
                   ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
-                    $parcelaQuery->where('status', $status);
-                });
+                      $parcelaQuery->where('status', $status);
+                  });
             });
         }
 
         $contasAPagar = $query->get();
         $contasComParcelas = [];
 
-        // Processa os resultados para criar uma lista plana de itens a serem exibidos
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
-                if ($request->filled('status') && $conta->status !== $request->input('status')) continue;
-
                 $conta->conta_id = $conta->id;
+                $conta->id = count($contasComParcelas) + 1;
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
-                $conta->total_parcelas = 1;
+                $conta->valor_total = $conta->valor;
+                
+                // ADIÇÃO: Define valores padrão para contas de pagamento único
                 $conta->numero_parcela = 1;
+                $conta->total_parcelas = 1;
+
                 $contasComParcelas[] = $conta;
             } else {
                 $temParcelaPaga = $conta->parcelas->contains(fn($p) => $p->status === 'pago');
@@ -97,33 +94,38 @@ class ContasAPagarController extends Controller
                 $valorTotal = $conta->parcelas->sum('valor');
 
                 foreach ($conta->parcelas as $parcela) {
-                    $dataVencimentoParcela = Carbon::parse($parcela->data_vencimento);
-                    if (!$dataVencimentoParcela->between($inicio, $fim)) continue;
-                    if ($request->filled('status') && $parcela->status !== $request->input('status')) continue;
+                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
+                        continue;
+                    }
+                    if ($request->filled('status') && $parcela->status !== $request->input('status')) {
+                        continue;
+                    }
 
                     $contaClone = clone $conta;
+                    $contaClone->id = count($contasComParcelas) + 1;
                     $contaClone->conta_id = $conta->id;
-                    $contaClone->parcela_id = $parcela->id;
-                    $contaClone->descricao = $conta->descricao;
+                    $contaClone->descricao = $conta->descricao; // Mantém a descrição original da conta
                     $contaClone->valor = $parcela->valor;
+                    $contaClone->valor_total = $valorTotal;
                     $contaClone->data_vencimento = $parcela->data_vencimento;
                     $contaClone->status = $parcela->status;
                     $contaClone->data_pagamento = $parcela->data_pagamento;
                     $contaClone->numero_parcela = $parcela->numero_parcela;
                     $contaClone->total_parcelas = $totalParcelas;
+                    $contaClone->parcela_id = $parcela->id;
+                    $contaClone->conta_descricao = $conta->descricao;
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
+                    
                     $contasComParcelas[] = $contaClone;
                 }
             }
         }
 
-        $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
+        return collect($contasComParcelas)->sortBy(function ($item) {
             return Carbon::parse($item->data_vencimento);
         })->values()->all();
-
-        return [$contasComParcelas, $inicio, $fim];
     }
 
     /**
@@ -131,33 +133,35 @@ class ContasAPagarController extends Controller
      */
     public function index(Request $request)
     {
-        list($contasComParcelas) = $this->getContasFiltradas($request);
+        $contasComParcelas = $this->getContasFiltradas($request);
         
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
-        
+    
         if ($empresaSelecionada == null) {
             $planoDeContas = PlanoDeConta::all();
-            $fornecedores = Fornecedor::all();
             $contas_corrente = ContaCorrente::all();
             $caixas = Caixa::all();
         } else {
             $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
             $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
-            $fornecedores = Fornecedor::all();
-            $contas_corrente = ContaCorrente::all();
+            $contas_corrente = ContaCorrente::all(); // Atenção: este não está filtrado por empresa no código original.
             $caixas = Caixa::where('empresa_id', $empresa_id)->get();
         }
-
+        
+        // A variável $fornecedores foi otimizada. Não carregamos mais todos os registros.
+        // Passamos um array vazio, pois o Select2 busca os dados dinamicamente via AJAX.
+        $fornecedores = [];
+    
         return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
 
-    /**
-     * Gera e exibe um relatório em PDF com base nos filtros.
-     */
     public function gerarRelatorioPDF(Request $request)
     {
-        list($contasComParcelas, $inicio, $fim) = $this->getContasFiltradas($request);
+        $contasComParcelas = $this->getContasFiltradas($request);
+
+        $inicio = $request->filled('data_inicio') ? Carbon::parse($request->input('data_inicio')) : Carbon::now()->startOfMonth();
+        $fim = $request->filled('data_fim') ? Carbon::parse($request->input('data_fim')) : Carbon::now()->endOfMonth();
 
         $dadosFiltro = [
             'periodo' => 'De ' . $inicio->format('d/m/Y') . ' a ' . $fim->format('d/m/Y'),

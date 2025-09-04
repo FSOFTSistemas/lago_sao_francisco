@@ -60,9 +60,12 @@
     <table>
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Fornecedor</th>
+                <th>Descrição</th>
                 <th>Data de Vencimento</th>
                 <th>Forma de Pagamento</th>
+                <th>Situação</th>
                 <th>Valor</th>
             </tr>
         </thead>
@@ -70,7 +73,15 @@
             @php $valorTotal = 0; @endphp
             @forelse ($contas as $conta)
                 <tr>
+                    <td>{{ $conta->id }}</td>
                     <td>{{ $conta->fornecedor->nome_fantasia ?? 'Não informado' }}</td>
+                    <td> {{ $conta->descricao }}
+                    @if ($conta->total_parcelas > 1)
+                            <small class="text-muted d-block">
+                                Parcela {{ $conta->numero_parcela }} de {{ $conta->total_parcelas }}
+                            </small>
+                    @endif
+                    </td>
                     <td>{{ \Carbon\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
                     <td>
                         @php
@@ -86,6 +97,7 @@
                             echo implode(', ', $formasFormatadas);
                         @endphp
                     </td>
+                    <td>{{ $conta->status }}</td>
                     <td>R$ {{ number_format($conta->valor, 2, ',', '.') }}</td>
                 </tr>
                 @php $valorTotal += $conta->valor; @endphp
