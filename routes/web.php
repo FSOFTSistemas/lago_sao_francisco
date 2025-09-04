@@ -286,3 +286,6 @@ Route::get('/relatorios/produtos/filtrar', [RelatorioProdutosController::class, 
 Route::get('/relatorios/produtos/pdf', [RelatorioProdutosController::class, 'gerarPdf'])->name('relatorio.produtos.pdf');
 
 Route::get('/contas-a-pagar/relatorio-pdf', [App\Http\Controllers\ContasAPagarController::class, 'gerarRelatorioPDF'])->name('contasAPagar.gerarRelatorioPDF');
+
+Route::get('/fornecedores/busca', [App\Http\Controllers\FornecedorController::class, 'busca'])->name('fornecedores.busca');
+Route::get('/fornecedores/json/{fornecedor}', [App\Http\Controllers\FornecedorController::class, 'showJson'])->name('fornecedores.showJson');

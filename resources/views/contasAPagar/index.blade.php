@@ -9,7 +9,7 @@
 
 @section('content')
 
-    <form method="GET" action="{{ route('contasAPagar.index') }}" class="mb-4">
+    <form method="GET" action="{{ route('contasAPagar.index') }}" class="mb-4" id="filtro-form">
         <div class="form-row">
             <div class="form-group col-md-3">
                 <label for="data_inicio">Data Início</label>
@@ -31,11 +31,11 @@
                 </select>
             </div>
 
-            <div class="form-group row">
-                <label for="fornecedor_id">* Fornecedor</label>
-                    <select class="form-control" name="fornecedor_id" id="fornecedor_id" style="width: 100%;">
-                        <option value="">Selecione</option>
-                    </select>
+            <div class="form-group col-md-3">
+                <label for="fornecedor_id">Fornecedor</label>
+                <select class="form-control" name="fornecedor_id" id="fornecedor_id" style="width: 100%;">
+                    {{-- Populado via JavaScript --}}
+                </select>
             </div>
         </div>
 
@@ -46,10 +46,10 @@
                 <button type="submit" class="btn btn-primary mr-2">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
-                <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary">
+                <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary mr-2">
                     <i class="fas fa-sync-alt"></i> Limpar
                 </a>
-                <button type="button" class="btn btn-pdf" id="btn-gerar-relatorio">
+                <button type="button" class="btn btn-info" id="btn-gerar-relatorio">
                     <i class="fas fa-file-pdf"></i> Gerar Relatório
                 </button>
             </div>
@@ -105,17 +105,6 @@
                             <small class="text-muted d-block">
                                 Parcela {{ $contasAPagar->numero_parcela }} de {{ $contasAPagar->total_parcelas }}
                             </small>
-
-                            @if (request('mes'))
-                                @php
-                                    $mesFiltro = \Carbon\Carbon::createFromFormat('Y-m', request('mes'));
-                                    $dataVencimento = \Carbon\Carbon::parse($contasAPagar->data_vencimento);
-                                @endphp
-
-                                @if ($dataVencimento->format('Y-m') === $mesFiltro->format('Y-m'))
-                                    <small class="text-primary d-block">📌 Parcela atual</small>
-                                @endif
-                            @endif
                         @endif
                     </td>
 
@@ -132,7 +121,7 @@
 
                     <td>
                         @php
-                            $formas = explode("\n", $contasAPagar->forma_pagamento);
+                            $formas = is_string($contasAPagar->forma_pagamento) ? explode("\n", $contasAPagar->forma_pagamento) : [];
                         @endphp
 
                         @foreach ($formas as $forma)
@@ -149,19 +138,19 @@
                     <td>
                         @if ($contasAPagar->valor - $contasAPagar->valor_pago > 0)
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id }}">
+                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id ?? ($contasAPagar->conta_id . '_' . $contasAPagar->parcela_id) }}">
                                 💰
                             </button>
                         @endif
 
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                            data-target="#showContasAPagar{{ $contasAPagar->id }}">
+                            data-target="#showContasAPagar{{ $contasAPagar->id ?? ($contasAPagar->conta_id . '_' . $contasAPagar->parcela_id) }}">
                             👁️
                         </button>
 
                         @if ($contasAPagar->pode_excluir)
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteContasAPagarModal{{ $contasAPagar->id }}">
+                                data-target="#deleteContasAPagarModal{{ $contasAPagar->id ?? $contasAPagar->conta_id }}">
                                 🗑️
                             </button>
                         @endif
@@ -178,9 +167,6 @@
 
     @include('contasAPagar.modals._create')
     @stack('modais')
-
-
-
 @stop
 
 @section('css')
@@ -190,55 +176,67 @@
             background-color: #679A4C !important;
             border: none !important;
         }
-
         .test {
             color: rebeccapurple !important
-        }
-        .btn-pdf {
-            background-color: red;
-            color: #fff;
-            margin-left: 5px;
         }
     </style>
 @stop
 
 @section('js')
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {{-- CORREÇÃO: Removido o carregamento duplicado do jQuery. O AdminLTE já o inclui. --}}
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('#fornecedor_id').select2({
-                placeholder: 'Digite para buscar um fornecedor',
+            var fornecedorSelect = $('#fornecedor_id');
+
+            fornecedorSelect.select2({
+                placeholder: 'Selecione ou digite para buscar',
                 minimumInputLength: 3,
                 ajax: {
-                    url: '/fornecedores/busca',
+                    url: "{{ route('fornecedores.busca') }}",
                     dataType: 'json',
                     delay: 250,
                     data: function(params) {
                         return {
-                            q: params.term // termo digitado
+                            q: params.term // termo de busca
                         };
                     },
                     processResults: function(data) {
                         return {
-                            results: data.map(fornecedor => ({
-                                id: fornecedor.id,
-                                text: fornecedor.razao_social
-                            }))
+                            results: data.map(function(fornecedor) {
+                                return {
+                                    id: fornecedor.id,
+                                    text: fornecedor.razao_social
+                                };
+                            })
                         };
                     },
                     cache: true
                 }
             });
+
+            // Mantém o fornecedor selecionado após filtrar
+            var initialFornecedorId = "{{ request('fornecedor_id') }}";
+            if (initialFornecedorId) {
+                $.ajax({
+                    url: '/fornecedores/json/' + initialFornecedorId,
+                    dataType: 'json'
+                }).done(function(data) {
+                    var option = new Option(data.text, data.id, true, true);
+                    fornecedorSelect.append(option).trigger('change');
+                });
+            }
+            
+            // Ação do botão Gerar Relatório
             $('#btn-gerar-relatorio').on('click', function() {
                 var form = $('#filtro-form');
                 var url = "{{ route('contasAPagar.gerarRelatorioPDF') }}";
-                var params = form.serialize(); // Pega todos os dados do formulário
+                var params = form.serialize();
 
                 // Abre o PDF em uma nova aba com os parâmetros do filtro
                 window.open(url + '?' + params, '_blank');
             });
         });
     </script>
-
 @stop
+
