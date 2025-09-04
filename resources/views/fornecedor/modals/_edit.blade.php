@@ -11,22 +11,22 @@
                     @csrf
                     @method('PUT')
                     <div class="mb-3">
-                        <label for="razao_social" class="form-label">Razão Social</label>
+                        <label for="razao_social" class="form-label">Razão Social/Nome</label>
                         <input type="text" class="form-control" name="razao_social"
                             value={{ $fornecedor->razao_social }} required>
                     </div>
                     <div class="mb-3">
-                        <label for="nomeFantasia">Nome Fantasia:</label>
+                        <label for="nomeFantasia">Nome Fantasia/Apelido:</label>
                         <input type="text" class="form-control" id="nomeFantasia" name="nome_fantasia"
                             value="{{ $fornecedor->nome_fantasia }}">
                     </div>
                     <div class="mb-3">
-                        <label for="cnpj">CNPJ:</label>
-                        <input type="text" class="form-control" id="cnpj" name="cnpj"
+                        <label for="cnpjEdit">CNPJ/CPF:</label>
+                        <input type="text" class="form-control" id="cnpjEdit" name="cnpj"
                             value="{{ $fornecedor->cnpj }}">
                     </div>
                     <div class="mb-3">
-                        <label for="inscricaoEstadual">Inscrição Estadual:</label>
+                        <label for="inscricaoEstadual">Inscrição Estadual/RG:</label>
                         <input type="text" class="form-control" id="inscricaoEstadual" name="inscricao_estadual"
                             value="{{ $fornecedor->inscricao_estadual }}">
                     </div>

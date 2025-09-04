@@ -284,3 +284,5 @@ Route::post('/reservas/{id}/noshow-supervisor', [ReservaController::class, 'marc
 Route::get('/relatorios/produtos', [RelatorioProdutosController::class, 'index'])->name('relatorio.produtos');
 Route::get('/relatorios/produtos/filtrar', [RelatorioProdutosController::class, 'filtrar'])->name('relatorio.produtos.filtrar');
 Route::get('/relatorios/produtos/pdf', [RelatorioProdutosController::class, 'gerarPdf'])->name('relatorio.produtos.pdf');
+
+Route::get('/contas-a-pagar/relatorio-pdf', [App\Http\Controllers\ContasAPagarController::class, 'gerarRelatorioPDF'])->name('contasAPagar.gerarRelatorioPDF');

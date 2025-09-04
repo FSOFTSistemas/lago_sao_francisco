@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use App\Services\CaixaService;
 use App\Services\ContaCorrenteService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Throwable;
@@ -146,6 +147,110 @@ class ContasAPagarController extends Controller
 
         // Retorna a view com os dados processados e prontos para exibição
         return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
+    }
+
+    public function gerarRelatorioPDF(Request $request)
+    {
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+
+        // Preparar a query base
+        if ($empresaSelecionada == null) {
+            $query = ContasAPagar::query();
+        } else {
+            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+            $query = ContasAPagar::where('empresa_id', $empresa_id);
+        }
+
+        $query->with('parcelas');
+
+        if ($request->filled('data_inicio') && $request->filled('data_fim')) {
+            $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
+            $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
+        } else {
+            $inicio = \Carbon\Carbon::now()->startOfMonth();
+            $fim = \Carbon\Carbon::now()->endOfMonth();
+        }
+
+        $query->where(function ($q) use ($inicio, $fim) {
+            $q->whereBetween('data_vencimento', [$inicio, $fim]);
+            $q->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
+                $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
+            });
+        });
+
+        if ($request->filled('fornecedor_id')) {
+            $query->where('fornecedor_id', $request->input('fornecedor_id'));
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->input('status');
+            $query->where(function ($q) use ($status) {
+                $q->where('status', $status)
+                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
+                        $parcelaQuery->where('status', $status);
+                    });
+            });
+        }
+
+        $contasAPagar = $query->get();
+        $contasComParcelas = [];
+
+        foreach ($contasAPagar as $conta) {
+            if ($conta->parcelas->isEmpty()) {
+                $conta->conta_id = $conta->id;
+                $conta->id = count($contasComParcelas) + 1;
+                $conta->pode_excluir = $conta->status !== 'pago';
+                $conta->conta_descricao = $conta->descricao;
+                $conta->parcela_id = null;
+                $contasComParcelas[] = $conta;
+                $conta->valor_total = $conta->valor;
+            } else {
+                foreach ($conta->parcelas as $parcela) {
+                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
+                        continue;
+                    }
+                    if ($request->filled('status') && $parcela->status !== $request->input('status')) {
+                        continue;
+                    }
+
+                    $contaClone = clone $conta;
+                    $contaClone->id = count($contasComParcelas) + 1;
+                    $contaClone->conta_id = $conta->id;
+                    $contaClone->descricao .= " - Parcela {$parcela->numero_parcela}/{$conta->parcelas->count()}";
+                    $contaClone->valor = $parcela->valor;
+                    $contaClone->valor_total = $conta->parcelas->sum('valor');
+                    $contaClone->data_vencimento = $parcela->data_vencimento;
+                    $contaClone->status = $parcela->status;
+                    $contaClone->data_pagamento = $parcela->data_pagamento;
+                    $contaClone->numero_parcela = $parcela->numero_parcela;
+                    $contaClone->total_parcelas = $conta->parcelas->count();
+                    $contaClone->parcela_id = $parcela->id;
+                    $contaClone->conta_descricao = $conta->descricao;
+                    $contaClone->pode_excluir = !$conta->parcelas->contains(fn ($p) => $p->status === 'pago');
+                    $contaClone->valor_pago = $parcela->valor_pago;
+                    $contaClone->forma_pagamento = $parcela->forma_pagamento;
+
+                    $contasComParcelas[] = $contaClone;
+                }
+            }
+        }
+
+        $contasComParcelas = collect($contasComParcelas)->sortBy(function ($item) {
+            return Carbon::parse($item->data_vencimento);
+        })->values()->all();
+
+        $dadosFiltro = [
+            'periodo' => 'De ' . $inicio->format('d/m/Y') . ' a ' . $fim->format('d/m/Y'),
+            'situacao' => $request->input('status') ? ucfirst($request->input('status')) : 'Todas'
+        ];
+
+        $pdf = Pdf::loadView('contasAPagar.relatorio', [
+            'contas' => $contasComParcelas,
+            'filtros' => $dadosFiltro
+        ]);
+
+        return $pdf->stream('relatorio_contas_a_pagar.pdf');
     }
 
 
