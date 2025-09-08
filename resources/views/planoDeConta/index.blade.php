@@ -31,7 +31,7 @@
                     <th>Tipo</th>
                     {{-- <th>Empresa</th> --}}
                     <th>Plano de Contas Pai</th>
-                    <th>Ações</th>
+                    {{-- <th>Ações</th> --}}
                 </tr>
             </thead>
             <tbody>
@@ -42,7 +42,7 @@
                         <td>{{ $planoDeConta->tipo }}</td>
                         {{-- <td>{{ $planoDeConta->empresa->nome_fantasia }}</td> --}}
                         <td>{{ $planoDeConta->planoPai->descricao ?? '' }}</td>
-                        <td>
+                        {{-- <td>
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
                                 data-target="#editPlanoModal{{ $planoDeConta->id }}">
                                 ✏️
@@ -52,7 +52,7 @@
                             data-target="#deletePlanoModal{{ $planoDeConta->id }}">
                             🗑️
                         </button>
-                        </td>
+                        </td> --}}
                     </tr>
                     @include('planoDeConta.modals._edit', ['planoDeConta' => $planoDeConta])
                     @include('planoDeConta.modals._delete', ['planoDeConta' => $planoDeConta])

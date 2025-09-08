@@ -234,7 +234,7 @@ class ContasAReceberController extends Controller
                 'valor' => $data['valor_pago'],
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => $pagamento->plano_de_contas_id ?? 1,
+                'plano_de_conta_id' => $pagamento->plano_de_contas_id ?? 36, // 36-> Receita
             ]);
         });
 

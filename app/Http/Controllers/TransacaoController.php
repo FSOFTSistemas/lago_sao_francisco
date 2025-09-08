@@ -291,7 +291,7 @@ class TransacaoController extends Controller
                 'valor_total' => $transacao->valor,
                 'tipo' => $transacao->tipo === 'pagamento' ? 'entrada' : 'saida',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 1, // ou o plano de conta padrão
+                'plano_de_conta_id' => 44, // 44-> Hospedagem
             ]);
 
         } catch (\Exception $e) {
@@ -349,7 +349,7 @@ class TransacaoController extends Controller
                 'valor_total' => $transacao->valor,
                 'tipo' => 'cancelamento',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 1, // ou o plano de conta padrão
+                'plano_de_conta_id' => 49, // 49-> Serviços Cancelados
             ]);
 
         } catch (\Exception $e) {
