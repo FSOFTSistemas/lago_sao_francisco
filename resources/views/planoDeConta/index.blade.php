@@ -29,7 +29,8 @@
                     <th>ID</th>
                     <th>Descrição</th>
                     <th>Tipo</th>
-                    <th>Empresa</th>
+                    {{-- <th>Empresa</th> --}}
+                    <th>Plano de Contas Pai</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -39,7 +40,8 @@
                         <td>{{ $planoDeConta->id }}</td>
                         <td>{{ $planoDeConta->descricao }}</td>
                         <td>{{ $planoDeConta->tipo }}</td>
-                        <td>{{ $planoDeConta->empresa->nome_fantasia }}</td>
+                        {{-- <td>{{ $planoDeConta->empresa->nome_fantasia }}</td> --}}
+                        <td>{{ $planoDeConta->planoPai->descricao ?? '' }}</td>
                         <td>
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
                                 data-target="#editPlanoModal{{ $planoDeConta->id }}">
