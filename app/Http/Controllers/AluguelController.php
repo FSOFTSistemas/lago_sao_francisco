@@ -468,7 +468,7 @@ class AluguelController extends Controller
                 'valor_total' => $pagamento->valor,
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 1, // ou o plano de conta padrão
+                'plano_de_conta_id' => 42, // 42->Receita/Aluguel
             ]);
         }
     }

@@ -253,7 +253,7 @@ class DayUseController extends Controller
                                 'empresa_id' => Auth::user()->empresa_id,
                                 'data' => now(),
                                 'movimento_id' => $movimento->id,
-                                'plano_de_conta_id' => 1,
+                                'plano_de_conta_id' => 52, // Receita->DAYUSE
                             ]);
                         }
                     }

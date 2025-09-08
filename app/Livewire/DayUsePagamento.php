@@ -217,7 +217,7 @@ class DayUsePagamento extends Component
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
                 'valor_total' => $payment['valor'],
-                'plano_de_conta_id' => 1,
+                'plano_de_conta_id' => 52, //52->DayUse
             ]);
         }
 
