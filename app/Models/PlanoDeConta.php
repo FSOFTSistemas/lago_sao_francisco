@@ -23,4 +23,8 @@ class PlanoDeConta extends Model
     {
         return $query->where('empresa_id', $empresaId);
     }
+    public function planoPai()
+    {
+        return $this->belongsTo($this, 'plano_de_conta_pai');
+    }
 }
