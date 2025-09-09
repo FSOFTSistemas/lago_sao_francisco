@@ -38,7 +38,8 @@ class FornecedorController extends Controller
                 'nome_fantasia' => 'nullable|string',
                 'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'nullable|string'
+                'inscricao_estadual' => 'nullable|string',
+                'forma_pagamento' => 'nullable|string'
             ]);
             Fornecedor::create($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
@@ -61,7 +62,8 @@ class FornecedorController extends Controller
                 'nome_fantasia' => 'nullable|string',
                 'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
-                'inscricao_estadual' => 'nullable|string'
+                'inscricao_estadual' => 'nullable|string',
+                'forma_pagamento' => 'nullable|string'
             ]);
             $fornecedor->update($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');
