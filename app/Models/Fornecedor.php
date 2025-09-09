@@ -15,5 +15,6 @@ class Fornecedor extends Model
         'cnpj',
         'endereco',
         'inscricao_estadual',
+        'forma_pagamento'
     ];
 }
