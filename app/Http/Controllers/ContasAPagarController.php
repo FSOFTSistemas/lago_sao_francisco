@@ -149,9 +149,7 @@ class ContasAPagarController extends Controller
             $caixas = Caixa::where('empresa_id', $empresa_id)->get();
         }
         
-        // A variável $fornecedores foi otimizada. Não carregamos mais todos os registros.
-        // Passamos um array vazio, pois o Select2 busca os dados dinamicamente via AJAX.
-        $fornecedores = [];
+        $fornecedores = Fornecedor::all();
     
         return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
