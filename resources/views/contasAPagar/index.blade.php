@@ -120,17 +120,7 @@
                     </td>
 
                     <td>
-                        @php
-                            $formas = is_string($contasAPagar->forma_pagamento) ? explode("\n", $contasAPagar->forma_pagamento) : [];
-                        @endphp
-
-                        @foreach ($formas as $forma)
-                            @if (trim($forma) == 'conta_corrente')
-                                <span class="text-success">Conta Corrente</span><br>
-                            @elseif(trim($forma) == 'caixa')
-                                <span class="text-success">Caixa</span><br>
-                            @endif
-                        @endforeach
+                       {{$contasAPagar->fornecedor->forma_pagamento}}
                     </td>
 
                     <td>{{ $contasAPagar->fornecedor->nome_fantasia ?? '' }}</td>
