@@ -84,18 +84,7 @@
                     </td>
                     <td>{{ \Carbon\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
                     <td>
-                        @php
-                            $formas = explode("\n", $conta->forma_pagamento);
-                            $formasFormatadas = [];
-                            foreach ($formas as $forma) {
-                                if (trim($forma) == 'conta_corrente') {
-                                    $formasFormatadas[] = 'Conta Corrente';
-                                } elseif (trim($forma) == 'caixa') {
-                                    $formasFormatadas[] = 'Caixa';
-                                }
-                            }
-                            echo implode(', ', $formasFormatadas);
-                        @endphp
+                        {{$conta->fornecedor->forma_pagamento}}
                     </td>
                     <td>{{ $conta->status }}</td>
                     <td>R$ {{ number_format($conta->valor, 2, ',', '.') }}</td>
