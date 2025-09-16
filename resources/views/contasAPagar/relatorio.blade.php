@@ -82,7 +82,7 @@
                         @endif
                     </td>
                     <td>{{ \Carbon\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
-                    <td>R$ {{ number_format($conta->valor, 2, ',', '.') }}</td>
+                    <td>R${{ number_format($conta->valor, 2, ',', '.') }}</td>
                     <td>{{ $conta->status }}</td>
                     <td>
                         {{$conta->fornecedor->forma_pagamento}}
