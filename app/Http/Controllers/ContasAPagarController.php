@@ -196,7 +196,8 @@ class ContasAPagarController extends Controller
                     'nullable',
                     'exists:fornecedors,id',
                 ],
-                'parcelas' => 'nullable|integer|min:1'
+                'parcelas' => 'nullable|integer|min:1',
+                'periodo' => 'nullable|integer|min:1'
             ]);
 
             $validatedData['empresa_id'] = Auth::user()->empresa_id;
@@ -205,6 +206,7 @@ class ContasAPagarController extends Controller
             }
             $numParcelas = $request->input('parcelas', 1);
             $numParcelas = (int) $numParcelas;
+            $periodo = (int) $request->input('periodo', 30);
             // Define o valor total e número de parcelas
             $validatedData['total_parcelas'] = $numParcelas > 1 ? $numParcelas : null;
             $validatedData['plano_de_contas_id'] = (int) $validatedData['plano_de_contas_id'];
@@ -227,7 +229,7 @@ class ContasAPagarController extends Controller
                         'contas_a_pagar_id' => $conta->id,
                         'numero_parcela' => $i,
                         'valor' => $valorParcela,
-                        'data_vencimento' => $dataBase->copy()->addMonths($i - 1),
+                        'data_vencimento' => $dataBase->copy()->addDays(($i - 1) * $periodo),
                         'status' => 'pendente',
                     ]);
                     $valor_total -= $valorParcela;
