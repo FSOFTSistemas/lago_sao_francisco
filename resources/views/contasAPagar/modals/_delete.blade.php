@@ -1,11 +1,11 @@
-<div class="modal fade" id="deleteContasAPagarModal{{ $contasAPagar->id }}" tabindex="-1"
-    aria-labelledby="deleteContasAPagarModalLabel{{ $contasAPagar->id }}" aria-hidden="true">
+<div class="modal fade" id="deleteContasAPagarModal{{ $contasAPagar->conta_id }}" tabindex="-1"
+    aria-labelledby="deleteContasAPagarModalLabel{{ $contasAPagar->conta_id }}" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 
             <!-- Cabeçalho -->
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteContasAPagarModalLabel{{ $contasAPagar->id }}">
+                <h5 class="modal-title" id="deleteContasAPagarModalLabel{{ $contasAPagar->conta_id }}">
                     <i class="fas fa-trash"></i> Confirmar Exclusão
                 </h5>
                 <button type="button" class="btn-close" data-dismiss="modal" aria-label="Fechar"></button>
@@ -45,11 +45,11 @@
 
             <!-- Rodapé -->
             <div class="modal-footer">
-                <form action="{{ route('contasAPagar.destroy', $contasAPagar->id) }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger">Sim, excluir tudo</button>
-                </form>
+                <form action="{{ route('contasAPagar.forceDelete', $contasAPagar->conta_id) }}" method="POST">
+    @csrf
+    <button type="submit" class="btn btn-danger">Excluir</button>
+</form>
+
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
             </div>
         </div>
