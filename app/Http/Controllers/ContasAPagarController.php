@@ -301,10 +301,15 @@ class ContasAPagarController extends Controller
         }
     }
 
-    public function destroy(ContasAPagar $contasAPagar)
+    public function destroy($id)
     {
-        $contasAPagar->delete();
-        return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
+        try{
+            $contasAPagar = ContasAPagar::findOrFail($id);
+            $contasAPagar->delete();
+            return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
+        } catch (\Exception $e) {
+           dd($e)->getMessage;
+        }
     }
 
 

@@ -97,7 +97,7 @@
 
             @foreach ($contasComParcelas as $contasAPagar)
                 <tr>
-                    <td>{{ $contasAPagar->conta_id }}</td>
+                    <td>{{ $contasAPagar->conta_id }} / id: {{$contasAPagar->id}}</td>
                     <td>{{ $contasAPagar->parcela_id }}</td>
                     <td>
                         {{ $contasAPagar->descricao }}
@@ -140,7 +140,7 @@
 
                         @if ($contasAPagar->pode_excluir)
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
-                                data-target="#deleteContasAPagarModal{{ $contasAPagar->id ?? $contasAPagar->conta_id }}">
+                                data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
                                 🗑️
                             </button>
                         @endif

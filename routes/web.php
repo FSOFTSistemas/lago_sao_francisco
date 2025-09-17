@@ -289,3 +289,5 @@ Route::get('/contas-a-pagar/relatorio-pdf', [App\Http\Controllers\ContasAPagarCo
 
 Route::get('/fornecedores/busca', [App\Http\Controllers\FornecedorController::class, 'busca'])->name('fornecedores.busca');
 Route::get('/fornecedores/json/{fornecedor}', [App\Http\Controllers\FornecedorController::class, 'showJson'])->name('fornecedores.showJson');
+
+Route::post('/contasAPagar/{id}/delete', [ContasAPagarController::class, 'destroy'])->name('contasAPagar.forceDelete');
