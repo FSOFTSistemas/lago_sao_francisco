@@ -36,8 +36,8 @@ class ContasAReceberController extends Controller
             ]);
         } else {
             $query->whereBetween('data_vencimento', [
-                Carbon::now()->startOfMonth(),
-                Carbon::now()->endOfMonth()
+                Carbon::now()->startOfDay(),
+                Carbon::now()->endOfDay()
             ]);
         }
 

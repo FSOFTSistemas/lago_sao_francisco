@@ -176,7 +176,7 @@ class FuncionarioController extends Controller
                 'nome' => 'required|string',
                 'cpf' => 'required|string',
                 'endereco_id' => 'nullable|exists:enderecos,id',
-                'salario' => 'required|numeric',
+                'salario' => 'nullable|numeric',
                 'data_contratacao' => 'required|date',
                 'status' => 'required|in:ativo,inativo',
                 'setor' => 'required|string',

@@ -45,16 +45,22 @@ class ContasAPagarController extends Controller
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
             $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
+        } elseif (!$request->hasAny(['data_inicio', 'data_fim', 'status', 'fornecedor_id'])) {
+            // Nenhum filtro foi enviado: aplica data de hoje
+            $inicio = \Carbon\Carbon::today()->startOfDay();
+            $fim = \Carbon\Carbon::today()->endOfDay();
         } else {
-            $inicio = \Carbon\Carbon::now()->startOfMonth();
-            $fim = \Carbon\Carbon::now()->endOfMonth();
+            // Mesmo com filtros parciais, mantém o padrão como hoje
+            $inicio = \Carbon\Carbon::today()->startOfDay();
+            $fim = \Carbon\Carbon::today()->endOfDay();
         }
+
 
         $query->where(function ($q) use ($inicio, $fim) {
             $q->whereBetween('data_vencimento', [$inicio, $fim])
-              ->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
-                  $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
-              });
+                ->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
+                    $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
+                });
         });
 
         if ($request->filled('fornecedor_id')) {
@@ -65,9 +71,9 @@ class ContasAPagarController extends Controller
             $status = $request->input('status');
             $query->where(function ($q) use ($status) {
                 $q->where('status', $status)
-                  ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
-                      $parcelaQuery->where('status', $status);
-                  });
+                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
+                        $parcelaQuery->where('status', $status);
+                    });
             });
         }
 
@@ -82,7 +88,7 @@ class ContasAPagarController extends Controller
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
                 $conta->valor_total = $conta->valor;
-                
+
                 // ADIÇÃO: Define valores padrão para contas de pagamento único
                 $conta->numero_parcela = 1;
                 $conta->total_parcelas = 1;
@@ -94,9 +100,11 @@ class ContasAPagarController extends Controller
                 $valorTotal = $conta->parcelas->sum('valor');
 
                 foreach ($conta->parcelas as $parcela) {
-                    if (!($parcela->data_vencimento >= $inicio && $parcela->data_vencimento <= $fim)) {
+                    $parcelaVencimento = \Carbon\Carbon::parse($parcela->data_vencimento);
+                    if (!$parcelaVencimento->between($inicio, $fim)) {
                         continue;
                     }
+
                     if ($request->filled('status') && $parcela->status !== $request->input('status')) {
                         continue;
                     }
@@ -117,7 +125,7 @@ class ContasAPagarController extends Controller
                     $contaClone->pode_excluir = !$temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
-                    
+
                     $contasComParcelas[] = $contaClone;
                 }
             }
@@ -134,10 +142,10 @@ class ContasAPagarController extends Controller
     public function index(Request $request)
     {
         $contasComParcelas = $this->getContasFiltradas($request);
-        
+
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
-    
+
         if ($empresaSelecionada == null) {
             $planoDeContas = PlanoDeConta::all();
             $contas_corrente = ContaCorrente::all();
@@ -145,12 +153,12 @@ class ContasAPagarController extends Controller
         } else {
             $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
             $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
-            $contas_corrente = ContaCorrente::all(); // Atenção: este não está filtrado por empresa no código original.
+            $contas_corrente = ContaCorrente::all(); // Atenção: este não está filtrado por empresa.
             $caixas = Caixa::where('empresa_id', $empresa_id)->get();
         }
-        
+
         $fornecedores = Fornecedor::all();
-    
+
         return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
 
@@ -303,12 +311,12 @@ class ContasAPagarController extends Controller
 
     public function destroy($id)
     {
-        try{
+        try {
             $contasAPagar = ContasAPagar::findOrFail($id);
             $contasAPagar->delete();
             return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
         } catch (\Exception $e) {
-           dd($e)->getMessage;
+            dd($e)->getMessage;
         }
     }
 
@@ -458,4 +466,3 @@ class ContasAPagarController extends Controller
         );
     }
 }
-

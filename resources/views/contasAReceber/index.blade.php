@@ -34,6 +34,11 @@
                 <a href="{{ route('contasAReceber.index') }}" class="btn btn-secondary">Limpar</a>
             </div>
         </div>
+        @if(!request()->filled('data_inicio') && !request()->filled('data_fim'))
+    <div class="alert alert-info">
+        Exibindo contas com vencimento <strong>hoje</strong>. Para ver outros períodos, selecione as datas no filtro acima.
+    </div>
+@endif
     </form>
 
 
