@@ -288,12 +288,6 @@ class ContasAPagarController extends Controller
                 'fornecedor_id' => [
                     'nullable',
                     'exists:fornecedors,id',
-                    function ($attribute, $value, $fail) {
-                        if ($value && !Fornecedor::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
-                            $fail('O fornecedor selecionado não pertence à sua empresa.');
-                        }
-                    }
                 ],
             ]);
 
