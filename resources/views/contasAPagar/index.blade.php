@@ -147,6 +147,13 @@
                             👁️
                         </button>
 
+                        @if ($contasAPagar->total_parcelas == 1 && $contasAPagar->status !== 'pago')
+                            <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
+                                data-target="#editContasAPagarModal{{ $contasAPagar->conta_id }}">
+                                ✏️
+                            </button>
+                        @endif
+
                         @if ($contasAPagar->pode_excluir)
                             <button type="button" class="btn btn-danger btn-sm" data-toggle="modal"
                                 data-target="#deleteContasAPagarModal{{ $contasAPagar->conta_id }}">
@@ -159,6 +166,7 @@
                     @include('contasAPagar.modals._pagar', ['contasAPagar' => $contasAPagar])
                     @include('contasAPagar.modals._show', ['contasAPagar' => $contasAPagar])
                     @include('contasAPagar.modals._delete', ['contasAPagar' => $contasAPagar])
+                    @include('contasAPagar.modals._edit', ['contasAPagar' => $contasAPagar])
                 @endpush
             @endforeach
         </tbody>
