@@ -14,12 +14,15 @@
             <div class="form-group col-md-3">
                 <label for="data_inicio">Data Início</label>
                 <input type="date" name="data_inicio" id="data_inicio" class="form-control"
-                    value="{{ request('data_inicio') }}">
+                    value="{{ request('data_inicio') ?? now()->format('Y-m-d') }}">
+
             </div>
 
             <div class="form-group col-md-3">
                 <label for="data_fim">Data Fim</label>
-                <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ request('data_fim') }}">
+                <input type="date" name="data_fim" id="data_fim" class="form-control"
+                    value="{{ request('data_fim') ?? now()->format('Y-m-d') }}">
+
             </div>
 
             <div class="form-group col-md-3">
@@ -54,6 +57,12 @@
                 </button>
             </div>
         </div>
+        @if (!request()->filled('data_inicio') && !request()->filled('data_fim'))
+            <div class="alert alert-info">
+                Exibindo contas com vencimento <strong>hoje</strong>. Para ver outros períodos, selecione as datas no filtro
+                acima.
+            </div>
+        @endif
     </form>
 
     <div class="d-flex justify-content-end mb-3">
@@ -97,7 +106,7 @@
 
             @foreach ($contasComParcelas as $contasAPagar)
                 <tr>
-                    <td>{{ $contasAPagar->conta_id }} / id: {{$contasAPagar->id}}</td>
+                    <td>{{ $contasAPagar->conta_id }} / id: {{ $contasAPagar->id }}</td>
                     <td>{{ $contasAPagar->parcela_id }}</td>
                     <td>
                         {{ $contasAPagar->descricao }}
@@ -120,7 +129,7 @@
                     </td>
 
                     <td>
-                       {{$contasAPagar->fornecedor->forma_pagamento}}
+                        {{ $contasAPagar->fornecedor->forma_pagamento }}
                     </td>
 
                     <td>{{ $contasAPagar->fornecedor->nome_fantasia ?? '' }}</td>
@@ -128,13 +137,13 @@
                     <td>
                         @if ($contasAPagar->valor - $contasAPagar->valor_pago > 0)
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id ?? ($contasAPagar->conta_id . '_' . $contasAPagar->parcela_id) }}">
+                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
                                 💰
                             </button>
                         @endif
 
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                            data-target="#showContasAPagar{{ $contasAPagar->id ?? ($contasAPagar->conta_id . '_' . $contasAPagar->parcela_id) }}">
+                            data-target="#showContasAPagar{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
                             👁️
                         </button>
 
@@ -166,6 +175,7 @@
             background-color: #679A4C !important;
             border: none !important;
         }
+
         .test {
             color: rebeccapurple !important
         }
@@ -216,7 +226,7 @@
                     fornecedorSelect.append(option).trigger('change');
                 });
             }
-            
+
             // Ação do botão Gerar Relatório
             $('#btn-gerar-relatorio').on('click', function() {
                 var form = $('#filtro-form');
@@ -229,4 +239,3 @@
         });
     </script>
 @stop
-
