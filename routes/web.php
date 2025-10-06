@@ -83,7 +83,7 @@ Route::resource('bancos', BancoController::class)->middleware('permission:gerenc
 
 Route::resource('fornecedor', FornecedorController::class)->middleware('permission:gerenciar fornecedor');
 
-Route::resource('contasAPagar', ContasAPagarController::class)->middleware(['permission:gerenciar contas a pagar', 'caixa.aberto']);
+Route::resource('contasAPagar', ContasAPagarController::class)->middleware(['permission:gerenciar contas a pagar']);
 
 Route::get('endereco/{cep}', [EnderecoController::class, 'buscarEnderecoPorCep'])->name('buscarCep');
 
