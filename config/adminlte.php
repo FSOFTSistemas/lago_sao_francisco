@@ -478,6 +478,12 @@ return [
                     'can'  => 'gerenciar plano de conta',
                 ],
                 [
+                    'text' => 'DRE',
+                    'url'  => '/relatorio/plano-de-contas',
+                    'icon' => 'fas fa-file-invoice',
+                    'can'  => 'gerenciar plano de conta',
+                ],
+                [
                     'text'    => 'NFe',
                     'icon'    => 'far fa-file-alt',
                     'can'     => 'gerenciar NFe',
