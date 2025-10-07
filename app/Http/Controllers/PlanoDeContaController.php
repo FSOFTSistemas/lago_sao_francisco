@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Empresa;
 use App\Models\PlanoDeConta;
-use App\Services\PlanoDeContasService;
+use App\services\PlanoDeContasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -89,22 +89,28 @@ class PlanoDeContaController extends Controller
 
     public function relatorio(Request $request)
     {
-        // Validação básica das datas
-        $request->validate([
-            'data_inicio' => 'nullable|date',
-            'data_fim' => 'nullable|date|after_or_equal:data_inicio',
-        ]);
-        
-        $empresaId = Auth::user()->empresa_id;
-        $dataInicio = $request->input('data_inicio');
-        $dataFim = $request->input('data_fim');
+        try {
+            $request->validate([
+                'data_inicio' => 'nullable|date',
+                'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
+            ]);
 
-        $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico($empresaId, $dataInicio, $dataFim);
+            $dataInicio = $request->input('data_inicio');
+            $dataFim    = $request->input('data_fim');
 
-        // Separar as contas raiz (Receitas e Despesas)
-        $receitas = collect($arvoreContas)->firstWhere('descricao', 'Receita');
-        $despesas = collect($arvoreContas)->firstWhere('descricao', 'Despesa');
+            $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
 
-        return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
+            $despesas = collect($arvoreContas)->first(function ($node) {
+                return strtolower($node['model']->descricao) === 'despesa';
+            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+
+            $receitas = collect($arvoreContas)->first(function ($node) {
+                return strtolower($node['model']->descricao) === 'receita';
+            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+
+            return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
+        } catch (\Exception $e) {
+            dd($e->getMessage(), $e->getTrace());
+        }
     }
 }
