@@ -1,5 +1,7 @@
 @php
-    $hasChildren = !empty($conta->filhos);
+    $conta = $node['model'];
+    $hasChildren = !empty($node['filhos']);
+    $totalCumulativo = $node['total_cumulativo'];
     $collapseId = 'collapse-' . $conta->id;
 @endphp
 
@@ -20,8 +22,8 @@
                     @endif
                     {{ $conta->descricao }}
                 </span>
-                <span class="font-weight-bold {{ $conta->total_cumulativo >= 0 ? 'text-primary' : 'text-danger' }}">
-                    R$ {{ number_format(abs($conta->total_cumulativo), 2, ',', '.') }}
+                <span class="font-weight-bold {{ $totalCumulativo >= 0 ? 'text-primary' : 'text-danger' }}">
+                    R$ {{ number_format(abs($totalCumulativo), 2, ',', '.') }}
                 </span>
             </button>
         </h5>
@@ -30,8 +32,8 @@
     @if($hasChildren)
         <div id="{{ $collapseId }}" class="collapse" aria-labelledby="heading-{{ $conta->id }}" data-parent="#{{ $parentId }}">
             <div class="card-body pl-5">
-                @foreach($conta->filhos as $filho)
-                    @include('relatorios.partials.plano_conta_item', ['conta' => $filho, 'parentId' => $collapseId])
+                @foreach($node['filhos'] as $filhoNode)
+                    @include('relatorios.partials.plano_conta_item', ['node' => $filhoNode, 'parentId' => $collapseId])
                 @endforeach
             </div>
         </div>

@@ -87,30 +87,36 @@ class PlanoDeContaController extends Controller
         }
     }
 
-    public function relatorio(Request $request)
-    {
-        try {
-            $request->validate([
-                'data_inicio' => 'nullable|date',
-                'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
-            ]);
+   public function relatorio(Request $request)
+{
+    try {
+        $request->validate([
+            'data_inicio' => 'nullable|date',
+            'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
+        ]);
+        
+        $dataInicio = $request->input('data_inicio');
+        $dataFim    = $request->input('data_fim');
 
-            $dataInicio = $request->input('data_inicio');
-            $dataFim    = $request->input('data_fim');
+        // 1. CHAMA O SERVICE PARA PEGAR OS DADOS REAIS DO BANCO
+        // Passamos 'null' para o ID da empresa para buscar o consolidado
+        $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
 
-            $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
+        // 2. ENCONTRA AS CONTAS RAIZ DE DESPESA E RECEITA NA ÁRVORE
+        $despesas = collect($arvoreContas)->first(function ($node) {
+            return strtolower($node['model']->descricao) === 'despesa';
+        }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
 
-            $despesas = collect($arvoreContas)->first(function ($node) {
-                return strtolower($node['model']->descricao) === 'despesa';
-            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+        $receitas = collect($arvoreContas)->first(function ($node) {
+            return strtolower($node['model']->descricao) === 'receita';
+        }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
 
-            $receitas = collect($arvoreContas)->first(function ($node) {
-                return strtolower($node['model']->descricao) === 'receita';
-            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
-
-            return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
-        } catch (\Exception $e) {
-            dd($e->getMessage(), $e->getTrace());
-        }
+        // 3. ENVIA OS DADOS REAIS PARA AS VIEWS QUE AGORA SABEMOS QUE ESTÃO CORRETAS
+        return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
+        
+    } catch (\Exception $e) {
+        // Bloco de segurança para capturar qualquer erro inesperado
+        dd($e); 
     }
+}
 }
