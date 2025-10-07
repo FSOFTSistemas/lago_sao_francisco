@@ -1,6 +1,6 @@
 <?php
 
-namespace App\services; // Corrigido para 'services' minúsculo como você mencionou
+namespace App\services;
 
 use App\Models\PlanoDeConta;
 use App\Models\FluxoCaixa;
@@ -11,41 +11,26 @@ use Illuminate\Support\Facades\DB;
 
 class PlanoDeContasService
 {
-    /**
-     * Gera a estrutura de árvore do plano de contas com totais cumulativos.
-     * O parâmetro $empresaId agora é opcional.
-     */
     public function gerarRelatorioHierarquico(?int $empresaId = null, $dataInicio = null, $dataFim = null): array
     {
-        // 1. Buscar contas. Se $empresaId for nulo, busca todas.
         $query = PlanoDeConta::query();
         $query->when($empresaId, function ($q) use ($empresaId) {
             return $q->where('empresa_id', $empresaId)->orWhereNull('empresa_id');
         });
         $todasContas = $query->get();
 
-        // 2. Calcular os totais. Se $empresaId for nulo, calcula o total de tudo.
         $totaisIndividuais = $this->calcularTotaisIndividuais($empresaId, $dataInicio, $dataFim);
-
-        // 3. Montar a estrutura da árvore (sem alterações)
         $arvore = $this->construirArvore($todasContas);
-
-        // 4. Calcular os totais cumulativos (sem alterações)
         $this->calcularTotaisCumulativos($arvore, $totaisIndividuais);
-
         return $arvore;
     }
 
-    /**
-     * Calcula os totais lançados diretamente em cada plano de conta.
-     * O parâmetro $empresaId agora é opcional.
-     */
     private function calcularTotaisIndividuais(?int $empresaId = null, $dataInicio, $dataFim): array
     {
         $totais = [];
 
-        // --- Fluxo de Caixa ---
-        $fluxoQuery = FluxoCaixa::query()
+        // --- Fluxo de Caixas --- (Já está correto)
+        $fluxoQuery = FluxoCaixa::query() // Ajustado para o nome correto do Model se necessário
             ->select(
                 'plano_de_conta_id',
                 DB::raw("SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as entradas"),
@@ -53,40 +38,33 @@ class PlanoDeContasService
             )
             ->whereNotNull('plano_de_conta_id')
             ->groupBy('plano_de_conta_id');
-        
-        // Aplica o filtro de empresa APENAS se um ID for fornecido
-        $fluxoQuery->when($empresaId, function ($q) use ($empresaId) {
-            return $q->where('empresa_id', $empresaId);
-        });
+        $fluxoQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
 
         // --- Contas a Pagar ---
         $pagarQuery = ContasAPagar::query()
             ->select('plano_de_contas_id', DB::raw('SUM(valor_pago) as total_pago'))
-            ->where('status', 'finalizado')
+            ->where('status', 'pago') // <<< --- CORREÇÃO APLICADA AQUI ---
             ->whereNotNull('plano_de_contas_id')
             ->groupBy('plano_de_contas_id');
-        
-        $pagarQuery->when($empresaId, function ($q) use ($empresaId) {
-            return $q->where('empresa_id', $empresaId);
-        });
+        $pagarQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
 
         // --- Contas a Receber ---
+        // Vou assumir que o status para recebido seria 'recebido'. Se for diferente, basta ajustar aqui.
         $receberQuery = ContasAReceber::query()
             ->select('plano_de_contas_id', DB::raw('SUM(valor_recebido) as total_recebido'))
-            ->where('status', 'finalizado')
+            ->where('status', 'recebido') // Assumindo 'recebido' como status para receitas.
             ->whereNotNull('plano_de_contas_id')
             ->groupBy('plano_de_contas_id');
-            
-        $receberQuery->when($empresaId, function ($q) use ($empresaId) {
-            return $q->where('empresa_id', $empresaId);
-        });
+        $receberQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
 
+        // Filtros de data
         if ($dataInicio && $dataFim) {
             $fluxoQuery->whereBetween('data', [$dataInicio, $dataFim]);
             $pagarQuery->whereBetween('data_pagamento', [$dataInicio, $dataFim]);
             $receberQuery->whereBetween('data_recebimento', [$dataInicio, $dataFim]);
         }
         
+        // Processamento dos totais (sem alterações)
         $fluxos = $fluxoQuery->get();
         foreach ($fluxos as $fluxo) {
             $totais[$fluxo->plano_de_conta_id] = ($totais[$fluxo->plano_de_conta_id] ?? 0) + $fluxo->entradas - $fluxo->saidas;
@@ -102,16 +80,12 @@ class PlanoDeContasService
         return $totais;
     }
     
-    // Os métodos construirArvore e calcularTotaisCumulativos não precisam de nenhuma alteração.
-    // Copie-os da sua versão anterior que já estava funcionando.
+    // Métodos construirArvore e calcularTotaisCumulativos (sem alterações)
     private function construirArvore(Collection $contas): array
     {
         $mapaContas = [];
         foreach ($contas as $conta) {
-            $mapaContas[$conta->id] = [
-                'model' => $conta,
-                'filhos' => []
-            ];
+            $mapaContas[$conta->id] = ['model' => $conta, 'filhos' => []];
         }
         $arvore = [];
         foreach ($mapaContas as $id => &$node) {
