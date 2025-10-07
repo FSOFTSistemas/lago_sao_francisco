@@ -2,6 +2,7 @@
 
 namespace App\services;
 
+use App\Models\ContasAPagar;
 use App\Models\FluxoCaixa;
 use App\Models\PlanoDeConta;
 use Illuminate\Support\Collection;
@@ -27,35 +28,54 @@ class PlanoDeContasService
         return $arvore;
     }
 
-    private function calcularTotaisIndividuais(?int $empresaId = null, $dataInicio, $dataFim): array
-    {
-        $totais = [];
+    private function calcularTotaisIndividuais(?int $empresaId = null, $dataInicio = null, $dataFim): array
+{
+    $totais = [];
 
-        // Fontes de dados (FluxoCaixas, ContasAPagar, ContasAReceber)
-        $fluxoQuery = FluxoCaixa::query()
-            ->select('plano_de_conta_id', DB::raw("SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE -valor END) as total"))
-            ->whereNotNull('plano_de_conta_id')->groupBy('plano_de_conta_id');
-        $fluxoQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
-        if ($dataInicio && $dataFim) $fluxoQuery->whereBetween('data', [$dataInicio, $dataFim]);
-        
-        foreach ($fluxoQuery->get() as $item) {
-            $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;
-        }
+    // IDs dos movimentos que são puramente operacionais e devem ser ignorados no relatório.
+    // Baseado no seu print: sangria(17), suprimento(18), abertura de caixa(19), fechamento de caixa(20)
+    $idsDeMovimentoParaIgnorar = [17, 18, 19, 20];
 
-        $pagarQuery = \App\Models\ContasAPagar::query()
-            ->select('plano_de_contas_id', DB::raw('SUM(valor_pago) as total'))
-            ->where('status', 'pago')->whereNotNull('plano_de_contas_id')->groupBy('plano_de_contas_id');
-        $pagarQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
-        if ($dataInicio && $dataFim) $pagarQuery->whereBetween('data_pagamento', [$dataInicio, $dataFim]);
-
-        foreach ($pagarQuery->get() as $item) {
-            $totais[$item->plano_de_contas_id] = ($totais[$item->plano_de_conta_id] ?? 0) - $item->total;
-        }
-
-        // Adicione outras fontes de dados como ContasAReceber aqui se necessário
-        
-        return $totais;
+    // --- Fluxo de Caixas ---
+    $fluxoQuery = FluxoCaixa::query()
+        ->select('plano_de_conta_id', DB::raw("SUM(CASE WHEN tipo = 'entrada' THEN valor WHEN tipo = 'saida' THEN -valor ELSE 0 END) as total"))
+        ->whereNotNull('plano_de_conta_id')
+        ->whereNotIn('movimento_id', $idsDeMovimentoParaIgnorar) // <-- LÓGICA AVANÇADA AQUI
+        ->where('tipo', '!=', 'cancelamento') // Ignora também os cancelamentos
+        ->groupBy('plano_de_conta_id');
+    
+    $fluxoQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
+    if ($dataInicio && $dataFim) $fluxoQuery->whereBetween('data', [$dataInicio, $dataFim]);
+    
+    foreach ($fluxoQuery->get() as $item) {
+        $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;
     }
+
+    // --- Contas a Pagar ---
+    $pagarQuery = ContasAPagar::query()
+        ->select('plano_de_contas_id', DB::raw('SUM(valor_pago) as total'))
+        ->where('status', 'pago')->whereNotNull('plano_de_contas_id')->groupBy('plano_de_contas_id');
+    $pagarQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
+    if ($dataInicio && $dataFim) $pagarQuery->whereBetween('data_pagamento', [$dataInicio, $dataFim]);
+
+    foreach ($pagarQuery->get() as $item) {
+        $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) - $item->total;
+    }
+
+    // --- Contas a Receber ---
+    $receberQuery = \App\Models\ContasAReceber::query()
+        ->select('plano_de_contas_id', DB::raw('SUM(valor_recebido) as total'))
+        ->where('status', 'recebido') // Assumindo 'recebido' como status.
+        ->whereNotNull('plano_de_contas_id')->groupBy('plano_de_contas_id');
+    $receberQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
+    if ($dataInicio && $dataFim) $receberQuery->whereBetween('data_recebimento', [$dataInicio, $dataFim]);
+
+    foreach ($receberQuery->get() as $item) {
+        $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;
+    }
+    
+    return $totais;
+}
 
     /**
      * Constrói a árvore a partir de uma lista de contas. VERSÃO FINAL E DEFINITIVA.
