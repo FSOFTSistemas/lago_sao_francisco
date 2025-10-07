@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\services; // Corrigido para 'services' minúsculo como você mencionou
 
 use App\Models\PlanoDeConta;
 use App\Models\FluxoCaixa;
@@ -13,24 +13,24 @@ class PlanoDeContasService
 {
     /**
      * Gera a estrutura de árvore do plano de contas com totais cumulativos.
-     *
-     * @param int $empresaId
-     * @param string|null $dataInicio
-     * @param string|null $dataFim
-     * @return array
+     * O parâmetro $empresaId agora é opcional.
      */
-    public function gerarRelatorioHierarquico(int $empresaId, $dataInicio = null, $dataFim = null): array
+    public function gerarRelatorioHierarquico(?int $empresaId = null, $dataInicio = null, $dataFim = null): array
     {
-        // 1. Buscar todas as contas da empresa
-        $todasContas = PlanoDeConta::daEmpresa($empresaId)->get();
+        // 1. Buscar contas. Se $empresaId for nulo, busca todas.
+        $query = PlanoDeConta::query();
+        $query->when($empresaId, function ($q) use ($empresaId) {
+            return $q->where('empresa_id', $empresaId)->orWhereNull('empresa_id');
+        });
+        $todasContas = $query->get();
 
-        // 2. Calcular os totais diretos para cada conta
+        // 2. Calcular os totais. Se $empresaId for nulo, calcula o total de tudo.
         $totaisIndividuais = $this->calcularTotaisIndividuais($empresaId, $dataInicio, $dataFim);
 
-        // 3. Montar a estrutura da árvore
+        // 3. Montar a estrutura da árvore (sem alterações)
         $arvore = $this->construirArvore($todasContas);
 
-        // 4. Calcular os totais cumulativos (soma dos filhos)
+        // 4. Calcular os totais cumulativos (sem alterações)
         $this->calcularTotaisCumulativos($arvore, $totaisIndividuais);
 
         return $arvore;
@@ -38,13 +38,14 @@ class PlanoDeContasService
 
     /**
      * Calcula os totais lançados diretamente em cada plano de conta.
+     * O parâmetro $empresaId agora é opcional.
      */
-    private function calcularTotaisIndividuais(int $empresaId, $dataInicio, $dataFim): array
+    private function calcularTotaisIndividuais(?int $empresaId = null, $dataInicio, $dataFim): array
     {
         $totais = [];
 
-        // Fluxo de Caixa (Entradas - Saídas)
-        $fluxoQuery = FluxoCaixa::where('empresa_id', $empresaId)
+        // --- Fluxo de Caixa ---
+        $fluxoQuery = FluxoCaixa::query()
             ->select(
                 'plano_de_conta_id',
                 DB::raw("SUM(CASE WHEN tipo = 'entrada' THEN valor ELSE 0 END) as entradas"),
@@ -52,65 +53,70 @@ class PlanoDeContasService
             )
             ->whereNotNull('plano_de_conta_id')
             ->groupBy('plano_de_conta_id');
+        
+        // Aplica o filtro de empresa APENAS se um ID for fornecido
+        $fluxoQuery->when($empresaId, function ($q) use ($empresaId) {
+            return $q->where('empresa_id', $empresaId);
+        });
 
-        // Contas a Pagar (Saídas)
-        $pagarQuery = ContasAPagar::daEmpresa($empresaId)
+        // --- Contas a Pagar ---
+        $pagarQuery = ContasAPagar::query()
             ->select('plano_de_contas_id', DB::raw('SUM(valor_pago) as total_pago'))
-            ->where('status', 'finalizado') // Considerar apenas o que foi pago
+            ->where('status', 'finalizado')
             ->whereNotNull('plano_de_contas_id')
             ->groupBy('plano_de_contas_id');
+        
+        $pagarQuery->when($empresaId, function ($q) use ($empresaId) {
+            return $q->where('empresa_id', $empresaId);
+        });
 
-        // Contas a Receber (Entradas)
-        $receberQuery = ContasAReceber::where('empresa_id', $empresaId)
+        // --- Contas a Receber ---
+        $receberQuery = ContasAReceber::query()
             ->select('plano_de_contas_id', DB::raw('SUM(valor_recebido) as total_recebido'))
-            ->where('status', 'finalizado') // Considerar apenas o que foi recebido
+            ->where('status', 'finalizado')
             ->whereNotNull('plano_de_contas_id')
             ->groupBy('plano_de_contas_id');
+            
+        $receberQuery->when($empresaId, function ($q) use ($empresaId) {
+            return $q->where('empresa_id', $empresaId);
+        });
 
-        // Filtros de data (se fornecidos)
         if ($dataInicio && $dataFim) {
             $fluxoQuery->whereBetween('data', [$dataInicio, $dataFim]);
             $pagarQuery->whereBetween('data_pagamento', [$dataInicio, $dataFim]);
             $receberQuery->whereBetween('data_recebimento', [$dataInicio, $dataFim]);
         }
-
+        
         $fluxos = $fluxoQuery->get();
         foreach ($fluxos as $fluxo) {
             $totais[$fluxo->plano_de_conta_id] = ($totais[$fluxo->plano_de_conta_id] ?? 0) + $fluxo->entradas - $fluxo->saidas;
         }
-
         $pagamentos = $pagarQuery->get();
         foreach ($pagamentos as $pagamento) {
             $totais[$pagamento->plano_de_contas_id] = ($totais[$pagamento->plano_de_contas_id] ?? 0) - $pagamento->total_pago;
         }
-        
         $recebimentos = $receberQuery->get();
         foreach ($recebimentos as $recebimento) {
             $totais[$recebimento->plano_de_contas_id] = ($totais[$recebimento->plano_de_contas_id] ?? 0) + $recebimento->total_recebido;
         }
-
         return $totais;
     }
-
-    /**
-     * Constrói a árvore a partir de uma lista de contas.
-     */
+    
+    // Os métodos construirArvore e calcularTotaisCumulativos não precisam de nenhuma alteração.
+    // Copie-os da sua versão anterior que já estava funcionando.
     private function construirArvore(Collection $contas): array
     {
         $mapaContas = [];
-        // Criamos um "nó" para cada conta, que é um array contendo o modelo e um espaço para os filhos.
         foreach ($contas as $conta) {
             $mapaContas[$conta->id] = [
                 'model' => $conta,
                 'filhos' => []
             ];
         }
-
         $arvore = [];
         foreach ($mapaContas as $id => &$node) {
             $conta = $node['model'];
             if ($conta->plano_de_conta_pai && isset($mapaContas[$conta->plano_de_conta_pai])) {
-                // Adicionamos o nó atual ao array 'filhos' do seu pai.
                 $mapaContas[$conta->plano_de_conta_pai]['filhos'][] = &$node;
             } else {
                 $arvore[] = &$node;
@@ -118,23 +124,14 @@ class PlanoDeContasService
         }
         return $arvore;
     }
-
-    /**
-     * CALCULAR TOTAIS CUMULATIVOS - MÉTODO CORRIGIDO
-     */
     private function calcularTotaisCumulativos(array &$nodes, array $totaisIndividuais)
     {
-        foreach ($nodes as &$node) { // Usamos referência '&' para modificar o array original
+        foreach ($nodes as &$node) { 
             if (!empty($node['filhos'])) {
                 $this->calcularTotaisCumulativos($node['filhos'], $totaisIndividuais);
             }
-
             $totalProprio = $totaisIndividuais[$node['model']->id] ?? 0;
-            
-            // Somamos os totais que já foram calculados para os filhos.
             $totalFilhos = collect($node['filhos'])->sum('total_cumulativo');
-            
-            // Criamos a propriedade 'total_cumulativo' no nosso array de nó.
             $node['total_cumulativo'] = $totalProprio + $totalFilhos;
         }
     }
