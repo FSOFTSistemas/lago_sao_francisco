@@ -77,7 +77,30 @@
                 </div>
             </div>
         </div>
+      </div>
+        @php
+    $totalReceitas = $receitas['total_cumulativo'] ?? 0;
+    $totalDespesas = $despesas['total_cumulativo'] ?? 0;
+    // Como as despesas já vêm com valor negativo do service, nós simplesmente somamos.
+    $saldoFinal = $totalReceitas + $totalDespesas;
+@endphp
+
+<div class="row">
+    <div class="col-12">
+        <div class="card {{ $saldoFinal >= 0 ? 'border-success' : 'border-danger' }}">
+            <div class="card-header bg-light">
+                <h3 class="card-title font-weight-bold">
+                    Saldo Final do Período
+                </h3>
+            </div>
+            <div class="card-body text-center py-4">
+                <h2 class="font-weight-bolder {{ $saldoFinal >= 0 ? 'text-success' : 'text-danger' }}" style="font-size: 2.5rem;">
+                    R$ {{ number_format($saldoFinal, 2, ',', '.') }}
+                </h2>
+            </div>
+        </div>
     </div>
+</div>
 @stop
 
 @push('js')
