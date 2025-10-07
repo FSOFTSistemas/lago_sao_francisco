@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Empresa;
 use App\Models\PlanoDeConta;
 use App\services\PlanoDeContasService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -87,36 +88,46 @@ class PlanoDeContaController extends Controller
         }
     }
 
-   public function relatorio(Request $request)
-{
-    try {
-        $request->validate([
-            'data_inicio' => 'nullable|date',
-            'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
-        ]);
-        
-        $dataInicio = $request->input('data_inicio');
-        $dataFim    = $request->input('data_fim');
+    public function relatorio(Request $request)
+    {
+        try {
+            $request->validate([
+                'data_inicio' => 'nullable|date',
+                'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
+            ]);
+            
+            // Pega as datas do formulário
+            $dataInicio = $request->input('data_inicio');
+            $dataFim    = $request->input('data_fim');
 
-        // 1. CHAMA O SERVICE PARA PEGAR OS DADOS REAIS DO BANCO
-        // Passamos 'null' para o ID da empresa para buscar o consolidado
-        $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
+            // ===================================================================
+            // LÓGICA PARA O FILTRO PADRÃO DO MÊS ATUAL
+            // ===================================================================
+            // Se nenhuma data de início foi enviada, define o padrão
+            if (empty($dataInicio)) {
+                $hoje = Carbon::now();
+                $dataInicio = $hoje->startOfMonth()->format('Y-m-d');
+                $dataFim = $hoje->endOfMonth()->format('Y-m-d');
+            }
+            // ===================================================================
 
-        // 2. ENCONTRA AS CONTAS RAIZ DE DESPESA E RECEITA NA ÁRVORE
-        $despesas = collect($arvoreContas)->first(function ($node) {
-            return strtolower($node['model']->descricao) === 'despesa';
-        }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+            // Chama o service para pegar os dados reais do banco, já com o filtro
+            $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
 
-        $receitas = collect($arvoreContas)->first(function ($node) {
-            return strtolower($node['model']->descricao) === 'receita';
-        }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+            // Encontra as contas raiz de despesa e receita
+            $despesas = collect($arvoreContas)->first(function ($node) {
+                return strtolower($node['model']->descricao) === 'despesa';
+            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
 
-        // 3. ENVIA OS DADOS REAIS PARA AS VIEWS QUE AGORA SABEMOS QUE ESTÃO CORRETAS
-        return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
-        
-    } catch (\Exception $e) {
-        // Bloco de segurança para capturar qualquer erro inesperado
-        dd($e); 
+            $receitas = collect($arvoreContas)->first(function ($node) {
+                return strtolower($node['model']->descricao) === 'receita';
+            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+
+            // Envia os dados para a view
+            return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
+            
+        } catch (\Exception $e) {
+            dd($e); 
+        }
     }
-}
 }
