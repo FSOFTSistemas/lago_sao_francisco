@@ -4,11 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Models\Empresa;
 use App\Models\PlanoDeConta;
+use App\Services\PlanoDeContasService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class PlanoDeContaController extends Controller
 {
+    protected $planoDeContasService;
+
+    public function __construct(PlanoDeContasService $planoDeContasService)
+    {
+        $this->planoDeContasService = $planoDeContasService;
+    }
     /**
      * Display a listing of the resource.
      */
@@ -78,5 +85,26 @@ class PlanoDeContaController extends Controller
             dd($e)->getMessage();
             return redirect()->back()->with('error', 'Erro ao deletar Plano de Conta');
         }
+    }
+
+    public function relatorio(Request $request)
+    {
+        // Validação básica das datas
+        $request->validate([
+            'data_inicio' => 'nullable|date',
+            'data_fim' => 'nullable|date|after_or_equal:data_inicio',
+        ]);
+        
+        $empresaId = Auth::user()->empresa_id;
+        $dataInicio = $request->input('data_inicio');
+        $dataFim = $request->input('data_fim');
+
+        $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico($empresaId, $dataInicio, $dataFim);
+
+        // Separar as contas raiz (Receitas e Despesas)
+        $receitas = collect($arvoreContas)->firstWhere('descricao', 'Receita');
+        $despesas = collect($arvoreContas)->firstWhere('descricao', 'Despesa');
+
+        return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
     }
 }

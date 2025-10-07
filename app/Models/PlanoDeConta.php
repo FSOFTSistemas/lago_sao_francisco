@@ -27,4 +27,8 @@ class PlanoDeConta extends Model
     {
         return $this->belongsTo($this, 'plano_de_conta_pai');
     }
+    public function filhos()
+    {
+        return $this->hasMany($this, 'plano_de_conta_pai');
+    }
 }
