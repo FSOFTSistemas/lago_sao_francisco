@@ -1,4 +1,6 @@
-@extends('adminlte::page') @section('title', 'Relatório de Plano de Contas')
+@extends('adminlte::page')
+
+@section('title', 'Relatório de Plano de Contas')
 
 @section('content_header')
     <h1>Relatório de Plano de Contas</h1>
@@ -42,16 +44,16 @@
                 </div>
                 <div class="card-body">
                     <div id="accordion-receitas">
-                        @if($receitas && !empty($receitas->filhos))
-                            @foreach($receitas->filhos as $conta)
-                                @include('relatorios.partials.plano_conta_item', ['conta' => $conta, 'parentId' => 'accordion-receitas'])
+                        @if($receitas && !empty($receitas['filhos']))
+                            @foreach($receitas['filhos'] as $contaNode)
+                                @include('relatorios.partials.plano_conta_item', ['node' => $contaNode, 'parentId' => 'accordion-receitas'])
                             @endforeach
                         @else
                             <p>Nenhuma receita encontrada.</p>
                         @endif
                     </div>
                     <hr>
-                    <h4>Total Receitas: <span class="text-success">R$ {{ number_format($receitas->total_cumulativo ?? 0, 2, ',', '.') }}</span></h4>
+                    <h4>Total Receitas: <span class="text-success">R$ {{ number_format($receitas['total_cumulativo'] ?? 0, 2, ',', '.') }}</span></h4>
                 </div>
             </div>
         </div>
@@ -62,16 +64,16 @@
                 </div>
                 <div class="card-body">
                     <div id="accordion-despesas">
-                         @if($despesas && !empty($despesas->filhos))
-                            @foreach($despesas->filhos as $conta)
-                                @include('relatorios.partials.plano_conta_item', ['conta' => $conta, 'parentId' => 'accordion-despesas'])
+                         @if($despesas && !empty($despesas['filhos']))
+                            @foreach($despesas['filhos'] as $contaNode)
+                                @include('relatorios.partials.plano_conta_item', ['node' => $contaNode, 'parentId' => 'accordion-despesas'])
                             @endforeach
                         @else
                             <p>Nenhuma despesa encontrada.</p>
                         @endif
                     </div>
                     <hr>
-                    <h4>Total Despesas: <span class="text-danger">R$ {{ number_format(abs($despesas->total_cumulativo ?? 0), 2, ',', '.') }}</span></h4>
+                    <h4>Total Despesas: <span class="text-danger">R$ {{ number_format(abs($despesas['total_cumulativo'] ?? 0), 2, ',', '.') }}</span></h4>
                 </div>
             </div>
         </div>
