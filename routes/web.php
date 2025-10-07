@@ -291,3 +291,6 @@ Route::get('/fornecedores/busca', [App\Http\Controllers\FornecedorController::cl
 Route::get('/fornecedores/json/{fornecedor}', [App\Http\Controllers\FornecedorController::class, 'showJson'])->name('fornecedores.showJson');
 
 Route::post('/contasAPagar/{id}/delete', [ContasAPagarController::class, 'destroy'])->name('contasAPagar.forceDelete');
+
+Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relatorio'])
+    ->name('plano-de-contas.relatorio'); 
