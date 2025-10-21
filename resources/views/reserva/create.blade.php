@@ -271,10 +271,19 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group row" id="campoPlaca">
+                                    <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
+                                    <div class="col-md-4">
+                                        <input type="text" name="placa_veiculo" id="placa_veiculo"
+                                            class="form-control"
+                                            value="{{ old('placa_veiculo', $reserva->placa_veiculo ?? '') }}">
+                                    </div>
+                                </div>
+
                                     <div class="form-group row" id="campoObservacoes">
                                         <label for="observacao" class="col-md-3 label-control">Observações</label>
                                         <div class="col-md-9">
-                                            <textarea class="form-control" name="observacao" rows="3" id="observacoes">{{ old('observacao', $reserva->observacao ?? '') }}</textarea>
+                                            <textarea class="form-control" name="observacoes" rows="3" id="observacoes">{{ old('observacoes', $reserva->observacoes ?? '') }}</textarea>
                                         </div>
                                     </div>
 
@@ -349,6 +358,11 @@
                                                     <i class="fa fa-file-pdf-o"></i> Gerar Voucher
                                                 </a>
                                             @endif
+
+                                            <a href="{{ route('reserva.fnrh', $reserva->id) }}"
+                                                class="btn btn-warning" target="_blank">
+                                                <i class="fas fa-address-card"></i> Emitir FNRH
+                                            </a>
                                             <!-- Botão No Show -->
                                             @if (isset($reserva) && $reserva->situacao === 'reserva')
                                                 <button type="button" class="btn btn-cancelar-noshow" id="btn-noshow"
@@ -606,6 +620,10 @@
                                     <input type="date" class="form-control" id="data_transacao"
                                         value="{{ date('Y-m-d') }}">
                                 </div>
+                                <div class="form-group">
+                                <label for="comprovante_transacao">Anexar Comprovante (Opcional)</label>
+                                <input type="file" class="form-control-file" id="comprovante_transacao">
+                            </div>
                                 <div class="form-group">
                                     <label for="observacoes_transacao">Observações</label>
                                     <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
@@ -964,6 +982,10 @@
         #esconder {
             display: none !important;
         }
+
+        #placa_veiculo {
+        text-transform: uppercase;
+    }
     </style>
     <style>
         @media (max-width: 768px) {
@@ -1000,8 +1022,16 @@
             });
         });
     </script>
-    <script>
+   <script>
         $(document).ready(function() {
+            // 1. Plugins que ESTÃO funcionando (Select2)
+            $('.select2').select2({
+                placeholder: 'selecione...',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // 2. Máscaras que ESTÃO funcionando (JQuery Mask)
             $("#telefone").mask("(00) 00000-0000");
             $("#valor_diaria").mask("#.##0,00", {
                 reverse: true
@@ -1009,7 +1039,69 @@
             $("#valor_transacao").mask("#.##0,00", {
                 reverse: true
             });
-        })
+
+            // --- INÍCIO DA SOLUÇÃO PARA PLACA ---
+            
+            // 3. Função de formatação manual para Placa
+            // (Baseada na sua função, mas com a lógica de formatação refinada)
+            function formatarPlacaManual(valor) {
+                let limpa = valor.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+                if (limpa.length > 7) {
+                    limpa = limpa.substring(0, 7);
+                }
+                
+                let resultado = '';
+                // Validação caractere a caractere para garantir o formato
+                for (let i = 0; i < limpa.length; i++) {
+                    const char = limpa[i];
+                    
+                    if (i < 3) { // Posições 0, 1, 2 (AAA)
+                        if (/[A-Z]/.test(char)) {
+                            resultado += char;
+                        }
+                    } else if (i === 3) { // Posição 3 (Número)
+                        if (/[0-9]/.test(char)) {
+                            resultado += char;
+                        }
+                    } else if (i === 4) { // Posição 4 (Híbrido - Letra ou Número)
+                        if (/[A-Z0-9]/.test(char)) {
+                            resultado += char;
+                        }
+                    } else { // Posições 5, 6 (Números)
+                        if (/[0-9]/.test(char)) {
+                            resultado += char;
+                        }
+                    }
+                }
+
+                // Adiciona o hífen
+                if (resultado.length > 3) {
+                    resultado = resultado.slice(0, 3) + '-' + resultado.slice(3);
+                }
+                
+                return resultado;
+            }
+
+            var placaInput = $("#placa_veiculo");
+
+            // 4. Limpa qualquer máscara ou listener conflitante
+            // Esta é a parte mais importante!
+            try {
+                placaInput.unmask(); // Remove o plugin JQuery Mask (importante!)
+            } catch(e) {}
+            placaInput.off('input');   // Remove qualquer listener 'input' anterior
+
+            // 5. Aplica o novo listener de formatação manual
+            placaInput.on('input', function () {
+                const valor = $(this).val();
+                const formatado = formatarPlacaManual($(this).val());
+                $(this).val(formatado);
+            });
+
+            // --- FIM DA SOLUÇÃO PARA PLACA ---
+
+        }); // Fim do $(document).ready
     </script>
 
     <script>
@@ -1374,6 +1466,7 @@
                 const categoria = $('#categoria_transacao').val();
                 const tipo = $('#tipo_transacao').val();
                 const restante = parseFloat($('#valor-falta-lancar').val());
+                const comprovanteFile = $('#comprovante_transacao')[0].files[0];
 
                 if (valorStr > restante) {
                     Swal.fire({
@@ -1392,21 +1485,26 @@
 
                 const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
-                const dados = {
-                    descricao: descricao,
-                    valor: valor,
-                    forma_pagamento_id: formaPagamentoId,
-                    data_pagamento: dataTransacao,
-                    observacoes: observacoes,
-                    categoria: categoria,
-                    tipo: tipo,
-                    reserva_id: reservaId
-                };
+                const formData = new FormData();
+            formData.append('descricao', descricao);
+            formData.append('valor', valor);
+            formData.append('forma_pagamento_id', formaPagamentoId);
+            formData.append('data_pagamento', dataTransacao);
+            formData.append('observacoes', observacoes);
+            formData.append('categoria', categoria);
+            formData.append('tipo', tipo);
+            formData.append('reserva_id', reservaId);
+
+            if (comprovanteFile) {
+                formData.append('comprovante', comprovanteFile);
+            }
 
                 $.ajax({
                     url: '/transacoes',
                     method: 'POST',
-                    data: dados,
+                    data: formData, 
+                processData: false, 
+                contentType: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
@@ -1459,9 +1557,10 @@
                 $('#forma_pagamento_transacao').val('');
                 $('#data_transacao').val('{{ date('Y-m-d') }}');
                 $('#observacoes_transacao').val('');
+                $('#comprovante_transacao').val(null);
             }
 
-            function atualizarListaAtividades() {
+function atualizarListaAtividades() {
                 const $lista = $('#lista-atividades');
 
                 if (transacoes.length === 0) {
@@ -1473,6 +1572,17 @@
 
                 transacoes.forEach(function(transacao) {
                     if (!transacao.status) return; // Pular transações inativas
+
+                    let linkComprovante = '';
+                    if (transacao.comprovante_path) {
+                        // Use a URL do storage
+                        let urlComprovante = '{{ asset('storage') }}/' + transacao.comprovante_path;
+                        linkComprovante = `
+                        <a href="${urlComprovante}" target="_blank" class="btn btn-sm btn-outline-info float-right" style="margin-left: 5px;" title="Ver Comprovante">
+                            <i class="fas fa-file-alt"></i>
+                        </a>
+                    `;
+                    }
 
                     const dataFormatada = moment(transacao.data_pagamento).format('DD/MM/YYYY');
                     const valorFormatado = 'R$ ' + parseFloat(transacao.valor).toLocaleString('pt-BR', {
@@ -1486,22 +1596,24 @@
                     if (transacao.tipo === 'item') {
                         // Para itens de produto (ReservaItem)
                         html = `
-                            <div class="atividade-item" data-id="${transacao.id}">
-                                <div class="atividade-header">
-                                    <span>${transacao.descricao} (x${transacao.quantidade})</span>
-                                    <span class="text-success">${valorFormatado}</span>
-                                </div>
-                                <div class="atividade-details">
-                                    <span class="badge ${badgeClass}">produtos</span>
-                                    Item da reserva • ${dataFormatada}
-                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
-                                        <button class="btn btn-sm btn-outline-danger float-right btn-remover-item" data-id="${transacao.id}">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    @endif
-                                </div>
+                        <div class="atividade-item" data-id="${transacao.id}">
+                            <div class="atividade-header">
+                                <span>${transacao.descricao}</span>
+                                <span class="text-${transacao.tipo === 'desconto' ? 'danger' : 'success'}">${transacao.tipo === 'desconto' ? '-' : ''}${valorFormatado}</span>
                             </div>
-                        `;
+                            <div class="atividade-details">
+                                <span class="badge ${badgeClass}">${transacao.categoria}</span>
+                                ${formaPagamento} • ${dataFormatada}
+
+                                @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
+                                    ${linkComprovante} 
+                                    <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    `;
                     } else {
                         // Para transações normais
                         html = `
@@ -1514,6 +1626,9 @@
                                     <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                     ${formaPagamento} • ${dataFormatada}
                                     @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
+                                        
+                                        ${linkComprovante} 
+                                        
                                         <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
                                             <i class="fas fa-trash"></i>
                                         </button>

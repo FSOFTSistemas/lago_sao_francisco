@@ -13,6 +13,7 @@ use App\Models\PreferenciasHotel;
 use App\Models\Produto;
 use App\Models\Transacao;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -90,6 +91,8 @@ class ReservaController extends Controller
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
                 'n_adultos' => 'required',
                 'n_criancas' => 'required',
+                'observacoes' => 'nullable|string',
+                'placa_veiculo' => 'nullable|string|max:10'
             ]);
 
             $preferencia = PreferenciasHotel::first();
@@ -201,6 +204,8 @@ class ReservaController extends Controller
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
                 'n_adultos' => 'required',
                 'n_criancas' => 'required',
+                'observacoes' => 'nullable|string',
+                'placa_veiculo' => 'nullable|string|max:10'
             ]);
 
             // Validações específicas de situação
@@ -713,6 +718,51 @@ class ReservaController extends Controller
                 'success' => false,
                 'message' => 'Erro ao marcar No Show: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    public function emitirFNRH(Reserva $reserva)
+    {
+        try {
+            // Carregar os relacionamentos necessários
+            $reserva->load('hospede', 'quarto');
+
+            // Pegar o hóspede principal. Se não houver, falhar graciosamente.
+            $hospede = $reserva->hospede;
+            if (!$hospede) {
+                return redirect()->back()->with('error', 'Reserva sem hóspede principal definido.');
+            }
+
+            // Calcular n° de acompanhantes
+            // O total de hóspedes (adultos + crianças) menos o hóspede principal (1)
+            $n_acompanhantes = max(0, ($reserva->n_adultos + $reserva->n_criancas) - 1);
+
+            $data = [
+                'reserva' => $reserva,
+                'hospede' => $hospede,
+                'quarto' => $reserva->quarto,
+                'data_entrada' => Carbon::parse($reserva->data_checkin)->format('d/m/Y'),
+                'data_saida' => Carbon::parse($reserva->data_checkout)->format('d/m/Y'),
+                
+                // --- ALTERAÇÃO AQUI ---
+                'hora_entrada' => $reserva->hora_checkin ? Carbon::parse($reserva->hora_checkin)->format('H:i') : '',
+                'hora_saida' => '', // Deixa em branco
+                // --- FIM DA ALTERAÇÃO ---
+
+                'n_acompanhantes' => $n_acompanhantes,
+            ];
+
+            // Carregar a view do PDF
+            $pdf = Pdf::loadView('reserva.fnrh', $data);
+
+            // Definir o nome do arquivo
+            $fileName = 'FNRH_' . str_replace(' ', '_', $hospede->nome) . '_' . $reserva->id . '.pdf';
+
+            // Retornar o PDF no navegador (stream)
+            return $pdf->stream($fileName);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao gerar FNRH: ' . $e->getMessage());
         }
     }
 }
