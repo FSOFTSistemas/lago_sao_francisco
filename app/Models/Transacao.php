@@ -22,6 +22,7 @@ class Transacao extends Model
         'valor',
         'observacoes',
         'reserva_id',
+        'comprovante_path',
     ];
 
     protected $casts = [

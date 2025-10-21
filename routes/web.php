@@ -294,3 +294,5 @@ Route::post('/contasAPagar/{id}/delete', [ContasAPagarController::class, 'destro
 
 Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relatorio'])
     ->name('plano-de-contas.relatorio'); 
+
+    Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');

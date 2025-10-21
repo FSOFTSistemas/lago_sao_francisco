@@ -20,6 +20,7 @@ class Reserva extends Model
         'n_adultos',
         'n_criancas',
         'observacoes',
+        'placa_veiculo'
     ];
 
     public function quarto()

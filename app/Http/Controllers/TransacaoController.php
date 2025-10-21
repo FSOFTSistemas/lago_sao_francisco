@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class TransacaoController extends Controller
 {
@@ -45,7 +46,14 @@ class TransacaoController extends Controller
                 'valor' => 'required|numeric|min:0',
                 'observacoes' => 'nullable|string',
                 'reserva_id' => 'required|exists:reservas,id',
+                'comprovante' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // 2MB Max
             ]);
+
+            $comprovantePath = null;
+        if ($request->hasFile('comprovante')) { 
+           
+            $comprovantePath = $request->file('comprovante')->store('comprovantes', 'public'); 
+        }
 
             DB::beginTransaction();
 
@@ -61,6 +69,7 @@ class TransacaoController extends Controller
                 'valor' => $request->valor,
                 'observacoes' => $request->observacoes,
                 'reserva_id' => $request->reserva_id,
+                'comprovante_path' => $comprovantePath,
             ]);
             LogReserva::registrarPagamentoAdicionado($request->reserva_id, Auth::id(), $transacao);
 
@@ -77,6 +86,10 @@ class TransacaoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
+            if (isset($comprovantePath) && Storage::disk('public')->exists($comprovantePath)) { 
+            Storage::disk('public')->delete($comprovantePath); 
+        }
             
             return response()->json([
                 'success' => false,
@@ -117,43 +130,48 @@ class TransacaoController extends Controller
     }
 
     public function destroy($id)
-    {
-        try {
-            DB::beginTransaction();
-            $transacao = Transacao::findOrFail($id);
+{
+    try {
+        DB::beginTransaction();
+        $transacao = Transacao::findOrFail($id);
 
-            // Verificar se a transação é do mesmo dia ou de dias anteriores
-            $dataTransacao = Carbon::parse($transacao->data_pagamento);
-            $hoje = Carbon::today();
+        // Verificar se a transação é do mesmo dia ou de dias anteriores
+        $dataTransacao = Carbon::parse($transacao->data_pagamento);
+        $hoje = Carbon::today();
 
-            if ($dataTransacao->isSameDay($hoje)) {
-                // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
-                $this->cancelarMovimentacaoCaixa($transacao);
-            } else {
-                // Transação de dias anteriores: criar ContasAPagar
-                $this->criarContasAPagar($transacao);
-            }
-            LogReserva::registrarPagamentoRemovido($transacao->reserva->id, Auth::id(), $transacao);
-
-            // Remover a transação
-            $transacao->delete();
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transação removida com sucesso!'
-            ]);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao remover transação: ' . $e->getMessage()
-            ], 500);
+        if ($dataTransacao->isSameDay($hoje)) {
+            // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
+            $this->cancelarMovimentacaoCaixa($transacao);
+        } else {
+            // Transação de dias anteriores: criar ContasAPagar
+            $this->criarContasAPagar($transacao);
         }
+        LogReserva::registrarPagamentoRemovido($transacao->reserva->id, Auth::id(), $transacao);
+
+        // 5. APAGAR O ARQUIVO DO DISCO QUANDO A TRANSAÇÃO FOR REMOVIDA
+        if ($transacao->comprovante_path) { 
+            Storage::disk('public')->delete($transacao->comprovante_path); 
+        }
+
+        // Remover a transação
+        $transacao->delete();
+
+        DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transação removida com sucesso!'
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erro ao remover transação: ' . $e->getMessage()
+        ], 500);
     }
+}
 
 
     public function getByReserva($reservaId)
