@@ -78,7 +78,7 @@ class VoucherReservaEmail extends Mailable
         ];
 
         // 2. Gerar o PDF em memória (usando seu template.blade.php)
-        $pdf = Pdf::loadView('template', $data); // Certifique-se que o nome 'template' está correto
+        $pdf = Pdf::loadView('vouchers.template', $data); // Certifique-se que o nome 'template' está correto
 
         // 3. Anexar o PDF
         return [
