@@ -272,13 +272,41 @@
                                     </div>
 
                                     <div class="form-group row" id="campoPlaca">
-                                    <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
-                                    <div class="col-md-4">
-                                        <input type="text" name="placa_veiculo" id="placa_veiculo"
-                                            class="form-control"
-                                            value="{{ old('placa_veiculo', $reserva->placa_veiculo ?? '') }}">
+                                        <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
+                                        <div class="col-md-4">
+                                            <input type="text" name="placa_veiculo" id="placa_veiculo"
+                                                class="form-control"
+                                                value="{{ old('placa_veiculo', $reserva->placa_veiculo ?? '') }}">
+                                        </div>
                                     </div>
-                                </div>
+
+                                    <div class="form-group row" id="campoCanalVenda">
+                                        <label for="canal_venda" class="col-md-3 label-control">Canal de Venda</label>
+                                        <div class="col-md-4">
+                                            <select class="form-control select2" name="canal_venda" id="canal_venda">
+                                                <option value="">Selecione um canal</option>
+                                                @php
+                                                    // Pegamos a variável passada pelo controller
+                                                    $opcoesCanal = $canaisVenda ?? [
+                                                        'WhatsApp',
+                                                        'Instagram',
+                                                        'Telefone',
+                                                        'Indicação',
+                                                        'Balcão',
+                                                        'Facebook',
+                                                        'Email',
+                                                        'Outros',
+                                                    ];
+                                                    $canalSelecionado = old('canal_venda', $reserva->canal_venda ?? '');
+                                                @endphp
+                                                @foreach ($opcoesCanal as $canal)
+                                                    <option value="{{ $canal }}" @selected($canalSelecionado == $canal)>
+                                                        {{ $canal }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
 
                                     <div class="form-group row" id="campoObservacoes">
                                         <label for="observacao" class="col-md-3 label-control">Observações</label>
@@ -357,10 +385,15 @@
                                                     class="btn btn-info" target="_blank">
                                                     <i class="fa fa-file-pdf-o"></i> Gerar Voucher
                                                 </a>
+
+                                                <a href="{{ route('reserva.enviarVoucher', $reserva->id) }}"
+                                                    class="btn btn-success">
+                                                    <i class="fas fa-envelope"></i> Enviar por Email
+                                                </a>
                                             @endif
 
-                                            <a href="{{ route('reserva.fnrh', $reserva->id) }}"
-                                                class="btn btn-warning" target="_blank">
+                                            <a href="{{ route('reserva.fnrh', $reserva->id) }}" class="btn btn-warning"
+                                                target="_blank">
                                                 <i class="fas fa-address-card"></i> Emitir FNRH
                                             </a>
                                             <!-- Botão No Show -->
@@ -621,9 +654,9 @@
                                         value="{{ date('Y-m-d') }}">
                                 </div>
                                 <div class="form-group">
-                                <label for="comprovante_transacao">Anexar Comprovante (Opcional)</label>
-                                <input type="file" class="form-control-file" id="comprovante_transacao">
-                            </div>
+                                    <label for="comprovante_transacao">Anexar Comprovante (Opcional)</label>
+                                    <input type="file" class="form-control-file" id="comprovante_transacao">
+                                </div>
                                 <div class="form-group">
                                     <label for="observacoes_transacao">Observações</label>
                                     <textarea class="form-control" id="observacoes_transacao" rows="2" placeholder="Observações opcionais"></textarea>
@@ -984,8 +1017,8 @@
         }
 
         #placa_veiculo {
-        text-transform: uppercase;
-    }
+            text-transform: uppercase;
+        }
     </style>
     <style>
         @media (max-width: 768px) {
@@ -1022,7 +1055,7 @@
             });
         });
     </script>
-   <script>
+    <script>
         $(document).ready(function() {
             // 1. Plugins que ESTÃO funcionando (Select2)
             $('.select2').select2({
@@ -1041,7 +1074,7 @@
             });
 
             // --- INÍCIO DA SOLUÇÃO PARA PLACA ---
-            
+
             // 3. Função de formatação manual para Placa
             // (Baseada na sua função, mas com a lógica de formatação refinada)
             function formatarPlacaManual(valor) {
@@ -1050,12 +1083,12 @@
                 if (limpa.length > 7) {
                     limpa = limpa.substring(0, 7);
                 }
-                
+
                 let resultado = '';
                 // Validação caractere a caractere para garantir o formato
                 for (let i = 0; i < limpa.length; i++) {
                     const char = limpa[i];
-                    
+
                     if (i < 3) { // Posições 0, 1, 2 (AAA)
                         if (/[A-Z]/.test(char)) {
                             resultado += char;
@@ -1079,7 +1112,7 @@
                 if (resultado.length > 3) {
                     resultado = resultado.slice(0, 3) + '-' + resultado.slice(3);
                 }
-                
+
                 return resultado;
             }
 
@@ -1089,14 +1122,14 @@
             // Esta é a parte mais importante!
             try {
                 placaInput.unmask(); // Remove o plugin JQuery Mask (importante!)
-            } catch(e) {}
-            placaInput.off('input');   // Remove qualquer listener 'input' anterior
+            } catch (e) {}
+            placaInput.off('input'); // Remove qualquer listener 'input' anterior
 
             // 5. Aplica o novo listener de formatação manual
-            placaInput.on('input', function () {
-                const valor = $(this).val();
-                const formatado = formatarPlacaManual($(this).val());
-                $(this).val(formatado);
+            placaInput.on('input', function() {
+                const valor = $(this).val();
+                const formatado = formatarPlacaManual($(this).val());
+                $(this).val(formatado);
             });
 
             // --- FIM DA SOLUÇÃO PARA PLACA ---
@@ -1486,25 +1519,25 @@
                 const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
                 const formData = new FormData();
-            formData.append('descricao', descricao);
-            formData.append('valor', valor);
-            formData.append('forma_pagamento_id', formaPagamentoId);
-            formData.append('data_pagamento', dataTransacao);
-            formData.append('observacoes', observacoes);
-            formData.append('categoria', categoria);
-            formData.append('tipo', tipo);
-            formData.append('reserva_id', reservaId);
+                formData.append('descricao', descricao);
+                formData.append('valor', valor);
+                formData.append('forma_pagamento_id', formaPagamentoId);
+                formData.append('data_pagamento', dataTransacao);
+                formData.append('observacoes', observacoes);
+                formData.append('categoria', categoria);
+                formData.append('tipo', tipo);
+                formData.append('reserva_id', reservaId);
 
-            if (comprovanteFile) {
-                formData.append('comprovante', comprovanteFile);
-            }
+                if (comprovanteFile) {
+                    formData.append('comprovante', comprovanteFile);
+                }
 
                 $.ajax({
                     url: '/transacoes',
                     method: 'POST',
-                    data: formData, 
-                processData: false, 
-                contentType: false,
+                    data: formData,
+                    processData: false,
+                    contentType: false,
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
@@ -1560,7 +1593,7 @@
                 $('#comprovante_transacao').val(null);
             }
 
-function atualizarListaAtividades() {
+            function atualizarListaAtividades() {
                 const $lista = $('#lista-atividades');
 
                 if (transacoes.length === 0) {
