@@ -20,9 +20,14 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Mail\VoucherReservaEmail;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class ReservaController extends Controller
 {
+    private $canaisVenda = ['WhatsApp', 'Instagram', 'Telefone', 'Indicação', 'Balcão', 'Facebook', 'Email', 'Outros'];
+
     public function index(Request $request)
     {
         $situacao = $request->input('situacao', 'todos'); // 'todos' por padrão
@@ -74,8 +79,9 @@ class ReservaController extends Controller
 
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+        $canaisVenda = $this->canaisVenda;
 
-        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout'));
+        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda'));
     }
 
     public function store(Request $request)
@@ -92,7 +98,8 @@ class ReservaController extends Controller
                 'n_adultos' => 'required',
                 'n_criancas' => 'required',
                 'observacoes' => 'nullable|string',
-                'placa_veiculo' => 'nullable|string|max:10'
+                'placa_veiculo' => 'nullable|string|max:10',
+                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda)
             ]);
 
             $preferencia = PreferenciasHotel::first();
@@ -186,8 +193,10 @@ class ReservaController extends Controller
         $podeHospedar = $hoje->equalTo($dataCheckin) &&
             in_array($reserva->situacao, ['reserva']) &&
             !in_array($reserva->situacao, ['finalizada', 'cancelado']);
+            
 
-        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar', 'logs'));
+            $canaisVenda = $this->canaisVenda;
+        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar', 'logs', 'canaisVenda'));
     }
 
     public function update(Request $request, Reserva $reserva)
@@ -205,7 +214,8 @@ class ReservaController extends Controller
                 'n_adultos' => 'required',
                 'n_criancas' => 'required',
                 'observacoes' => 'nullable|string',
-                'placa_veiculo' => 'nullable|string|max:10'
+                'placa_veiculo' => 'nullable|string|max:10',
+                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda)
             ]);
 
             // Validações específicas de situação
@@ -763,6 +773,61 @@ class ReservaController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao gerar FNRH: ' . $e->getMessage());
+        }
+    }
+
+    public function relatorioPorCanal(Request $request)
+    {
+        $query = Reserva::query();
+
+        // Define datas padrão (mês atual) se não forem fornecidas
+        $dataInicio = $request->input('data_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $dataFim = $request->input('data_fim', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        // Filtra por data de CRIAÇÃO da reserva
+        $query->whereBetween('created_at', [$dataInicio, $dataFim]);
+
+        $dadosRelatorio = $query
+            ->select('canal_venda', DB::raw('count(*) as total'))
+            ->groupBy('canal_venda')
+            ->orderBy('total', 'desc')
+            ->get()
+            ->map(function ($item) {
+                // Agrupar 'null' ou 'vazio' em 'Não Preenchido'
+                $item->canal_venda = $item->canal_venda ?: 'Não Preenchido';
+                return $item;
+            })
+            ->groupBy('canal_venda') // Reagrupar caso 'Não Preenchido' já exista
+            ->map(function ($group) {
+                return $group->sum('total'); // Soma os totais
+            });
+
+        return view('reserva.relatorio_canal', [
+            'dadosRelatorio' => $dadosRelatorio,
+            'data_inicio'    => $dataInicio,
+            'data_fim'       => $dataFim,
+        ]);
+    }
+
+    public function enviarVoucherPorEmail(Reserva $reserva)
+    {
+        try {
+            // Carregar o hóspede para pegar o e-mail
+            $reserva->load('hospede');
+
+            if (!$reserva->hospede || !$reserva->hospede->email) {
+                return redirect()->back()->with('error', 'Hóspede não possui e-mail cadastrado.');
+            }
+
+            // Dispara o e-mail usando a classe Mailable
+            Mail::to($reserva->hospede->email)->send(new VoucherReservaEmail($reserva));
+
+            return redirect()->back()->with('success', 'Voucher enviado por e-mail com sucesso!');
+
+        } catch (\Exception $e) {
+            // Logar o erro para depuração
+            Log::error('Erro ao enviar voucher por e-mail: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao enviar e-mail. Verifique as configurações.');
         }
     }
 }

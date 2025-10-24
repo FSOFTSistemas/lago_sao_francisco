@@ -296,3 +296,8 @@ Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relato
     ->name('plano-de-contas.relatorio'); 
 
     Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');
+
+    Route::get('reservas/relatorio/canal', [ReservaController::class, 'relatorioPorCanal'])->name('reserva.relatorio.canal');
+
+    Route::get('reserva/{reserva}/enviar-voucher', [ReservaController::class, 'enviarVoucherPorEmail'])
+     ->name('reserva.enviarVoucher');

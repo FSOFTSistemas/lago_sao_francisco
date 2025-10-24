@@ -187,7 +187,10 @@
                         <td><span class="info-label">Nome:</span> {{ $reserva->hospede->nome ?? 'Não informado' }}</td>
                         <td><span class="info-label">Telefone:</span>
                             {{ $reserva->hospede->telefone ?? 'Não informado' }}</td>
-                        <td><span class="info-label">Email:</span> {{ $reserva->hospede->email ?? 'Não informado' }}
+                        <td><span class="info-label">CPF:</span> {{ $reserva->hospede->cpf ?? 'Não informado' }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><span class="info-label">Email:</span> {{ $reserva->hospede->email ?? 'Não informado' }}
                         </td>
                     </tr>
                 </table>
