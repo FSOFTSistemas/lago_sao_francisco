@@ -812,19 +812,20 @@ class ReservaController extends Controller
     public function enviarVoucherPorEmail(Reserva $reserva)
     {
         try {
+           
             // Carregar o hóspede para pegar o e-mail
             $reserva->load('hospede');
 
             if (!$reserva->hospede || !$reserva->hospede->email) {
                 return redirect()->back()->with('error', 'Hóspede não possui e-mail cadastrado.');
             }
-
             // Dispara o e-mail usando a classe Mailable
             Mail::to($reserva->hospede->email)->send(new VoucherReservaEmail($reserva));
 
             return redirect()->back()->with('success', 'Voucher enviado por e-mail com sucesso!');
 
         } catch (\Exception $e) {
+            dd($e);
             // Logar o erro para depuração
             Log::error('Erro ao enviar voucher por e-mail: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Erro ao enviar e-mail. Verifique as configurações.');
