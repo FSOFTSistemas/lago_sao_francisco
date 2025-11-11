@@ -329,13 +329,13 @@
                             </select>
                         </div>
 
-                        @if (Auth::user()->hasRole('master'))
+                        @if (Auth::user()->hasRole('Master'))
                             <div class="form-group col-md-12">
                                 <label for="empresa_id">Empresa</label>
                                 <select class="form-control" name="empresa_id">
                                     <option value="">Todas</option>
-                                    @foreach ($empresa as $emp)
-                                        <option value="{{ $emp->id }}">{{ $emp->nome }}</option>
+                                    @foreach ($empresas as $emp)
+                                        <option value="{{ $emp->id }}">{{ $emp->nome_fantasia }}</option>
                                     @endforeach
                                 </select>
                             </div>

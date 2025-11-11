@@ -300,8 +300,7 @@ class FluxoCaixaController extends Controller
         if ($request->filled('caixa_id')) {
             $query->where('caixa_id', $request->caixa_id);
         }
-
-        if (Auth::user()->hasRole('master')) {
+        if (Auth::user()->hasRole('Master')) {
             if ($request->filled('empresa_id')) {
                 $query->where('empresa_id', $request->empresa_id);
             }
