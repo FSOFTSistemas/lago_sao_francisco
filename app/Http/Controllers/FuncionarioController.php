@@ -49,7 +49,7 @@ class FuncionarioController extends Controller
         $setores = $this->setores;
         $cargos = $this->cargos;
         $roles = Role::all();
-        $users = User::with('roles')->get();
+        $users = User::where('ativo', true)->with('roles')->get();
         $permissoes = Permission::all();
         return view('funcionario.form', compact('empresas', 'enderecos', 'setores', 'cargos', 'roles', 'users', 'permissoes'));
     }

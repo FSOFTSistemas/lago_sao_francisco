@@ -35,7 +35,9 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'empresa_id'];
+        'empresa_id',
+        'ativo',
+    ];
 
         public function empresa()
         {

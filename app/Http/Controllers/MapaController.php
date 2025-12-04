@@ -14,14 +14,18 @@ use Illuminate\Support\Facades\Log;
 
 class MapaController extends Controller
 {
-    public function index(Request $request)
-    {
-        $dataInicio = $request->get('data_inicio', Carbon::now()->startOfWeek()->format('Y-m-d'));
-        $dataFim = $request->get('data_fim', Carbon::parse($dataInicio)->addDays(13)->format('Y-m-d'));
-        $hospedes = Hospede::all();
+   public function index(Request $request)
+{
+    $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
 
-        return view('mapa.index', compact('dataInicio', 'dataFim', 'hospedes'));
-    }
+    $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
+
+    // Busca os hóspedes ordenados por nome (Melhora a UX do select)
+    $hospedes = Hospede::orderBy('nome')->get();
+
+    // Retorna a view (lembre-se que o arquivo blade com o React deve se chamar 'index.blade.php' dentro da pasta 'mapa')
+    return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
+}
 
     public function getDadosMapa(Request $request)
     {
@@ -83,7 +87,9 @@ class MapaController extends Controller
                             'data_checkin' => $reserva->data_checkin,
                             'data_checkout' => $reserva->data_checkout,
                             'situacao' => $reserva->situacao,
-                            'valor_diaria' => $reserva->valor_diaria
+                            'valor_diaria' => $reserva->valor_diaria,
+                            'n_adultos' => $reserva->n_adultos,
+                            'n_criancas' => $reserva->n_criancas,
                         ];
                     }
 

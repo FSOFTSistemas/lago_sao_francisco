@@ -1,0 +1,44 @@
+{
+  "_bootstrap-BNaAnzU2.js": {
+    "file": "assets/bootstrap-BNaAnzU2.js",
+    "name": "bootstrap"
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff": {
+    "file": "assets/bootstrap-icons-BeopsB42.woff",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff"
+  },
+  "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2": {
+    "file": "assets/bootstrap-icons-mSm7cUeB.woff2",
+    "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app--3KrnxEu.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-Bd5pc4QE.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "_bootstrap-BNaAnzU2.js"
+    ],
+    "css": [
+      "assets/app-BI69yjDX.css"
+    ],
+    "assets": [
+      "assets/bootstrap-icons-mSm7cUeB.woff2",
+      "assets/bootstrap-icons-BeopsB42.woff"
+    ]
+  },
+  "resources/js/mapa-reservas.jsx": {
+    "file": "assets/mapa-reservas-D2ETQ0aM.js",
+    "name": "mapa-reservas",
+    "src": "resources/js/mapa-reservas.jsx",
+    "isEntry": true,
+    "imports": [
+      "_bootstrap-BNaAnzU2.js"
+    ]
+  }
+}

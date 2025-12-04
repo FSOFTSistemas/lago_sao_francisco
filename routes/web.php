@@ -61,6 +61,8 @@ use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VoucherController;
 use App\Livewire\Dayuse\ShowDayuse;
+use App\Models\Hospede;
+use Illuminate\Support\Carbon;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -78,6 +80,9 @@ Route::resource('planoDeConta', PlanoDeContaController::class)->middleware('perm
 Route::resource('empresa', EmpresaController::class)->middleware('permission:gerenciar empresa');
 
 Route::resource('usuarios', UserController::class)->middleware('permission:gerenciar usuarios');
+
+Route::patch('/usuarios/{id}/toggle-status', [UserController::class, 'toggleStatus'])
+    ->name('usuarios.toggleStatus');
 
 Route::resource('bancos', BancoController::class)->middleware('permission:gerenciar banco');
 
@@ -301,3 +306,7 @@ Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relato
 
     Route::get('reserva/{reserva}/enviar-voucher', [ReservaController::class, 'enviarVoucherPorEmail'])
      ->name('reserva.enviarVoucher');
+
+     Route::get('/reserva-interativa', function () {
+    return view('reserva.react_page'); 
+})->middleware('auth');
