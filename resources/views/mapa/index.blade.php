@@ -521,31 +521,31 @@
             let mapaBody = '';
             dados.categorias.forEach(categoria => {
                 // Linha da categoria
-                mapaBody += `
-            <div class="categoria-row">
-                <div class="row no-gutters">
-                    <div class="col-2 categoria-header">
-                        <i class="fas fa-chevron-down"></i> ${categoria.titulo}
-                    </div>
-                    <div class="col-10">
-                        <div class="row no-gutters">
-        `;
+        //         mapaBody += `
+        //     <div class="categoria-row">
+        //         <div class="row no-gutters">
+        //             <div class="col-2 categoria-header">
+        //                 <i class="fas fa-chevron-down"></i> ${categoria.titulo}
+        //             </div>
+        //             <div class="col-10">
+        //                 <div class="row no-gutters">
+        // `;
 
-                dados.datas.forEach(data => {
-                    const valorOriginal = categoria.tarifas[data];
-                    const valorTarifa = parseFloat(valorOriginal) || 0;
-                    const totalDisponiveis = categoria.quartos.filter(quarto => {
-                        const reserva = encontrarReservaNaData(quarto.reservas, data);
-                        return !reserva;
-                    }).length;
+            //     dados.datas.forEach(data => {
+            //         const valorOriginal = categoria.tarifas[data];
+            //         const valorTarifa = parseFloat(valorOriginal) || 0;
+            //         const totalDisponiveis = categoria.quartos.filter(quarto => {
+            //             const reserva = encontrarReservaNaData(quarto.reservas, data);
+            //             return !reserva;
+            //         }).length;
 
-                    mapaBody += `
-                <div class="col categoria-info">
-                    <div>${totalDisponiveis}</div>
-                    <div class="tarifa">R$ ${valorTarifa.toFixed(2).replace('.', ',')}</div>
-                </div>
-            `;
-                });
+            //         mapaBody += `
+            //     <div class="col categoria-info">
+            //         <div>${totalDisponiveis}</div>
+            //         <div class="tarifa">R$ ${valorTarifa.toFixed(2).replace('.', ',')}</div>
+            //     </div>
+            // `;
+            //     });
 
 
 

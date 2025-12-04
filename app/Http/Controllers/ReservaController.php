@@ -80,91 +80,96 @@ class ReservaController extends Controller
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
         $canaisVenda = $this->canaisVenda;
+        $vendedores = Funcionario::all();
 
-        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda'));
+        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda', 'vendedores'));
     }
 
     public function store(Request $request)
-    {
-        try {
-            $validatedData = $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'hospede_id' => 'nullable|exists:hospedes,id',
-                'data_checkin' => 'required|date',
-                'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'nullable',
-                'valor_total' => 'numeric',
-                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
-                'n_adultos' => 'required',
-                'n_criancas' => 'required',
-                'observacoes' => 'nullable|string',
-                'placa_veiculo' => 'nullable|string|max:10',
-                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda)
-            ]);
+{
+    try {
+        dd($request);
+        $validatedData = $request->validate([
+            'quarto_id' => 'required|exists:quartos,id',
+            'hospede_id' => 'nullable|exists:hospedes,id',
+            'data_checkin' => 'required|date',
+            'data_checkout' => 'required|date|after_or_equal:data_checkin',
+            'valor_diaria' => 'nullable',
+            'valor_total' => 'numeric',
+            'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
+            'n_adultos' => 'required',
+            'n_criancas' => 'required',
+            'observacoes' => 'nullable|string',
+            'placa_veiculo' => 'nullable|string|max:10',
+            'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
+            'vendedor_id' => 'nullable|exists:funcionarios,id', 
+            'hospedes_secundarios' => 'nullable|array',         
+            'hospedes_secundarios.*' => 'exists:hospedes,id',
+        ]);
 
-            $preferencia = PreferenciasHotel::first();
-            // Lógica para valor_diaria com base em tarifas diárias
-            if ($preferencia->valor_diaria === 'tarifario' || empty($validatedData['valor_diaria'])) {
-                $quarto = Quarto::with('categoria.tarifa')->find($validatedData['quarto_id']);
-                $categoria = $quarto->categoria;
-                $tarifa = $categoria->tarifa;
+        $preferencia = PreferenciasHotel::first();
+        // Lógica para valor_diaria com base em tarifas diárias
+        if ($preferencia->valor_diaria === 'tarifario' || empty($validatedData['valor_diaria'])) {
+            $quarto = Quarto::with('categoria.tarifa')->find($validatedData['quarto_id']);
+            $categoria = $quarto->categoria;
+            $tarifa = $categoria->tarifa;
 
-                $checkin = Carbon::parse($validatedData['data_checkin']);
-                $checkout = Carbon::parse($validatedData['data_checkout']);
+            $checkin = Carbon::parse($validatedData['data_checkin']);
+            $checkout = Carbon::parse($validatedData['data_checkout']);
 
-                $periodo = CarbonPeriod::create($checkin, $checkout->subDay());
+            $periodo = CarbonPeriod::create($checkin, $checkout->subDay());
 
-                $total = 0;
-                $quantidadeDias = 0;
+            $total = 0;
+            $quantidadeDias = 0;
 
-                foreach ($periodo as $dia) {
-                    $campo = match ($dia->dayOfWeek) {
-                        0 => 'dom',
-                        1 => 'seg',
-                        2 => 'ter',
-                        3 => 'qua',
-                        4 => 'qui',
-                        5 => 'sex',
-                        6 => 'sab',
-                    };
+            foreach ($periodo as $dia) {
+                $campo = match ($dia->dayOfWeek) {
+                    0 => 'dom',
+                    1 => 'seg',
+                    2 => 'ter',
+                    3 => 'qua',
+                    4 => 'qui',
+                    5 => 'sex',
+                    6 => 'sab',
+                };
 
-                    $valorDia = (float) $tarifa->$campo ?? 0;
-                    $total += $valorDia;
-                    $quantidadeDias++;
-                }
-
-                // Média proporcional da tarifa
-                $mediaTarifa = $quantidadeDias > 0 ? $total / $quantidadeDias : 0;
-                $validatedData['valor_diaria'] = number_format($mediaTarifa, 2, '.', '');
-                $padraoAdultos = $tarifa->padrao_adultos ?? 0;
-                $padraoCriancas = $tarifa->padrao_criancas ?? 0;
-                $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
-                $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
-
-                $extrasAdultos = max(0, $validatedData['n_adultos'] - $padraoAdultos);
-                $extrasCriancas = max(0, $validatedData['n_criancas'] - $padraoCriancas);
-
-                $valorDiariaBase = (float) $validatedData['valor_diaria'];
-                $valorDiariaFinal = $valorDiariaBase + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
-
-                $validatedData['valor_diaria'] = number_format($valorDiariaFinal, 2, '.', '');
-            } else {
-                // Remove máscara se foi preenchido manualmente
-                $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
+                $valorDia = (float) $tarifa->$campo ?? 0;
+                $total += $valorDia;
+                $quantidadeDias++;
             }
 
-            $reserva = Reserva::create($validatedData);
+            // Média proporcional da tarifa
+            $mediaTarifa = $quantidadeDias > 0 ? $total / $quantidadeDias : 0;
+            $validatedData['valor_diaria'] = number_format($mediaTarifa, 2, '.', '');
+            $padraoAdultos = $tarifa->padrao_adultos ?? 0;
+            $padraoCriancas = $tarifa->padrao_criancas ?? 0;
+            $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
+            $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
 
-            LogReserva::registrarCriacao($reserva, Auth::id());
+            $extrasAdultos = max(0, $validatedData['n_adultos'] - $padraoAdultos);
+            $extrasCriancas = max(0, $validatedData['n_criancas'] - $padraoCriancas);
 
-            return redirect()->route('reserva.edit', $reserva->id)
-                ->with('success', 'Reserva criada com sucesso!');
-        } catch (\Exception $e) {
-            return redirect()->back()->withInput()
-                ->with('error', 'Erro ao criar reserva!: ' . $e->getMessage());
+            $valorDiariaBase = (float) $validatedData['valor_diaria'];
+            $valorDiariaFinal = $valorDiariaBase + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+
+            $validatedData['valor_diaria'] = number_format($valorDiariaFinal, 2, '.', '');
+        } else {
+            // Remove máscara se foi preenchido manualmente
+            $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
         }
-    }
 
+        // Cria a reserva com os dados validados
+        $reserva = Reserva::create($validatedData);
+
+        LogReserva::registrarCriacao($reserva, Auth::id());
+
+        return redirect()->route('reserva.edit', $reserva->id)
+            ->with('success', 'Reserva criada com sucesso!');
+    } catch (\Exception $e) {
+        return redirect()->back()->withInput()
+            ->with('error', 'Erro ao criar reserva!: ' . $e->getMessage());
+    }
+}
     public function edit(Reserva $reserva)
     {
         // Buscar quartos agrupados por categoria para edição
@@ -181,6 +186,7 @@ class ReservaController extends Controller
 
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+        $vendedores = Funcionario::all();
 
         $logs = LogReserva::where('reserva_id', $reserva->id)
             ->with('usuario')
@@ -196,78 +202,77 @@ class ReservaController extends Controller
             
 
             $canaisVenda = $this->canaisVenda;
-        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar', 'logs', 'canaisVenda'));
+        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar', 'logs', 'canaisVenda', 'vendedores'));
     }
 
-    public function update(Request $request, Reserva $reserva)
-    {
-        try {
-            // Validação básica
-            $validatedData = $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'hospede_id' => 'nullable|exists:hospedes,id',
-                'data_checkin' => 'required|date',
-                'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'required',
-                'valor_total' => 'numeric',
-                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
-                'n_adultos' => 'required',
-                'n_criancas' => 'required',
-                'observacoes' => 'nullable|string',
-                'placa_veiculo' => 'nullable|string|max:10',
-                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda)
-            ]);
+public function update(Request $request, Reserva $reserva)
+{
+    try {
+        // Validação básica
+        $validatedData = $request->validate([
+            'quarto_id' => 'required|exists:quartos,id',
+            'hospede_id' => 'nullable|exists:hospedes,id',
+            'data_checkin' => 'required|date',
+            'data_checkout' => 'required|date|after_or_equal:data_checkin',
+            'valor_diaria' => 'required',
+            'valor_total' => 'numeric',
+            'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
+            'n_adultos' => 'required',
+            'n_criancas' => 'required',
+            'observacoes' => 'nullable|string',
+            'placa_veiculo' => 'nullable|string|max:10',
+            'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
+            'vendedor_id' => 'nullable|exists:funcionarios,id', // novo campo
+            'hospedes_secundarios' => 'nullable|array',          // novo campo
+            'hospedes_secundarios.*' => 'exists:hospedes,id',    // valida cada id do array
+        ]);
 
-            // Validações específicas de situação
-            $situacaoAtual = $reserva->situacao;
-            $novaSituacao = $validatedData['situacao'];
+        // Validações específicas de situação
+        $situacaoAtual = $reserva->situacao;
+        $novaSituacao = $validatedData['situacao'];
 
-            // Regras de validação para mudança de situação
-            if ($situacaoAtual === 'hospedado' && $novaSituacao !== 'hospedado') {
-                return redirect()->back()->withInput()->with('error', 'Não é possível alterar a situação de uma reserva hospedada manualmente.');
-            }
-
-            if (in_array($situacaoAtual, ['finalizada', 'cancelado']) && $novaSituacao !== $situacaoAtual) {
-                return redirect()->back()->withInput()->with('error', 'Não é possível alterar a situação de uma reserva finalizada ou cancelada.');
-            }
-
-            // Verificar se há pagamentos para mudança de pré-reserva para reserva
-            if ($situacaoAtual === 'pre-reserva' && $novaSituacao === 'reserva') {
-                $temPagamentos = Transacao::where('reserva_id', $reserva->id)
-                    ->where('tipo', 'pagamento')
-                    ->where('status', true)
-                    ->exists();
-
-                if (!$temPagamentos) {
-                    return redirect()->back()->withInput()->with('error', 'Para alterar para "reserva", é necessário ter pelo menos um pagamento registrado.');
-                }
-            }
-
-            // Remover a máscara do valor_diaria antes de salvar
-            $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
-
-            // Guardar dados antigos para o log
-            $dadosAntigos = $reserva->toArray();
-
-            // Verificar se o status mudou para registrar no log
-            $statusAntigo = $reserva->situacao;
-
-            $reserva->update($validatedData);
-
-            // Registrar log de edição
-            LogReserva::registrarEdicao($reserva, Auth::id(), $dadosAntigos);
-
-            // Se o status mudou, registrar log específico de alteração de status
-            if ($statusAntigo !== $reserva->situacao) {
-                LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
-            }
-
-            return redirect()->back()->with('success', 'Reserva atualizada com sucesso!');
-        } catch (\Exception $e) {
-            // Redirecionar de volta com os inputs para que old() funcione
-            return redirect()->back()->withInput()->with('error', 'Erro ao atualizar reserva!: ' . $e->getMessage());
+        if ($situacaoAtual === 'hospedado' && $novaSituacao !== 'hospedado') {
+            return redirect()->back()->withInput()->with('error', 'Não é possível alterar a situação de uma reserva hospedada manualmente.');
         }
+
+        if (in_array($situacaoAtual, ['finalizada', 'cancelado']) && $novaSituacao !== $situacaoAtual) {
+            return redirect()->back()->withInput()->with('error', 'Não é possível alterar a situação de uma reserva finalizada ou cancelada.');
+        }
+
+        if ($situacaoAtual === 'pre-reserva' && $novaSituacao === 'reserva') {
+            $temPagamentos = Transacao::where('reserva_id', $reserva->id)
+                ->where('tipo', 'pagamento')
+                ->where('status', true)
+                ->exists();
+
+            if (!$temPagamentos) {
+                return redirect()->back()->withInput()->with('error', 'Para alterar para "reserva", é necessário ter pelo menos um pagamento registrado.');
+            }
+        }
+
+        // Remover a máscara do valor_diaria antes de salvar
+        $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
+
+        // Guardar dados antigos para o log
+        $dadosAntigos = $reserva->toArray();
+        $statusAntigo = $reserva->situacao;
+
+        // Atualizar reserva com os dados validados
+        $reserva->update($validatedData);
+
+        // Registrar log de edição
+        LogReserva::registrarEdicao($reserva, Auth::id(), $dadosAntigos);
+
+        // Se o status mudou, registrar log específico de alteração de status
+        if ($statusAntigo !== $reserva->situacao) {
+            LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
+        }
+
+        return redirect()->back()->with('success', 'Reserva atualizada com sucesso!');
+    } catch (\Exception $e) {
+        return redirect()->back()->withInput()->with('error', 'Erro ao atualizar reserva!: ' . $e->getMessage());
     }
+}
 
     public function destroy(Reserva $reserva)
     {
@@ -312,7 +317,8 @@ class ReservaController extends Controller
                     return [
                         'id' => $quarto->id,
                         'nome' => $quarto->nome,
-                        'categoria_id' => $quarto->categoria_id
+                        'categoria_id' => $quarto->categoria_id,
+                        'ocupantes' => $quarto->categoria->ocupantes
                     ];
                 })
             ];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Empresa;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -15,7 +16,7 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $empresas = Empresa::all();
-        $users = User::with('roles')->get();
+        $users = User::where('ativo', true)->with('roles')->get();
         $permissions = Permission::all();
         return view('usuario.index', compact('users', 'empresas', 'permissions', 'roles'));
     }
@@ -45,6 +46,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'empresa_id' => $request->empresa_id,
+                'ativo' => true
             ]);
 
             $user->assignRole($request->role);
@@ -91,6 +93,7 @@ class UserController extends Controller
         }
     }
 
+
     public function edit($id)
     {
         $user = User::findOrFail($id);
@@ -100,15 +103,53 @@ class UserController extends Controller
         return view('usuario.create', compact('user', 'empresas', 'permissions', 'roles'));
     }
 
-    public function destroy($id)
-    {
-        try {
-            $user = User::findOrFail($id);
-            $user->delete();
-            return redirect()->route('usuarios.index')->with('success', 'Usuário excluído com sucesso!');
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-            return redirect()->route('usuarios.index')->with('error', 'Erro ao excluir usuário!');
+  public function destroy($id)
+{
+    try {
+        $user = User::findOrFail($id);
+
+        // Verifica se existe algum fluxo de caixa vinculado a este usuário
+        $temVinculo = DB::table('fluxo_caixas')
+            ->where('usuario_id', $user->id)
+            ->exists();
+
+        if ($temVinculo) {
+            // Desativa silenciosamente
+            if ($user->ativo) {
+                $user->ativo = false;
+                $user->save();
+            }
+
+            return redirect()->route('usuarios.index')
+                ->with('success', 'Usuário desativado com sucesso!');
         }
+
+        // Sem vínculos: exclui normalmente
+        $user->delete();
+
+        return redirect()->route('usuarios.index')
+            ->with('success', 'Usuário excluído com sucesso!');
+    } catch (\Exception $e) {
+        return redirect()->route('usuarios.index')
+            ->with('error', 'Erro ao excluir usuário: ' . $e->getMessage());
     }
+}
+
+    public function toggleStatus($id)
+{
+    try {
+        $user = User::findOrFail($id);
+
+        $user->ativo = !$user->ativo;
+        $user->save();
+
+        $status = $user->ativo ? 'ativado' : 'desativado';
+
+        return redirect()->route('usuarios.index')
+            ->with('success', "Usuário {$status} com sucesso!");
+    } catch (\Exception $e) {
+        return redirect()->route('usuarios.index')
+            ->with('error', 'Erro ao alterar status do usuário: ' . $e->getMessage());
+    }
+}
 }

@@ -21,8 +21,16 @@ class Reserva extends Model
         'n_criancas',
         'observacoes',
         'placa_veiculo',
-        'canal_venda'
+        'canal_venda',
+        'vendedor_id',
+        'hospedes_secundarios',
     ];
+
+        protected $casts = [
+        'hospedes_secundarios' => 'array',
+    ];
+
+
 
     public function quarto()
     {
@@ -37,5 +45,10 @@ class Reserva extends Model
     public function transacoes()
     {
         return $this->hasMany(Transacao::class);
+    }
+
+    public function vendedor()
+    {
+        return $this->belongsTo(Funcionario::class, 'vendedor_id');
     }
 }
