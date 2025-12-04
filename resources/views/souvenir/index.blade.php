@@ -87,7 +87,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="valor">Preço:</label>
-                                        <input type="number" name="valor" id="valor" class="form-control"
+                                        <input type="number" name="valor" id="valor" class="form-control" step="0.01" min="0" inputmode="decimal" lang="pt-BR"
                                             value="{{ $souvenir->valor }}" required>
                                     </div>
                                     <div class="form-group">
@@ -156,7 +156,7 @@
                         </div>
                         <div class="form-group">
                             <label for="valor">Preço:</label>
-                            <input type="number" name="valor" id="valor" class="form-control" required>
+                            <input type="number" name="valor" id="valor" class="form-control" step="0.01" min="0" inputmode="decimal" lang="pt-BR" required>
                         </div>
                         <div class="form-group">
                             <label for="estoque">Estoque</label>
