@@ -256,8 +256,7 @@
                                             <div class="col-md-5">
                                                 <label for="n_adultos">* Nº adultos/adolescentes</label>
                                                 <input type="number" name="n_adultos" id="n_adultos"
-                                                    class="form-control"
-                                                    value="{{ $quarto->categoria->ocupantes }}"
+                                                    class="form-control" value="{{ $quarto->categoria->ocupantes }}"
                                                     min="1" readonly>
                                             </div>
 
@@ -271,31 +270,70 @@
                                         </div>
                                     </div>
 
-                <div class="form-group row mb-4" id="container-hospedes-secundarios" style="display: none;">
-    <label for="hospedes_secundarios"
-        class="col-md-3 col-form-label text-md-right font-weight-bold">Hóspedes Secundários:</label>
-    <div class="col-md-4">
-        <div class="hospedes-sec-select-container">
-            <select class="form-control select2-hospedes-sec" id="hospedes_secundarios" name="hospedes_secundarios[]"
-                multiple="multiple" style="width: 100%;">
-                @php
-                    $selectedHospedesSec =
-                        isset($reserva) && $reserva->hospedes_secundarios
-                            ? $reserva->hospedes_secundarios->pluck('id')->toArray()
-                            : [];
-                @endphp
-                @foreach ($hospedes as $hospsec)
-                    @if ($hospsec->nome !== 'Bloqueado')
-                        <option value="{{ $hospsec->id }}" 
-                            {{ in_array($hospsec->id, $selectedHospedesSec) ? 'selected' : '' }}>
-                            {{ $hospsec->nome }}
-                        </option>
-                    @endif
-                @endforeach
-            </select>
-        </div>
-    </div>
-</div>
+                                    <div class="form-group row mb-4" id="container-hospedes-secundarios"
+                                        style="display: none;">
+                                        <label for="hospedes_secundarios"
+                                            class="col-md-3 col-form-label text-md-right font-weight-bold">Hóspedes
+                                            Secundários:</label>
+                                        <div class="col-md-4">
+                                            <div class="hospedes-sec-select-container">
+                                                <select class="form-control select2-hospedes-sec"
+                                                    id="hospedes_secundarios" name="hospedes_secundarios[]"
+                                                    multiple="multiple" style="width: 100%;">
+                                                    @php
+                                                        // 1. Tenta pegar do 'old' (se houve erro de validação)
+                                                        $selectedHospedesSec = old('hospedes_secundarios');
+
+                                                        // 2. Se não tem old, e estamos editando uma reserva
+                                                        if (
+                                                            !$selectedHospedesSec &&
+                                                            isset($reserva) &&
+                                                            !empty($reserva->hospedes_secundarios)
+                                                        ) {
+                                                            $dados = $reserva->hospedes_secundarios;
+
+                                                            // Verifica se é uma Collection do Laravel (Relacionamento many-to-many)
+                                                            if ($dados instanceof \Illuminate\Support\Collection) {
+                                                                $selectedHospedesSec = $dados->pluck('id')->toArray();
+                                                            }
+                                                            // Verifica se é um Array nativo (Cast 'array' ou JSON)
+                                                            elseif (is_array($dados)) {
+                                                                // Pega o primeiro item pra saber se é um Objeto/Array ou se já é o ID direto
+                                                                $primeiro = reset($dados);
+
+                                                                // Se o array contém objetos ou arrays associativos (ex: [['id'=>1], ['id'=>2]])
+                                                                if (
+                                                                    is_object($primeiro) ||
+                                                                    (is_array($primeiro) && isset($primeiro['id']))
+                                                                ) {
+                                                                    $selectedHospedesSec = collect($dados)
+                                                                        ->pluck('id')
+                                                                        ->toArray();
+                                                                } else {
+                                                                    // Se chegou aqui, já é o array de IDs ["3", "5"]
+                                                                    $selectedHospedesSec = $dados;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        // 3. Garante que sempre seja array para o in_array não quebrar
+                                                        if (!is_array($selectedHospedesSec)) {
+                                                            $selectedHospedesSec = [];
+                                                        }
+                                                    @endphp
+
+                                                    @foreach ($hospedes as $hospsec)
+                                                        @if ($hospsec->nome !== 'Bloqueado')
+                                                            <option value="{{ $hospsec->id }}"
+                                                                {{ in_array($hospsec->id, $selectedHospedesSec) ? 'selected' : '' }}>
+                                                                {{ $hospsec->nome }}
+                                                            </option>
+                                                        @endif
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="form-group row" id="campoPlaca">
                                         <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
@@ -337,19 +375,16 @@
                                     <div class='form-group row'>
                                         <label for='vendedores' class='col-md-3 label-control'>Vendedor</label>
                                         <div class='col-sm-4'>
-                                          
-
-                                                <select class='form-control select2' name='vendedor_id'
-                                                    id='vendedores'>
-                                                    <option value=''>Selecione um vendedor</option>
-                                                    @foreach ($vendedores as $vendedor)
-                                                            <option value="{{ $vendedor->id }}">
-                                                                {{ $vendedor->nome }}
-                                                            </option>
-                                                    @endforeach
-                                                </select>
+                                            <select class='form-control select2' name='vendedor_id' id='vendedores'>
+                                                <option value=''>Selecione um vendedor</option>
+                                                @foreach ($vendedores as $vendedor)
+                                                    <option value="{{ $vendedor->id }}"
+                                                        {{ old('vendedor_id', $reserva->vendedor_id ?? '') == $vendedor->id ? 'selected' : '' }}>
+                                                        {{ $vendedor->nome }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
-
                                     </div>
 
                                     <div class="form-group row" id="campoObservacoes">
@@ -1063,7 +1098,8 @@
         #placa_veiculo {
             text-transform: uppercase;
         }
-         /* Área de seleção principal - Fundo branco com borda verde */
+
+        /* Área de seleção principal - Fundo branco com borda verde */
         .select2-selection--multiple {
             min-height: 38px !important;
             border: 1px solid #679A4C !important;
@@ -2392,19 +2428,22 @@
                                 '">');
 
                             grupo.quartos.forEach(function(quarto) {
-    $optgroup.append('<option value="' + quarto.id +
-        '" data-ocupantes="' + quarto.ocupantes + '">' + quarto.nome + '</option>');
-});
+                                $optgroup.append('<option value="' + quarto.id +
+                                    '" data-ocupantes="' + quarto
+                                    .ocupantes + '">' + quarto.nome +
+                                    '</option>');
+                            });
 
-$('#quarto').on('change', function() {
-    // Pega o atributo data-ocupantes da opção selecionada
-    const ocupantes = $(this).find(':selected').data('ocupantes');
-    
-    // Se tiver valor, atualiza o campo n_adultos
-    if (ocupantes) {
-        $('#n_adultos').val(ocupantes);
-    }
-});
+                            $('#quarto').on('change', function() {
+                                // Pega o atributo data-ocupantes da opção selecionada
+                                const ocupantes = $(this).find(':selected')
+                                    .data('ocupantes');
+
+                                // Se tiver valor, atualiza o campo n_adultos
+                                if (ocupantes) {
+                                    $('#n_adultos').val(ocupantes);
+                                }
+                            });
 
                             $select.append($optgroup);
                         });
@@ -2602,7 +2641,7 @@ $('#quarto').on('change', function() {
             }
         });
     </script>
-     <script>
+    <script>
         $(document).ready(function() {
             // Inicializa o Select2 com configurações aprimoradas
             $('.select2-hospedes-sec').select2({
@@ -2613,58 +2652,58 @@ $('#quarto').on('change', function() {
             });
 
             const $primarySelect = $('#hospede_id');
-        const $secondarySelect = $('#hospedes_secundarios');
-        const $containerSecondary = $('#container-hospedes-secundarios');
+            const $secondarySelect = $('#hospedes_secundarios');
+            const $containerSecondary = $('#container-hospedes-secundarios');
 
-        function gerenciarHospedesSecundarios() {
-            // Pega o valor. Se o select estiver disabled, tenta pegar do input hidden se houver, ou do próprio select
-            let primaryId = $primarySelect.val();
-            
-            // Caso esteja em modo de edição e o select principal esteja disabled/renomeado
-            if (!primaryId && $('input[name="hospede_id"]').length) {
-                 primaryId = $('input[name="hospede_id"]').val();
-            }
+            function gerenciarHospedesSecundarios() {
+                // Pega o valor. Se o select estiver disabled, tenta pegar do input hidden se houver, ou do próprio select
+                let primaryId = $primarySelect.val();
 
-            // 1. Controle de Visibilidade
-            if (!primaryId) {
-                $containerSecondary.slideUp();
-                return; // Se não tem hóspede principal, esconde e para por aqui
-            } else {
-                $containerSecondary.slideDown();
-            }
-
-            // 2. Controle de Opções (Remover o principal da lista secundária)
-            
-            // Primeiro, verifica se o principal está selecionado nos secundários e remove se estiver
-            let selecionadosSecundarios = $secondarySelect.val() || [];
-            if (selecionadosSecundarios.includes(primaryId)) {
-                // Filtra removendo o ID do principal
-                selecionadosSecundarios = selecionadosSecundarios.filter(id => id !== primaryId);
-                // Atualiza o valor do select2 e dispara o evento change
-                $secondarySelect.val(selecionadosSecundarios).trigger('change');
-            }
-
-            // Percorre as opções para desabilitar a que corresponde ao hóspede principal
-            $secondarySelect.find('option').each(function() {
-                if ($(this).val() == primaryId) {
-                    $(this).prop('disabled', true); // Desabilita no HTML
-                } else {
-                    $(this).prop('disabled', false); // Habilita os outros
+                // Caso esteja em modo de edição e o select principal esteja disabled/renomeado
+                if (!primaryId && $('input[name="hospede_id"]').length) {
+                    primaryId = $('input[name="hospede_id"]').val();
                 }
-            });
 
-            // É necessário reinicializar ou notificar o Select2 para renderizar os itens desabilitados corretamente
-            // Mas apenas trigger('change.select2') muitas vezes não atualiza a visualização "disabled" na lista aberta
-            // O Select2 v4 geralmente detecta a propriedade disabled automaticamente ao abrir o dropdown.
-        }
+                // 1. Controle de Visibilidade
+                if (!primaryId) {
+                    $containerSecondary.slideUp();
+                    return; // Se não tem hóspede principal, esconde e para por aqui
+                } else {
+                    $containerSecondary.slideDown();
+                }
 
-        // Executa ao carregar a página (para casos de Edição ou Validation Errors)
-        gerenciarHospedesSecundarios();
+                // 2. Controle de Opções (Remover o principal da lista secundária)
 
-        // Executa sempre que o hóspede principal mudar
-        $primarySelect.on('change', function() {
+                // Primeiro, verifica se o principal está selecionado nos secundários e remove se estiver
+                let selecionadosSecundarios = $secondarySelect.val() || [];
+                if (selecionadosSecundarios.includes(primaryId)) {
+                    // Filtra removendo o ID do principal
+                    selecionadosSecundarios = selecionadosSecundarios.filter(id => id !== primaryId);
+                    // Atualiza o valor do select2 e dispara o evento change
+                    $secondarySelect.val(selecionadosSecundarios).trigger('change');
+                }
+
+                // Percorre as opções para desabilitar a que corresponde ao hóspede principal
+                $secondarySelect.find('option').each(function() {
+                    if ($(this).val() == primaryId) {
+                        $(this).prop('disabled', true); // Desabilita no HTML
+                    } else {
+                        $(this).prop('disabled', false); // Habilita os outros
+                    }
+                });
+
+                // É necessário reinicializar ou notificar o Select2 para renderizar os itens desabilitados corretamente
+                // Mas apenas trigger('change.select2') muitas vezes não atualiza a visualização "disabled" na lista aberta
+                // O Select2 v4 geralmente detecta a propriedade disabled automaticamente ao abrir o dropdown.
+            }
+
+            // Executa ao carregar a página (para casos de Edição ou Validation Errors)
             gerenciarHospedesSecundarios();
-        });
+
+            // Executa sempre que o hóspede principal mudar
+            $primarySelect.on('change', function() {
+                gerenciarHospedesSecundarios();
+            });
         });
     </script>
 

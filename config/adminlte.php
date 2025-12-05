@@ -375,6 +375,11 @@ return [
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/relatorios/produtos',
                 ],
+                [
+                    'text' => 'Café da manhã',
+                    'icon' => 'fas fa-mug-hot',
+                    'url'  => '/relatorios/cafe-da-manha',
+                ],
             ],
         ],
         [
@@ -514,6 +519,13 @@ return [
                         ],
                     ],
                 ],
+                [
+                    'text' => 'Comissão',
+                    'url'  => '/relatorios/vendas-vendedor',
+                    'icon' => 'fas fa-piggy-bank',
+                    'can'  => 'gerenciar financeiro',
+                ],
+
             ],
         ],
         [
