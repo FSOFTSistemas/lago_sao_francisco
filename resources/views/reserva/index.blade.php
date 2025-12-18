@@ -91,17 +91,14 @@
                                 00000{{ $reserva->id }}
                             </a>
 
-                            <!-- Botão de Excluir (Apenas para bloqueados) -->
+                            <!-- Botão de Excluir com Supervisor (Apenas para bloqueados) -->
                             @if ($reserva->situacao === 'bloqueado')
-                                <form action="{{ route('reserva.destroy', $reserva->id) }}" method="POST" 
-                                      class="form-excluir-bloqueio"
-                                      style="display: inline-block; margin: 0;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-link p-0 text-danger" title="Excluir Bloqueio">
-                                        <i class="fas fa-trash-alt" style="font-size: 0.9rem;"></i>
-                                    </button>
-                                </form>
+                                <button type="button" 
+                                        class="btn btn-link p-0 text-danger btn-excluir-bloqueio-super" 
+                                        title="Excluir Bloqueio (Requer Senha)"
+                                        data-url="{{ route('reservas.excluir.bloqueio.supervisor', $reserva->id) }}">
+                                    <i class="fas fa-trash-alt" style="font-size: 0.9rem;"></i>
+                                </button>
                             @endif
                         </div>
                     </td>
@@ -153,26 +150,68 @@
     
     <script>
         $(document).ready(function() {
-            // Intercepta o envio do formulário de exclusão
-            $('.form-excluir-bloqueio').on('submit', function(e) {
-                e.preventDefault(); // Impede o envio imediato
-                
-                var form = this;
-                
-                Swal.fire({
-                    title: 'Tem certeza?',
-                    text: "Deseja realmente excluir este bloqueio de data?",
+            // Lógica para excluir bloqueio com senha de supervisor
+            $(document).on('click', '.btn-excluir-bloqueio-super', async function(e) {
+                e.preventDefault();
+                const btn = $(this);
+                const url = btn.data('url');
+                const token = $('meta[name="csrf-token"]').attr('content');
+
+                const result = await Swal.fire({
+                    title: 'Autorização do Supervisor',
+                    text: 'Digite a senha do supervisor para excluir este bloqueio.',
+                    input: 'password',
+                    inputLabel: 'Senha',
+                    inputPlaceholder: 'Digite a senha...',
+                    inputAttributes: {
+                        autocapitalize: 'off',
+                        autocomplete: 'new-password'
+                    },
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Sim, excluir!',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit(); // Envia o formulário se confirmado
-                    }
+                    confirmButtonText: 'Autorizar Exclusão',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#d33', // Cor vermelha para indicar perigo/exclusão
+                    showLoaderOnConfirm: true,
+                    preConfirm: async (senha) => {
+                        if (!senha) {
+                            Swal.showValidationMessage('A senha é obrigatória');
+                            return false;
+                        }
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': token,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({ senha_supervisor: senha })
+                            });
+
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || 'Erro na autorização');
+                            }
+
+                            return await response.json();
+                        } catch (error) {
+                            Swal.showValidationMessage(`Erro: ${error.message}`);
+                        }
+                    },
+                    allowOutsideClick: () => !Swal.isLoading()
                 });
+
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Sucesso!',
+                        text: result.value.message,
+                        icon: 'success'
+                    }).then(() => {
+                        location.reload(); // Recarrega a página para atualizar a tabela
+                    });
+                }
             });
         });
     </script>

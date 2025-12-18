@@ -318,3 +318,5 @@ Route::get('/relatorios/cafe-da-manha/pdf', [App\Http\Controllers\ReservaControl
 Route::get('/relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendas'])->name('relatorios.vendas');
 
 Route::get('/relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
+
+Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [App\Http\Controllers\ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
