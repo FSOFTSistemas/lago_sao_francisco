@@ -54,7 +54,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     // Estados para Modal de Detalhes
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [reservaDetalhes, setReservaDetalhes] = useState(null);
-    const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null); // NOVO: Guarda o resumo financeiro
+    const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null);
 
     // --- ESTADOS DOS FORMULÁRIOS ---
     const [formReserva, setFormReserva] = useState({
@@ -86,7 +86,27 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 params: { data_inicio: filtroDataInicio, data_fim: filtroDataFim }
             });
             if (response.data.success) {
-                setDadosMapa(response.data);
+                const dados = response.data;
+                
+                // --- CORREÇÃO DE ORDENAÇÃO ---
+                // Força a ordenação numérica baseada no campo 'posicao'
+                if (dados.quartos && Array.isArray(dados.quartos)) {
+                    dados.quartos.sort((a, b) => {
+                        // Converte para Inteiro antes de comparar
+                        const posA = parseInt(a.posicao, 10) || 0;
+                        const posB = parseInt(b.posicao, 10) || 0;
+                        
+                        // Se as posições forem iguais (ou ambas 0), ordena pelo nome para desempatar
+                        if (posA === posB) {
+                            return a.nome.localeCompare(b.nome, undefined, { numeric: true });
+                        }
+                        
+                        return posA - posB;
+                    });
+                }
+                // -----------------------------
+
+                setDadosMapa(dados);
             } else {
                 alert('Erro ao carregar mapa: ' + response.data.message);
             }
@@ -99,16 +119,17 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     };
 
     const getOptionsQuartos = () => {
-        if (!dadosMapa || !dadosMapa.categorias) return [];
+        // Ajustado para a nova estrutura plana (dadosMapa.quartos)
+        if (!dadosMapa || !dadosMapa.quartos) return [];
         let options = [];
-        dadosMapa.categorias.forEach(cat => {
-            cat.quartos.forEach(q => {
-                options.push({ 
-                    value: q.id, 
-                    label: `${q.nome} (${cat.titulo})` 
-                });
+        
+        dadosMapa.quartos.forEach(q => {
+            options.push({ 
+                value: q.id, 
+                label: `${q.nome} (${q.categoria_nome})` 
             });
         });
+        
         return options;
     };
 
@@ -116,14 +137,13 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         return reservas.find(r => r.data_checkin <= data && r.data_checkout > data);
     };
 
-    // --- CLIQUE NA CÉLULA (ATUALIZADO) ---
+    // --- CLIQUE NA CÉLULA ---
     const handleCellClick = async (quarto, data, reserva = null) => {
         if (reserva) {
             setReservaDetalhes(reserva);
-            setFinanceiroDetalhes(null); // Limpa dados anteriores enquanto carrega
+            setFinanceiroDetalhes(null); 
             setShowModalDetalhes(true);
 
-            // Busca os dados financeiros detalhados (Total, Recebido, Falta Lançar, Nº Diárias)
             try {
                 const response = await axios.get(`/transacoes/resumo/${reserva.id}`);
                 if (response.data.success) {
@@ -368,21 +388,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             </div>
 
                             <div id="mapa-body">
-                                {dadosMapa.categorias.map(categoria => (
-                                    <React.Fragment key={categoria.titulo}>
-                                        {categoria.quartos.map(quarto => (
-                                            <div key={quarto.id} className="quarto-row" style={{ minWidth: 'fit-content' }}>
-                                                <div className="row no-gutters flex-nowrap" style={{ width: 'fit-content', minWidth: '100%' }}>
-                                                    <div className="col-2 quarto-header sticky-left" style={{minWidth: '150px', position: 'sticky', left: 0, zIndex: 101}}>
-                                                        {quarto.nome}
-                                                    </div>
-                                                    <div className="col-10 d-flex">
-                                                        {renderLinhaQuarto(quarto)}
-                                                    </div>
-                                                </div>
+                                {/* Iteração direta nos quartos (lista plana) em vez de categorias */}
+                                {dadosMapa.quartos.map(quarto => (
+                                    <div key={quarto.id} className="quarto-row" style={{ minWidth: 'fit-content' }}>
+                                        <div className="row no-gutters flex-nowrap" style={{ width: 'fit-content', minWidth: '100%' }}>
+                                            <div className="col-2 quarto-header sticky-left" style={{minWidth: '150px', position: 'sticky', left: 0, zIndex: 101}}>
+                                                {quarto.nome}
                                             </div>
-                                        ))}
-                                    </React.Fragment>
+                                            <div className="col-10 d-flex">
+                                                {renderLinhaQuarto(quarto)}
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </div>

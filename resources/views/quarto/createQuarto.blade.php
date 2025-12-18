@@ -43,7 +43,17 @@
               <div class="form-group row">
                 <label class="col-md-3 label-control"  for="posicao">Posição:</label>
                 <div class="col-md-3">
-                  <div><input class="form-control"  type="number" name="posicao" id="posicao" value="{{ old('posicao', $quarto->posicao ?? '') }}"></div>
+                  <!-- Adicionado min="1" e oninput para forçar apenas números -->
+                  <div>
+                      <input class="form-control" 
+                             type="number" 
+                             name="posicao" 
+                             id="posicao" 
+                             value="{{ old('posicao', $quarto->posicao ?? '') }}"
+                             min="1"
+                             oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                  </div>
+                  <small class="text-muted">Se deixar vazio, será colocado na última posição.</small>
                 </div>
               </div>
 
@@ -156,10 +166,17 @@
   document.addEventListener('DOMContentLoaded', function () {
       const switchInput = document.getElementById('ativoSwitch');
       const label = document.getElementById('ativoLabel');
-      label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
-      switchInput.addEventListener('change', function () {
-          label.textContent = this.checked ? 'Ativo' : 'Inativo';
-      });
+      
+      // Função para atualizar o label
+      const updateLabel = () => {
+          label.textContent = switchInput.checked ? 'Ativo' : 'Inativo';
+      };
+
+      // Inicializa o label
+      if(switchInput){
+          updateLabel();
+          switchInput.addEventListener('change', updateLabel);
+      }
   });
 </script>
   

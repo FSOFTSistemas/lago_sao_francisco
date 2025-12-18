@@ -14,18 +14,16 @@ use Illuminate\Support\Facades\Log;
 
 class MapaController extends Controller
 {
-   public function index(Request $request)
-{
-    $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
+    public function index(Request $request)
+    {
+        $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
+        $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
 
-    $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
+        // Busca os hóspedes ordenados por nome (Melhora a UX do select)
+        $hospedes = Hospede::orderBy('nome')->get();
 
-    // Busca os hóspedes ordenados por nome (Melhora a UX do select)
-    $hospedes = Hospede::orderBy('nome')->get();
-
-    // Retorna a view (lembre-se que o arquivo blade com o React deve se chamar 'index.blade.php' dentro da pasta 'mapa')
-    return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
-}
+        return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
+    }
 
     public function getDadosMapa(Request $request)
     {
@@ -41,71 +39,54 @@ class MapaController extends Controller
                 $dataAtual->addDay();
             }
 
-            // Buscar quartos agrupados por categoria
-            $categorias = Categoria::with(['quartos' => function ($query) {
-                $query->where('status', 1)->orderBy('posicao');
-            }])->where('status', 1)->orderBy('posicao')->get();
-
-            // Buscar reservas no período
-            $reservas = Reserva::with(['hospede', 'quarto'])
-                ->where(function ($query) use ($dataInicio, $dataFim) {
-                    $query->where('data_checkin', '<=', $dataFim)
-                        ->where('data_checkout', '>', $dataInicio);
-                })
-                ->whereNotIn('situacao', ['cancelado'])
+            // --- ALTERAÇÃO PRINCIPAL ---
+            // Busca quartos diretamente, ordenados pela posição globalmente, ignorando agrupamento visual de categoria
+            $quartos = Quarto::where('status', 1)
+                ->orderBy('posicao', 'asc') // Ordenação Global
+                ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
+                    $query->with('hospede')
+                        ->where(function ($q) use ($dataInicio, $dataFim) {
+                            $q->where('data_checkin', '<=', $dataFim)
+                              ->where('data_checkout', '>', $dataInicio);
+                        })
+                        ->whereNotIn('situacao', ['cancelado']);
+                }])
                 ->get();
 
-            // Organizar dados do mapa
-            $dadosMapa = [];
+            // Organizar dados do mapa (Lista plana de quartos)
+            $dadosQuartos = [];
 
-            foreach ($categorias as $categoria) {
-                $tarifas = $this->obterTarifasCategoria($categoria->id, $datas);
-
-                $dadosCategoria = [
-                    'id' => $categoria->id,
-                    'titulo' => $categoria->titulo,
-                    'quartos' => [],
-                    'tarifas' => $tarifas,
-                    'total_quartos' => $categoria->quartos->count()
-                ];
-
-                foreach ($categoria->quartos as $quarto) {
-                    $dadosQuarto = [
-                        'id' => $quarto->id,
-                        'nome' => $quarto->nome,
-                        'categoria_id' => $categoria->id,
-                        'reservas' => []
+            foreach ($quartos as $quarto) {
+                $reservasFormatadas = [];
+                foreach ($quarto->reservas as $reserva) {
+                    $reservasFormatadas[] = [
+                        'id' => $reserva->id,
+                        'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
+                        'data_checkin' => $reserva->data_checkin,
+                        'data_checkout' => $reserva->data_checkout,
+                        'situacao' => $reserva->situacao,
+                        'valor_diaria' => $reserva->valor_diaria,
+                        'n_adultos' => $reserva->n_adultos,
+                        'n_criancas' => $reserva->n_criancas,
                     ];
-
-                    // Buscar reservas deste quarto no período
-                    $reservasQuarto = $reservas->where('quarto_id', $quarto->id);
-
-                    foreach ($reservasQuarto as $reserva) {
-                        $dadosQuarto['reservas'][] = [
-                            'id' => $reserva->id,
-                            'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
-                            'data_checkin' => $reserva->data_checkin,
-                            'data_checkout' => $reserva->data_checkout,
-                            'situacao' => $reserva->situacao,
-                            'valor_diaria' => $reserva->valor_diaria,
-                            'n_adultos' => $reserva->n_adultos,
-                            'n_criancas' => $reserva->n_criancas,
-                        ];
-                    }
-
-                    $dadosCategoria['quartos'][] = $dadosQuarto;
                 }
 
-                $dadosMapa[] = $dadosCategoria;
+                $dadosQuartos[] = [
+                    'id' => $quarto->id,
+                    'nome' => $quarto->nome,
+                    'posicao' => $quarto->posicao,
+                    'categoria_nome' => $quarto->categoria->titulo ?? '',
+                    'reservas' => $reservasFormatadas
+                ];
             }
 
             // Calcular ocupação por data
-            $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $reservas, $categorias);
+            $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $quartos);
 
             return response()->json([
                 'success' => true,
                 'datas' => $datas,
-                'categorias' => $dadosMapa,
+                'quartos' => $dadosQuartos, // Agora retornamos 'quartos' direto, não 'categorias'
                 'ocupacao' => $ocupacaoPorData
             ]);
         } catch (\Exception $e) {
@@ -116,49 +97,24 @@ class MapaController extends Controller
         }
     }
 
-    private function obterTarifasCategoria($categoriaId, $datas)
-    {
-        $tarifas = [];
-        $tarifa = Tarifa::where('categoria_id', $categoriaId)
-            ->where('ativo', true)
-            ->first();
-
-        if ($tarifa) {
-            foreach ($datas as $data) {
-                $diaSemana = Carbon::parse($data)->dayOfWeek;
-                $valorDiaria = match ($diaSemana) {
-                    0 => $tarifa->dom ?? 0, // Domingo
-                    1 => $tarifa->seg ?? 0, // Segunda
-                    2 => $tarifa->ter ?? 0, // Terça
-                    3 => $tarifa->qua ?? 0, // Quarta
-                    4 => $tarifa->qui ?? 0, // Quinta
-                    5 => $tarifa->sex ?? 0, // Sexta
-                    6 => $tarifa->sab ?? 0, // Sábado
-                };
-
-                $tarifas[$data] = $valorDiaria;
-            }
-        } else {
-            // Se não houver tarifa, preencher com 0
-            foreach ($datas as $data) {
-                $tarifas[$data] = 0;
-            }
-        }
-
-        return $tarifas;
-    }
-
-    private function calcularOcupacaoPorData($datas, $reservas, $categorias)
+    private function calcularOcupacaoPorData($datas, $quartos)
     {
         $ocupacao = [];
-        $totalQuartos = $categorias->sum(function ($categoria) {
-            return $categoria->quartos->count();
-        });
+        $totalQuartos = $quartos->count();
 
         foreach ($datas as $data) {
-            $quartosOcupados = $reservas->filter(function ($reserva) use ($data) {
-                return $reserva->data_checkin <= $data && $reserva->data_checkout > $data;
-            })->count();
+            $quartosOcupados = 0;
+            
+            // Loop otimizado
+            foreach ($quartos as $quarto) {
+                $temReserva = $quarto->reservas->contains(function ($reserva) use ($data) {
+                    return $reserva->data_checkin <= $data && $reserva->data_checkout > $data;
+                });
+                
+                if ($temReserva) {
+                    $quartosOcupados++;
+                }
+            }
 
             $percentual = $totalQuartos > 0 ? round(($quartosOcupados / $totalQuartos) * 100) : 0;
 
