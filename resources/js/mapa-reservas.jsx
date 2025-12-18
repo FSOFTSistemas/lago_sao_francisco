@@ -51,9 +51,10 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const [showModalReserva, setShowModalReserva] = useState(false);
     const [showModalBloqueio, setShowModalBloqueio] = useState(false);
     
-    // NOVO: Estado para Modal de Detalhes da Reserva
+    // Estados para Modal de Detalhes
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [reservaDetalhes, setReservaDetalhes] = useState(null);
+    const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null); // NOVO: Guarda o resumo financeiro
 
     // --- ESTADOS DOS FORMULÁRIOS ---
     const [formReserva, setFormReserva] = useState({
@@ -68,7 +69,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
     const [formBloqueio, setFormBloqueio] = useState({
         quarto_ids: [], 
-        selectedOptions: [], // Para controlar o React-Select visualmente
+        selectedOptions: [], 
         data_checkin: '',
         data_checkout: '',
         observacoes: 'Manutenção / Bloqueio'
@@ -97,7 +98,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         }
     };
 
-    // Prepara opções para o React Select
     const getOptionsQuartos = () => {
         if (!dadosMapa || !dadosMapa.categorias) return [];
         let options = [];
@@ -116,13 +116,23 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         return reservas.find(r => r.data_checkin <= data && r.data_checkout > data);
     };
 
-    // --- CLIQUE NA CÉLULA (ALTERADO) ---
-    const handleCellClick = (quarto, data, reserva = null) => {
-      console.log("dados da reserva ao clicar", reserva)
+    // --- CLIQUE NA CÉLULA (ATUALIZADO) ---
+    const handleCellClick = async (quarto, data, reserva = null) => {
         if (reserva) {
-            // Em vez de redirecionar, abre o modal de detalhes
             setReservaDetalhes(reserva);
+            setFinanceiroDetalhes(null); // Limpa dados anteriores enquanto carrega
             setShowModalDetalhes(true);
+
+            // Busca os dados financeiros detalhados (Total, Recebido, Falta Lançar, Nº Diárias)
+            try {
+                const response = await axios.get(`/transacoes/resumo/${reserva.id}`);
+                if (response.data.success) {
+                    setFinanceiroDetalhes(response.data.resumo);
+                }
+            } catch (error) {
+                console.error("Erro ao carregar financeiro:", error);
+            }
+
         } else {
             setCelulaSelecionada({ quartoId: quarto.id, data: data, quartoNome: quarto.nome });
             setShowModalAcoes(true);
@@ -154,7 +164,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         checkoutDate.setDate(checkoutDate.getDate() + 1);
         const checkoutString = checkoutDate.toISOString().split('T')[0];
 
-        // Encontra o objeto opção correspondente ao quarto clicado
         const options = getOptionsQuartos();
         const optionSelecionada = options.find(op => op.value === celulaSelecionada.quartoId);
 
@@ -407,7 +416,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 </div>
             </SimpleModal>
 
-            {/* NOVO: Modal de Detalhes da Reserva (Apenas visualização) */}
+            {/* MODAL DETALHES COM FINANCEIRO */}
             <SimpleModal show={showModalDetalhes} onClose={() => setShowModalDetalhes(false)} title="Detalhes da Reserva">
                 {reservaDetalhes && (
                     <div>
@@ -437,17 +446,42 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         </div>
 
                         {reservaDetalhes.situacao !== 'bloqueado' && (
-                            <div className="row mb-3">
-                                <div className="col-6">
-                                    <label className="text-muted mb-0">Total</label>
-                                    <div className="text-success font-weight-bold">{formatMoney(reservaDetalhes.valor_total || (reservaDetalhes.valor_diaria * 1))}</div>
-                                </div>
-                                <div className="col-6">
-                                    <label className="text-muted mb-0">Hóspedes</label>
-                                    <div>{reservaDetalhes.n_adultos} Adulto(s) {reservaDetalhes.n_criancas > 1 ? `, ${reservaDetalhes.n_criancas} criança(s)` : ""}</div>
+                            <div className="bg-light p-3 rounded mb-3 border">
+                                <div className="row">
+                                    <div className="col-6 mb-2">
+                                        <label className="text-muted mb-0 small">Nº de Diárias</label>
+                                        <div className="font-weight-bold">
+                                            {financeiroDetalhes ? financeiroDetalhes.num_diarias : <i className="fas fa-spinner fa-spin"></i>}
+                                        </div>
+                                    </div>
+                                    <div className="col-6 mb-2">
+                                        <label className="text-muted mb-0 small">Total Geral</label>
+                                        <div className="text-primary font-weight-bold">
+                                            {financeiroDetalhes ? formatMoney(financeiroDetalhes.total_geral) : <i className="fas fa-spinner fa-spin"></i>}
+                                        </div>
+                                    </div>
+                                    <div className="col-6">
+                                        <label className="text-muted mb-0 small">Recebido</label>
+                                        <div className="text-success font-weight-bold">
+                                            {financeiroDetalhes ? formatMoney(financeiroDetalhes.total_recebido) : <i className="fas fa-spinner fa-spin"></i>}
+                                        </div>
+                                    </div>
+                                    <div className="col-6">
+                                        <label className="text-muted mb-0 small">Falta Receber</label>
+                                        <div className="text-danger font-weight-bold h5 mb-0">
+                                            {financeiroDetalhes ? formatMoney(financeiroDetalhes.falta_lancar) : <i className="fas fa-spinner fa-spin"></i>}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
+
+                        <div className="row mb-3">
+                            <div className="col-12">
+                                <label className="text-muted mb-0">Hóspedes</label>
+                                <div>{reservaDetalhes.n_adultos} Adulto(s) {reservaDetalhes.n_criancas > 0 ? `, ${reservaDetalhes.n_criancas} criança(s)` : ""}</div>
+                            </div>
+                        </div>
                         
                         {/* Rodapé com botão de Editar */}
                         <div className="border-top pt-3 mt-2 text-right">
@@ -455,7 +489,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                 Fechar
                             </button>
                             <a href={`/reserva/${reservaDetalhes.id}/edit`} className="btn btn-primary">
-                                <i className="fas fa-edit"></i> Editar / Detalhes Completos
+                                <i className="fas fa-edit"></i> Ir para reserva
                             </a>
                         </div>
                     </div>

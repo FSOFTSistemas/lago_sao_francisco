@@ -82,11 +82,28 @@
             @foreach ($reservas as $reserva)
                 <tr>
                     <td>
-                        <span class="status-indicator"
-                            style="background-color: {{ getReservaStatusColor($reserva->situacao) }};"></span>
-                        <a id="editlink" href="{{ route('reserva.edit', $reserva->id) }}">
-                            00000{{ $reserva->id }}
-                        </a>
+                        <!-- Container Flex para alinhar o indicador, o ID e o botão de excluir -->
+                        <div class="d-flex align-items-center">
+                            <span class="status-indicator"
+                                style="background-color: {{ getReservaStatusColor($reserva->situacao) }};"></span>
+                            
+                            <a id="editlink" href="{{ route('reserva.edit', $reserva->id) }}" class="mr-2">
+                                00000{{ $reserva->id }}
+                            </a>
+
+                            <!-- Botão de Excluir (Apenas para bloqueados) -->
+                            @if ($reserva->situacao === 'bloqueado')
+                                <form action="{{ route('reserva.destroy', $reserva->id) }}" method="POST" 
+                                      class="form-excluir-bloqueio"
+                                      style="display: inline-block; margin: 0;">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-link p-0 text-danger" title="Excluir Bloqueio">
+                                        <i class="fas fa-trash-alt" style="font-size: 0.9rem;"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </td>
                     <td>{{ $reserva->hospede->nome }}</td>
                     <td>{{ $reserva->quarto->nome }}</td>
@@ -130,6 +147,59 @@
 
 @stop
 
+@section('js')
+    <!-- Carrega o SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Intercepta o envio do formulário de exclusão
+            $('.form-excluir-bloqueio').on('submit', function(e) {
+                e.preventDefault(); // Impede o envio imediato
+                
+                var form = this;
+                
+                Swal.fire({
+                    title: 'Tem certeza?',
+                    text: "Deseja realmente excluir este bloqueio de data?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sim, excluir!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // Envia o formulário se confirmado
+                    }
+                });
+            });
+        });
+    </script>
+
+    @if(session('success'))
+    <script>
+        Swal.fire({
+            icon: 'success',
+            title: 'Sucesso!',
+            text: '{{ session("success") }}',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script>
+        Swal.fire({
+            icon: 'error',
+            title: 'Erro!',
+            text: '{{ session("error") }}'
+        });
+    </script>
+    @endif
+@stop
+
 @section('css')
     <style>
         #editlink {
@@ -147,6 +217,7 @@
             height: 10px;
             border-radius: 2px;
             margin-right: 8px;
+            flex-shrink: 0; 
         }
 
         .d-flex {
@@ -157,6 +228,10 @@
             align-items: center;
         }
 
+        .mr-2 { margin-right: 0.5rem; }
+        .p-0 { padding: 0 !important; }
+        .text-danger { color: #dc3545 !important; }
+        
         .me-3 {
             margin-right: 1rem;
         }
@@ -186,3 +261,4 @@
             color: #fff;
         }
     </style>
+@stop
