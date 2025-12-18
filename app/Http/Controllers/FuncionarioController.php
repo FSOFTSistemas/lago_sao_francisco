@@ -168,7 +168,7 @@ class FuncionarioController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Funcionario $funcionario)
+   public function update(Request $request, Funcionario $funcionario)
     {
         try {
             $funcionario = Funcionario::findOrFail($funcionario->id);
@@ -186,25 +186,39 @@ class FuncionarioController extends Controller
                 'caixa' => 'boolean',
                 'senha_supervisor' => 'nullable|string|min:6',
             ]);
+            
             $dados = $request->all();
+
+            // Lógica de senha do supervisor
             if ($request->input('setor') === 'Gerência') {
-                if (filled($request->input('senha_supervisor'))) {
-                    // Mantém 'senha_supervisor' nos dados
-                    $dados['senha_supervisor'] = $request->input('senha_supervisor');
+                if ($request->filled('senha_supervisor')) {
+                    // SE PREENCHEU SENHA: CRIPTOGRAFA ANTES DE SALVAR
+                    $dados['senha_supervisor'] = bcrypt($request->input('senha_supervisor'));
                 } else {
-                    // Remove para não atualizar com null
+                    // SE NÃO PREENCHEU: REMOVE DO ARRAY PARA NÃO APAGAR A SENHA ATUAL
                     unset($dados['senha_supervisor']);
                 }
             } else {
-                // Em qualquer outro setor, sempre ignora
-                unset($dados['senha_supervisor']);
+                // SE MUDOU DE SETOR (SAIU DA GERÊNCIA): LIMPA A SENHA
+                $dados['senha_supervisor'] = null;
             }
 
+            // Tratamento do CPF (apenas números)
+            if (isset($dados['cpf'])) {
+                $dados['cpf'] = preg_replace('/[^0-9]/', '', $dados['cpf']);
+            }
+
+            // Checkboxes não enviados (false)
+            $dados['vendedor'] = $request->has('vendedor');
+            $dados['caixa'] = $request->has('caixa');
+
             $funcionario->update($dados);
+            
             return redirect()->route('funcionario.index')->with('success', 'Funcionário atualizado com sucesso');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->back()->with('error', 'Erro ao validar dados');
+            // Em produção, evite dd()
+            // dd($e)->getMessage(); 
+            return redirect()->back()->with('error', 'Erro ao validar dados: ' . $e->getMessage());
         }
     }
 

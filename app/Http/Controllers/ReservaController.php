@@ -1018,4 +1018,93 @@ public function update(Request $request, Reserva $reserva)
 
         return $pdf->stream('relatorio_vendas.pdf');
     }
+
+     public function excluirBloqueioComSupervisor(Request $request, $id)
+    {
+        $request->validate([
+            'senha_supervisor' => ['required', 'string', 'min:1'],
+        ]);
+
+        $reserva = Reserva::findOrFail($id);
+
+        // Segurança adicional: só permite excluir com senha se for 'bloqueado'
+        // Se quiser permitir excluir qualquer reserva com senha, remova este if.
+        if ($reserva->situacao !== 'bloqueado') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta função é exclusiva para remover bloqueios de data.'
+            ], 400);
+        }
+
+        // === Lógica de validação de senha (Reutilizada) ===
+        $senhaDigitada = (string) $request->input('senha_supervisor');
+        $funcionarios = Funcionario::whereNotNull('senha_supervisor')->get();
+        $supervisor = null;
+
+        foreach ($funcionarios as $f) {
+            $hashBanco = trim((string) $f->senha_supervisor);
+            if ($hashBanco === '') continue;
+
+            // Verifica MD5 (Legado)
+            if (hash_equals($hashBanco, md5($senhaDigitada))) {
+                $supervisor = $f;
+                break;
+            }
+
+            // Verifica Bcrypt/Argon (Laravel padrão)
+            if (str_starts_with($hashBanco, '$2') || str_starts_with($hashBanco, '$argon')) {
+                // Pequeno ajuste para hashes antigos que usavam prefixo $2b$ em vez de $2y$
+                $hashNorm = preg_replace('/^\$2b\$/', '$2y$', $hashBanco);
+                if (password_verify($senhaDigitada, $hashNorm)) {
+                    $supervisor = $f;
+                    break;
+                }
+            }
+        }
+
+        if (!$supervisor) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Senha de supervisor inválida.'
+            ], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $dadosAntigos = $reserva->toArray();
+
+            // Log de Exclusão com Supervisor
+            LogReserva::create([
+                'reserva_id'    => $reserva->id, // Será null ou o ID antes de deletar (dependendo do banco, logs podem ficar orfãos, mas ok para histórico)
+                'usuario_id'    => Auth::id(),
+                'tipo'          => 'exclusao',
+                'descricao'     => "Exclusão de bloqueio ID #{$reserva->id} via Supervisor",
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos'   => [
+                    'acao'            => "Exclusão de bloqueio",
+                    'supervisor_id'   => $supervisor->id,
+                    'supervisor_nome' => $supervisor->nome,
+                    'motivo'          => 'Liberação de data bloqueada'
+                ],
+            ]);
+
+            // Remove o bloqueio
+            $reserva->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Bloqueio removido com sucesso!'
+            ]);
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao excluir bloqueio: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
