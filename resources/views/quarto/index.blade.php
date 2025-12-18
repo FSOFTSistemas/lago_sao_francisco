@@ -38,7 +38,7 @@
             <thead class="table-primary">
                 <tr>
                     <th>Ativo?</th>
-                    <th>Posição</th>
+                    <th style="width: 100px;">Posição</th>
                     <th>Título</th>
                     <th>Categoria</th>
                     <th>Ações</th>
@@ -49,12 +49,32 @@
                     <tr>
                         <td>
                           @if($quarto->status == true)
-                          <i class="fa-regular fa-circle-check"></i>
+                          <i class="fa-regular fa-circle-check text-success"></i>
                           @else
-                          <i class="fa-regular fa-circle-xmark"></i>
+                          <i class="fa-regular fa-circle-xmark text-danger"></i>
                           @endif
                         </td>
-                        <td>{{ $quarto->posicao }}</td>
+                        <td>
+                            <!-- Formulário Inline para Editar Posição -->
+                            <form action="{{ route('quarto.update', $quarto->id) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                <!-- Enviamos os campos obrigatórios ocultos para passar na validação -->
+                                <input type="hidden" name="nome" value="{{ $quarto->nome }}">
+                                <input type="hidden" name="categoria_id" value="{{ $quarto->categoria_id }}">
+                                <input type="hidden" name="status" value="{{ $quarto->status }}">
+                                <input type="hidden" name="descricao" value="{{ $quarto->descricao }}">
+                                
+                                <input type="number" 
+                                       name="posicao" 
+                                       value="{{ $quarto->posicao }}" 
+                                       class="form-control form-control-sm text-center" 
+                                       style="width: 70px;"
+                                       min="1"
+                                       onchange="this.form.submit()"
+                                       title="Alterar posição e salvar">
+                            </form>
+                        </td>
                         <td>
                           <a id="editlink" href="{{ route('quarto.edit', $quarto->id) }}">
                             {{ $quarto->nome }}
@@ -88,4 +108,14 @@
     .new:hover{
         background-color: #3e7222 !important;
     }
+    /* Remove as setinhas do input number para ficar mais limpo */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
 </style>
+@stop
