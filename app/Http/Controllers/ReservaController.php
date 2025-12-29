@@ -107,6 +107,16 @@ class ReservaController extends Controller
             ]);
 
             $preferencia = PreferenciasHotel::first();
+
+            $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
+        $maxOcupantes = $quarto->categoria->ocupantes;
+        $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
+
+        if ($totalPessoas > $maxOcupantes) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Você selecionou {$totalPessoas} (Adultos + Crianças).");
+        }
             
             // --- 1. Lógica para definir o Valor da Diária ---
             if ($preferencia->valor_diaria === 'tarifario' || empty($validatedData['valor_diaria'])) {
@@ -264,6 +274,16 @@ public function update(Request $request, Reserva $reserva)
                     return redirect()->back()->withInput()->with('error', 'Para alterar para "reserva", é necessário ter pelo menos um pagamento registrado.');
                 }
             }
+
+            $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
+        $maxOcupantes = $quarto->categoria->ocupantes;
+        $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
+
+        if ($totalPessoas > $maxOcupantes) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Total inserido: {$totalPessoas}.");
+        }
 
             // Remover a máscara do valor_diaria antes de salvar (Ex: 1.200,00 -> 1200.00)
             $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
