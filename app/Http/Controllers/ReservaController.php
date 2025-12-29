@@ -616,7 +616,7 @@ public function update(Request $request, Reserva $reserva)
         }
     }
 
-    public function hospedar($id)
+public function hospedar($id)
     {
         try {
             $reserva = Reserva::findOrFail($id);
@@ -624,43 +624,57 @@ public function update(Request $request, Reserva $reserva)
             // Guardar status antigo para o log
             $statusAntigo = $reserva->situacao;
 
-            // Verificar se hoje é o dia do check-in
-            $hoje = Carbon::today();
-            $dataCheckin = Carbon::parse($reserva->data_checkin);
+            // --- CORREÇÃO DA DATA AQUI ---
+            // Normaliza as datas para meia-noite para comparar apenas o dia, ignorando horas
+            $hoje = \Carbon\Carbon::today(); 
+            $dataCheckin = \Carbon\Carbon::parse($reserva->data_checkin)->startOfDay();
 
-            if (!$hoje->equalTo($dataCheckin)) {
+            // Se hoje for MENOR que a data de check-in (tentando entrar antes do dia)
+            if ($hoje->lt($dataCheckin)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'O check-in só pode ser realizado na data prevista.'
+                    'message' => 'O check-in só pode ser realizado a partir de ' . $dataCheckin->format('d/m/Y') . '.'
                 ], 400);
             }
+            // Nota: Se $hoje for maior (check-in atrasado), o código passa direto aqui, permitindo a entrada.
 
             // Verificar se a situação permite hospedagem
-            if (!in_array($reserva->situacao, ['reserva'])) {
+            // Aceitamos apenas 'reserva' (confirmada). 'pre-reserva' geralmente precisa confirmar antes.
+            if ($reserva->situacao !== 'reserva') {
+                
+                $msg = 'Esta reserva não está pronta para check-in.';
+                
+                if ($reserva->situacao === 'hospedado') {
+                    $msg = 'O hóspede já realizou o check-in.';
+                } elseif (in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow'])) {
+                    $msg = 'Esta reserva já foi finalizada ou cancelada.';
+                } elseif ($reserva->situacao === 'pre-reserva') {
+                    $msg = 'Confirme a pré-reserva antes de realizar o check-in.';
+                }
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta reserva não está em situação adequada para hospedagem.'
+                    'message' => $msg
                 ], 400);
             }
 
-            if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Esta reserva já foi finalizada ou cancelada.'
-                ], 400);
-            }
-
+            // Realizar o Check-in
             $reserva->situacao = 'hospedado';
-            $reserva->hora_checkin = Carbon::now()->format('H:i:s');
+            // Salva a hora atual exata do check-in
+            $reserva->hora_checkin = \Carbon\Carbon::now()->format('H:i:s'); 
             $reserva->save();
 
             // Registrar log de alteração de status
-            LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
+            // Certifique-se que o Auth e LogReserva estão importados no topo do controller
+            if (class_exists('App\Models\LogReserva')) {
+                \App\Models\LogReserva::registrarAlteracaoStatus($reserva, \Illuminate\Support\Facades\Auth::id(), $statusAntigo);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Check-in realizado com sucesso!'
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

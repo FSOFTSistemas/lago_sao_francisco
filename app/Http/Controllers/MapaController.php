@@ -25,11 +25,11 @@ class MapaController extends Controller
         return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
     }
 
-    public function getDadosMapa(Request $request)
+public function getDadosMapa(Request $request)
     {
         try {
-            $dataInicio = Carbon::parse($request->get('data_inicio', Carbon::now()->startOfWeek()));
-            $dataFim = Carbon::parse($request->get('data_fim', $dataInicio->copy()->addDays(13)));
+            $dataInicio = \Carbon\Carbon::parse($request->get('data_inicio', \Carbon\Carbon::now()->startOfWeek()));
+            $dataFim = \Carbon\Carbon::parse($request->get('data_fim', $dataInicio->copy()->addDays(13)));
 
             // Gerar array de datas
             $datas = [];
@@ -39,10 +39,9 @@ class MapaController extends Controller
                 $dataAtual->addDay();
             }
 
-            // --- ALTERAÇÃO PRINCIPAL ---
-            // Busca quartos diretamente, ordenados pela posição globalmente, ignorando agrupamento visual de categoria
-            $quartos = Quarto::where('status', 1)
-                ->orderBy('posicao', 'asc') // Ordenação Global
+            // Busca quartos ordenados
+            $quartos = \App\Models\Quarto::where('status', 1)
+                ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
                     $query->with('hospede')
                         ->where(function ($q) use ($dataInicio, $dataFim) {
@@ -53,7 +52,7 @@ class MapaController extends Controller
                 }])
                 ->get();
 
-            // Organizar dados do mapa (Lista plana de quartos)
+            // Organizar dados do mapa
             $dadosQuartos = [];
 
             foreach ($quartos as $quarto) {
@@ -75,18 +74,26 @@ class MapaController extends Controller
                     'id' => $quarto->id,
                     'nome' => $quarto->nome,
                     'posicao' => $quarto->posicao,
+                    
+                    // --- CORREÇÃO AQUI ---
+                    // Adicionamos a capacidade para o React conseguir ler
+                    'ocupantes' => $quarto->categoria->ocupantes ?? 999, 
+                    
+                    // Enviamos também o objeto categoria completo por segurança
+                    'categoria' => $quarto->categoria,
+                    
                     'categoria_nome' => $quarto->categoria->titulo ?? '',
                     'reservas' => $reservasFormatadas
                 ];
             }
 
-            // Calcular ocupação por data
+            // Calcular ocupação
             $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $quartos);
 
             return response()->json([
                 'success' => true,
                 'datas' => $datas,
-                'quartos' => $dadosQuartos, // Agora retornamos 'quartos' direto, não 'categorias'
+                'quartos' => $dadosQuartos,
                 'ocupacao' => $ocupacaoPorData
             ]);
         } catch (\Exception $e) {
@@ -128,63 +135,74 @@ class MapaController extends Controller
         return $ocupacao;
     }
 
-    public function criarReservaRapida(Request $request)
+public function criarReservaRapida(Request $request)
     {
         try {
-            Log::debug('Dados recebidos:', $request->all());
+            // 1. Validação dos inputs
             $request->validate([
-                'quarto_id' => 'required|exists:quartos,id',
-                'data_checkin' => 'required|date',
+                'quarto_id'     => 'required|exists:quartos,id',
+                'data_checkin'  => 'required|date',
                 'data_checkout' => 'required|date|after:data_checkin',
-                'tipo' => 'required|in:reserva,bloqueio',
-                'valor_diaria' => 'nullable|numeric',
+                'tipo'          => 'required|in:reserva,bloqueio',
+                'n_adultos'     => 'nullable|integer|min:1', 
+                'n_criancas'    => 'nullable|integer|min:0',
             ]);
 
+            // --- NOVA VALIDAÇÃO DE CAPACIDADE (O SEGREDO ESTÁ AQUI) ---
+            if ($request->tipo === 'reserva') {
+                // Busca o quarto e a categoria dele
+                $quarto = \App\Models\Quarto::with('categoria')->find($request->quarto_id);
+                
+                // Pega a capacidade (se não tiver categoria, assume um valor alto ou 0)
+                $capacidadeMaxima = $quarto->categoria ? $quarto->categoria->ocupantes : 999;
+                
+                $nAdultos = $request->input('n_adultos', 1);
+                $nCriancas = $request->input('n_criancas', 0);
+                $totalPessoas = $nAdultos + $nCriancas;
+
+                if ($totalPessoas > $capacidadeMaxima) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Capacidade excedida! O quarto comporta máximo de {$capacidadeMaxima} pessoas, mas você tentou inserir {$totalPessoas}."
+                    ], 422); // 422 = Unprocessable Entity
+                }
+            }
+            // -----------------------------------------------------------
+
             $dadosReserva = [
-                'quarto_id' => $request->quarto_id,
-                'data_checkin' => $request->data_checkin,
+                'quarto_id'     => $request->quarto_id,
+                'data_checkin'  => $request->data_checkin,
                 'data_checkout' => $request->data_checkout,
-                'valor_diaria' => $request->valor_diaria ?? 0,
-                'n_adultos' => 1,
-                'n_criancas' => 0,
+                'valor_diaria'  => $request->valor_diaria ?? 0,
+                'valor_total'   => $request->valor_total ?? 0,
+                'n_adultos'     => $request->input('n_adultos', 1), 
+                'n_criancas'    => $request->input('n_criancas', 0),
             ];
 
             if ($request->tipo === 'bloqueio') {
-                $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
-
+                $hospedeBloqueado = \App\Models\Hospede::where('nome', 'Bloqueado')->first();
                 if (!$hospedeBloqueado) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Hóspede "Bloqueado" não encontrado. Crie um hóspede com este nome.'
-                    ], 400);
+                    return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
                 }
-
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
             } else {
-                $request->validate([
-                    'hospede_id' => 'required|exists:hospedes,id'
-                ]);
+                $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
                 $dadosReserva['situacao'] = $request->situacao;
                 $dadosReserva['hospede_id'] = $request->hospede_id;
             }
 
-            $reserva = Reserva::create($dadosReserva);
+            $reserva = \App\Models\Reserva::create($dadosReserva);
 
             return response()->json([
                 'success' => true,
-                'message' => $request->tipo === 'bloqueio'
-                    ? 'Bloqueio criado com sucesso!'
-                    : 'Reserva criada com sucesso!',
+                'message' => 'Reserva criada com sucesso!',
                 'reserva_id' => $reserva->id
             ]);
-        } catch (\Exception $e) {
-            Log::error('Erro ao criar reserva rápida', ['erro' => $e->getMessage()]);
 
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage() ?: 'Erro inesperado ao criar reserva.'
-            ], 500);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Erro criar reserva rápida', ['erro' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
         }
     }
 }
