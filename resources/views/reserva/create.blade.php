@@ -223,6 +223,7 @@
                                                         <optgroup label="{{ $categoria }}">
                                                             @foreach ($quartos as $quarto)
                                                                 <option value="{{ $quarto->id }}"
+                                                                    data-ocupantes="{{ $quarto->categoria->ocupantes }}"
                                                                     {{ old('quarto_id', $reserva->quarto_id ?? '') == $quarto->id ? 'selected' : '' }}>
                                                                     {{ $quarto->nome }}
                                                                 </option>
@@ -239,7 +240,7 @@
                                         <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                                     @endif
 
-                                    <div class="form-group row" style="display: none !important" id="esconder">
+                                    <div class="form-group row">
                                         <label class="col-md-3 label-control" for="valor_diaria">* Valor da
                                             diária:</label>
                                         <div class="col-md-4">
@@ -257,7 +258,7 @@
                                                 <label for="n_adultos">* Nº adultos/adolescentes</label>
                                                 <input type="number" name="n_adultos" id="n_adultos"
                                                     class="form-control" value="{{ $quarto->categoria->ocupantes }}"
-                                                    min="1" readonly>
+                                                    min="1">
                                             </div>
 
                                             <div class="col-md-5">
@@ -493,10 +494,10 @@
                                             @endif
 
                                             <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
-                                            @if (isset($reserva) && $reserva->situacao === 'reserva' && $reserva->data_checkin === date('Y-m-d'))
+                                            @if (isset($reserva) && $reserva->situacao === 'reserva' && $reserva->data_checkin <= date('Y-m-d'))
                                                 <button type="button" class="btn btn-danger" id="btn-hospedar"
                                                     data-reserva-id="{{ $reserva->id }}">
-                                                    <i class="fas fa-bed"></i> Hospedar
+                                                    <i class="fas fa-bed"></i> Check-in
                                                 </button>
                                             @endif
 
@@ -504,7 +505,7 @@
                                             @if (isset($reserva) && $reserva->situacao === 'hospedado')
                                                 <button type="button" class="btn btn-success" id="btn-finalizar"
                                                     data-reserva-id="{{ $reserva->id }}">
-                                                    <i class="fas fa-check-circle"></i> Finalizar
+                                                    <i class="fas fa-check-circle"></i> Check-out
                                                 </button>
                                             @endif
 
@@ -1091,10 +1092,6 @@
             background-color: #4c0a7a;
         }
 
-        #esconder {
-            display: none !important;
-        }
-
         #placa_veiculo {
             text-transform: uppercase;
         }
@@ -1191,6 +1188,51 @@
             });
             $("#valor_transacao").mask("#.##0,00", {
                 reverse: true
+            });
+
+            function validarCapacidadeQuarto() {
+                // Pega o objeto da opção selecionada
+                const quartoOption = $('#quarto').find(':selected');
+
+                // Se não tiver quarto selecionado, não valida
+                if (!quartoOption.length || !quartoOption.val()) return;
+
+                const maxOcupantes = parseInt(quartoOption.data('ocupantes')) || 0;
+                const nAdultos = parseInt($('#n_adultos').val()) || 0;
+                const nCriancas = parseInt($('#n_criancas').val()) || 0;
+                const totalPessoas = nAdultos + nCriancas;
+
+                if (maxOcupantes > 0 && totalPessoas > maxOcupantes) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Capacidade Excedida',
+                        text: `A capacidade máxima deste quarto (Categoria: ${maxOcupantes} pessoas) foi excedida.`,
+                        confirmButtonText: 'Corrigir'
+                    });
+
+                    // Opcional: Ajustar automaticamente para o máximo permitido
+                    // Se adultos já estourou, reduz adultos. Se foi a soma com criança, zera criança.
+                    if (nAdultos > maxOcupantes) {
+                        $('#n_adultos').val(maxOcupantes);
+                        $('#n_criancas').val(0);
+                    } else {
+                        // Mantém adultos e reduz crianças para o que sobrar
+                        $('#n_criancas').val(maxOcupantes - nAdultos);
+                    }
+                }
+            }
+
+            // Adiciona os ouvintes de evento nos campos relevantes
+            $('#n_adultos, #n_criancas').on('change blur', function() {
+                validarCapacidadeQuarto();
+            });
+
+            // O evento de mudança de quarto já existe no seu código, 
+            // mas vamos garantir que a validação rode também
+            $('#quarto').on('change', function() {
+                // O seu código atual já preenche n_adultos com o padrão.
+                // Vamos dar um pequeno delay para garantir que o valor padrão entrou antes de validar
+                setTimeout(validarCapacidadeQuarto, 100);
             });
 
             // --- INÍCIO DA SOLUÇÃO PARA PLACA ---
