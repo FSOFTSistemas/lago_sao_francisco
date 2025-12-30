@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import axios from 'axios';
 import Select from 'react-select';
-import Swal from 'sweetalert2'; // <--- IMPORTANTE: Import do SweetAlert2
+import Swal from 'sweetalert2';
 
 // --- COMPONENTE MODAL SIMPLES ---
 const SimpleModal = ({ show, onClose, title, children, size = 'md' }) => {
@@ -122,7 +122,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             const reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
             const reservaFim = quarto.reservas.find(r => checkData(r.data_checkout, dataAtual));
 
-            // === LÓGICA DE BARRA ===
             if (reservaInicio) {
                 let slotsOcupados = 0;
                 for (let j = i; j < totalDias; j++) {
@@ -136,7 +135,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 }
 
                 const larguraGrid = slotsOcupados * larguraDia;
-                const larguraBarra = larguraGrid + 30; // +30px invade próximo dia
+                const larguraBarra = larguraGrid + 30; 
                 const margemEsquerda = reservaFim ? 30 : 0;
                 
                 celulas.push(
@@ -173,7 +172,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 continue;
             }
 
-            // === CÉLULA VAZIA ===
             celulas.push(
                 <div 
                     key={`${quarto.id}-${dataAtual}-vazio`}
@@ -206,7 +204,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const handleRealizarCheckin = async () => {
         if (!reservaDetalhes) return;
         
-        // SweetAlert de Confirmação
         const result = await Swal.fire({
             title: 'Confirmar Check-in',
             text: `Deseja realizar o check-in para ${reservaDetalhes.hospede_nome}?`,
@@ -238,14 +235,10 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         }
     };
 
-    // --- VALIDAÇÃO E SALVAMENTO ---
     const handleSalvarReserva = async (e) => {
         e.preventDefault();
         
-        // 1. Encontrar o quarto selecionado
         const quarto = dadosMapa.quartos.find(q => q.id === celulaSelecionada.quartoId);
-        
-        // 2. Tentar descobrir a capacidade
         let capacidadeMaxima = 999; 
 
         if (quarto) {
@@ -434,6 +427,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             <div className="col-6"><small className="text-muted">Check-out</small><div>{formatDate(reservaDetalhes.data_checkout)}</div></div>
                         </div>
 
+                        {/* HÓSPEDES */}
                         <div className="row mb-3">
                              <div className="col-12">
                                  <label className="text-muted mb-0 small">Hóspedes</label>
@@ -443,6 +437,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                  </div>
                              </div>
                         </div>
+
+                        {/* OBSERVAÇÕES */}
+                        {reservaDetalhes.observacoes && (
+                            <div className="row mb-3">
+                                <div className="col-12">
+                                    <label className="text-muted mb-0 small">Observações</label>
+                                    <div className="p-2 rounded border bg-white" style={{ fontSize: '0.9rem', fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
+                                        {reservaDetalhes.observacoes}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {reservaDetalhes.situacao !== 'bloqueado' && (
                             <div className="bg-light p-3 rounded mb-3 border">

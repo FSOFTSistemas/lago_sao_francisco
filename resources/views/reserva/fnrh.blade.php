@@ -164,7 +164,7 @@
             <tr>
                 <td style="width: 33%;">
                     <span class="label">Nascimento (DD/MM/AAAA)</span>
-                    <div class="value">{{ $hospede->data_nascimento ? \Carbon\Carbon::parse($hospede->data_nascimento)->format('d/m/Y') : '' }}</div>
+                    <div class="value">{{ $hospede->nascimento ? \Carbon\Carbon::parse($hospede->nascimento)->format('d/m/Y') : '' }}</div>
                 </td>
                 <td style="width: 33%;">
                     <span class="label">Profissão</span>
@@ -199,8 +199,8 @@
                     <div class="value">{{ $hospede->rg_orgao ?? '' }}</div>
                 </td>
                 <td>
-                    <span class="label">Tipo (Passaporte, etc.)</span>
-                    <div class="value">{{ $hospede->rg ? 'RG' : ($hospede->passaporte ? 'Passaporte' : '') }}</div>
+                    <span class="label">Nº Passaporte</span>
+                    <div class="value">{{ $hospede->passaporte ?? '' }}</div>
                 </td>
             </tr>
         </table>
@@ -208,23 +208,29 @@
         <div class="section-title">Endereço</div>
         <table>
             <tr>
-                <td colspan="3">
-                    <span class="label">Endereço (Rua, N°, Bairro)</span>
-                    <div class="value">{{ $hospede->endereco ?? '' }}</div>
-                </td>
+               <td colspan="3">
+    <span class="label">Endereço (Rua, N°, Bairro)</span>
+    <div class="value">
+        @if($hospede->endereco)
+            {{ $hospede->endereco->logradouro }}, {{ $hospede->endereco->numero }} - {{ $hospede->endereco->bairro }}
+        @else
+            -
+        @endif
+    </div>
+</td>
                 <td style="width: 25%;">
                     <span class="label">CEP</span>
-                    <div class="value">{{ $hospede->cep ?? '' }}</div>
+                    <div class="value">{{ $hospede->endereco->cep ?? '' }}</div>
                 </td>
             </tr>
             <tr>
                 <td style="width: 35%;">
                     <span class="label">Cidade</span>
-                    <div class="value">{{ $hospede->cidade ?? '' }}</div>
+                    <div class="value">{{ $hospede->endereco->cidade ?? '' }}</div>
                 </td>
                 <td style="width: 20%;">
                     <span class="label">Estado (UF)</span>
-                    <div class="value">{{ $hospede->estado ?? '' }}</div>
+                    <div class="value">{{ $hospede->endereco->uf ?? '' }}</div>
                 </td>
                 <td colspan="2" style="width: 45%;">
                     <span class="label">País</span>

@@ -67,6 +67,7 @@ public function getDadosMapa(Request $request)
                         'valor_diaria' => $reserva->valor_diaria,
                         'n_adultos' => $reserva->n_adultos,
                         'n_criancas' => $reserva->n_criancas,
+                        'observacoes' => $reserva->observacoes,
                     ];
                 }
 

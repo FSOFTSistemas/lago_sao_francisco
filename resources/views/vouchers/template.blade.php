@@ -190,7 +190,8 @@
                         <td><span class="info-label">CPF:</span> {{ $reserva->hospede->cpf ?? 'Não informado' }}</td>
                     </tr>
                     <tr>
-                        <td colspan="3"><span class="info-label">Email:</span> {{ $reserva->hospede->email ?? 'Não informado' }}
+                        <td colspan="3"><span class="info-label">Email:</span>
+                            {{ $reserva->hospede->email ?? 'Não informado' }}
                         </td>
                     </tr>
                 </table>
@@ -202,13 +203,19 @@
             <div class="section-title">DADOS DA RESERVA</div>
             <table class="info-table">
                 <tr>
-                    <td><span class="info-label">Quarto:</span></td>
+                    <td><span class="info-label">Quarto:</span> {{ $reserva->quarto->titulo ?? '' }}</td>
                     <td><span class="info-label">Categoria:</span>
                         {{ $reserva->quarto->categoria->titulo ?? 'Não informado' }}</td>
                 </tr>
                 <tr>
                     <td><span class="info-label">Nº de Adultos:</span> {{ $reserva->n_adultos ?? '0' }}</td>
                     <td><span class="info-label">Nº de Crianças:</span> {{ $reserva->n_criancas ?? '0' }}</td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <span class="info-label">Observações:</span>
+                        {{ $reserva->observacoes ?? '—' }}
+                    </td>
                 </tr>
             </table>
         </div>
