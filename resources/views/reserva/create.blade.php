@@ -257,10 +257,11 @@
                                             <div class="col-md-5">
                                                 <label for="n_adultos">* Nº adultos/adolescentes</label>
                                                 <input type="number" name="n_adultos" id="n_adultos"
-                                                    class="form-control" value="{{ $reserva->n_adultos ? $reserva->n_adultos : $quarto->categoria->ocupantes }}"
+                                                    class="form-control"
+                                                    value="{{ old('n_adultos', isset($reserva) ? $reserva->n_adultos : 1) }}"
                                                     min="1">
                                             </div>
-                                
+
                                             <div class="col-md-5">
                                                 <label for="n_criancas">* Nº crianças (6 a 12 anos)</label>
                                                 <input type="number" name="n_criancas" id="n_criancas"
