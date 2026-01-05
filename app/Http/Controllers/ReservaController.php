@@ -112,7 +112,7 @@ class ReservaController extends Controller
         $maxOcupantes = $quarto->categoria->ocupantes;
         $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
 
-        if ($totalPessoas > $maxOcupantes) {
+        if ($totalPessoas > ($maxOcupantes + 10)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Você selecionou {$totalPessoas} (Adultos + Crianças).");
@@ -279,7 +279,7 @@ public function update(Request $request, Reserva $reserva)
         $maxOcupantes = $quarto->categoria->ocupantes;
         $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
 
-        if ($totalPessoas > $maxOcupantes) {
+        if ($totalPessoas > ($maxOcupantes + 10)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Total inserido: {$totalPessoas}.");

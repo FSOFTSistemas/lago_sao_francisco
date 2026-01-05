@@ -135,7 +135,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 }
 
                 const larguraGrid = slotsOcupados * larguraDia;
-                const larguraBarra = larguraGrid + 30; 
+                const larguraBarra = larguraGrid + 25; 
                 const margemEsquerda = reservaFim ? 30 : 0;
                 
                 celulas.push(
@@ -253,7 +253,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
         const nAdultos = parseInt(formReserva.n_adultos || 0);
         const nCriancas = parseInt(formReserva.n_criancas || 0);
-        const totalPessoas = nAdultos + nCriancas;
+        const totalPessoas = nAdultos + nCriancas + 10;
 
         if (totalPessoas > capacidadeMaxima) {
             Swal.fire({

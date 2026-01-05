@@ -1201,7 +1201,7 @@
                 const maxOcupantes = parseInt(quartoOption.data('ocupantes')) || 0;
                 const nAdultos = parseInt($('#n_adultos').val()) || 0;
                 const nCriancas = parseInt($('#n_criancas').val()) || 0;
-                const totalPessoas = nAdultos + nCriancas + 2;
+                const totalPessoas = nAdultos + nCriancas + 10;
 
                 if (maxOcupantes > 0 && totalPessoas > maxOcupantes) {
                     Swal.fire({
