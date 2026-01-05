@@ -15,6 +15,8 @@ class Hospede extends Model
         'telefone',
         'passaporte',
         'cpf',
+        'rg',
+        'orgao_expedidor',
         'nascimento',
         'sexo',
         'profissao',
