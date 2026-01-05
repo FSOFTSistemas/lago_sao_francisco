@@ -1201,9 +1201,9 @@
                 const maxOcupantes = parseInt(quartoOption.data('ocupantes')) || 0;
                 const nAdultos = parseInt($('#n_adultos').val()) || 0;
                 const nCriancas = parseInt($('#n_criancas').val()) || 0;
-                const totalPessoas = nAdultos + nCriancas + 10;
+                const totalPessoas = nAdultos + nCriancas;
 
-                if (maxOcupantes > 0 && totalPessoas > maxOcupantes) {
+                if (maxOcupantes > 0 && totalPessoas > (maxOcupantes + 10)) {
                     Swal.fire({
                         icon: 'warning',
                         title: 'Capacidade Excedida',
