@@ -159,9 +159,9 @@ public function criarReservaRapida(Request $request)
                 
                 $nAdultos = $request->input('n_adultos', 1);
                 $nCriancas = $request->input('n_criancas', 0);
-                $totalPessoas = $nAdultos + $nCriancas + 10;
+                $totalPessoas = $nAdultos + $nCriancas;
 
-                if ($totalPessoas > $capacidadeMaxima) {
+                if ($totalPessoas > ($capacidadeMaxima + 10)) {
                     return response()->json([
                         'success' => false,
                         'message' => "Capacidade excedida! O quarto comporta máximo de {$capacidadeMaxima} pessoas, mas você tentou inserir {$totalPessoas}."
