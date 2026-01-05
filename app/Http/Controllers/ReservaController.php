@@ -29,19 +29,19 @@ class ReservaController extends Controller
     private $canaisVenda = ['WhatsApp', 'Instagram', 'Telefone', 'Indicação', 'Balcão', 'Facebook', 'Email', 'Outros'];
 
     public function index(Request $request)
-    {
-        $situacao = $request->input('situacao', 'todos'); // 'todos' por padrão
+{
+    $situacao = $request->input('situacao', 'todos');
 
-        $query = Reserva::with(['quarto', 'hospede'])->latest();
+    $query = Reserva::with(['quarto', 'hospede'])->latest();
 
-        if ($situacao !== 'todos') {
-            $query->where('situacao', $situacao);
-        }
-
-        $reservas = $query->paginate(10);
-
-        return view('reserva.index', compact('reservas', 'situacao'));
+    if ($situacao !== 'todos') {
+        $query->where('situacao', $situacao);
     }
+
+    $reservas = $query->get(); 
+
+    return view('reserva.index', compact('reservas', 'situacao'));
+}
 
 
 
@@ -932,9 +932,10 @@ public function hospedar($id)
     }
 
     // Método auxiliar privado para reaproveitar a query
+   // Método auxiliar privado para reaproveitar a query
     private function buscarReservasParaCafe($inicio, $fim)
     {
-        // 1. Removemos 'hospedes_secundarios' do with(), pois não é uma relação
+        // 1. Consulta ao Banco
         $reservas = Reserva::with(['quarto', 'hospede'])
             ->whereIn('situacao', ['reserva', 'hospedado'])
             ->where(function ($query) use ($inicio, $fim) {
@@ -942,13 +943,20 @@ public function hospedar($id)
                       ->where('data_checkout', '>=', $inicio);
             })
             ->orderBy('data_checkin')
-            ->get();
+            ->get(); // Retorna a coleção
 
-        // 2. Coletamos todos os IDs de hóspedes secundários de todas as reservas encontradas
+        // --- CORREÇÃO DE DUPLICATAS ---
+        // Força a coleção a manter apenas uma entrada por ID de reserva.
+        // Isso resolve o problema de duplicação/triplicação causado por Joins invisíveis.
+        $reservas = $reservas->unique('id');
+        // ------------------------------
+
+        // 2. Coletamos todos os IDs de hóspedes secundários
         $todosIdsSecundarios = [];
         foreach ($reservas as $reserva) {
-            // Garante que é array (caso o cast não esteja configurado no model)
             $secundarios = $reserva->hospedes_secundarios;
+            
+            // Tratamento seguro para JSON ou Array
             if (is_string($secundarios)) {
                 $secundarios = json_decode($secundarios, true);
             }
@@ -958,11 +966,9 @@ public function hospedar($id)
             }
         }
         
-        // Remove duplicados
         $todosIdsSecundarios = array_unique($todosIdsSecundarios);
 
         // 3. Buscamos os nomes desses hóspedes no banco (uma única query rápida)
-        // Criamos um mapa: [ID => ObjetoHospede]
         $mapaHospedes = Hospede::whereIn('id', $todosIdsSecundarios)->get()->keyBy('id');
 
         // 4. "Anexamos" os objetos reais de volta em cada reserva

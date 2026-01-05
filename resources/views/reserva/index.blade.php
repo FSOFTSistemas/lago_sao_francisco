@@ -56,7 +56,7 @@
         </div>
     </form>
 
-    @component('components.data-table', [
+   @component('components.data-table', [
         'responsive' => [
             ['responsivePriority' => 1, 'targets' => 0],
             ['responsivePriority' => 2, 'targets' => 1],
@@ -64,7 +64,7 @@
             ['responsivePriority' => 4, 'targets' => 3],
             ['responsivePriority' => 5, 'targets' => -1],
         ],
-        'itemsPerPage' => 10,
+        'itemsPerPage' => 10, 
         'showTotal' => false,
         'valueColumnIndex' => 0,
     ])
@@ -118,6 +118,7 @@
             @endforeach
         </tbody>
     @endcomponent
+    
     @php
         function getReservaStatusColor($situacao)
         {
