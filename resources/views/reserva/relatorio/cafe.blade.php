@@ -67,7 +67,8 @@
                             <td class="text-center align-middle">
                                 <span class="badge badge-info" style="font-size: 1rem;">
                                     {{-- Contagem ajustada --}}
-                                    {{ 1 + ($reserva->lista_secundarios ? $reserva->lista_secundarios->count() : 0) }}
+                                    {{-- {{ 1 + ($reserva->lista_secundarios ? $reserva->lista_secundarios->count() : 0) }} --}}
+                                    {{ $reserva->n_adultos + $reserva->n_criancas }}
                                 </span>
                                 <br>
                                 <small class="text-muted">
@@ -93,9 +94,7 @@
                     <tr class="bg-secondary">
                         <td colspan="3" class="text-right font-weight-bold">Total Geral de Pessoas:</td>
                         <td class="text-center font-weight-bold">
-                            {{ $reservas->sum(function($r) { 
-                                return 1 + ($r->lista_secundarios ? $r->lista_secundarios->count() : 0); 
-                            }) }}
+                            {{$reserva->n_adultos + $reserva->n_criancas}}
                         </td>
                         <td></td>
                     </tr>

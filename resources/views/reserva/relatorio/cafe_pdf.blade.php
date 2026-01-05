@@ -37,7 +37,7 @@
             @foreach($reservas as $reserva)
                 @php 
                     $qtdSecundarios = $reserva->lista_secundarios ? $reserva->lista_secundarios->count() : 0;
-                    $qtdPessoas = 1 + $qtdSecundarios;
+                    $qtdPessoas = $reserva->n_adultos + $reserva->n_criancas;
                     $totalGeral += $qtdPessoas;
                 @endphp
                 <tr>

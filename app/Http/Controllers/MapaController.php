@@ -159,7 +159,7 @@ public function criarReservaRapida(Request $request)
                 
                 $nAdultos = $request->input('n_adultos', 1);
                 $nCriancas = $request->input('n_criancas', 0);
-                $totalPessoas = $nAdultos + $nCriancas;
+                $totalPessoas = $nAdultos + $nCriancas + 10;
 
                 if ($totalPessoas > $capacidadeMaxima) {
                     return response()->json([
