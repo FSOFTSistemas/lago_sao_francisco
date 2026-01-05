@@ -320,3 +320,4 @@ Route::get('/relatorios/vendas-vendedor', [App\Http\Controllers\ReservaControlle
 Route::get('/relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
 
 Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [App\Http\Controllers\ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
+Route::post('/mapa/mover-reserva', [ReservaController::class, 'moverReserva']);

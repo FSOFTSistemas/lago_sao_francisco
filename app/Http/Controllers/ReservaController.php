@@ -1149,4 +1149,100 @@ public function hospedar($id)
             ], 500);
         }
     }
+
+    public function moverReserva(Request $request)
+    {
+        try {
+            $request->validate([
+                'reserva_id' => 'required|exists:reservas,id',
+                'novo_quarto_id' => 'required|exists:quartos,id',
+                'nova_data_checkin' => 'required|date',
+            ]);
+
+            $reserva = Reserva::findOrFail($request->reserva_id);
+            
+            // 1. Calcular a duração original da estadia
+            $inicioOriginal = \Carbon\Carbon::parse($reserva->data_checkin);
+            $fimOriginal = \Carbon\Carbon::parse($reserva->data_checkout);
+            $diasDuracao = $inicioOriginal->diffInDays($fimOriginal);
+            
+            // Garante no mínimo 1 dia caso a diferença seja 0 (day use ou erro)
+            if ($diasDuracao < 1) $diasDuracao = 1;
+
+            // 2. Definir novas datas
+            $novoInicio = \Carbon\Carbon::parse($request->nova_data_checkin);
+            $novoFim = $novoInicio->copy()->addDays($diasDuracao);
+
+            // 3. Verificar Disponibilidade (Colisão)
+            // Verifica se existe alguma reserva no NOVO quarto que conflite com o período
+            // IMPORTANTE: Excluir a própria reserva da verificação ($reserva->id)
+            $conflito = Reserva::where('quarto_id', $request->novo_quarto_id)
+                ->where('id', '!=', $reserva->id) // Ignora ela mesma
+                ->where('situacao', '!=', 'cancelado') // Ignora canceladas
+                ->where(function ($query) use ($novoInicio, $novoFim) {
+                    $query->where(function ($q) use ($novoInicio, $novoFim) {
+                        // Caso 1: Nova reserva começa dentro de uma existente
+                        $q->where('data_checkin', '<=', $novoInicio)
+                          ->where('data_checkout', '>', $novoInicio);
+                    })
+                    ->orWhere(function ($q) use ($novoInicio, $novoFim) {
+                        // Caso 2: Nova reserva termina dentro de uma existente
+                        $q->where('data_checkin', '<', $novoFim)
+                          ->where('data_checkout', '>=', $novoFim);
+                    })
+                    ->orWhere(function ($q) use ($novoInicio, $novoFim) {
+                        // Caso 3: Nova reserva engloba uma existente
+                        $q->where('data_checkin', '>=', $novoInicio)
+                          ->where('data_checkout', '<=', $novoFim);
+                    });
+                })->exists();
+
+            if ($conflito) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'O quarto selecionado já está ocupado neste período.'
+                ], 422);
+            }
+
+            // 4. Capturar dados antigos para o LOG
+            $dadosAntigos = $reserva->toArray();
+            $quartoAntigoNome = Quarto::find($reserva->quarto_id)->nome ?? 'N/D';
+            $quartoNovoNome = Quarto::find($request->novo_quarto_id)->nome ?? 'N/D';
+
+            // 5. Atualizar a Reserva
+            $reserva->quarto_id = $request->novo_quarto_id;
+            $reserva->data_checkin = $novoInicio->format('Y-m-d');
+            $reserva->data_checkout = $novoFim->format('Y-m-d');
+            $reserva->save();
+
+            // 6. Registrar LogDetalhado
+            // Assumindo que você tem o LogReserva importado
+            LogReserva::create([
+                'reserva_id' => $reserva->id,
+                'usuario_id' => Auth::id(),
+                'tipo' => 'edicao', // ou 'movimentacao' se tiver no enum
+                'descricao' => "Reserva movida via Mapa (Arrastar e Soltar)",
+                'dados_antigos' => $dadosAntigos,
+                'dados_novos' => [
+                    'acao' => 'Movimentação Mapa',
+                    'de_quarto' => $quartoAntigoNome,
+                    'para_quarto' => $quartoNovoNome,
+                    'de_periodo' => $inicioOriginal->format('d/m/Y') . ' a ' . $fimOriginal->format('d/m/Y'),
+                    'para_periodo' => $novoInicio->format('d/m/Y') . ' a ' . $novoFim->format('d/m/Y'),
+                    'responsavel' => Auth::user()->name ?? 'Sistema'
+                ]
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Reserva movida com sucesso!'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao mover reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
