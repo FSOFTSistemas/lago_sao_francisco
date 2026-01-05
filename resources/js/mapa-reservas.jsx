@@ -57,8 +57,14 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
     // Forms
     const [formReserva, setFormReserva] = useState({
-        hospede_id: '', data_checkin: '', data_checkout: '', situacao: 'pre-reserva',
-        n_adultos: 1, n_criancas: 0, valor_diaria: ''
+        hospede_id: '', 
+        data_checkin: '', 
+        data_checkout: '', 
+        situacao: 'pre-reserva',
+        n_adultos: 1, 
+        n_criancas: 0, 
+        valor_diaria: '',
+        nomes_hospedes_secundarios: '' 
     });
 
     const [formBloqueio, setFormBloqueio] = useState({
@@ -108,34 +114,63 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     };
 
     // --- RENDERIZAÇÃO VISUAL ---
+// --- RENDERIZAÇÃO VISUAL ---
     const renderLinhaQuarto = (quarto) => {
         const celulas = [];
         const datas = dadosMapa.datas;
         const totalDias = datas.length;
         const larguraDia = 60; 
 
+        // Função auxiliar para comparar datas (apenas YYYY-MM-DD)
         const checkData = (d1, d2) => (d1 && d2 && d1.substring(0, 10) === d2.substring(0, 10));
 
         for (let i = 0; i < totalDias; i++) {
             const dataAtual = datas[i];
 
-            const reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
+            // 1. Verifica se há uma reserva começando EXATAMENTE hoje
+            let reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
+
+            // --- CORREÇÃO DO BUG (Reservas contínuas) ---
+            // Se estamos na primeira coluna do mapa (i === 0) e não encontramos um check-in hoje,
+            // procuramos por uma reserva que começou ANTES e termina DEPOIS de hoje.
+            if (i === 0 && !reservaInicio) {
+                reservaInicio = quarto.reservas.find(r => 
+                    r.data_checkin < dataAtual && 
+                    r.data_checkout > dataAtual
+                );
+            }
+            // ---------------------------------------------
+
+            // Verifica se alguma outra reserva termina hoje (para ajustar margem visual)
             const reservaFim = quarto.reservas.find(r => checkData(r.data_checkout, dataAtual));
 
             if (reservaInicio) {
+                // Calcula quantos dias visíveis essa reserva vai ocupar
                 let slotsOcupados = 0;
                 for (let j = i; j < totalDias; j++) {
                     const dFutura = datas[j];
+                    // Para o contador se chegarmos na data de checkout
                     if (checkData(dFutura, reservaInicio.data_checkout)) break; 
                     slotsOcupados++;
                 }
                 
+                // Correção de segurança: Se a reserva termina hoje mas caiu aqui, garante largura mínima
                 if (slotsOcupados === 0 && checkData(reservaInicio.data_checkout, dataAtual)) {
                     slotsOcupados = 1;
                 }
 
+                // Se a reserva vai além do final do calendário visível, ela ocupa tudo até o fim
+                if (slotsOcupados === 0 && reservaInicio.data_checkout > datas[totalDias - 1]) {
+                    slotsOcupados = totalDias - i;
+                }
+
+                // Fallback final para evitar largura 0
+                if (slotsOcupados === 0) slotsOcupados = 1;
+
                 const larguraGrid = slotsOcupados * larguraDia;
-                const larguraBarra = larguraGrid + 25; 
+                const larguraBarra = larguraGrid + 25; // +25px para dar o efeito de continuidade visual
+                
+                // Se houver um checkout no mesmo dia (troca de hóspede), empurra a barra nova para direita
                 const margemEsquerda = reservaFim ? 30 : 0;
                 
                 celulas.push(
@@ -168,10 +203,12 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     </div>
                 );
 
+                // Avança o loop principal (i) para pular os dias que essa reserva já ocupou visualmente
                 if (slotsOcupados > 0) i += (slotsOcupados - 1);
                 continue;
             }
 
+            // Renderiza célula vazia se não houver reserva
             celulas.push(
                 <div 
                     key={`${quarto.id}-${dataAtual}-vazio`}
@@ -276,6 +313,12 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         const checkoutString = end.toISOString().split('T')[0];
         const diff = Math.ceil(Math.abs(end - start) / (864e5));
 
+        // Validação Hóspede
+        if (!formReserva.hospede_id) {
+            Swal.fire('Atenção', 'Selecione um hóspede.', 'warning');
+            return;
+        }
+
         try {
             const res = await axios.post('/mapa/criar-reserva', { 
                 ...formReserva, 
@@ -324,7 +367,17 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const abrirFormularioReserva = () => {
         setShowModalAcoes(false);
         const checkin = celulaSelecionada.data;
-        setFormReserva({ ...formReserva, hospede_id: '', data_checkin: checkin, data_checkout: checkin, valor_diaria: '' });
+        // Reseta o form, incluindo os hóspedes secundários
+        setFormReserva({ 
+            ...formReserva, 
+            hospede_id: '', 
+            data_checkin: checkin, 
+            data_checkout: checkin, 
+            valor_diaria: '', 
+            n_adultos: 1,
+            n_criancas: 0,
+            nomes_hospedes_secundarios: '' 
+        });
         setShowModalReserva(true);
     };
 
@@ -438,6 +491,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                              </div>
                         </div>
 
+                        {/* HÓSPEDES SECUNDÁRIOS - NOVO */}
+                        {reservaDetalhes.nomes_hospedes_secundarios && (
+                            <div className="row mb-3">
+                                <div className="col-12">
+                                    <label className="text-muted mb-0 small">Hóspedes Secundários</label>
+                                    <div className="font-weight-bold text-dark">
+                                        {reservaDetalhes.nomes_hospedes_secundarios}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* OBSERVAÇÕES */}
                         {reservaDetalhes.observacoes && (
                             <div className="row mb-3">
@@ -498,6 +563,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     <div className="row mb-2">
                         <div className="col-6"><label className="small mb-1">Adultos</label><input type="number" className="form-control" min="1" value={formReserva.n_adultos} onChange={e => setFormReserva({...formReserva, n_adultos: e.target.value})} /></div>
                         <div className="col-6"><label className="small mb-1">Crianças</label><input type="number" className="form-control" min="0" value={formReserva.n_criancas} onChange={e => setFormReserva({...formReserva, n_criancas: e.target.value})} /></div>
+                    </div>
+
+                    {/* NOVO CAMPO: Hóspedes Secundários (Textarea) */}
+                    <div className="form-group">
+                        <label className="small mb-1">Hóspedes Secundários (Nomes)</label>
+                        <textarea 
+                            className="form-control" 
+                            rows="2" 
+                            placeholder="Separe os nomes por vírgula..."
+                            value={formReserva.nomes_hospedes_secundarios} 
+                            onChange={e => setFormReserva({...formReserva, nomes_hospedes_secundarios: e.target.value})}
+                        ></textarea>
                     </div>
                     
                     <input type="text" className="form-control" placeholder="Valor" value={formReserva.valor_diaria} onChange={e=>setFormReserva({...formReserva, valor_diaria: e.target.value.replace(/\D/g, "").replace(/(\d)(\d{2})$/, "$1,$2")})} />

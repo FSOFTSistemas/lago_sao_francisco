@@ -272,7 +272,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="form-group row mb-4" id="container-hospedes-secundarios"
+                                    {{-- <div class="form-group row mb-4" id="container-hospedes-secundarios"
                                         style="display: none;">
                                         <label for="hospedes_secundarios"
                                             class="col-md-3 col-form-label text-md-right font-weight-bold">Hóspedes
@@ -335,8 +335,14 @@
                                                 </select>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> --}}
 
+                                    <div class="form-group row" id="nomes_hospedes_secundarios">
+                                        <label for="nomes_hospedes_secundarios" class="col-md-3 label-control">Hospedes Secundários</label>
+                                        <div class="col-md-5">
+                                            <textarea class="form-control" name="nomes_hospedes_secundarios" rows="3" id="nomes_hospedes_secundarios">{{ old('nomes_hospedes_secundarios', $reserva->nomes_hospedes_secundarios ?? '') }}</textarea>
+                                        </div>
+                                    </div>
                                     <div class="form-group row" id="campoPlaca">
                                         <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
                                         <div class="col-md-4">
@@ -2687,12 +2693,12 @@
     <script>
         $(document).ready(function() {
             // Inicializa o Select2 com configurações aprimoradas
-            $('.select2-hospedes-sec').select2({
-                placeholder: "Selecione hóspedes secundários",
-                allowClear: true,
-                closeOnSelect: false,
-                width: '100%'
-            });
+            // $('.select2-hospedes-sec').select2({
+            //     placeholder: "Selecione hóspedes secundários",
+            //     allowClear: true,
+            //     closeOnSelect: false,
+            //     width: '100%'
+            // });
 
             const $primarySelect = $('#hospede_id');
             const $secondarySelect = $('#hospedes_secundarios');

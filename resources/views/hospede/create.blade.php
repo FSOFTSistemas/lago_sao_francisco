@@ -95,6 +95,30 @@
                     </div>
                 </div>
 
+                <!-- Novos Campos: RG e Órgão Expedidor -->
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="rg">RG:</label>
+                    <div class="col-md-3">
+                        <div><input class="form-control" type="text" name="rg" id="rg"
+                                value="{{ old('rg', $hospede->rg ?? '') }}"></div>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="orgao_expedidor">Órgão Expedidor:</label>
+                    <div class="col-md-3">
+                        <div><input class="form-control" type="text" name="orgao_expedidor" id="orgao_expedidor"
+                                value="{{ old('orgao_expedidor', $hospede->orgao_expedidor ?? '') }}"></div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-md-3 label-control" for="nacionalidade">Nacionalidade:</label>
+                    <div class="col-md-3">
+                        <div><input class="form-control" type="text" name="nacionalidade" id="nacionalidade"
+                                value="{{ old('nacionalidade', $hospede->nacionalidade ?? '') }}"></div>
+                    </div>
+                </div>
+
                 <div class="form-group row">
                     <label class="col-md-3 label-control" for="nascimento">Data de nascimento:</label>
                     <div class="col-md-2">
@@ -253,6 +277,7 @@
             $('#cep').mask('00000-000');
             $('#telefone').mask('(00) 00000-0000');
             $('#cpf').mask('000.000.000-00');
+            $('#rg').mask('000000000'); // Máscara de RG adicionada
         })
     </script>
 

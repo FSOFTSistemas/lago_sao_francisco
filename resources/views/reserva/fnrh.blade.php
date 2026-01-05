@@ -172,7 +172,7 @@
                 </td>
                 <td style="width: 34%;">
                     <span class="label">Nacionalidade</span>
-                    <div class="value">{{ $hospede->nacionalidade ?? '' }}</div>
+                    <div class="value">{{ $hospede->nacionalidade ?? 'Brasileiro(a)' }}</div>
                 </td>
             </tr>
             <tr>
@@ -196,7 +196,7 @@
                 </td>
                 <td>
                     <span class="label">Órgão Expedidor</span>
-                    <div class="value">{{ $hospede->rg_orgao ?? '' }}</div>
+                    <div class="value">{{ $hospede->orgao_expedidor ?? '' }}</div>
                 </td>
                 <td>
                     <span class="label">Nº Passaporte</span>
