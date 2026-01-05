@@ -68,6 +68,7 @@ public function getDadosMapa(Request $request)
                         'n_adultos' => $reserva->n_adultos,
                         'n_criancas' => $reserva->n_criancas,
                         'observacoes' => $reserva->observacoes,
+                        'nomes_hospedes_secundarios' => $reserva->nomes_hospedes_secundarios
                     ];
                 }
 
@@ -147,6 +148,8 @@ public function criarReservaRapida(Request $request)
                 'tipo'          => 'required|in:reserva,bloqueio',
                 'n_adultos'     => 'nullable|integer|min:1', 
                 'n_criancas'    => 'nullable|integer|min:0',
+                'nomes_hospedes_secundarios'    => 'nullable|string',
+
             ]);
 
             // --- NOVA VALIDAÇÃO DE CAPACIDADE (O SEGREDO ESTÁ AQUI) ---
@@ -178,6 +181,7 @@ public function criarReservaRapida(Request $request)
                 'valor_total'   => $request->valor_total ?? 0,
                 'n_adultos'     => $request->input('n_adultos', 1), 
                 'n_criancas'    => $request->input('n_criancas', 0),
+                'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios
             ];
 
             if ($request->tipo === 'bloqueio') {

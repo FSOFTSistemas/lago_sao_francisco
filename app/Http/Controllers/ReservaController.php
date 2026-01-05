@@ -102,8 +102,9 @@ class ReservaController extends Controller
                 'placa_veiculo' => 'nullable|string|max:10',
                 'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
-                'hospedes_secundarios' => 'nullable|array',
-                'hospedes_secundarios.*' => 'exists:hospedes,id',
+                'nomes_hospedes_secundarios' => 'nullable|string',
+                // 'hospedes_secundarios' => 'nullable|array',
+                // 'hospedes_secundarios.*' => 'exists:hospedes,id',
             ]);
 
             $preferencia = PreferenciasHotel::first();
@@ -248,8 +249,9 @@ public function update(Request $request, Reserva $reserva)
                 'placa_veiculo' => 'nullable|string|max:10',
                 'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
-                'hospedes_secundarios' => 'nullable|array',
-                'hospedes_secundarios.*' => 'exists:hospedes,id',
+                'nomes_hospedes_secundarios' => 'nullable|string',
+                // 'hospedes_secundarios' => 'nullable|array',
+                // 'hospedes_secundarios.*' => 'exists:hospedes,id',
             ]);
 
             // Validações específicas de situação

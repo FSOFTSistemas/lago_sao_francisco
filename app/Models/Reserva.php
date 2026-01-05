@@ -23,12 +23,13 @@ class Reserva extends Model
         'placa_veiculo',
         'canal_venda',
         'vendedor_id',
-        'hospedes_secundarios',
+        // 'hospedes_secundarios',
+        'nomes_hospedes_secundarios'
     ];
 
-        protected $casts = [
-        'hospedes_secundarios' => 'array',
-    ];
+    //     protected $casts = [
+    //     'hospedes_secundarios' => 'array',
+    // ];
 
 
 
