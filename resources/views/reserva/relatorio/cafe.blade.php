@@ -4,9 +4,16 @@
 
 @section('content_header')
     <h1>Lista de Café da Manhã</h1>
-@stop
-
-@section('content')
+    @stop
+    
+    @section('content')
+    @php $totalGeral = 0; @endphp
+    @foreach($reservas as $reserva)
+    @php 
+                    $qtdPessoas = $reserva->n_adultos + $reserva->n_criancas;
+                    $totalGeral += $qtdPessoas;
+    @endphp
+    @endforeach
 <div class="card">
     <div class="card-header">
         <form action="{{ route('relatorios.cafe') }}" method="GET" class="form-inline">
@@ -94,9 +101,8 @@
                     <tr class="bg-secondary">
                         <td colspan="3" class="text-right font-weight-bold">Total Geral de Pessoas:</td>
                         <td class="text-center font-weight-bold">
-                            {{$reserva->n_adultos + $reserva->n_criancas}}
                         </td>
-                        <td></td>
+                        <td>{{$totalGeral}}</td>
                     </tr>
                 </tfoot>
             </table>
