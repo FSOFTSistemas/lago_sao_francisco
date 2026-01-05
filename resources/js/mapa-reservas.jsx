@@ -253,9 +253,9 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
         const nAdultos = parseInt(formReserva.n_adultos || 0);
         const nCriancas = parseInt(formReserva.n_criancas || 0);
-        const totalPessoas = nAdultos + nCriancas + 10;
+        const totalPessoas = nAdultos + nCriancas;
 
-        if (totalPessoas > capacidadeMaxima) {
+        if (totalPessoas > (capacidadeMaxima + 10)) {
             Swal.fire({
                 icon: 'warning',
                 title: 'Capacidade Excedida',
