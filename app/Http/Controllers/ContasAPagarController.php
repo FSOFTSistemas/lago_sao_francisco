@@ -189,7 +189,7 @@ class ContasAPagarController extends Controller
                 'descricao' => 'required|string|max:255',
                 'valor' => 'required|numeric|min:0.01',
                 'valor_pago' => 'numeric|min:0.00',
-                'data_vencimento' => 'required|date|after_or_equal:today',
+                'data_vencimento' => 'required|date',
                 'status' => 'required|in:pendente,finalizado',
                 'plano_de_contas_id' => [
                     'exists:plano_de_contas,id',
