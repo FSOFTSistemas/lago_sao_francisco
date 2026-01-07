@@ -113,24 +113,21 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         return reserva.data_checkin <= hoje;
     };
 
-// --- RENDERIZAÇÃO VISUAL ---
+    // --- RENDERIZAÇÃO VISUAL ---
     const renderLinhaQuarto = (quarto) => {
         const celulas = [];
         const datas = dadosMapa.datas;
         const totalDias = datas.length;
         const larguraDia = 60; 
 
-        // Função auxiliar para comparar datas (apenas YYYY-MM-DD)
         const checkData = (d1, d2) => (d1 && d2 && d1.substring(0, 10) === d2.substring(0, 10));
 
         for (let i = 0; i < totalDias; i++) {
             const dataAtual = datas[i];
 
-            // 1. Verifica se há uma reserva começando EXATAMENTE hoje
             let reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
 
-            // 2. CORREÇÃO: Verifica reservas contínuas (que começaram antes e passam por hoje)
-            // Se estamos na primeira coluna (i === 0) e não há check-in hoje, busca uma em andamento.
+            // Verifica se estamos no meio de uma reserva que começou antes do período visível
             if (i === 0 && !reservaInicio) {
                 reservaInicio = quarto.reservas.find(r => 
                     r.data_checkin < dataAtual && 
@@ -138,28 +135,22 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 );
             }
 
-            // Verifica se alguma outra reserva termina hoje (para ajustar margem visual no checkout)
             const reservaFim = quarto.reservas.find(r => checkData(r.data_checkout, dataAtual));
 
             if (reservaInicio) {
-                // Calcula quantos dias visíveis essa reserva vai ocupar neste grid
                 let slotsOcupados = 0;
                 for (let j = i; j < totalDias; j++) {
                     const dFutura = datas[j];
-                    // Para o contador se chegarmos na data de checkout
                     if (checkData(dFutura, reservaInicio.data_checkout)) break; 
                     slotsOcupados++;
                 }
                 
-                // Fallbacks de segurança para largura
                 if (slotsOcupados === 0 && checkData(reservaInicio.data_checkout, dataAtual)) slotsOcupados = 1;
                 if (slotsOcupados === 0 && reservaInicio.data_checkout > datas[totalDias - 1]) slotsOcupados = totalDias - i;
                 if (slotsOcupados === 0) slotsOcupados = 1;
 
                 const larguraGrid = slotsOcupados * larguraDia;
-                const larguraBarra = larguraGrid + 25; // +25px para efeito de continuidade visual
-                
-                // Margem esquerda se houver troca de hóspede no mesmo dia
+                const larguraBarra = larguraGrid + 25; 
                 const margemEsquerda = reservaFim ? 30 : 0;
                 
                 celulas.push(
@@ -174,7 +165,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             zIndex: 10
                         }}
                     >
-                        {/* BLOCO DA RESERVA (ARRASTÁVEL) */}
                         <div 
                             className={`reserva-block situacao-${reservaInicio.situacao}`}
                             style={{ 
@@ -182,16 +172,10 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                 marginLeft: `${margemEsquerda}px`, 
                                 borderRadius: '4px',
                                 zIndex: 20,
-                                cursor: 'grab' // Cursor de "mãozinha" para indicar que pode arrastar
+                                cursor: 'pointer'
                             }}
                             onClick={(e) => { e.stopPropagation(); handleCellClick(quarto, dataAtual, reservaInicio); }}
                             title={`Reserva: ${reservaInicio.hospede_nome}`}
-                            
-                            // --- EVENTOS DRAG & DROP (Início do Arrasto) ---
-                            draggable={true}
-                            onDragStart={(e) => handleDragStart(e, reservaInicio)}
-                            onDragEnd={handleDragEnd}
-                            // -----------------------------------------------
                         >
                             <span style={{ paddingLeft: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {reservaInicio.hospede_nome}
@@ -200,23 +184,16 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     </div>
                 );
 
-                // Avança o loop 'i' para pular os dias ocupados por esta reserva
                 if (slotsOcupados > 0) i += (slotsOcupados - 1);
                 continue;
             }
 
-            // CÉLULA VAZIA (ALVO ONDE SE SOLTA A RESERVA)
             celulas.push(
                 <div 
                     key={`${quarto.id}-${dataAtual}-vazio`}
                     className="quarto-cell"
                     style={{ minWidth: `${larguraDia}px`, width: `${larguraDia}px`, flex: `0 0 ${larguraDia}px` }}
                     onClick={() => handleCellClick(quarto, dataAtual)}
-                    
-                    // --- EVENTOS DRAG & DROP (Soltar Aqui) ---
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, quarto.id, dataAtual)}
-                    // -----------------------------------------
                 >
                 </div>
             );
@@ -307,12 +284,16 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         let start = new Date(formReserva.data_checkin);
         let end = new Date(formReserva.data_checkout);
         
-        end.setDate(end.getDate() + 1);
+        // CORRIGIDO: Removida a linha que adicionava +1 dia incondicionalmente
+        // Se a data de checkout for igual ou menor que checkin, ajustamos para o dia seguinte (mínimo 1 diária)
         if (start.getTime() >= end.getTime()) {
              end = new Date(start);
              end.setDate(end.getDate() + 1);
         }
+        
         const checkoutString = end.toISOString().split('T')[0];
+        
+        // Cálculo de dias
         const diff = Math.ceil(Math.abs(end - start) / (864e5));
 
         // Validação Hóspede
@@ -346,8 +327,15 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         e.preventDefault();
         if (formBloqueio.quarto_ids.length === 0) return Swal.fire('Atenção', 'Selecione pelo menos um quarto.', 'warning');
         
+        // CORRIGIDO: Removida a adição de +1 dia aqui também
+        let start = new Date(formBloqueio.data_checkin);
         let end = new Date(formBloqueio.data_checkout);
-        end.setDate(end.getDate() + 1); 
+
+        if (start.getTime() >= end.getTime()) {
+             end = new Date(start);
+             end.setDate(end.getDate() + 1);
+        }
+
         const checkoutString = end.toISOString().split('T')[0];
 
         const requests = formBloqueio.quarto_ids.map(qid => axios.post('/mapa/criar-reserva', {
@@ -369,7 +357,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const abrirFormularioReserva = () => {
         setShowModalAcoes(false);
         const checkin = celulaSelecionada.data;
-        // Reseta o form, incluindo os hóspedes secundários
+        // Checkin selecionado, checkout igual (o usuário muda)
         setFormReserva({ 
             ...formReserva, 
             hospede_id: '', 
@@ -389,75 +377,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         const opt = getOptionsQuartos().find(op => op.value === celulaSelecionada.quartoId);
         setFormBloqueio({ quarto_ids: [celulaSelecionada.quartoId], selectedOptions: opt ? [opt] : [], data_checkin: checkin, data_checkout: checkin, observacoes: 'Bloqueio' });
         setShowModalBloqueio(true);
-    };
-
-    // --- DRAG AND DROP HANDLERS ---
-    
-    // Quando começa a arrastar
-    const handleDragStart = (e, reserva) => {
-        // Envia os dados da reserva como JSON string
-        e.dataTransfer.setData("reserva_data", JSON.stringify(reserva));
-        e.dataTransfer.effectAllowed = "move";
-        // Opcional: Efeito visual no elemento sendo arrastado
-        e.target.style.opacity = "0.5";
-    };
-
-    // Quando termina de arrastar (com sucesso ou não)
-    const handleDragEnd = (e) => {
-        e.target.style.opacity = "1";
-    };
-
-    // Necessário para permitir o "Drop" na div de destino
-    const handleDragOver = (e) => {
-        e.preventDefault(); // Permite soltar
-        e.dataTransfer.dropEffect = "move";
-    };
-
-    // Quando solta na célula vazia
-    const handleDrop = async (e, quartoDestinoId, dataDestino) => {
-        e.preventDefault();
-        const dataJson = e.dataTransfer.getData("reserva_data");
-        
-        if (!dataJson) return;
-
-        const reserva = JSON.parse(dataJson);
-
-        // Previne mover para o mesmo lugar
-        if (reserva.quarto_id === quartoDestinoId && reserva.data_checkin === dataDestino) {
-            return;
-        }
-
-        // Confirmação com o Usuário
-        const confirm = await Swal.fire({
-            title: 'Mover Reserva?',
-            text: `Deseja mover ${reserva.hospede_nome} para o dia ${formatDate(dataDestino)} neste quarto?`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sim, mover'
-        });
-
-        if (!confirm.isConfirmed) return;
-
-        setLoading(true); // Bloqueia a UI
-
-        try {
-            const response = await axios.post('/mapa/mover-reserva', {
-                reserva_id: reserva.id,
-                novo_quarto_id: quartoDestinoId,
-                nova_data_checkin: dataDestino
-            });
-
-            if (response.data.success) {
-                // Swal.fire('Sucesso', 'Reserva movida!', 'success'); // Opcional
-                fetchMapa(); // Recarrega o mapa para ver a mudança
-            }
-        } catch (error) {
-            const msg = error.response?.data?.message || 'Erro ao processar movimentação.';
-            Swal.fire('Não foi possível mover', msg, 'error');
-            setLoading(false); // Remove loading só se der erro (se sucesso, o fetchMapa cuida)
-        }
     };
 
     return (
