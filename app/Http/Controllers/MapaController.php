@@ -7,6 +7,7 @@ use App\Models\Categoria;
 use App\Models\Reserva;
 use App\Models\Tarifa;
 use App\Models\Hospede;
+use App\Models\PreferenciasHotel;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +62,8 @@ public function getDadosMapa(Request $request)
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
                         'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
+                        // ADICIONADO: Telefone do hóspede para o link do WhatsApp
+                        'hospede_telefone' => $reserva->hospede ? $reserva->hospede->telefone : null,
                         'data_checkin' => $reserva->data_checkin,
                         'data_checkout' => $reserva->data_checkout,
                         'situacao' => $reserva->situacao,
@@ -76,14 +79,8 @@ public function getDadosMapa(Request $request)
                     'id' => $quarto->id,
                     'nome' => $quarto->nome,
                     'posicao' => $quarto->posicao,
-                    
-                    // --- CORREÇÃO AQUI ---
-                    // Adicionamos a capacidade para o React conseguir ler
                     'ocupantes' => $quarto->categoria->ocupantes ?? 999, 
-                    
-                    // Enviamos também o objeto categoria completo por segurança
                     'categoria' => $quarto->categoria,
-                    
                     'categoria_nome' => $quarto->categoria->titulo ?? '',
                     'reservas' => $reservasFormatadas
                 ];
@@ -149,15 +146,11 @@ public function criarReservaRapida(Request $request)
                 'n_adultos'     => 'nullable|integer|min:1', 
                 'n_criancas'    => 'nullable|integer|min:0',
                 'nomes_hospedes_secundarios'    => 'nullable|string',
-
             ]);
 
-            // --- NOVA VALIDAÇÃO DE CAPACIDADE (O SEGREDO ESTÁ AQUI) ---
+            // Validação de Capacidade
             if ($request->tipo === 'reserva') {
-                // Busca o quarto e a categoria dele
                 $quarto = \App\Models\Quarto::with('categoria')->find($request->quarto_id);
-                
-                // Pega a capacidade (se não tiver categoria, assume um valor alto ou 0)
                 $capacidadeMaxima = $quarto->categoria ? $quarto->categoria->ocupantes : 999;
                 
                 $nAdultos = $request->input('n_adultos', 1);
@@ -167,18 +160,76 @@ public function criarReservaRapida(Request $request)
                 if ($totalPessoas > ($capacidadeMaxima + 10)) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Capacidade excedida! O quarto comporta máximo de {$capacidadeMaxima} pessoas, mas você tentou inserir {$totalPessoas}."
-                    ], 422); // 422 = Unprocessable Entity
+                        'message' => "Capacidade excedida! O quarto comporta máximo de {$capacidadeMaxima} pessoas."
+                    ], 422);
                 }
             }
-            // -----------------------------------------------------------
+
+            // --- LÓGICA DE PREÇO AUTOMÁTICO (Adaptada do ReservaController) ---
+            $valorDiariaFinal = 0;
+            $valorTotalFinal = 0;
+
+            if ($request->tipo === 'reserva') {
+                $preferencia = PreferenciasHotel::first();
+                
+                // Como removemos o campo do front, ele sempre calculará pelo tarifário se a preferência permitir
+                // ou se simplesmente assumirmos o tarifário como padrão na ausência de valor.
+                
+                $quarto = \App\Models\Quarto::with('categoria.tarifa')->find($request->quarto_id);
+                $categoria = $quarto->categoria;
+                $tarifa = $categoria->tarifa;
+
+                if ($tarifa) {
+                    $checkin = \Carbon\Carbon::parse($request->data_checkin);
+                    $checkout = \Carbon\Carbon::parse($request->data_checkout);
+                    $periodo = \Carbon\CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+
+                    $totalTarifa = 0;
+                    $quantidadeDias = 0;
+
+                    foreach ($periodo as $dia) {
+                        $campo = match ($dia->dayOfWeek) {
+                            0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab',
+                        };
+                        $valorDia = (float) ($tarifa->$campo ?? 0);
+                        $totalTarifa += $valorDia;
+                        $quantidadeDias++;
+                    }
+
+                    // Média proporcional
+                    $mediaTarifa = $quantidadeDias > 0 ? $totalTarifa / $quantidadeDias : 0;
+                    
+                    // Extras
+                    $padraoAdultos = $tarifa->padrao_adultos ?? 0;
+                    $padraoCriancas = $tarifa->padrao_criancas ?? 0;
+                    $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
+                    $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
+
+                    $nAdultosInput = $request->input('n_adultos', 1);
+                    $nCriancasInput = $request->input('n_criancas', 0);
+
+                    $extrasAdultos = max(0, $nAdultosInput - $padraoAdultos);
+                    $extrasCriancas = max(0, $nCriancasInput - $padraoCriancas);
+
+                    $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+                    
+                    // Cálculo do Total
+                    // Diferença em dias reais para o total
+                    $diasTotal = $checkin->diffInDays($checkout);
+                    if ($diasTotal < 1) $diasTotal = 1;
+                    
+                    $valorTotalFinal = $valorDiariaFinal * $diasTotal;
+                }
+            }
+            // ------------------------------------------------------------------
 
             $dadosReserva = [
                 'quarto_id'     => $request->quarto_id,
                 'data_checkin'  => $request->data_checkin,
                 'data_checkout' => $request->data_checkout,
-                'valor_diaria'  => $request->valor_diaria ?? 0,
-                'valor_total'   => $request->valor_total ?? 0,
+                // Usa os valores calculados
+                'valor_diaria'  => $valorDiariaFinal,
+                'valor_total'   => $valorTotalFinal,
                 'n_adultos'     => $request->input('n_adultos', 1), 
                 'n_criancas'    => $request->input('n_criancas', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios
@@ -191,6 +242,8 @@ public function criarReservaRapida(Request $request)
                 }
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
+                $dadosReserva['valor_diaria'] = 0;
+                $dadosReserva['valor_total'] = 0;
             } else {
                 $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
                 $dadosReserva['situacao'] = $request->situacao;
