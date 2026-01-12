@@ -9,7 +9,6 @@
 @section('content')
     <div class='container-fluid'>
         <div class='row'>
-            <!-- Coluna Principal (Formulário) -->
             <div class='col-lg-8'>
                 <div class='card'>
                     <div class='card-header green bg-primary text-white'>
@@ -18,7 +17,6 @@
                         </h3>
                     </div>
                     <div class='card-body'>
-                        <!-- Abas de navegação -->
                         <ul class="nav nav-tabs mb-3" id="reservaTabs" role="tablist">
                             <li class="nav-item">
                                 <a class="nav-link active" id="dados-tab" data-toggle="tab" href="#dados" role="tab"
@@ -30,14 +28,9 @@
                                     aria-controls="produtos" aria-selected="false">Produtos</a>
                             </li>
                             <?php endif; ?>
-
-
-
                         </ul>
 
-                        <!-- Conteúdo das abas -->
                         <div class="tab-content" id="reservaTabsContent">
-                            <!-- Aba 1: Dados da Reserva -->
                             <div class="tab-pane fade show active" id="dados" role="tabpanel"
                                 aria-labelledby="dados-tab">
                                 <form id='createReservaForm'
@@ -141,7 +134,6 @@
                                                 @endif
                                             @endif
 
-                                            <!-- Input hidden para situações não editáveis -->
                                             @if ($isEdicao && !$podeAlterarSituacao)
                                                 <input type='hidden' name='situacao' value='{{ $situacaoAtual }}'>
                                             @endif
@@ -195,7 +187,6 @@
                                             </button>
                                         </div>
                                     </div>
-                                    <!-- Campo do período -->
                                     <div class="form-group row" id="campoPeriodo">
                                         <label class="col-md-3 label-control" for="periodo">* Período</label>
                                         <div class="col-md-4">
@@ -211,7 +202,6 @@
                                     <input type="hidden" name="data_checkout" id="data_checkout"
                                         value="{{ old('data_checkout', $reserva->data_checkout ?? '') }}">
 
-                                    <!-- Select de quartos agrupados por categoria -->
                                     <div class="form-group row" id="campoQuarto">
                                         <label class="col-md-3 label-control" for="quarto">* Quarto</label>
                                         <div class="col-md-4">
@@ -240,16 +230,7 @@
                                         <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                                     @endif
 
-                                    <div class="form-group row">
-                                        <label class="col-md-3 label-control" for="valor_diaria">* Valor da
-                                            diária:</label>
-                                        <div class="col-md-4">
-                                            <div><input class="form-control" type="text" name="valor_diaria"
-                                                    id="valor_diaria"
-                                                    value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}">
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {{-- CAMPO VALOR DIÁRIA FOI COMPLETAMENTE REMOVIDO --}}
 
                                     <div class="form-group row">
                                         <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
@@ -271,71 +252,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    {{-- <div class="form-group row mb-4" id="container-hospedes-secundarios"
-                                        style="display: none;">
-                                        <label for="hospedes_secundarios"
-                                            class="col-md-3 col-form-label text-md-right font-weight-bold">Hóspedes
-                                            Secundários:</label>
-                                        <div class="col-md-4">
-                                            <div class="hospedes-sec-select-container">
-                                                <select class="form-control select2-hospedes-sec"
-                                                    id="hospedes_secundarios" name="hospedes_secundarios[]"
-                                                    multiple="multiple" style="width: 100%;">
-                                                    @php
-                                                        // 1. Tenta pegar do 'old' (se houve erro de validação)
-                                                        $selectedHospedesSec = old('hospedes_secundarios');
-
-                                                        // 2. Se não tem old, e estamos editando uma reserva
-                                                        if (
-                                                            !$selectedHospedesSec &&
-                                                            isset($reserva) &&
-                                                            !empty($reserva->hospedes_secundarios)
-                                                        ) {
-                                                            $dados = $reserva->hospedes_secundarios;
-
-                                                            // Verifica se é uma Collection do Laravel (Relacionamento many-to-many)
-                                                            if ($dados instanceof \Illuminate\Support\Collection) {
-                                                                $selectedHospedesSec = $dados->pluck('id')->toArray();
-                                                            }
-                                                            // Verifica se é um Array nativo (Cast 'array' ou JSON)
-                                                            elseif (is_array($dados)) {
-                                                                // Pega o primeiro item pra saber se é um Objeto/Array ou se já é o ID direto
-                                                                $primeiro = reset($dados);
-
-                                                                // Se o array contém objetos ou arrays associativos (ex: [['id'=>1], ['id'=>2]])
-                                                                if (
-                                                                    is_object($primeiro) ||
-                                                                    (is_array($primeiro) && isset($primeiro['id']))
-                                                                ) {
-                                                                    $selectedHospedesSec = collect($dados)
-                                                                        ->pluck('id')
-                                                                        ->toArray();
-                                                                } else {
-                                                                    // Se chegou aqui, já é o array de IDs ["3", "5"]
-                                                                    $selectedHospedesSec = $dados;
-                                                                }
-                                                            }
-                                                        }
-
-                                                        // 3. Garante que sempre seja array para o in_array não quebrar
-                                                        if (!is_array($selectedHospedesSec)) {
-                                                            $selectedHospedesSec = [];
-                                                        }
-                                                    @endphp
-
-                                                    @foreach ($hospedes as $hospsec)
-                                                        @if ($hospsec->nome !== 'Bloqueado')
-                                                            <option value="{{ $hospsec->id }}"
-                                                                {{ in_array($hospsec->id, $selectedHospedesSec) ? 'selected' : '' }}>
-                                                                {{ $hospsec->nome }}
-                                                            </option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div> --}}
 
                                     <div class="form-group row" id="nomes_hospedes_secundarios">
                                         <label for="nomes_hospedes_secundarios" class="col-md-3 label-control">Hospedes Secundários</label>
@@ -402,7 +318,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Área de Logs -->
                                     <div class="card mt-4">
                                         <div class="card-header bg-light">
                                             <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">LOGS
@@ -431,7 +346,6 @@
                                                         @endisset
 
                                                         @if (isset($reserva) && $logsDaReserva->isNotEmpty())
-                                                            {{-- @dd($logs) --}}
                                                             @foreach ($logs as $log)
                                                                 <tr>
                                                                     <td>{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
@@ -466,7 +380,6 @@
                                             <i class="fas fa-arrow-left"></i> Voltar
                                         </a>
                                         @if (isset($reserva))
-                                            <!-- Botão Gerar Voucher (apenas para reserva ou pre-reserva) -->
                                             @if (isset($reserva) && in_array($reserva->situacao, ['reserva', 'pre-reserva']))
                                                 <a href="{{ route('reservas.voucher', $reserva->id) }}"
                                                     class="btn btn-info" target="_blank">
@@ -483,7 +396,6 @@
                                                 target="_blank">
                                                 <i class="fas fa-address-card"></i> Emitir FNRH
                                             </a>
-                                            <!-- Botão No Show -->
                                             @if (isset($reserva) && $reserva->situacao === 'reserva')
                                                 <button type="button" class="btn btn-cancelar-noshow" id="btn-noshow"
                                                     data-reserva-id="{{ $reserva->id }}"
@@ -491,7 +403,6 @@
                                                     <i class="fas fa-user-slash"></i> No Show
                                                 </button>
                                             @endif
-                                            <!-- Botão Cancelar (substitui o Excluir) -->
                                             @if (in_array($reserva->situacao, ['pre-reserva']))
                                                 <button type="button" class="btn btn-danger btn-excluir-reserva-super"
                                                     data-url="{{ route('reservas.cancelar.supervisor', $reserva->id) }}"
@@ -500,7 +411,6 @@
                                                 </button>
                                             @endif
 
-                                            <!-- Botão Hospedar (aparece quando é o dia do check-in) -->
                                             @if (isset($reserva) && $reserva->situacao === 'reserva' && $reserva->data_checkin <= date('Y-m-d'))
                                                 <button type="button" class="btn btn-danger" id="btn-hospedar"
                                                     data-reserva-id="{{ $reserva->id }}">
@@ -508,7 +418,6 @@
                                                 </button>
                                             @endif
 
-                                            <!-- Botão Finalizar (aparece quando está hospedado) -->
                                             @if (isset($reserva) && $reserva->situacao === 'hospedado')
                                                 <button type="button" class="btn btn-success" id="btn-finalizar"
                                                     data-reserva-id="{{ $reserva->id }}">
@@ -528,7 +437,6 @@
                                 </form>
                             </div>
 
-                            <!-- Aba 2: Produtos -->
                             <div class="tab-pane fade" id="produtos" role="tabpanel" aria-labelledby="produtos-tab">
                                 <div class="mb-3">
                                     <button type="button" class="btn btn-primary" id="btn-adicionar-produto-card"
@@ -580,7 +488,6 @@
                                     @endif
                                 </div>
 
-                                <!-- Formulário para adicionar produto (movido da coluna lateral para a aba) -->
                                 <div id="form-transacao-produto" style="display: none;" class="card mt-3">
                                     <div class="card-header bg-light">
                                         <h5 class="mb-0" id="titulo-form-produto">Adicionar Produto</h5>
@@ -618,8 +525,7 @@
                                             id="btn-adicionar-item-produto">Adicionar Item</button>
 
                                         <div id="lista-itens-produto">
-                                            <!-- Itens de produto adicionados dinamicamente aqui -->
-                                        </div>
+                                            </div>
 
                                         <div class="form-group mt-3">
                                             <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
@@ -641,9 +547,7 @@
                 </div>
             </div>
 
-            <!-- Coluna Lateral (Resumo e Atividades) -->
             <div class='col-lg-4'>
-                <!-- Card de Resumo Detalhado -->
                 <div class='card shadow-sm mb-4'>
                     <div class='card-header bg-light'>
                         <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>RESUMO</h5>
@@ -685,7 +589,6 @@
                     </div>
                 </div>
 
-                <!-- Card de Atividades na Reserva -->
                 @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow']))
                     <div class='card shadow-sm'>
                         <div class='card-header bg-light d-flex justify-content-between align-items-center'>
@@ -709,7 +612,6 @@
                                 <p class='text-muted text-center'>Nenhuma atividade adicionada</p>
                             </div>
 
-                            <!-- Formulário para adicionar transação (pagamento) -->
                             <div id='form-transacao-pagamento' style='display: none;'>
                                 <hr>
                                 <h6 id='titulo-form-pagamento'>Adicionar Pagamento</h6>
@@ -760,7 +662,6 @@
                         </div>
                     </div>
                 @elseif (isset($reserva))
-                    <!-- Card apenas de visualização para reservas finalizadas/canceladas -->
                     <div class='card shadow-sm'>
                         <div class='card-header bg-light'>
                             <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES DA
@@ -774,7 +675,6 @@
                     </div>
                 @endif
 
-                <!-- Dicas -->
                 <div class="dicas mt-4">
                     <div id="quadroDicas" class="card shadow-sm transition-all">
                         <div class="card-body pb-2">
@@ -800,7 +700,6 @@
         </div>
     </div>
 
-    <!-- Modal de Cadastro de Hóspede -->
     <div class="modal fade" id="modalCadastrarHospede" tabindex="-1" role="dialog"
         aria-labelledby="modalHospedeLabel" aria-hidden="true">
         <div class="modal-dialog " role="document">
@@ -1188,11 +1087,8 @@
                 width: '100%'
             });
 
-            // 2. Máscaras que ESTÃO funcionando (JQuery Mask)
+            // 2. Máscaras
             $("#telefone").mask("(00) 00000-0000");
-            $("#valor_diaria").mask("#.##0,00", {
-                reverse: true
-            });
             $("#valor_transacao").mask("#.##0,00", {
                 reverse: true
             });
@@ -1243,9 +1139,6 @@
             });
 
             // --- INÍCIO DA SOLUÇÃO PARA PLACA ---
-
-            // 3. Função de formatação manual para Placa
-            // (Baseada na sua função, mas com a lógica de formatação refinada)
             function formatarPlacaManual(valor) {
                 let limpa = valor.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
@@ -1288,7 +1181,6 @@
             var placaInput = $("#placa_veiculo");
 
             // 4. Limpa qualquer máscara ou listener conflitante
-            // Esta é a parte mais importante!
             try {
                 placaInput.unmask(); // Remove o plugin JQuery Mask (importante!)
             } catch (e) {}
@@ -1300,7 +1192,6 @@
                 const formatado = formatarPlacaManual($(this).val());
                 $(this).val(formatado);
             });
-
             // --- FIM DA SOLUÇÃO PARA PLACA ---
 
         }); // Fim do $(document).ready
@@ -1398,9 +1289,8 @@
     <script>
         $(document).ready(function() {
             const hospedeBloqueadoId = "{{ $hospedeBloqueado->id ?? '' }}";
-            const diaria = $("#valor_diaria");
-            const valorDiariaArmazenado = diaria.val();
 
+            // --- ATUALIZAR CAMPOS (Lógica corrigida sem valor_diaria) ---
             function atualizarCampos() {
                 const situacao = $('input[name="situacao"]:checked').val();
                 if (!situacao) {
@@ -1428,10 +1318,9 @@
                     });
 
                     $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
-                    $('#valor_diaria').val(0);
                 } else if (situacao === 'finalizada' || situacao === 'cancelado' || situacao === 'noshow') {
                     // Desabilitar campos para reservas finalizadas ou canceladas
-                    $('#periodo, #hospede_id, #valor_diaria, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton')
+                    $('#periodo, #hospede_id, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton')
                         .attr('disabled', true);
                     $('#btn-atualizar-criar').hide();
                     $(':radio:not(:checked)').attr('disabled', true);
@@ -1440,11 +1329,6 @@
                     $('.form-group').slideDown(200);
                     $('#campoQuarto').hide()
                     $('#hospede_id').prop('disabled', false).val('');
-                    if (valorDiariaArmazenado) {
-                        diaria.val(valorDiariaArmazenado)
-                    } else {
-                        $('#valor_diaria').val('');
-                    }
                 }
             }
 
@@ -1453,7 +1337,6 @@
         });
     </script>
 
-    <!-- Scripts para funcionalidade de transações -->
     <script>
         $(document).ready(function() {
             let transacoes = [];
@@ -1538,14 +1421,7 @@
                     success: function(response) {
                         if (response.success) {
                             const resumo = response.resumo;
-                            if (resumo.valor_diaria != null && !isNaN(resumo.valor_diaria)) {
-                                let valorFormatado = parseFloat(resumo.valor_diaria).toFixed(2).replace(
-                                    '.', ',');
-                                $('#valor_diaria').val(valorFormatado);
-                            } else {
-                                console.warn('valor_diaria inválido:', resumo.valor_diaria);
-                                $('#valor_diaria').val('');
-                            }
+
                             $('#num-diarias').text(resumo.num_diarias);
                             $('#diaria-media').text('R$ ' + resumo.valor_diaria.toLocaleString(
                                 'pt-BR', {
@@ -1579,7 +1455,10 @@
             function atualizarResumo() {
                 const checkin = $('#data_checkin').val();
                 const checkout = $('#data_checkout').val();
-                const valorDiaria = parseFloat($('#valor_diaria').val().replace(/\./g, '').replace(',', '.')) || 0;
+                // Sem o input manual, assumimos 0 para cálculo frontend imediato.
+                // O valor real será calculado/preservado pelo Backend.
+                const valorDiaria = 0;
+
                 let numDiarias = 0;
                 if (checkin && checkout) {
                     const inicio = moment(checkin);
@@ -1600,24 +1479,19 @@
                 const faltaLancar = totalGeral - totalRecebido - totalDescontos;
 
                 $('#num-diarias').text(numDiarias);
-                $('#diaria-media').text('R$ ' + valorDiaria.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-                $('#total-diarias').text('R$ ' + totalDiarias.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
+                // Não atualizamos diaria-media ou total-diarias com 0 para não confundir visualmente,
+                // a menos que seja explicitamente calculado.
+                // Mas garantimos atualização de produtos e recebimentos:
+
                 $('#total-produtos').text('R$ ' + totalProdutos.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
                 }));
-                $('#total-geral').text('R$ ' + totalGeral.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
-                atualizarInputRecebido(totalRecebido)
-                atualizarInputFaltaLancar(faltaLancar);
-            }
 
-            // Atualizar resumo quando valor da diária mudar
-            $('#valor_diaria').on('input', atualizarResumo);
+                // Total geral fica dependente apenas de produtos se diária for 0 no front
+                // $('#total-geral').text(...) 
+
+                atualizarInputRecebido(totalRecebido)
+            }
 
             // Mostrar formulário baseado no tipo
             window.mostrarFormulario = function(tipo) {

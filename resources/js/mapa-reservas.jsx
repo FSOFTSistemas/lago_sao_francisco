@@ -63,7 +63,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         situacao: 'pre-reserva',
         n_adultos: 1, 
         n_criancas: 0, 
-        valor_diaria: '',
         nomes_hospedes_secundarios: '' 
     });
 
@@ -280,12 +279,9 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             return; 
         }
 
-        const vDiaria = parseFloat(formReserva.valor_diaria.replace(/\./g, '').replace(',', '.')) || 0;
         let start = new Date(formReserva.data_checkin);
         let end = new Date(formReserva.data_checkout);
         
-        // CORRIGIDO: Removida a linha que adicionava +1 dia incondicionalmente
-        // Se a data de checkout for igual ou menor que checkin, ajustamos para o dia seguinte (mínimo 1 diária)
         if (start.getTime() >= end.getTime()) {
              end = new Date(start);
              end.setDate(end.getDate() + 1);
@@ -293,9 +289,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         
         const checkoutString = end.toISOString().split('T')[0];
         
-        // Cálculo de dias
-        const diff = Math.ceil(Math.abs(end - start) / (864e5));
-
         // Validação Hóspede
         if (!formReserva.hospede_id) {
             Swal.fire('Atenção', 'Selecione um hóspede.', 'warning');
@@ -303,12 +296,11 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         }
 
         try {
+            // Removido valor_diaria e valor_total do payload
             const res = await axios.post('/mapa/criar-reserva', { 
                 ...formReserva, 
                 data_checkout: checkoutString,
                 quarto_id: celulaSelecionada.quartoId, 
-                valor_diaria: vDiaria, 
-                valor_total: vDiaria * diff, 
                 tipo: 'reserva' 
             });
             if (res.data.success) { 
@@ -327,7 +319,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         e.preventDefault();
         if (formBloqueio.quarto_ids.length === 0) return Swal.fire('Atenção', 'Selecione pelo menos um quarto.', 'warning');
         
-        // CORRIGIDO: Removida a adição de +1 dia aqui também
         let start = new Date(formBloqueio.data_checkin);
         let end = new Date(formBloqueio.data_checkout);
 
@@ -363,7 +354,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             hospede_id: '', 
             data_checkin: checkin, 
             data_checkout: checkin, 
-            valor_diaria: '', 
             n_adultos: 1,
             n_criancas: 0,
             nomes_hospedes_secundarios: '' 
@@ -464,8 +454,26 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             <strong>Reserva #{reservaDetalhes.id}</strong>
                             <span className={`badge situacao-${reservaDetalhes.situacao} text-uppercase px-3 py-2`}>{reservaDetalhes.situacao}</span>
                         </div>
-                        <h5 className="font-weight-bold mb-3">{reservaDetalhes.hospede_nome}</h5>
-                        <div className="row mb-3">
+                        
+                        <h5 className="font-weight-bold mb-1">{reservaDetalhes.hospede_nome}</h5>
+                        
+                        {/* Link do WhatsApp */}
+                        {reservaDetalhes.hospede_telefone && (
+                            <div className="mb-3">
+                                <a 
+                                    href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, '')}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-success font-weight-bold"
+                                    style={{ textDecoration: 'none' }}
+                                >
+                                    <i className="fab fa-whatsapp mr-1"></i> 
+                                    {reservaDetalhes.hospede_telefone}
+                                </a>
+                            </div>
+                        )}
+
+                        <div className="row mb-3 mt-3">
                             <div className="col-6"><small className="text-muted">Check-in</small><div>{formatDate(reservaDetalhes.data_checkin)}</div></div>
                             <div className="col-6"><small className="text-muted">Check-out</small><div>{formatDate(reservaDetalhes.data_checkout)}</div></div>
                         </div>
@@ -481,7 +489,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                              </div>
                         </div>
 
-                        {/* HÓSPEDES SECUNDÁRIOS - NOVO */}
+                        {/* HÓSPEDES SECUNDÁRIOS */}
                         {reservaDetalhes.nomes_hospedes_secundarios && (
                             <div className="row mb-3">
                                 <div className="col-12">
@@ -555,7 +563,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         <div className="col-6"><label className="small mb-1">Crianças</label><input type="number" className="form-control" min="0" value={formReserva.n_criancas} onChange={e => setFormReserva({...formReserva, n_criancas: e.target.value})} /></div>
                     </div>
 
-                    {/* NOVO CAMPO: Hóspedes Secundários (Textarea) */}
                     <div className="form-group">
                         <label className="small mb-1">Hóspedes Secundários (Nomes)</label>
                         <textarea 
@@ -567,7 +574,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         ></textarea>
                     </div>
                     
-                    <input type="text" className="form-control" placeholder="Valor" value={formReserva.valor_diaria} onChange={e=>setFormReserva({...formReserva, valor_diaria: e.target.value.replace(/\D/g, "").replace(/(\d)(\d{2})$/, "$1,$2")})} />
                     <div className="text-right mt-3"><button type="submit" className="btn btn-primary">Salvar</button></div>
                 </form>
             </SimpleModal>
