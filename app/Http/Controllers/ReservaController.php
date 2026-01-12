@@ -933,13 +933,16 @@ public function hospedar($id)
 
     // Método auxiliar privado para reaproveitar a query
    // Método auxiliar privado para reaproveitar a query
+    // Método auxiliar privado para reaproveitar a query
     private function buscarReservasParaCafe($inicio, $fim)
     {
         // 1. Consulta ao Banco
         $reservas = Reserva::with(['quarto', 'hospede'])
             ->whereIn('situacao', ['reserva', 'hospedado'])
             ->where(function ($query) use ($inicio, $fim) {
-                $query->where('data_checkin', '<=', $fim)
+                // ALTERADO: data_checkin deve ser MENOR (<) que a data fim do relatório.
+                // Se o checkin for IGUAL ao dia do relatório, ele não entra (pois só toma café no dia seguinte).
+                $query->where('data_checkin', '<', $fim)
                       ->where('data_checkout', '>=', $inicio);
             })
             ->orderBy('data_checkin')
@@ -947,10 +950,8 @@ public function hospedar($id)
 
         // --- CORREÇÃO DE DUPLICATAS ---
         // Força a coleção a manter apenas uma entrada por ID de reserva.
-        // Isso resolve o problema de duplicação/triplicação causado por Joins invisíveis.
         $reservas = $reservas->unique('id');
-        // ------------------------------
-
+        
         // 2. Coletamos todos os IDs de hóspedes secundários
         $todosIdsSecundarios = [];
         foreach ($reservas as $reserva) {
