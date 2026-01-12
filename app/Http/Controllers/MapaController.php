@@ -8,25 +8,27 @@ use App\Models\Reserva;
 use App\Models\Tarifa;
 use App\Models\Hospede;
 use App\Models\PreferenciasHotel;
+use App\Models\Funcionario;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class MapaController extends Controller
 {
+    // ... (métodos index e getDadosMapa permanecem iguais) ...
     public function index(Request $request)
     {
         $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
         $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
-
-        // Busca os hóspedes ordenados por nome (Melhora a UX do select)
         $hospedes = Hospede::orderBy('nome')->get();
-
         return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
     }
 
-public function getDadosMapa(Request $request)
+    public function getDadosMapa(Request $request)
     {
         try {
             $dataInicio = \Carbon\Carbon::parse($request->get('data_inicio', \Carbon\Carbon::now()->startOfWeek()));
@@ -40,7 +42,10 @@ public function getDadosMapa(Request $request)
                 $dataAtual->addDay();
             }
 
-            // Busca quartos ordenados
+            // Mapeamento de Nomes (Funcionários e Users)
+            $funcionariosMap = Funcionario::pluck('nome', 'id')->toArray();
+            $usersMap = User::pluck('name', 'id')->toArray();
+
             $quartos = \App\Models\Quarto::where('status', 1)
                 ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
@@ -53,17 +58,27 @@ public function getDadosMapa(Request $request)
                 }])
                 ->get();
 
-            // Organizar dados do mapa
             $dadosQuartos = [];
 
             foreach ($quartos as $quarto) {
                 $reservasFormatadas = [];
                 foreach ($quarto->reservas as $reserva) {
+                    
+                    // Lógica para encontrar o nome (Só vai aparecer se tiver vendedor_id salvo)
+                    $nomeVendedor = null;
+                    if ($reserva->vendedor_id) {
+                        if (isset($funcionariosMap[$reserva->vendedor_id])) {
+                            $nomeVendedor = $funcionariosMap[$reserva->vendedor_id];
+                        } elseif (isset($usersMap[$reserva->vendedor_id])) {
+                            $nomeVendedor = $usersMap[$reserva->vendedor_id];
+                        }
+                    }
+
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
                         'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
-                        // ADICIONADO: Telefone do hóspede para o link do WhatsApp
                         'hospede_telefone' => $reserva->hospede ? $reserva->hospede->telefone : null,
+                        'vendedor_nome' => $nomeVendedor,
                         'data_checkin' => $reserva->data_checkin,
                         'data_checkout' => $reserva->data_checkout,
                         'situacao' => $reserva->situacao,
@@ -86,7 +101,6 @@ public function getDadosMapa(Request $request)
                 ];
             }
 
-            // Calcular ocupação
             $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $quartos);
 
             return response()->json([
@@ -96,10 +110,7 @@ public function getDadosMapa(Request $request)
                 'ocupacao' => $ocupacaoPorData
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao carregar dados do mapa: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
         }
     }
 
@@ -107,37 +118,22 @@ public function getDadosMapa(Request $request)
     {
         $ocupacao = [];
         $totalQuartos = $quartos->count();
-
         foreach ($datas as $data) {
             $quartosOcupados = 0;
-            
-            // Loop otimizado
             foreach ($quartos as $quarto) {
-                $temReserva = $quarto->reservas->contains(function ($reserva) use ($data) {
-                    return $reserva->data_checkin <= $data && $reserva->data_checkout > $data;
-                });
-                
-                if ($temReserva) {
+                if ($quarto->reservas->contains(fn($r) => $r->data_checkin <= $data && $r->data_checkout > $data)) {
                     $quartosOcupados++;
                 }
             }
-
             $percentual = $totalQuartos > 0 ? round(($quartosOcupados / $totalQuartos) * 100) : 0;
-
-            $ocupacao[$data] = [
-                'ocupados' => $quartosOcupados,
-                'total' => $totalQuartos,
-                'percentual' => $percentual
-            ];
+            $ocupacao[$data] = ['ocupados' => $quartosOcupados, 'total' => $totalQuartos, 'percentual' => $percentual];
         }
-
         return $ocupacao;
     }
 
-public function criarReservaRapida(Request $request)
+    public function criarReservaRapida(Request $request)
     {
         try {
-            // 1. Validação dos inputs
             $request->validate([
                 'quarto_id'     => 'required|exists:quartos,id',
                 'data_checkin'  => 'required|date',
@@ -145,10 +141,9 @@ public function criarReservaRapida(Request $request)
                 'tipo'          => 'required|in:reserva,bloqueio',
                 'n_adultos'     => 'nullable|integer|min:1', 
                 'n_criancas'    => 'nullable|integer|min:0',
-                'nomes_hospedes_secundarios'    => 'nullable|string',
+                'nomes_hospedes_secundarios' => 'nullable|string',
             ]);
 
-            // Validação de Capacidade
             if ($request->tipo === 'reserva') {
                 $quarto = \App\Models\Quarto::with('categoria')->find($request->quarto_id);
                 $capacidadeMaxima = $quarto->categoria ? $quarto->categoria->ocupantes : 999;
@@ -160,21 +155,16 @@ public function criarReservaRapida(Request $request)
                 if ($totalPessoas > ($capacidadeMaxima + 10)) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Capacidade excedida! O quarto comporta máximo de {$capacidadeMaxima} pessoas."
+                        'message' => "Capacidade excedida! Máximo de {$capacidadeMaxima} pessoas."
                     ], 422);
                 }
             }
 
-            // --- LÓGICA DE PREÇO AUTOMÁTICO (Adaptada do ReservaController) ---
+            // Cálculo Automático de Preço
             $valorDiariaFinal = 0;
             $valorTotalFinal = 0;
 
             if ($request->tipo === 'reserva') {
-                $preferencia = PreferenciasHotel::first();
-                
-                // Como removemos o campo do front, ele sempre calculará pelo tarifário se a preferência permitir
-                // ou se simplesmente assumirmos o tarifário como padrão na ausência de valor.
-                
                 $quarto = \App\Models\Quarto::with('categoria.tarifa')->find($request->quarto_id);
                 $categoria = $quarto->categoria;
                 $tarifa = $categoria->tarifa;
@@ -196,10 +186,8 @@ public function criarReservaRapida(Request $request)
                         $quantidadeDias++;
                     }
 
-                    // Média proporcional
                     $mediaTarifa = $quantidadeDias > 0 ? $totalTarifa / $quantidadeDias : 0;
                     
-                    // Extras
                     $padraoAdultos = $tarifa->padrao_adultos ?? 0;
                     $padraoCriancas = $tarifa->padrao_criancas ?? 0;
                     $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
@@ -213,26 +201,24 @@ public function criarReservaRapida(Request $request)
 
                     $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
                     
-                    // Cálculo do Total
-                    // Diferença em dias reais para o total
                     $diasTotal = $checkin->diffInDays($checkout);
                     if ($diasTotal < 1) $diasTotal = 1;
                     
                     $valorTotalFinal = $valorDiariaFinal * $diasTotal;
                 }
             }
-            // ------------------------------------------------------------------
 
             $dadosReserva = [
                 'quarto_id'     => $request->quarto_id,
                 'data_checkin'  => $request->data_checkin,
                 'data_checkout' => $request->data_checkout,
-                // Usa os valores calculados
                 'valor_diaria'  => $valorDiariaFinal,
                 'valor_total'   => $valorTotalFinal,
                 'n_adultos'     => $request->input('n_adultos', 1), 
                 'n_criancas'    => $request->input('n_criancas', 0),
-                'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios
+                'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
+                'observacoes'   => $request->observacoes,
+                // 'vendedor_id' removido daqui para não salvar em reservas comuns
             ];
 
             if ($request->tipo === 'bloqueio') {
@@ -244,6 +230,9 @@ public function criarReservaRapida(Request $request)
                 $dadosReserva['situacao'] = 'bloqueado';
                 $dadosReserva['valor_diaria'] = 0;
                 $dadosReserva['valor_total'] = 0;
+                
+                // ADICIONADO AQUI: Salva o vendedor_id APENAS se for bloqueio
+                $dadosReserva['vendedor_id'] = Auth::id(); 
             } else {
                 $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
                 $dadosReserva['situacao'] = $request->situacao;

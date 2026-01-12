@@ -240,8 +240,8 @@ public function update(Request $request, Reserva $reserva)
                 'hospede_id' => 'nullable|exists:hospedes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
-                'valor_diaria' => 'required',
-                'valor_total' => 'nullable', // Alterado para nullable pois calculamos no backend
+                'valor_diaria' => 'nullable',
+                'valor_total' => 'nullable',
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
                 'n_adultos' => 'required',
                 'n_criancas' => 'required',
@@ -250,11 +250,9 @@ public function update(Request $request, Reserva $reserva)
                 'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'nomes_hospedes_secundarios' => 'nullable|string',
-                // 'hospedes_secundarios' => 'nullable|array',
-                // 'hospedes_secundarios.*' => 'exists:hospedes,id',
             ]);
 
-            // Validações específicas de situação
+            // Validações de situação
             $situacaoAtual = $reserva->situacao;
             $novaSituacao = $validatedData['situacao'];
 
@@ -277,44 +275,83 @@ public function update(Request $request, Reserva $reserva)
                 }
             }
 
+            // Validação de Capacidade
             $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
-        $maxOcupantes = $quarto->categoria->ocupantes;
-        $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
+            $maxOcupantes = $quarto->categoria->ocupantes;
+            $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
 
-        if ($totalPessoas > ($maxOcupantes + 10)) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Total inserido: {$totalPessoas}.");
-        }
+            if ($totalPessoas > ($maxOcupantes + 10)) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', "A capacidade máxima do quarto selecionado é de {$maxOcupantes} pessoas. Total inserido: {$totalPessoas}.");
+            }
 
-            // Remover a máscara do valor_diaria antes de salvar (Ex: 1.200,00 -> 1200.00)
-            $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
+            // --- CORREÇÃO DO ERRO ---
+            // Recupera a preferência (se não tiver importado, adicione: use App\Models\PreferenciasHotel;)
+            $preferencia = PreferenciasHotel::first();
+            
+            // Verifica se o valor veio no request usando ?? null para evitar o erro "Undefined array key"
+            $valorDiariaInput = $validatedData['valor_diaria'] ?? null;
 
-            // --- Lógica para calcular o Valor Total na Edição (NOVO) ---
+            if ($preferencia->valor_diaria === 'tarifario' || empty($valorDiariaInput)) {
+                // === LÓGICA DE CÁLCULO AUTOMÁTICO (Igual ao Store) ===
+                $quarto = Quarto::with('categoria.tarifa')->find($validatedData['quarto_id']);
+                $categoria = $quarto->categoria;
+                $tarifa = $categoria->tarifa;
+
+                $checkin = \Carbon\Carbon::parse($validatedData['data_checkin']);
+                $checkout = \Carbon\Carbon::parse($validatedData['data_checkout']);
+
+                // Copia o objeto checkout para não alterar a data original usada no cálculo de dias depois
+                $periodo = \Carbon\CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+
+                $total = 0;
+                $quantidadeDias = 0;
+
+                foreach ($periodo as $dia) {
+                    $campo = match ($dia->dayOfWeek) {
+                        0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab',
+                    };
+                    $valorDia = (float) ($tarifa->$campo ?? 0);
+                    $total += $valorDia;
+                    $quantidadeDias++;
+                }
+
+                $mediaTarifa = $quantidadeDias > 0 ? $total / $quantidadeDias : 0;
+                
+                // Cálculo de extras
+                $padraoAdultos = $tarifa->padrao_adultos ?? 0;
+                $padraoCriancas = $tarifa->padrao_criancas ?? 0;
+                $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
+                $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
+
+                $extrasAdultos = max(0, $validatedData['n_adultos'] - $padraoAdultos);
+                $extrasCriancas = max(0, $validatedData['n_criancas'] - $padraoCriancas);
+
+                $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+
+                $validatedData['valor_diaria'] = number_format($valorDiariaFinal, 2, '.', '');
+            } else {
+                // Se o valor veio manual, apenas formata
+                $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $valorDiariaInput);
+            }
+
+            // Recalcula o Valor Total
             $dtCheckin = \Carbon\Carbon::parse($validatedData['data_checkin']);
             $dtCheckout = \Carbon\Carbon::parse($validatedData['data_checkout']);
-            
-            // Diferença em dias
             $dias = $dtCheckin->diffInDays($dtCheckout);
-            
-            // Garante pelo menos 1 dia
             if ($dias < 1) $dias = 1;
 
-            // Recalcula o valor total com base na diária atualizada e datas
             $validatedData['valor_total'] = (float)$validatedData['valor_diaria'] * $dias;
             // -----------------------------------------------------------
 
-            // Guardar dados antigos para o log
             $dadosAntigos = $reserva->toArray();
             $statusAntigo = $reserva->situacao;
 
-            // Atualizar reserva com os dados validados e calculados
             $reserva->update($validatedData);
 
-            // Registrar log de edição
             LogReserva::registrarEdicao($reserva, Auth::id(), $dadosAntigos);
 
-            // Se o status mudou, registrar log específico de alteração de status
             if ($statusAntigo !== $reserva->situacao) {
                 LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
             }

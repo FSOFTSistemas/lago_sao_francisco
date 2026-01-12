@@ -63,6 +63,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         situacao: 'pre-reserva',
         n_adultos: 1, 
         n_criancas: 0, 
+        // REMOVIDO: valor_diaria (calculado no backend agora)
         nomes_hospedes_secundarios: '' 
     });
 
@@ -296,7 +297,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         }
 
         try {
-            // Removido valor_diaria e valor_total do payload
+            // Removido valor_diaria do envio, pois o backend calcula
             const res = await axios.post('/mapa/criar-reserva', { 
                 ...formReserva, 
                 data_checkout: checkoutString,
@@ -333,7 +334,13 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             quarto_id: qid, 
             data_checkin: formBloqueio.data_checkin, 
             data_checkout: checkoutString,
-            observacoes: formBloqueio.observacoes, situacao: 'bloqueado', n_adultos: 1, n_criancas: 0, valor_diaria: 0, valor_total: 0, tipo: 'bloqueio'
+            observacoes: formBloqueio.observacoes, // Aqui enviamos a observação
+            situacao: 'bloqueado', 
+            n_adultos: 1, 
+            n_criancas: 0, 
+            valor_diaria: 0, 
+            valor_total: 0, 
+            tipo: 'bloqueio'
         }));
         try { 
             await Promise.all(requests); 
@@ -459,7 +466,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         
                         {/* Link do WhatsApp */}
                         {reservaDetalhes.hospede_telefone && (
-                            <div className="mb-3">
+                            <div className="mb-2">
                                 <a 
                                     href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, '')}`} 
                                     target="_blank" 
@@ -470,6 +477,13 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                     <i className="fab fa-whatsapp mr-1"></i> 
                                     {reservaDetalhes.hospede_telefone}
                                 </a>
+                            </div>
+                        )}
+
+                        {/* NOVO: Exibir Vendedor */}
+                        {reservaDetalhes.vendedor_nome && (
+                            <div className="mb-3 text-muted small">
+                                <i className="fas fa-user-tag mr-1"></i> Vendedor: <strong>{reservaDetalhes.vendedor_nome}</strong>
                             </div>
                         )}
 
