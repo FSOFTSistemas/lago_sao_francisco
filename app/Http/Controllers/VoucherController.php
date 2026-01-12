@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reserva;
 use App\Models\PreferenciasHotel;
+use App\Models\Funcionario; // Importante importar o model
 use Carbon\Carbon;
 
 class VoucherController extends Controller
@@ -22,9 +23,24 @@ class VoucherController extends Controller
             $hora_checkin = Carbon::parse($preferencias->checkin)->format('H:i');
             $hora_checkout = Carbon::parse($preferencias->checkout)->format('H:i');
 
-            // Formatar o número do voucher
-            $numeroVoucher = 'HO_' . str_pad($reserva->id, 6, '0', STR_PAD_LEFT);
+            // --- Lógica do Número do Voucher (Atualizada) ---
+            $prefixo = '';
             
+            if ($reserva->vendedor_id) {
+                $vendedor = Funcionario::find($reserva->vendedor_id);
+                if ($vendedor) {
+                    // Pega as 2 primeiras letras do nome
+                    $iniciais = substr($vendedor->nome, 0, 2);
+                    // Remove acentos (opcional, mas recomendado para códigos) e deixa maiúsculo
+                    $iniciais = iconv('UTF-8', 'ASCII//TRANSLIT', $iniciais);
+                    $prefixo = strtoupper($iniciais) . '_'; // Ex: JO_
+                }
+            }
+
+            // Se tiver vendedor fica "JO_000123", se não tiver fica "000123"
+            $numeroVoucher = $prefixo . str_pad($reserva->id, 6, '0', STR_PAD_LEFT);
+            // ------------------------------------------------
+
             // Formatar datas
             $dataCheckin = Carbon::parse($reserva->data_checkin)->format('d/m/Y');
             $dataCheckout = Carbon::parse($reserva->data_checkout)->format('d/m/Y');

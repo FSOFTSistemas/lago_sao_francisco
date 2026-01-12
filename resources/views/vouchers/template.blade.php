@@ -10,6 +10,7 @@
             margin: 0;
             padding: 20px;
             color: #333;
+            font-size: 12px; /* Reduzido o tamanho base */
         }
 
         .container {
@@ -27,13 +28,13 @@
         }
 
         .logo {
-            font-size: 24px;
+            font-size: 20px; /* Reduzido de 24px */
             font-weight: bold;
             color: #679A4C;
         }
 
         .voucher-number {
-            font-size: 18px;
+            font-size: 16px; /* Reduzido de 18px */
             color: #679A4C;
             margin-top: 10px;
         }
@@ -47,6 +48,7 @@
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
             margin-bottom: 10px;
+            font-size: 12px; /* Definido tamanho levemente maior que o corpo */
         }
 
         .info-row {
@@ -65,7 +67,7 @@
 
         .check-info {
             background-color: #f8f9fa;
-            padding: 15px;
+            padding: 10px; /* Reduzido padding */
             border-radius: 5px;
             margin-bottom: 20px;
         }
@@ -92,12 +94,12 @@
 
         .payment-info {
             background-color: #f8f9fa;
-            padding: 15px;
+            padding: 10px;
             border-radius: 5px;
         }
 
         .total {
-            font-size: 18px;
+            font-size: 16px; /* Reduzido de 18px */
             font-weight: bold;
             margin-top: 10px;
             text-align: right;
@@ -106,7 +108,7 @@
         .footer {
             margin-top: 30px;
             text-align: center;
-            font-size: 12px;
+            font-size: 10px; /* Reduzido de 12px */
             color: #666;
             border-top: 1px solid #ddd;
             padding-top: 10px;
@@ -131,7 +133,7 @@
 
         th,
         td {
-            padding: 8px;
+            padding: 6px; /* Reduzido padding */
             text-align: left;
         }
 
@@ -146,7 +148,7 @@
         }
 
         .info-table td {
-            padding: 5px;
+            padding: 4px; /* Reduzido padding */
             vertical-align: top;
         }
 
@@ -160,13 +162,23 @@
         }
 
         .check-table td {
-            padding: 5px;
+            padding: 4px;
             border: none;
             vertical-align: top;
         }
 
         .check-label {
             font-weight: bold;
+        }
+        
+        /* Estilo para caixa de observação */
+        .obs-box {
+            margin-top: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px dashed #ccc;
+            background-color: #fff;
+            font-size: 10px;
         }
     </style>
 </head>
@@ -196,33 +208,19 @@
                     </tr>
                 </table>
             </div>
-
         </div>
 
         <div class="section">
             <div class="section-title">DADOS DA RESERVA</div>
             <table class="info-table">
-                <tr>
-                    <td><span class="info-label">Quarto:</span> {{ $reserva->quarto->titulo ?? '' }}</td>
-                    <td><span class="info-label">Categoria:</span>
-                        {{ $reserva->quarto->categoria->titulo ?? 'Não informado' }}</td>
-                </tr>
+                {{-- Removido Quarto e Categoria --}}
                 <tr>
                     <td><span class="info-label">Nº de Adultos:</span> {{ $reserva->n_adultos ?? '0' }}</td>
                     <td><span class="info-label">Nº de Crianças:</span> {{ $reserva->n_criancas ?? '0' }}</td>
                 </tr>
-                <tr>
-                    <td colspan="2">
-                        <span class="info-label">Observações:</span>
-                        {{ $reserva->observacoes ?? '—' }}
-                    </td>
-                </tr>
+                {{-- Removido Observações daqui --}}
             </table>
         </div>
-
-
-
-
 
         <div class="check-info">
             <div class="check-title">INFORMAÇÕES DE CHECK-IN E CHECK-OUT</div>
@@ -252,13 +250,13 @@
                 </tr>
             </table>
         </div>
+        
         <div class="section">
             @php
                 $totalReserva = $valorTotal;
                 $totalPago = $reserva->transacoes->sum('valor');
                 $totalRestante = max(0, $totalReserva - $totalPago);
             @endphp
-
 
             <div class="section-title">PAGAMENTOS</div>
 
@@ -289,30 +287,38 @@
                 </tbody>
             </table>
 
+            {{-- Observações movidas para cá --}}
+            @if(!empty($reserva->observacoes))
+            <div class="obs-box">
+                <strong>Observações:</strong><br>
+                {{ $reserva->observacoes }}
+            </div>
+            @endif
+
             {{-- Total pago --}}
-            <div class="totais" style="margin-top: 20px;">
-                <p style="font-size: 12px; margin: 2px 0;">
+            <div class="totais" style="margin-top: 10px;">
+                <p style="font-size: 11px; margin: 2px 0;">
                     <strong>Total da Reserva:</strong> R$ {{ number_format($totalReserva, 2, ',', '.') }}
                 </p>
-                <p style="font-size: 12px; margin: 2px 0;">
+                <p style="font-size: 11px; margin: 2px 0;">
                     <strong>Total Pago:</strong> R$ {{ number_format($totalPago, 2, ',', '.') }}
                 </p>
 
                 <div
                     style="
-        margin-top: 10px;
-        padding: 10px;
-        font-size: 16px;
-        font-weight: bold;
-        border: 2px solid #679A4C;
-        text-align: center;
-        background-color: #f5f5f5;
-    ">
+                        margin-top: 10px;
+                        padding: 8px;
+                        font-size: 14px; /* Reduzido */
+                        font-weight: bold;
+                        border: 2px solid #679A4C;
+                        text-align: center;
+                        background-color: #f5f5f5;
+                    ">
                     TOTAL A PAGAR: R$ {{ number_format($totalRestante, 2, ',', '.') }}
                 </div>
             </div>
         </div>
-        <p style="text-align: center; color:#679A4C">Este voucher deve ser apresentado no momento do check-in.</p>
+        <p style="text-align: center; color:#679A4C; margin-top: 10px;">Este voucher deve ser apresentado no momento do check-in.</p>
         <div class="footer">
             <p>Hotel Estação Chico - Fazenda Lago São Francisco | Turistica & Lazer em Garanhuns 09, Garanhuns-PE</p>
             <p>Telefone: (87)9 8141-1088 - Email: hplagosaofrancisco@gmail.com</p>
