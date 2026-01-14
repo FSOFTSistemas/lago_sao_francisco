@@ -555,7 +555,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                 {dadosMapa.quartos.map(q => (
                                     <div key={q.id} className="quarto-row" style={{ minWidth: 'fit-content' }}>
                                         <div className="row no-gutters flex-nowrap" style={{ width: 'fit-content', minWidth: '100%' }}>
-                                            <div className="col-2 quarto-header sticky-left" style={{minWidth: '150px', position: 'sticky', left: 0, zIndex: 101}}>{q.nome}</div>
+                                            <div className="col-2 quarto-header sticky-left" style={{minWidth: '150px', position: 'sticky', left: 0, zIndex: 101, paddingLeft:10}}>{q.nome}</div>
                                             <div className="col-10 d-flex">{renderLinhaQuarto(q)}</div>
                                         </div>
                                     </div>

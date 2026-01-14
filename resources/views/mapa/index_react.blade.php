@@ -23,7 +23,7 @@
     <style>
         .mapa-header { background-color: #f8f9fa; border-bottom: 2px solid #dee2e6; position: sticky; top: 0; z-index: 100; }
         .header-cell { padding: 10px 8px; font-weight: bold; text-align: center; border-right: 1px solid #dee2e6; min-height: 60px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .header-quartos { background-color: #e9ecef; border-right: 2px solid #dee2e6; }
+        .header-quartos { background-color: #e9ecef; border-right: 2px solid #dee2e6; max-width: 50px; }
         .data-header { padding: 5px 4px; text-align: center; border-right: 1px solid #dee2e6; font-size: 14px; line-height: 1.2; min-height: 60px; display: flex; flex-direction: column; justify-content: center; }
         .data-header .dia { font-weight: bold; font-size: 14px; }
         .data-header .data { font-size: 14px; color: #666; }
@@ -31,7 +31,7 @@
         .categoria-row { background-color: #f1f3f4; border-bottom: 1px solid #dee2e6; }
         .categoria-header { padding: 8px; font-weight: bold; background-color: #e9ecef; border-right: 2px solid #dee2e6; display: flex; align-items: center; font-size: 13px; }
         .quarto-row { border-bottom: 1px solid #dee2e6; }
-        .quarto-header { padding: 8px; background-color: #fff; border-right: 2px solid #dee2e6; display: flex; align-items: center; font-size: 12px; min-height: 40px; }
+        .quarto-header { padding: 8px; background-color: #fff; border-right: 2px solid #dee2e6; display: flex; align-items: center; font-size: 12px; min-height: 40px; max-width: 50px;}
         
         .quarto-cell { 
             padding: 2px; border-right: 1px solid #dee2e6; min-height: 40px; 
@@ -55,7 +55,7 @@
         .situacao-cancelado { background-color: #6A1B9A; }
         .situacao-noshow { background-color: #F48FB1; }
         
-        .mapa-container { overflow-x: auto; max-height: 70vh; overflow-y: auto; position: relative; }
+        .mapa-container { overflow-x: auto; max-height: 100vh; overflow-y: auto; position: relative; }
         .row.no-gutters>[class*="col-"] { padding-right: 0; padding-left: 0; }
 
         /* Estilo básico para o Modal React (Substituindo Bootstrap JS) */
