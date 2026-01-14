@@ -19,8 +19,12 @@ class Categoria extends Model
     {
         return $this->hasMany(Quarto::class);
     }
-    public function tarifa()
-    {
-        return $this->hasOne(Tarifa::class);
-    }
+    // public function tarifa()
+    // {
+    //     return $this->hasOne(Tarifa::class);
+    // }
+    public function tarifas()
+{
+    return $this->hasMany(Tarifa::class);
+}
 }

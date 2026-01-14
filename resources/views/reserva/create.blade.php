@@ -41,6 +41,9 @@
                                         @method('PUT')
                                     @endif
 
+                                    <input type="hidden" name="supervisor_id_autorizacao" id="supervisor_id_autorizacao"
+                                        value="">
+
                                     <div class='form-group row' id='campoSituacao'>
                                         <label class='col-md-3 label-control'><strong>* Situação</strong></label>
                                         <div class='situacao-options'>
@@ -147,37 +150,17 @@
                                     <div class='form-group row'>
                                         <label for='hospede_id' class='col-md-3 label-control'>* Hóspede</label>
                                         <div class='col-sm-4'>
-                                            @php
-                                                $hospedeSelecionado = old('hospede_id', $reserva->hospede_id ?? '');
-                                            @endphp
-
-                                            @if ($hospedeSelecionado)
-                                                <select class='form-control select2' name='hospede_id_disabled'
-                                                    id='hospede_id' disabled>
-                                                    <option value=''>Selecione um hóspede</option>
-                                                    @foreach ($hospedes as $hospede)
-                                                        @if ($hospede->nome !== 'Bloqueado')
-                                                            <option value="{{ $hospede->id }}"
-                                                                {{ $hospedeSelecionado == $hospede->id ? 'selected' : '' }}>
-                                                                {{ $hospede->nome }}
-                                                            </option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                                <input type='hidden' name='hospede_id' value="{{ $hospedeSelecionado }}">
-                                            @else
-                                                <select class='form-control select2' name='hospede_id' id='hospede_id'>
-                                                    <option value="">Selecione um hóspede</option>
-                                                    @foreach ($hospedes as $hospede)
-                                                        @if ($hospede->nome !== 'Bloqueado')
-                                                            <option value="{{ $hospede->id }}"
-                                                                {{ old('hospede_id') == $hospede->id ? 'selected' : '' }}>
-                                                                {{ $hospede->nome }}
-                                                            </option>
-                                                        @endif
-                                                    @endforeach
-                                                </select>
-                                            @endif
+                                            <select class='form-control select2' name='hospede_id' id='hospede_id'>
+                                                <option value="">Selecione um hóspede</option>
+                                                @foreach ($hospedes as $hospede)
+                                                    @if ($hospede->nome !== 'Bloqueado')
+                                                        <option value="{{ $hospede->id }}"
+                                                            {{ old('hospede_id', $reserva->hospede_id ?? '') == $hospede->id ? 'selected' : '' }}>
+                                                            {{ $hospede->nome }}
+                                                        </option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
                                         </div>
 
                                         <div class="col-sm-2">
@@ -230,7 +213,28 @@
                                         <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
                                     @endif
 
-                                    {{-- CAMPO VALOR DIÁRIA FOI COMPLETAMENTE REMOVIDO --}}
+                                    <div class="form-group row">
+                                        <label class="col-md-3 label-control" for="valor_diaria">Valor da Diária
+                                            (Manual):</label>
+                                        <div class="col-md-4">
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">R$</span>
+                                                </div>
+                                                <input type="text" name="valor_diaria" id="valor_diaria"
+                                                    class="form-control" readonly placeholder="Automático (Tarifário)"
+                                                    value="{{ old('valor_diaria', isset($reserva->valor_diaria) ? number_format($reserva->valor_diaria, 2, ',', '.') : '') }}">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-warning" id="btn-unlock-diaria"
+                                                        title="Desbloquear valor manual">
+                                                        <i class="fas fa-lock"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">Se vazio, o sistema calculará
+                                                automaticamente.</small>
+                                        </div>
+                                    </div>
 
                                     <div class="form-group row">
                                         <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
@@ -254,7 +258,8 @@
                                     </div>
 
                                     <div class="form-group row" id="nomes_hospedes_secundarios">
-                                        <label for="nomes_hospedes_secundarios" class="col-md-3 label-control">Hospedes Secundários</label>
+                                        <label for="nomes_hospedes_secundarios" class="col-md-3 label-control">Hospedes
+                                            Secundários</label>
                                         <div class="col-md-5">
                                             <textarea class="form-control" name="nomes_hospedes_secundarios" rows="3" id="nomes_hospedes_secundarios">{{ old('nomes_hospedes_secundarios', $reserva->nomes_hospedes_secundarios ?? '') }}</textarea>
                                         </div>
@@ -525,7 +530,7 @@
                                             id="btn-adicionar-item-produto">Adicionar Item</button>
 
                                         <div id="lista-itens-produto">
-                                            </div>
+                                        </div>
 
                                         <div class="form-group mt-3">
                                             <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
@@ -1092,6 +1097,65 @@
             $("#valor_transacao").mask("#.##0,00", {
                 reverse: true
             });
+            // REINTRODUZIDO: Máscara para o valor da diária
+            $('#valor_diaria').mask('#.##0,00', {
+                reverse: true
+            });
+
+            $('#btn-unlock-diaria').click(async function() {
+                const {
+                    value: password
+                } = await Swal.fire({
+                    title: 'Autorização de Supervisor',
+                    text: 'Digite a senha para alterar o valor manualmente',
+                    input: 'password',
+                    inputPlaceholder: 'Senha do supervisor',
+                    inputAttributes: {
+                        autocapitalize: 'off',
+                        autocomplete: 'new-password', // Tenta impedir autofill
+                        name: 'password_supervisor_prevention'
+                    },
+                    showCancelButton: true,
+                    confirmButtonText: 'Liberar',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (password) {
+                    $.ajax({
+                        url: '{{ route('validar.supervisor') }}',
+                        method: 'POST',
+                        data: {
+                            senha: password,
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                $('#valor_diaria').prop('readonly', false).focus();
+                                $('#btn-unlock-diaria').html(
+                                    '<i class="fas fa-lock-open"></i>').removeClass(
+                                    'btn-warning').addClass('btn-success').prop(
+                                    'disabled', true);
+
+                                // Salva o ID do supervisor no campo oculto
+                                $('#supervisor_id_autorizacao').val(response.supervisor_id);
+
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Liberado',
+                                    text: 'Você pode editar o valor da diária agora.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire('Erro', 'Senha incorreta.', 'error');
+                            }
+                        },
+                        error: function() {
+                            Swal.fire('Erro', 'Erro ao validar senha.', 'error');
+                        }
+                    });
+                }
+            });
 
             function validarCapacidadeQuarto() {
                 // Pega o objeto da opção selecionada
@@ -1327,8 +1391,8 @@
                     $('#btn-voltar').removeClass('btn-secondary').addClass('btn-primary');
                 } else {
                     $('.form-group').slideDown(200);
-                    $('#campoQuarto').hide()
-                    $('#hospede_id').prop('disabled', false).val('');
+                    $('#campoQuarto').hide();
+                    $('#hospede_id').prop('disabled', false);
                 }
             }
 
@@ -1423,10 +1487,14 @@
                             const resumo = response.resumo;
 
                             $('#num-diarias').text(resumo.num_diarias);
-                            $('#diaria-media').text('R$ ' + resumo.valor_diaria.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
+                            // REINTRODUZIDO: Exibir valor da diária, se disponível
+                            if (resumo.valor_diaria > 0) {
+                                $('#diaria-media').text('R$ ' + resumo.valor_diaria.toLocaleString(
+                                    'pt-BR', {
+                                        minimumFractionDigits: 2
+                                    }));
+                            }
+
                             $('#total-diarias').text('R$ ' + resumo.total_diarias.toLocaleString(
                                 'pt-BR', {
                                     minimumFractionDigits: 2
@@ -1455,9 +1523,13 @@
             function atualizarResumo() {
                 const checkin = $('#data_checkin').val();
                 const checkout = $('#data_checkout').val();
-                // Sem o input manual, assumimos 0 para cálculo frontend imediato.
-                // O valor real será calculado/preservado pelo Backend.
-                const valorDiaria = 0;
+
+                // Tenta pegar o valor manual se preenchido, senão 0
+                let valorDiaria = 0;
+                const valorInput = $('#valor_diaria').val();
+                if (valorInput) {
+                    valorDiaria = parseFloat(valorInput.replace(/\./g, '').replace(',', '.')) || 0;
+                }
 
                 let numDiarias = 0;
                 if (checkin && checkout) {
@@ -1479,9 +1551,15 @@
                 const faltaLancar = totalGeral - totalRecebido - totalDescontos;
 
                 $('#num-diarias').text(numDiarias);
-                // Não atualizamos diaria-media ou total-diarias com 0 para não confundir visualmente,
-                // a menos que seja explicitamente calculado.
-                // Mas garantimos atualização de produtos e recebimentos:
+
+                if (valorDiaria > 0) {
+                    $('#diaria-media').text('R$ ' + valorDiaria.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2
+                    }));
+                    $('#total-diarias').text('R$ ' + totalDiarias.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 2
+                    }));
+                }
 
                 $('#total-produtos').text('R$ ' + totalProdutos.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2
@@ -1492,6 +1570,9 @@
 
                 atualizarInputRecebido(totalRecebido)
             }
+
+            // Listener para atualizar resumo quando muda valor manual
+            $('#valor_diaria').on('input', atualizarResumo);
 
             // Mostrar formulário baseado no tipo
             window.mostrarFormulario = function(tipo) {

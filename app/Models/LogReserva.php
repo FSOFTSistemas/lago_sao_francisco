@@ -25,25 +25,16 @@ class LogReserva extends Model
         'dados_novos' => 'array',
     ];
     
-    /**
-     * Relacionamento com a reserva
-     */
     public function reserva()
     {
         return $this->belongsTo(Reserva::class);
     }
     
-    /**
-     * Relacionamento com o usuário
-     */
     public function usuario()
     {
         return $this->belongsTo(User::class);
     }
     
-    /**
-     * Registra um log de criação de reserva
-     */
     public static function registrarCriacao($reserva, $usuario_id)
     {
         return self::create([
@@ -56,23 +47,22 @@ class LogReserva extends Model
     }
     
     /**
-     * Registra um log de edição de reserva
+     * Registra um log de edição de reserva.
+     * Aceita uma descrição personalizada opcional.
      */
-    public static function registrarEdicao($reserva, $usuario_id, $dadosAntigos)
+    public static function registrarEdicao($reserva, $usuario_id, $dadosAntigos, $descricao = null)
     {
         return self::create([
             'reserva_id' => $reserva->id,
             'usuario_id' => $usuario_id,
             'tipo' => 'edicao',
-            'descricao' => 'Reserva editada',
+            // Lógica: Se veio descrição, usa ela. Se não, usa o padrão.
+            'descricao' => $descricao ?? 'Reserva editada',
             'dados_antigos' => $dadosAntigos,
             'dados_novos' => $reserva->toArray(),
         ]);
     }
     
-    /**
-     * Registra um log de exclusão de reserva
-     */
     public static function registrarExclusao($reserva_id, $usuario_id, $dadosAntigos)
     {
         return self::create([
@@ -84,9 +74,6 @@ class LogReserva extends Model
         ]);
     }
     
-    /**
-     * Registra um log de adição de produto
-     */
     public static function registrarProdutoAdicionado($reserva_id, $usuario_id, $produto)
     {
         return self::create([
@@ -98,9 +85,6 @@ class LogReserva extends Model
         ]);
     }
     
-    /**
-     * Registra um log de remoção de produto
-     */
     public static function registrarProdutoRemovido($reserva_id, $usuario_id, $produto)
     {
         return self::create([
@@ -112,9 +96,6 @@ class LogReserva extends Model
         ]);
     }
     
-    /**
-     * Registra um log de adição de pagamento
-     */
     public static function registrarPagamentoAdicionado($reserva_id, $usuario_id, $pagamento)
     {
         return self::create([
@@ -126,9 +107,6 @@ class LogReserva extends Model
         ]);
     }
     
-    /**
-     * Registra um log de remoção de pagamento
-     */
     public static function registrarPagamentoRemovido($reserva_id, $usuario_id, $pagamento)
     {
         return self::create([
@@ -140,9 +118,6 @@ class LogReserva extends Model
         ]);
     }
     
-    /**
-     * Registra um log de alteração de status
-     */
     public static function registrarAlteracaoStatus($reserva, $usuario_id, $statusAntigo)
     {
         return self::create([
@@ -155,10 +130,6 @@ class LogReserva extends Model
         ]);
     }
 
-
-    /**
-     * Exclusão autorizada por supervisor: grava detalhes em dados_novos
-     */
     public static function registrarExclusaoAutorizada(
         Reserva $reserva,
         int $usuarioExecutorId,
@@ -171,7 +142,7 @@ class LogReserva extends Model
         return self::create([
             'reserva_id'   => $reserva->id,
             'usuario_id'   => $usuarioExecutorId,
-            'tipo'         => 'exclusao', // compatível com seu enum existente
+            'tipo'         => 'exclusao', 
             'descricao'    => $mensagem ?: "Reserva excluída com autorização de supervisor",
             'dados_antigos'=> $dadosAntigos,
             'dados_novos'  => [
