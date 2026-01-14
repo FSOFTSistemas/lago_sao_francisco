@@ -55,7 +55,7 @@
         .situacao-cancelado { background-color: #6A1B9A; }
         .situacao-noshow { background-color: #F48FB1; }
         
-        .mapa-container { overflow-x: auto; max-height: 100vh; overflow-y: auto; position: relative; }
+        .mapa-container { overflow-x: auto; max-height: 85vh; overflow-y: auto; position: relative; }
         .row.no-gutters>[class*="col-"] { padding-right: 0; padding-left: 0; }
 
         /* Estilo básico para o Modal React (Substituindo Bootstrap JS) */
