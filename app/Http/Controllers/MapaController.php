@@ -6,10 +6,12 @@ use App\Models\Quarto;
 use App\Models\Categoria;
 use App\Models\Reserva;
 use App\Models\Tarifa;
+use App\Models\Temporada;
 use App\Models\Hospede;
 use App\Models\PreferenciasHotel;
 use App\Models\Funcionario;
 use App\Models\User;
+use App\Models\LogReserva;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -19,7 +21,6 @@ use Illuminate\Support\Facades\Auth;
 
 class MapaController extends Controller
 {
-    // ... (métodos index e getDadosMapa permanecem iguais) ...
     public function index(Request $request)
     {
         $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
@@ -31,10 +32,9 @@ class MapaController extends Controller
     public function getDadosMapa(Request $request)
     {
         try {
-            $dataInicio = \Carbon\Carbon::parse($request->get('data_inicio', \Carbon\Carbon::now()->startOfWeek()));
-            $dataFim = \Carbon\Carbon::parse($request->get('data_fim', $dataInicio->copy()->addDays(13)));
+            $dataInicio = Carbon::parse($request->get('data_inicio', Carbon::now()->startOfWeek()));
+            $dataFim = Carbon::parse($request->get('data_fim', $dataInicio->copy()->addDays(13)));
 
-            // Gerar array de datas
             $datas = [];
             $dataAtual = $dataInicio->copy();
             while ($dataAtual <= $dataFim) {
@@ -42,11 +42,10 @@ class MapaController extends Controller
                 $dataAtual->addDay();
             }
 
-            // Mapeamento de Nomes (Funcionários e Users)
             $funcionariosMap = Funcionario::pluck('nome', 'id')->toArray();
             $usersMap = User::pluck('name', 'id')->toArray();
 
-            $quartos = \App\Models\Quarto::where('status', 1)
+            $quartos = Quarto::where('status', 1)
                 ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
                     $query->with('hospede')
@@ -59,12 +58,9 @@ class MapaController extends Controller
                 ->get();
 
             $dadosQuartos = [];
-
             foreach ($quartos as $quarto) {
                 $reservasFormatadas = [];
                 foreach ($quarto->reservas as $reserva) {
-                    
-                    // Lógica para encontrar o nome (Só vai aparecer se tiver vendedor_id salvo)
                     $nomeVendedor = null;
                     if ($reserva->vendedor_id) {
                         if (isset($funcionariosMap[$reserva->vendedor_id])) {
@@ -73,7 +69,6 @@ class MapaController extends Controller
                             $nomeVendedor = $usersMap[$reserva->vendedor_id];
                         }
                     }
-
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
                         'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
@@ -89,7 +84,6 @@ class MapaController extends Controller
                         'nomes_hospedes_secundarios' => $reserva->nomes_hospedes_secundarios
                     ];
                 }
-
                 $dadosQuartos[] = [
                     'id' => $quarto->id,
                     'nome' => $quarto->nome,
@@ -100,9 +94,7 @@ class MapaController extends Controller
                     'reservas' => $reservasFormatadas
                 ];
             }
-
             $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $quartos);
-
             return response()->json([
                 'success' => true,
                 'datas' => $datas,
@@ -142,10 +134,12 @@ class MapaController extends Controller
                 'n_adultos'     => 'nullable|integer|min:1', 
                 'n_criancas'    => 'nullable|integer|min:0',
                 'nomes_hospedes_secundarios' => 'nullable|string',
+                'valor_diaria'  => 'nullable',
+                'supervisor_id_autorizacao' => 'nullable'
             ]);
 
             if ($request->tipo === 'reserva') {
-                $quarto = \App\Models\Quarto::with('categoria')->find($request->quarto_id);
+                $quarto = Quarto::with('categoria')->find($request->quarto_id);
                 $capacidadeMaxima = $quarto->categoria ? $quarto->categoria->ocupantes : 999;
                 
                 $nAdultos = $request->input('n_adultos', 1);
@@ -160,51 +154,80 @@ class MapaController extends Controller
                 }
             }
 
-            // Cálculo Automático de Preço
             $valorDiariaFinal = 0;
             $valorTotalFinal = 0;
+            $manualRateUsed = false;
 
             if ($request->tipo === 'reserva') {
-                $quarto = \App\Models\Quarto::with('categoria.tarifa')->find($request->quarto_id);
-                $categoria = $quarto->categoria;
-                $tarifa = $categoria->tarifa;
+                $checkin = Carbon::parse($request->data_checkin);
+                $checkout = Carbon::parse($request->data_checkout);
+                $diasTotal = $checkin->diffInDays($checkout);
+                if ($diasTotal < 1) $diasTotal = 1;
 
-                if ($tarifa) {
-                    $checkin = \Carbon\Carbon::parse($request->data_checkin);
-                    $checkout = \Carbon\Carbon::parse($request->data_checkout);
-                    $periodo = \Carbon\CarbonPeriod::create($checkin, $checkout->copy()->subDay());
-
-                    $totalTarifa = 0;
-                    $quantidadeDias = 0;
-
-                    foreach ($periodo as $dia) {
-                        $campo = match ($dia->dayOfWeek) {
-                            0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab',
-                        };
-                        $valorDia = (float) ($tarifa->$campo ?? 0);
-                        $totalTarifa += $valorDia;
-                        $quantidadeDias++;
+                // 1. Valor Manual (Prioridade)
+                if ($request->filled('valor_diaria')) {
+                    $valorDiariaFinal = (float) $request->valor_diaria; 
+                    $valorTotalFinal = $valorDiariaFinal * $diasTotal;
+                    $manualRateUsed = true;
+                } else {
+                    // 2. Cálculo Automático
+                    $quarto = Quarto::with('categoria')->find($request->quarto_id);
+                    if (!$quarto || !$quarto->categoria) {
+                        return response()->json(['success' => false, 'message' => 'Quarto ou Categoria não encontrados.'], 422);
                     }
 
-                    $mediaTarifa = $quantidadeDias > 0 ? $totalTarifa / $quantidadeDias : 0;
-                    
-                    $padraoAdultos = $tarifa->padrao_adultos ?? 0;
-                    $padraoCriancas = $tarifa->padrao_criancas ?? 0;
-                    $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
-                    $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
+                    // Verifica Temporada
+                    $temporada = Temporada::where('data_inicio', '<=', $checkin)
+                        ->where('data_fim', '>=', $checkin)
+                        ->first();
+                    $isAlta = $temporada ? true : false;
 
-                    $nAdultosInput = $request->input('n_adultos', 1);
-                    $nCriancasInput = $request->input('n_criancas', 0);
-
-                    $extrasAdultos = max(0, $nAdultosInput - $padraoAdultos);
-                    $extrasCriancas = max(0, $nCriancasInput - $padraoCriancas);
-
-                    $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+                    // Busca Tarifa (Alta ou Padrão)
+                    $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', $isAlta);
+                    if ($isAlta) {
+                        $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
+                    } else {
+                        $queryTarifa->where('alta_temporada', false);
+                    }
                     
-                    $diasTotal = $checkin->diffInDays($checkout);
-                    if ($diasTotal < 1) $diasTotal = 1;
-                    
-                    $valorTotalFinal = $valorDiariaFinal * $diasTotal;
+                    $tarifa = $queryTarifa->first();
+
+                    // Fallback
+                    if (!$tarifa) {
+                        $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
+                    }
+
+                    if ($tarifa) {
+                        $periodo = CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+                        $totalTarifa = 0;
+                        $quantidadeDias = 0;
+
+                        foreach ($periodo as $dia) {
+                            $campo = match ($dia->dayOfWeek) {
+                                0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab',
+                            };
+                            $valorDia = (float) ($tarifa->$campo ?? 0);
+                            $totalTarifa += $valorDia;
+                            $quantidadeDias++;
+                        }
+
+                        $mediaTarifa = $quantidadeDias > 0 ? $totalTarifa / $quantidadeDias : 0;
+                        $padraoAdultos = $tarifa->padrao_adultos ?? 0;
+                        $padraoCriancas = $tarifa->padrao_criancas ?? 0;
+                        $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
+                        $adicionalCrianca = (float) ($tarifa->adicional_crianca ?? 0);
+
+                        $nAdultosInput = $request->input('n_adultos', 1);
+                        $nCriancasInput = $request->input('n_criancas', 0);
+
+                        $extrasAdultos = max(0, $nAdultosInput - $padraoAdultos);
+                        $extrasCriancas = max(0, $nCriancasInput - $padraoCriancas);
+
+                        $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
+                        $valorTotalFinal = $valorDiariaFinal * $diasTotal;
+                    } else {
+                        return response()->json(['success' => false, 'message' => 'Nenhuma tarifa cadastrada para esta categoria/data.'], 422);
+                    }
                 }
             }
 
@@ -218,20 +241,16 @@ class MapaController extends Controller
                 'n_criancas'    => $request->input('n_criancas', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
                 'observacoes'   => $request->observacoes,
-                // 'vendedor_id' removido daqui para não salvar em reservas comuns
             ];
 
             if ($request->tipo === 'bloqueio') {
-                $hospedeBloqueado = \App\Models\Hospede::where('nome', 'Bloqueado')->first();
-                if (!$hospedeBloqueado) {
-                    return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
-                }
+                $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
+                if (!$hospedeBloqueado) return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
+                
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
                 $dadosReserva['valor_diaria'] = 0;
                 $dadosReserva['valor_total'] = 0;
-                
-                // ADICIONADO AQUI: Salva o vendedor_id APENAS se for bloqueio
                 $dadosReserva['vendedor_id'] = Auth::id(); 
             } else {
                 $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
@@ -239,7 +258,22 @@ class MapaController extends Controller
                 $dadosReserva['hospede_id'] = $request->hospede_id;
             }
 
-            $reserva = \App\Models\Reserva::create($dadosReserva);
+            $reserva = Reserva::create($dadosReserva);
+
+            if ($manualRateUsed && $request->filled('supervisor_id_autorizacao')) {
+                $supervisor = Funcionario::find($request->supervisor_id_autorizacao);
+                $nomeSupervisor = $supervisor ? $supervisor->nome : 'Desconhecido';
+                
+                LogReserva::create([
+                    'reserva_id' => $reserva->id,
+                    'usuario_id' => Auth::id(),
+                    'tipo' => 'criacao',
+                    'descricao' => "Reserva criada via Mapa com valor manual de R$ " . number_format($valorDiariaFinal, 2, ',', '.') . ". Autorizado por: {$nomeSupervisor}.",
+                    'dados_novos' => $reserva->toArray()
+                ]);
+            } else {
+                LogReserva::registrarCriacao($reserva, Auth::id());
+            }
 
             return response()->json([
                 'success' => true,
@@ -248,8 +282,42 @@ class MapaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Erro criar reserva rápida', ['erro' => $e->getMessage()]);
+            Log::error('Erro criar reserva rápida', ['erro' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Cadastra um hóspede rapidamente (apenas nome) via modal do Mapa.
+     */
+    public function salvarHospedeRapido(Request $request)
+    {
+        try {
+            // Valida se o nome foi preenchido
+            $request->validate([
+                'nome' => 'required|string|max:255',
+            ]);
+
+            // Cria o hóspede apenas com o nome
+            // (Certifique-se que seu banco permite email/telefone nulos ou adicione valores padrão aqui)
+            $hospede = \App\Models\Hospede::create([
+                'nome' => $request->input('nome'),
+                // 'email' => null, // Exemplo se precisar forçar null
+                // 'telefone' => null,
+            ]);
+
+            // Retorna sucesso e o objeto criado para o React atualizar a lista
+            return response()->json([
+                'success' => true,
+                'hospede' => $hospede
+            ]);
+
+        } catch (\Exception $e) {
+            // Retorna erro para o SweetAlert exibir
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao cadastrar hóspede: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

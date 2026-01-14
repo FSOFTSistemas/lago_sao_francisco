@@ -55,6 +55,13 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null);
     const [loadingAction, setLoadingAction] = useState(false); 
 
+    // Estado local para controle do desbloqueio de valor
+    const [isDiariaUnlocked, setIsDiariaUnlocked] = useState(false);
+
+    //cadastro rápido de hóspede
+    const [showModalNovoHospede, setShowModalNovoHospede] = useState(false);
+    const [novoHospedeNome, setNovoHospedeNome] = useState('');
+
     // Forms
     const [formReserva, setFormReserva] = useState({
         hospede_id: '', 
@@ -63,8 +70,9 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         situacao: 'pre-reserva',
         n_adultos: 1, 
         n_criancas: 0, 
-        // REMOVIDO: valor_diaria (calculado no backend agora)
-        nomes_hospedes_secundarios: '' 
+        nomes_hospedes_secundarios: '',
+        valor_diaria: '',
+        supervisor_id_autorizacao: ''
     });
 
     const [formBloqueio, setFormBloqueio] = useState({
@@ -102,6 +110,16 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         }
     };
 
+    // --- OPÇÕES PARA SELECTS ---
+    const getOptionsHospedes = () => {
+        return hospedes
+            .filter(h => h.nome !== 'Bloqueado')
+            .map(h => ({ 
+                value: h.id, 
+                label: h.nome
+            }));
+    };
+
     const getOptionsQuartos = () => {
         if (!dadosMapa || !dadosMapa.quartos) return [];
         return dadosMapa.quartos.map(q => ({ value: q.id, label: `${q.nome} (${q.categoria_nome})` }));
@@ -111,6 +129,94 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         if (!reserva || reserva.situacao !== 'reserva') return false;
         const hoje = new Date().toISOString().split('T')[0];
         return reserva.data_checkin <= hoje;
+    };
+
+    const handleSalvarNovoHospede = async (e) => {
+        e.preventDefault();
+        if (!novoHospedeNome.trim()) {
+            Swal.fire('Atenção', 'Informe o nome do hóspede.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await axios.post('/mapa/hospede-rapido', { 
+                nome: novoHospedeNome 
+            });
+
+            if (response.data.success) {
+                const novoHospede = response.data.hospede;
+                
+                // 1. Adiciona à lista de hóspedes no estado
+                setHospedes(prev => [...prev, novoHospede]);
+                
+                // 2. Seleciona automaticamente no formulário de reserva
+                setFormReserva(prev => ({ ...prev, hospede_id: novoHospede.id }));
+                
+                // 3. Limpa e fecha o modal
+                setNovoHospedeNome('');
+                setShowModalNovoHospede(false);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Cadastrado!',
+                    text: 'Hóspede cadastrado e selecionado.',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire('Erro', response.data.message, 'error');
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Erro', 'Erro ao cadastrar hóspede.', 'error');
+        }
+    };
+
+    // --- Lógica de Desbloqueio da Diária ---
+    const handleUnlockDiaria = async () => {
+        const { value: password } = await Swal.fire({
+            title: 'Autorização de Supervisor',
+            text: 'Digite a senha para alterar o valor manualmente',
+            input: 'password',
+            inputPlaceholder: 'Senha do supervisor',
+            inputAttributes: {
+                autocapitalize: 'off',
+                autocomplete: 'new-password',
+                name: 'pwd_sup_mapa_' + Math.random()
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Liberar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (password) {
+            try {
+                const response = await axios.post('/validar-supervisor', {
+                    senha: password
+                });
+
+                if (response.data.success) {
+                    setIsDiariaUnlocked(true);
+                    setFormReserva(prev => ({
+                        ...prev,
+                        supervisor_id_autorizacao: response.data.supervisor_id
+                    }));
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Liberado',
+                        text: 'Você pode editar o valor da diária agora.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Erro', 'Senha incorreta.', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Erro', 'Erro ao validar senha.', 'error');
+            }
+        }
     };
 
     // --- RENDERIZAÇÃO VISUAL ---
@@ -290,19 +396,25 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         
         const checkoutString = end.toISOString().split('T')[0];
         
-        // Validação Hóspede
         if (!formReserva.hospede_id) {
             Swal.fire('Atenção', 'Selecione um hóspede.', 'warning');
             return;
         }
 
         try {
-            // Removido valor_diaria do envio, pois o backend calcula
+            // Formatar valor da diária se existir
+            let valorDiariaFormatado = null;
+            if (formReserva.valor_diaria) {
+                valorDiariaFormatado = formReserva.valor_diaria.replace(/\./g, '').replace(',', '.');
+            }
+
             const res = await axios.post('/mapa/criar-reserva', { 
                 ...formReserva, 
                 data_checkout: checkoutString,
                 quarto_id: celulaSelecionada.quartoId, 
-                tipo: 'reserva' 
+                tipo: 'reserva',
+                valor_diaria: valorDiariaFormatado,
+                supervisor_id_autorizacao: formReserva.supervisor_id_autorizacao
             });
             if (res.data.success) { 
                 Swal.fire('Sucesso', 'Reserva criada com sucesso!', 'success');
@@ -312,7 +424,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 Swal.fire('Erro', res.data.message, 'error');
             }
         } catch (e) { 
-            Swal.fire('Erro', 'Ocorreu um erro ao tentar salvar.', 'error');
+            Swal.fire('Erro', e.response?.data?.message || 'Ocorreu um erro ao tentar salvar.', 'error');
         }
     };
 
@@ -334,7 +446,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             quarto_id: qid, 
             data_checkin: formBloqueio.data_checkin, 
             data_checkout: checkoutString,
-            observacoes: formBloqueio.observacoes, // Aqui enviamos a observação
+            observacoes: formBloqueio.observacoes, 
             situacao: 'bloqueado', 
             n_adultos: 1, 
             n_criancas: 0, 
@@ -355,7 +467,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const abrirFormularioReserva = () => {
         setShowModalAcoes(false);
         const checkin = celulaSelecionada.data;
-        // Checkin selecionado, checkout igual (o usuário muda)
         setFormReserva({ 
             ...formReserva, 
             hospede_id: '', 
@@ -363,8 +474,11 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
             data_checkout: checkin, 
             n_adultos: 1,
             n_criancas: 0,
-            nomes_hospedes_secundarios: '' 
+            nomes_hospedes_secundarios: '',
+            valor_diaria: '',
+            supervisor_id_autorizacao: ''
         });
+        setIsDiariaUnlocked(false);
         setShowModalReserva(true);
     };
 
@@ -402,7 +516,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 .situacao-noshow { background-color: #e83e8c; }
             `}</style>
 
-            {/* HEADER */}
+            {/* HEADER e MAPA (Mantidos iguais) */}
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <h1>Mapa de Reservas</h1>
                 <div className="d-flex align-items-center">
@@ -414,7 +528,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
             {loading && <div className="text-center p-4"><i className="fas fa-spinner fa-spin"></i> Carregando...</div>}
 
-            {/* MAPA */}
             {!loading && dadosMapa && (
                 <div className="card">
                     <div className="card-body p-0">
@@ -453,7 +566,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 </div>
             )}
             
-            {/* MODAL DETALHES */}
+            {/* MODAL DETALHES (Mantido) */}
             <SimpleModal show={showModalDetalhes} onClose={() => setShowModalDetalhes(false)} title="Detalhes da Reserva">
                 {reservaDetalhes && (
                     <div>
@@ -461,72 +574,31 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             <strong>Reserva #{reservaDetalhes.id}</strong>
                             <span className={`badge situacao-${reservaDetalhes.situacao} text-uppercase px-3 py-2`}>{reservaDetalhes.situacao}</span>
                         </div>
-                        
                         <h5 className="font-weight-bold mb-1">{reservaDetalhes.hospede_nome}</h5>
                         
-                        {/* Link do WhatsApp */}
                         {reservaDetalhes.hospede_telefone && (
                             <div className="mb-2">
-                                <a 
-                                    href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, '')}`} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-success font-weight-bold"
-                                    style={{ textDecoration: 'none' }}
-                                >
-                                    <i className="fab fa-whatsapp mr-1"></i> 
-                                    {reservaDetalhes.hospede_telefone}
+                                <a href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-success font-weight-bold" style={{ textDecoration: 'none' }}>
+                                    <i className="fab fa-whatsapp mr-1"></i> {reservaDetalhes.hospede_telefone}
                                 </a>
                             </div>
                         )}
-
-                        {/* NOVO: Exibir Vendedor */}
                         {reservaDetalhes.vendedor_nome && (
-                            <div className="mb-3 text-muted small">
-                                <i className="fas fa-user-tag mr-1"></i> Vendedor: <strong>{reservaDetalhes.vendedor_nome}</strong>
-                            </div>
+                            <div className="mb-3 text-muted small"><i className="fas fa-user-tag mr-1"></i> Vendedor: <strong>{reservaDetalhes.vendedor_nome}</strong></div>
                         )}
-
                         <div className="row mb-3 mt-3">
                             <div className="col-6"><small className="text-muted">Check-in</small><div>{formatDate(reservaDetalhes.data_checkin)}</div></div>
                             <div className="col-6"><small className="text-muted">Check-out</small><div>{formatDate(reservaDetalhes.data_checkout)}</div></div>
                         </div>
-
-                        {/* HÓSPEDES */}
                         <div className="row mb-3">
-                             <div className="col-12">
-                                 <label className="text-muted mb-0 small">Hóspedes</label>
-                                 <div className="font-weight-bold">
-                                     {reservaDetalhes.n_adultos} Adulto(s)
-                                     {reservaDetalhes.n_criancas > 0 ? ` e ${reservaDetalhes.n_criancas} Criança(s)` : ''}
-                                 </div>
-                             </div>
+                             <div className="col-12"><label className="text-muted mb-0 small">Hóspedes</label><div className="font-weight-bold">{reservaDetalhes.n_adultos} Adulto(s) {reservaDetalhes.n_criancas > 0 ? ` e ${reservaDetalhes.n_criancas} Criança(s)` : ''}</div></div>
                         </div>
-
-                        {/* HÓSPEDES SECUNDÁRIOS */}
                         {reservaDetalhes.nomes_hospedes_secundarios && (
-                            <div className="row mb-3">
-                                <div className="col-12">
-                                    <label className="text-muted mb-0 small">Hóspedes Secundários</label>
-                                    <div className="font-weight-bold text-dark">
-                                        {reservaDetalhes.nomes_hospedes_secundarios}
-                                    </div>
-                                </div>
-                            </div>
+                            <div className="row mb-3"><div className="col-12"><label className="text-muted mb-0 small">Hóspedes Secundários</label><div className="font-weight-bold text-dark">{reservaDetalhes.nomes_hospedes_secundarios}</div></div></div>
                         )}
-
-                        {/* OBSERVAÇÕES */}
                         {reservaDetalhes.observacoes && (
-                            <div className="row mb-3">
-                                <div className="col-12">
-                                    <label className="text-muted mb-0 small">Observações</label>
-                                    <div className="p-2 rounded border bg-white" style={{ fontSize: '0.9rem', fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>
-                                        {reservaDetalhes.observacoes}
-                                    </div>
-                                </div>
-                            </div>
+                            <div className="row mb-3"><div className="col-12"><label className="text-muted mb-0 small">Observações</label><div className="p-2 rounded border bg-white" style={{ fontSize: '0.9rem', fontStyle: 'italic', whiteSpace: 'pre-wrap' }}>{reservaDetalhes.observacoes}</div></div></div>
                         )}
-
                         {reservaDetalhes.situacao !== 'bloqueado' && (
                             <div className="bg-light p-3 rounded mb-3 border">
                                 <div className="row">
@@ -539,9 +611,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         )}
                         <div className="border-top pt-3 mt-2 text-right">
                              {podeFazerCheckin(reservaDetalhes) && (
-                                <button type="button" className="btn btn-success mr-2" onClick={handleRealizarCheckin} disabled={loadingAction}>
-                                    {loadingAction ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-check"></i>} Fazer Check-in
-                                </button>
+                                <button type="button" className="btn btn-success mr-2" onClick={handleRealizarCheckin} disabled={loadingAction}>{loadingAction ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-check"></i>} Fazer Check-in</button>
                              )}
                              <button className="btn btn-secondary mr-2" onClick={() => setShowModalDetalhes(false)}>Fechar</button>
                              <a href={`/reserva/${reservaDetalhes.id}/edit`} className="btn btn-primary"><i className="fas fa-edit"></i> Editar</a>
@@ -564,19 +634,136 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 </form>
             </SimpleModal>
 
+            {/* MODAL NOVA RESERVA */}
             <SimpleModal show={showModalReserva} onClose={() => setShowModalReserva(false)} title="Nova Reserva">
                 <form onSubmit={handleSalvarReserva}>
-                    <select className="form-control mb-2" value={formReserva.hospede_id} onChange={e=>setFormReserva({...formReserva, hospede_id: e.target.value})}>
-                        <option value="">Hóspede</option>{hospedes.map(h => h.nome!=='Bloqueado' && <option key={h.id} value={h.id}>{h.nome}</option>)}
-                    </select>
-                    <div className="row mb-2"><div className="col-6"><input type="date" className="form-control" value={formReserva.data_checkin} onChange={e=>setFormReserva({...formReserva, data_checkin: e.target.value})}/></div><div className="col-6"><input type="date" className="form-control" value={formReserva.data_checkout} onChange={e=>setFormReserva({...formReserva, data_checkout: e.target.value})}/></div></div>
-                    <select className="form-control mb-2" value={formReserva.situacao} onChange={e=>setFormReserva({...formReserva, situacao: e.target.value})}><option value="pre-reserva">Pré-reserva</option><option value="reserva">Reserva</option></select>
                     
-                    <div className="row mb-2">
-                        <div className="col-6"><label className="small mb-1">Adultos</label><input type="number" className="form-control" min="1" value={formReserva.n_adultos} onChange={e => setFormReserva({...formReserva, n_adultos: e.target.value})} /></div>
-                        <div className="col-6"><label className="small mb-1">Crianças</label><input type="number" className="form-control" min="0" value={formReserva.n_criancas} onChange={e => setFormReserva({...formReserva, n_criancas: e.target.value})} /></div>
+                    {/* HÓSPEDE COM BUSCA E BOTÃO DE ADICIONAR RÁPIDO */}
+                    <div className="form-group mb-2">
+                        <label className="small mb-1 font-weight-bold">Hóspede</label>
+                        <div className="d-flex">
+                            <div className="flex-grow-1">
+                                <Select
+                                    options={getOptionsHospedes()}
+                                    placeholder="Buscar hóspede..."
+                                    value={getOptionsHospedes().find(op => op.value === formReserva.hospede_id)}
+                                    onChange={op => setFormReserva({ ...formReserva, hospede_id: op ? op.value : '' })}
+                                    isClearable
+                                    isSearchable
+                                    noOptionsMessage={() => "Nenhum hóspede encontrado"}
+                                    styles={{ 
+                                        control: (base) => ({ 
+                                            ...base, 
+                                            minHeight: '38px', 
+                                            borderTopRightRadius: 0, 
+                                            borderBottomRightRadius: 0, 
+                                            borderColor: '#ced4da' 
+                                        }) 
+                                    }}
+                                />
+                            </div>
+                            <button 
+                                type="button" 
+                                className="btn btn-primary" 
+                                onClick={() => setShowModalNovoHospede(true)}
+                                style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                                title="Cadastrar Novo Hóspede"
+                            >
+                                <i className="fas fa-user-plus"></i>
+                            </button>
+                        </div>
                     </div>
 
+                    {/* DATAS */}
+                    <div className="row mb-2">
+                        <div className="col-6">
+                            <label className="small mb-1">Check-in</label>
+                            <input 
+                                type="date" 
+                                className="form-control" 
+                                value={formReserva.data_checkin} 
+                                onChange={e => setFormReserva({...formReserva, data_checkin: e.target.value})}
+                            />
+                        </div>
+                        <div className="col-6">
+                            <label className="small mb-1">Check-out</label>
+                            <input 
+                                type="date" 
+                                className="form-control" 
+                                value={formReserva.data_checkout} 
+                                onChange={e => setFormReserva({...formReserva, data_checkout: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    {/* SITUAÇÃO */}
+                    <div className="form-group mb-2">
+                        <label className="small mb-1">Situação</label>
+                        <select 
+                            className="form-control" 
+                            value={formReserva.situacao} 
+                            onChange={e => setFormReserva({...formReserva, situacao: e.target.value})}
+                        >
+                            <option value="pre-reserva">Pré-reserva</option>
+                            <option value="reserva">Reserva</option>
+                        </select>
+                    </div>
+
+                    {/* QUANTIDADE DE PESSOAS */}
+                    <div className="row mb-2">
+                        <div className="col-6">
+                            <label className="small mb-1">Adultos</label>
+                            <input 
+                                type="number" 
+                                className="form-control" 
+                                min="1" 
+                                value={formReserva.n_adultos} 
+                                onChange={e => setFormReserva({...formReserva, n_adultos: e.target.value})} 
+                            />
+                        </div>
+                        <div className="col-6">
+                            <label className="small mb-1">Crianças</label>
+                            <input 
+                                type="number" 
+                                className="form-control" 
+                                min="0" 
+                                value={formReserva.n_criancas} 
+                                onChange={e => setFormReserva({...formReserva, n_criancas: e.target.value})} 
+                            />
+                        </div>
+                    </div>
+
+                    {/* VALOR DA DIÁRIA (MANUAL COM TRAVA DE SUPERVISOR) */}
+                    <div className="form-group">
+                        <label className="small mb-1">Valor da Diária (Manual)</label>
+                        <div className="input-group">
+                            <div className="input-group-prepend">
+                                <span className="input-group-text">R$</span>
+                            </div>
+                            <input 
+                                type="text" 
+                                className="form-control" 
+                                placeholder="Automático"
+                                readOnly={!isDiariaUnlocked}
+                                value={formReserva.valor_diaria}
+                                onChange={e => setFormReserva({...formReserva, valor_diaria: e.target.value})}
+                            />
+                            <div className="input-group-append">
+                                <button 
+                                    type="button" 
+                                    className={`btn ${isDiariaUnlocked ? 'btn-success' : 'btn-warning'}`} 
+                                    onClick={handleUnlockDiaria}
+                                    disabled={isDiariaUnlocked}
+                                    title="Desbloquear valor manual"
+                                >
+                                    <i className={`fas ${isDiariaUnlocked ? 'fa-lock-open' : 'fa-lock'}`}></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small className="text-muted" style={{fontSize: '0.75rem'}}>Se vazio, o cálculo será automático pelo tarifário.</small>
+                    </div>
+
+                    {/* HÓSPEDES SECUNDÁRIOS */}
                     <div className="form-group">
                         <label className="small mb-1">Hóspedes Secundários (Nomes)</label>
                         <textarea 
@@ -588,7 +775,30 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         ></textarea>
                     </div>
                     
-                    <div className="text-right mt-3"><button type="submit" className="btn btn-primary">Salvar</button></div>
+                    <div className="text-right mt-3">
+                        <button type="submit" className="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </SimpleModal>
+
+            {/* --- NOVO: MODAL DE CADASTRO RÁPIDO DE HÓSPEDE --- */}
+            <SimpleModal show={showModalNovoHospede} onClose={() => setShowModalNovoHospede(false)} title="Novo Hóspede (Rápido)" size="sm">
+                <form onSubmit={handleSalvarNovoHospede}>
+                    <div className="form-group">
+                        <label className="font-weight-bold">Nome Completo</label>
+                        <input 
+                            type="text" 
+                            className="form-control" 
+                            value={novoHospedeNome} 
+                            onChange={e => setNovoHospedeNome(e.target.value)}
+                            placeholder="Digite o nome..."
+                            autoFocus
+                        />
+                    </div>
+                    <div className="d-flex justify-content-end gap-2 mt-3">
+                        <button type="button" className="btn btn-secondary mr-2" onClick={() => setShowModalNovoHospede(false)}>Cancelar</button>
+                        <button type="submit" className="btn btn-success">Salvar</button>
+                    </div>
                 </form>
             </SimpleModal>
         </div>

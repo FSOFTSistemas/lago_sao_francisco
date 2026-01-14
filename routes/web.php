@@ -56,6 +56,7 @@ use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\RelatorioProdutosController;
 use App\Http\Controllers\ReservaItemController;
 use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\TemporadaController;
 use App\Http\Controllers\TransacaoController;
 use App\Http\Controllers\UsuarioSenhaController;
 use App\Http\Controllers\VendedorController;
@@ -321,3 +322,10 @@ Route::get('/relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaContr
 
 Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [App\Http\Controllers\ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
 Route::post('/mapa/mover-reserva', [ReservaController::class, 'moverReserva']);
+Route::post('/validar-supervisor', [App\Http\Controllers\ReservaController::class, 'validarSupervisor'])->name('validar.supervisor');
+
+Route::post('/temporadas', [TemporadaController::class, 'store'])->name('temporadas.store');
+Route::put('/temporadas/{id}', [TemporadaController::class, 'update'])->name('temporadas.update');
+Route::delete('/temporadas/{id}', [TemporadaController::class, 'destroy'])->name('temporadas.destroy');
+
+Route::post('/mapa/hospede-rapido', [App\Http\Controllers\MapaController::class, 'salvarHospedeRapido'])->name('mapa.hospede_rapido');
