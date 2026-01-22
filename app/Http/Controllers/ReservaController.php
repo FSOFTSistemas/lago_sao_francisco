@@ -955,18 +955,25 @@ class ReservaController extends Controller
         return $reservas;
     }
 
-    private function calcularDadosVendas($dataInicio, $dataFim)
+   private function calcularDadosVendas($dataInicio, $dataFim)
     {
         $vendedores = Funcionario::all();
 
         $relatorio = $vendedores->map(function ($vendedor) use ($dataInicio, $dataFim) {
-            $totalReservas = Reserva::where('vendedor_id', $vendedor->id)
-                ->whereBetween('created_at', [$dataInicio . ' 00:00:00', $dataFim . ' 23:59:59'])
-                ->where('situacao', '!=', 'cancelado') 
-                ->sum('valor_total');
+            
+            // Lógica ajustada: Soma o valor das TRANSAÇÕES de pagamento (caixa realizado)
+            // Filtra pela data_pagamento e pelo vendedor da reserva associada
+            $totalReservas = Transacao::where('tipo', 'pagamento')
+                ->where('status', true) // Garante que a transação é válida
+                ->whereBetween('data_pagamento', [$dataInicio, $dataFim])
+                ->whereHas('reserva', function ($query) use ($vendedor) {
+                    $query->where('vendedor_id', $vendedor->id);
+                })
+                ->sum('valor');
 
             $totalDayUse = 0;
             if (class_exists('App\Models\DayUse')) {
+                // Mantém a lógica do Day Use conforme solicitado (baseado na criação)
                 $totalDayUse = \App\Models\DayUse::where('vendedor_id', $vendedor->id)
                     ->whereBetween('created_at', [$dataInicio . ' 00:00:00', $dataFim . ' 23:59:59'])
                     ->sum('total');
@@ -980,6 +987,7 @@ class ReservaController extends Controller
             ];
         });
 
+        // Filtra para exibir apenas quem teve vendas e ordena pelo maior valor
         return $relatorio->filter(function ($item) {
             return $item['total_geral'] > 0;
         })->sortByDesc('total_geral');
