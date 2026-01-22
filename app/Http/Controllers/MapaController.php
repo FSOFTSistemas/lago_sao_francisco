@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Quarto;
 use App\Models\Categoria;
 use App\Models\Reserva;
+use App\Models\ReservaPet; // Importante
 use App\Models\Tarifa;
 use App\Models\Temporada;
 use App\Models\Hospede;
-use App\Models\PreferenciasHotel;
+use App\Models\PreferenciasHotel; // Importante
 use App\Models\Funcionario;
 use App\Models\User;
 use App\Models\LogReserva;
@@ -29,7 +30,7 @@ class MapaController extends Controller
         return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
     }
 
-    public function getDadosMapa(Request $request)
+   public function getDadosMapa(Request $request)
     {
         try {
             $dataInicio = Carbon::parse($request->get('data_inicio', Carbon::now()->startOfWeek()));
@@ -78,6 +79,7 @@ class MapaController extends Controller
                         'data_checkout' => $reserva->data_checkout,
                         'situacao' => $reserva->situacao,
                         'valor_diaria' => $reserva->valor_diaria,
+                        'valor_total' => $reserva->valor_total, // <--- ADICIONADO AQUI
                         'n_adultos' => $reserva->n_adultos,
                         'n_criancas' => $reserva->n_criancas,
                         'observacoes' => $reserva->observacoes,
@@ -133,6 +135,10 @@ class MapaController extends Controller
                 'tipo'          => 'required|in:reserva,bloqueio',
                 'n_adultos'     => 'nullable|integer|min:1', 
                 'n_criancas'    => 'nullable|integer|min:0',
+                'n_criancas_nao_pagantes' => 'nullable|integer|min:0', // Validar novo campo
+                'qtd_pet_pequeno' => 'nullable|integer|min:0',
+                'qtd_pet_medio'   => 'nullable|integer|min:0',
+                'qtd_pet_grande'  => 'nullable|integer|min:0',
                 'nomes_hospedes_secundarios' => 'nullable|string',
                 'valor_diaria'  => 'nullable',
                 'supervisor_id_autorizacao' => 'nullable'
@@ -157,6 +163,11 @@ class MapaController extends Controller
             $valorDiariaFinal = 0;
             $valorTotalFinal = 0;
             $manualRateUsed = false;
+            $diasTotal = 0;
+            
+            // Variáveis para Pets
+            $petsParaSalvar = [];
+            $totalValorPets = 0;
 
             if ($request->tipo === 'reserva') {
                 $checkin = Carbon::parse($request->data_checkin);
@@ -164,25 +175,22 @@ class MapaController extends Controller
                 $diasTotal = $checkin->diffInDays($checkout);
                 if ($diasTotal < 1) $diasTotal = 1;
 
-                // 1. Valor Manual (Prioridade)
+                // 1. Valor Base (Manual)
                 if ($request->filled('valor_diaria')) {
                     $valorDiariaFinal = (float) $request->valor_diaria; 
-                    $valorTotalFinal = $valorDiariaFinal * $diasTotal;
                     $manualRateUsed = true;
                 } else {
-                    // 2. Cálculo Automático
+                    // 2. Cálculo Automático (Tarifário)
                     $quarto = Quarto::with('categoria')->find($request->quarto_id);
                     if (!$quarto || !$quarto->categoria) {
                         return response()->json(['success' => false, 'message' => 'Quarto ou Categoria não encontrados.'], 422);
                     }
 
-                    // Verifica Temporada
                     $temporada = Temporada::where('data_inicio', '<=', $checkin)
                         ->where('data_fim', '>=', $checkin)
                         ->first();
                     $isAlta = $temporada ? true : false;
 
-                    // Busca Tarifa (Alta ou Padrão)
                     $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', $isAlta);
                     if ($isAlta) {
                         $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
@@ -192,7 +200,6 @@ class MapaController extends Controller
                     
                     $tarifa = $queryTarifa->first();
 
-                    // Fallback
                     if (!$tarifa) {
                         $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
                     }
@@ -224,11 +231,36 @@ class MapaController extends Controller
                         $extrasCriancas = max(0, $nCriancasInput - $padraoCriancas);
 
                         $valorDiariaFinal = $mediaTarifa + ($extrasAdultos * $adicionalAdulto) + ($extrasCriancas * $adicionalCrianca);
-                        $valorTotalFinal = $valorDiariaFinal * $diasTotal;
                     } else {
-                        return response()->json(['success' => false, 'message' => 'Nenhuma tarifa cadastrada para esta categoria/data.'], 422);
+                        return response()->json(['success' => false, 'message' => 'Nenhuma tarifa cadastrada para esta categoria.'], 422);
                     }
                 }
+
+                // --- CÁLCULO DE PETS ---
+                // Importante: O valor dos pets é sempre SOMADO ao total, seja manual ou automático
+                $preferencias = PreferenciasHotel::first();
+                $tiposPet = ['pequeno', 'medio', 'grande'];
+                
+                foreach ($tiposPet as $tamanho) {
+                    $qtd = (int) $request->input("qtd_pet_{$tamanho}", 0);
+                    if ($qtd > 0) {
+                        $campoValor = "valor_pet_{$tamanho}";
+                        $valorUnitario = $preferencias->$campoValor ?? 0;
+                        
+                        // Custo = Qtd * Valor * Dias
+                        $custoPet = ($qtd * $valorUnitario * $diasTotal);
+                        $totalValorPets += $custoPet;
+                        
+                        $petsParaSalvar[] = [
+                            'tamanho' => $tamanho,
+                            'quantidade' => $qtd,
+                            'valor_unitario' => $valorUnitario
+                        ];
+                    }
+                }
+
+                // TOTAL FINAL = (Valor Diária * Dias) + Total Pets
+                $valorTotalFinal = ($valorDiariaFinal * $diasTotal) + $totalValorPets;
             }
 
             $dadosReserva = [
@@ -239,6 +271,7 @@ class MapaController extends Controller
                 'valor_total'   => $valorTotalFinal,
                 'n_adultos'     => $request->input('n_adultos', 1), 
                 'n_criancas'    => $request->input('n_criancas', 0),
+                'n_criancas_nao_pagantes' => $request->input('n_criancas_nao_pagantes', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
                 'observacoes'   => $request->observacoes,
             ];
@@ -259,6 +292,18 @@ class MapaController extends Controller
             }
 
             $reserva = Reserva::create($dadosReserva);
+
+            // --- SALVAR PETS NA TABELA ---
+            if (!empty($petsParaSalvar)) {
+                foreach ($petsParaSalvar as $pet) {
+                    ReservaPet::create([
+                        'reserva_id' => $reserva->id,
+                        'tamanho' => $pet['tamanho'],
+                        'quantidade' => $pet['quantidade'],
+                        'valor_unitario' => $pet['valor_unitario']
+                    ]);
+                }
+            }
 
             if ($manualRateUsed && $request->filled('supervisor_id_autorizacao')) {
                 $supervisor = Funcionario::find($request->supervisor_id_autorizacao);
@@ -287,33 +332,23 @@ class MapaController extends Controller
         }
     }
 
-    /**
-     * Cadastra um hóspede rapidamente (apenas nome) via modal do Mapa.
-     */
     public function salvarHospedeRapido(Request $request)
     {
         try {
-            // Valida se o nome foi preenchido
             $request->validate([
                 'nome' => 'required|string|max:255',
             ]);
 
-            // Cria o hóspede apenas com o nome
-            // (Certifique-se que seu banco permite email/telefone nulos ou adicione valores padrão aqui)
-            $hospede = \App\Models\Hospede::create([
+            $hospede = Hospede::create([
                 'nome' => $request->input('nome'),
-                // 'email' => null, // Exemplo se precisar forçar null
-                // 'telefone' => null,
             ]);
 
-            // Retorna sucesso e o objeto criado para o React atualizar a lista
             return response()->json([
                 'success' => true,
                 'hospede' => $hospede
             ]);
 
         } catch (\Exception $e) {
-            // Retorna erro para o SweetAlert exibir
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao cadastrar hóspede: ' . $e->getMessage()

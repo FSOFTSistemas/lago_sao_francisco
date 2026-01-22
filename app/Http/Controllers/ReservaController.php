@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Mail\VoucherReservaEmail;
+use App\Models\ReservaPet;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -34,7 +35,7 @@ class ReservaController extends Controller
     public function index(Request $request)
     {
         $situacao = $request->input('situacao', 'todos');
-        $query = Reserva::with(['quarto', 'hospede'])->latest();
+        $query = Reserva::with(['quarto', 'hospede'])->orderBy('id', 'desc');
         if ($situacao !== 'todos') $query->where('situacao', $situacao);
         $reservas = $query->get(); 
         return view('reserva.index', compact('reservas', 'situacao'));
@@ -66,8 +67,10 @@ class ReservaController extends Controller
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
         $canaisVenda = $this->canaisVenda;
         $vendedores = Funcionario::all();
+        
+        $preferencias = PreferenciasHotel::first();
 
-        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda', 'vendedores'));
+        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda', 'vendedores', 'preferencias'));
     }
 
     public function validarSupervisor(Request $request)
@@ -101,12 +104,12 @@ class ReservaController extends Controller
         return response()->json(['success' => false]);
     }
 
-    public function store(Request $request)
+   public function store(Request $request)
     {
         try {
             $validatedData = $request->validate([
                 'quarto_id' => 'required|exists:quartos,id',
-                'hospede_id' => 'nullable|exists:hospedes,id',
+                'hospede_id' => 'required|exists:hospedes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
                 'valor_diaria' => 'nullable',
@@ -114,21 +117,29 @@ class ReservaController extends Controller
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado',
                 'n_adultos' => 'required|integer',
                 'n_criancas' => 'required|integer',
+                'n_criancas_nao_pagantes' => 'nullable|integer', // NOVO
                 'observacoes' => 'nullable|string',
                 'placa_veiculo' => 'nullable|string|max:10',
                 'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'nomes_hospedes_secundarios' => 'nullable|string',
+                // Campos de pets (não salvos na tabela reservas diretamente)
+                'qtd_pet_pequeno' => 'nullable|integer|min:0',
+                'qtd_pet_medio'   => 'nullable|integer|min:0',
+                'qtd_pet_grande'  => 'nullable|integer|min:0',
             ]);
 
+            // Validação de Capacidade (Pessoas)
             $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
             $maxOcupantes = $quarto->categoria->ocupantes;
-            $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'];
+            $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'] + ($validatedData['n_criancas_nao_pagantes'] ?? 0); 
+        
 
             if ($totalPessoas > ($maxOcupantes + 10)) {
                 return redirect()->back()->withInput()->with('error', "Capacidade excedida.");
             }
 
+            // Cálculo da Diária Base (Quarto)
             if (empty($validatedData['valor_diaria'])) {
                 $calculo = $this->calcularTarifaAutomatica(
                     $validatedData['quarto_id'],
@@ -143,13 +154,26 @@ class ReservaController extends Controller
                 $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
             }
 
+            // Cálculo dos Dias
             $dtCheckin = \Carbon\Carbon::parse($validatedData['data_checkin']);
             $dtCheckout = \Carbon\Carbon::parse($validatedData['data_checkout']);
             $dias = $dtCheckin->diffInDays($dtCheckout);
             if ($dias < 1) $dias = 1;
-            $validatedData['valor_total'] = (float)$validatedData['valor_diaria'] * $dias;
 
+            // 1. Cria a reserva (sem o valor total final ainda, pois falta somar os pets)
+            // A gente calcula o total do quarto primeiro
+            $valorTotalQuarto = (float)$validatedData['valor_diaria'] * $dias;
+            $validatedData['valor_total'] = $valorTotalQuarto;
+            
             $reserva = Reserva::create($validatedData);
+
+            // 2. Processa Pets e Atualiza Valor Total
+            // Soma o valor dos pets ao valor total da reserva
+            $valorTotalPets = $this->processarPets($reserva, $request, $dias);
+            
+            $reserva->valor_total = $valorTotalQuarto + $valorTotalPets;
+            $reserva->save();
+
             LogReserva::registrarCriacao($reserva, Auth::id());
 
             return redirect()->route('reserva.edit', $reserva->id)->with('success', 'Reserva criada com sucesso!');
@@ -174,7 +198,18 @@ class ReservaController extends Controller
         $podeHospedar = $hoje->equalTo($dataCheckin) && in_array($reserva->situacao, ['reserva']) && !in_array($reserva->situacao, ['finalizada', 'cancelado']);
         $canaisVenda = $this->canaisVenda;
 
-        return view('reserva.create', compact('reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'podeHospedar', 'logs', 'canaisVenda', 'vendedores'));
+        $reserva->load('pets');
+        $preferencias = PreferenciasHotel::first();
+
+        $petsPequeno = $reserva->pets->where('tamanho', 'pequeno')->first()->quantidade ?? 0;
+        $petsMedio = $reserva->pets->where('tamanho', 'medio')->first()->quantidade ?? 0;
+        $petsGrande = $reserva->pets->where('tamanho', 'grande')->first()->quantidade ?? 0;
+
+        return view('reserva.create', compact(
+            'reserva', 'quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 
+            'formasPagamento', 'produtos', 'podeHospedar', 'logs', 'canaisVenda', 
+            'vendedores', 'preferencias', 'petsPequeno', 'petsMedio', 'petsGrande'
+        ));
     }
 
     public function update(Request $request, Reserva $reserva)
@@ -190,12 +225,16 @@ class ReservaController extends Controller
                 'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
                 'n_adultos' => 'required|integer',
                 'n_criancas' => 'required|integer',
+                'n_criancas_nao_pagantes' => 'nullable|integer',
                 'observacoes' => 'nullable|string',
                 'placa_veiculo' => 'nullable|string|max:10',
                 'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'nomes_hospedes_secundarios' => 'nullable|string',
                 'supervisor_id_autorizacao' => 'nullable', 
+                'qtd_pet_pequeno' => 'nullable|integer|min:0',
+                'qtd_pet_medio'   => 'nullable|integer|min:0',
+                'qtd_pet_grande'  => 'nullable|integer|min:0',
             ]);
 
             $situacaoAtual = $reserva->situacao;
@@ -227,21 +266,32 @@ class ReservaController extends Controller
             $dtCheckout = \Carbon\Carbon::parse($validatedData['data_checkout']);
             $dias = $dtCheckin->diffInDays($dtCheckout);
             if ($dias < 1) $dias = 1;
-            $validatedData['valor_total'] = (float)$validatedData['valor_diaria'] * $dias;
 
-            // --- CAPTURA DADOS ---
+           $valorTotalQuarto = (float)$validatedData['valor_diaria'] * $dias;
+            $validatedData['valor_total'] = $valorTotalQuarto; // Temporário, vai somar pets depois
+
+            // Dados antigos para log
             $dadosAntigos = $reserva->toArray();
             $valorAntigo = $reserva->valor_diaria;
             $supervisorId = $request->input('supervisor_id_autorizacao');
             
             unset($validatedData['supervisor_id_autorizacao']);
+            unset($validatedData['qtd_pet_pequeno']);
+            unset($validatedData['qtd_pet_medio']);
+            unset($validatedData['qtd_pet_grande']);
 
             $reserva->update($validatedData);
             
-            $valorNovo = $reserva->valor_diaria;
+            $reserva->pets()->delete(); 
+            $valorTotalPets = $this->processarPets($reserva, $request, $dias);
 
-            // --- LÓGICA DO LOG ---
-            $descricaoLog = null; // Padrão: vai virar 'Reserva editada' no model
+            // Atualiza total final
+            $reserva->valor_total = $valorTotalQuarto + $valorTotalPets;
+            $reserva->save();
+            
+            // --- LOGS ---
+            $valorNovo = $reserva->valor_diaria;
+            $descricaoLog = null;
             
             // Se houve mudança de valor e tem supervisor, cria mensagem detalhada
             if (abs((float)$valorAntigo - (float)$valorNovo) > 0.01 && $supervisorId) {
@@ -264,6 +314,44 @@ class ReservaController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Erro ao atualizar: ' . $e->getMessage());
         }
+    }
+
+    private function processarPets(Reserva $reserva, Request $request, int $dias)
+    {
+        $preferencias = PreferenciasHotel::first();
+        $totalPets = 0;
+
+        $tipos = [
+            'pequeno' => 'qtd_pet_pequeno',
+            'medio'   => 'qtd_pet_medio',
+            'grande'  => 'qtd_pet_grande'
+        ];
+
+        $valoresRef = [
+            'pequeno' => $preferencias->valor_pet_pequeno ?? 0,
+            'medio'   => $preferencias->valor_pet_medio ?? 0,
+            'grande'  => $preferencias->valor_pet_grande ?? 0,
+        ];
+
+        foreach ($tipos as $tamanho => $campoInput) {
+            $quantidade = (int) $request->input($campoInput, 0);
+            
+            if ($quantidade > 0) {
+                $valorUnitario = $valoresRef[$tamanho];
+                
+                ReservaPet::create([
+                    'reserva_id' => $reserva->id,
+                    'tamanho' => $tamanho,
+                    'quantidade' => $quantidade,
+                    'valor_unitario' => $valorUnitario
+                ]);
+
+                // Cálculo: Quantidade * Valor Diária Pet * Dias da Reserva
+                $totalPets += ($quantidade * $valorUnitario * $dias);
+            }
+        }
+
+        return $totalPets;
     }
 
     private function calcularTarifaAutomatica($quartoId, $checkinData, $checkoutData, $nAdultos, $nCriancas)
@@ -722,7 +810,11 @@ class ReservaController extends Controller
                 return redirect()->back()->with('error', 'Reserva sem hóspede principal definido.');
             }
 
-            $n_acompanhantes = max(0, ($reserva->n_adultos + $reserva->n_criancas) - 1);
+            // CORREÇÃO AQUI: Somar adultos + crianças pagantes + crianças não pagantes
+            $totalPessoas = $reserva->n_adultos + $reserva->n_criancas + ($reserva->n_criancas_nao_pagantes ?? 0);
+            
+            // Subtrai 1 porque o hóspede principal não é acompanhante
+            $n_acompanhantes = max(0, $totalPessoas - 1);
 
             $data = [
                 'reserva' => $reserva,

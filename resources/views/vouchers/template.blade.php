@@ -10,7 +10,7 @@
             margin: 0;
             padding: 20px;
             color: #333;
-            font-size: 12px; /* Reduzido o tamanho base */
+            font-size: 12px;
         }
 
         .container {
@@ -28,13 +28,13 @@
         }
 
         .logo {
-            font-size: 20px; /* Reduzido de 24px */
+            font-size: 20px;
             font-weight: bold;
             color: #679A4C;
         }
 
         .voucher-number {
-            font-size: 16px; /* Reduzido de 18px */
+            font-size: 16px;
             color: #679A4C;
             margin-top: 10px;
         }
@@ -48,97 +48,7 @@
             border-bottom: 1px solid #ddd;
             padding-bottom: 5px;
             margin-bottom: 10px;
-            font-size: 12px; /* Definido tamanho levemente maior que o corpo */
-        }
-
-        .info-row {
-            display: flex;
-            margin-bottom: 5px;
-        }
-
-        .info-label {
-            font-weight: bold;
-            width: 200px;
-        }
-
-        .info-value {
-            flex: 1;
-        }
-
-        .check-info {
-            background-color: #f8f9fa;
-            padding: 10px; /* Reduzido padding */
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-
-        .check-title {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #679A4C;
-        }
-
-        .check-row {
-            display: flex;
-            margin-bottom: 5px;
-        }
-
-        .check-label {
-            width: 120px;
-            font-weight: bold;
-        }
-
-        .check-value {
-            flex: 1;
-        }
-
-        .payment-info {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        .total {
-            font-size: 16px; /* Reduzido de 18px */
-            font-weight: bold;
-            margin-top: 10px;
-            text-align: right;
-        }
-
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px; /* Reduzido de 12px */
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-        }
-
-        .highlight {
-            color: #679A4C;
-            font-weight: bold;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-
-        table,
-        th,
-        td {
-            border: 1px solid #ddd;
-        }
-
-        th,
-        td {
-            padding: 6px; /* Reduzido padding */
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
+            font-size: 12px;
         }
 
         .info-table {
@@ -148,12 +58,31 @@
         }
 
         .info-table td {
-            padding: 4px; /* Reduzido padding */
+            padding: 4px;
             vertical-align: top;
+            border: 1px solid #ddd;
         }
 
+        /* ALTERAÇÃO AQUI: Ajuste do espaçamento do label */
         .info-label {
             font-weight: bold;
+            display: inline-block;
+            /* min-width removido para não criar espaço fixo grande */
+            min-width: auto; 
+            margin-right: 8px; /* Espaço pequeno entre o label e o texto */
+        }
+
+        .check-info {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .check-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #679A4C;
         }
 
         .check-table {
@@ -169,9 +98,9 @@
 
         .check-label {
             font-weight: bold;
+            margin-right: 5px; /* Adicionado para garantir separação no check-in/out */
         }
         
-        /* Estilo para caixa de observação */
         .obs-box {
             margin-top: 15px;
             margin-bottom: 15px;
@@ -179,6 +108,15 @@
             border: 1px dashed #ccc;
             background-color: #fff;
             font-size: 10px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
         }
     </style>
 </head>
@@ -192,33 +130,49 @@
         </div>
 
         <div class="section">
-            <div class="section">
-                <div class="section-title">DADOS DO HÓSPEDE</div>
-                <table class="info-table">
-                    <tr>
-                        <td><span class="info-label">Nome:</span> {{ $reserva->hospede->nome ?? 'Não informado' }}</td>
-                        <td><span class="info-label">Telefone:</span>
-                            {{ $reserva->hospede->telefone ?? 'Não informado' }}</td>
-                        <td><span class="info-label">CPF:</span> {{ $reserva->hospede->cpf ?? 'Não informado' }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="3"><span class="info-label">Email:</span>
-                            {{ $reserva->hospede->email ?? 'Não informado' }}
-                        </td>
-                    </tr>
-                </table>
-            </div>
+            <div class="section-title">DADOS DO HÓSPEDE</div>
+            <table class="info-table">
+                <tr>
+                    <td><span class="info-label">Nome:</span> {{ $reserva->hospede->nome ?? 'Não informado' }}</td>
+                    <td><span class="info-label">Telefone:</span> {{ $reserva->hospede->telefone ?? 'Não informado' }}</td>
+                </tr>
+                <tr>
+                    <td><span class="info-label">CPF:</span> {{ $reserva->hospede->cpf ?? 'Não informado' }}</td>
+                    <td><span class="info-label">Email:</span> {{ $reserva->hospede->email ?? 'Não informado' }}</td>
+                </tr>
+            </table>
         </div>
 
         <div class="section">
             <div class="section-title">DADOS DA RESERVA</div>
             <table class="info-table">
-                {{-- Removido Quarto e Categoria --}}
                 <tr>
                     <td><span class="info-label">Nº de Adultos:</span> {{ $reserva->n_adultos ?? '0' }}</td>
                     <td><span class="info-label">Nº de Crianças:</span> {{ $reserva->n_criancas ?? '0' }}</td>
                 </tr>
-                {{-- Removido Observações daqui --}}
+                
+                {{-- Exibe Crianças Não Pagantes apenas se houver --}}
+                @if(($reserva->n_criancas_nao_pagantes ?? 0) > 0)
+                <tr>
+                    <td colspan="2">
+                        <span class="info-label">Crianças (Não Pagantes):</span> 
+                        {{ $reserva->n_criancas_nao_pagantes }}
+                    </td>
+                </tr>
+                @endif
+
+                {{-- Exibe Pets apenas se houver --}}
+                @if($reserva->pets && $reserva->pets->count() > 0)
+                <tr>
+                    <td colspan="2">
+                        <span class="info-label">Pets:</span>
+                        @foreach($reserva->pets as $pet)
+                            {{ $pet->quantidade }}x {{ ucfirst($pet->tamanho) }}
+                            @if(!$loop->last), @endif
+                        @endforeach
+                    </td>
+                </tr>
+                @endif
             </table>
         </div>
 
@@ -240,8 +194,7 @@
                     <td colspan="2">
                         <span class="check-label">Nº de Diárias:</span> {{ $numDiarias }}
                         <span style="margin-left: 20px;">
-                            <span class="check-label">Valor Unitário:</span> R$
-                            {{ number_format($valorDiaria, 2, ',', '.') }}
+                            <span class="check-label">Valor Unitário:</span> R$ {{ number_format($valorDiaria, 2, ',', '.') }}
                         </span>
                         <span style="margin-left: 20px;">
                             <span class="check-label">Total:</span> R$ {{ number_format($valorTotal, 2, ',', '.') }}
@@ -260,17 +213,15 @@
 
             <div class="section-title">PAGAMENTOS</div>
 
-            {{-- Tabela de transações --}}
-            <table style="width: 100%; border-collapse: collapse;">
+            <table class="info-table" style="border: none;">
                 <thead>
-                    <tr>
+                    <tr style="background-color: #f2f2f2;">
                         <th>Forma de Pagamento</th>
                         <th>Descrição</th>
-                        <th>Data de Pagamento</th>
-                        <th>Valor Pago</th>
+                        <th>Data</th>
+                        <th>Valor</th>
                     </tr>
                 </thead>
-
                 <tbody>
                     @forelse ($reserva->transacoes as $transacao)
                         <tr>
@@ -281,13 +232,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4">Nenhuma transação registrada.</td>
+                            <td colspan="4" style="text-align: center;">Nenhuma transação registrada.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
 
-            {{-- Observações movidas para cá --}}
             @if(!empty($reserva->observacoes))
             <div class="obs-box">
                 <strong>Observações:</strong><br>
@@ -295,8 +245,7 @@
             </div>
             @endif
 
-            {{-- Total pago --}}
-            <div class="totais" style="margin-top: 10px;">
+            <div class="totais" style="margin-top: 10px; text-align: right;">
                 <p style="font-size: 11px; margin: 2px 0;">
                     <strong>Total da Reserva:</strong> R$ {{ number_format($totalReserva, 2, ',', '.') }}
                 </p>
@@ -304,11 +253,10 @@
                     <strong>Total Pago:</strong> R$ {{ number_format($totalPago, 2, ',', '.') }}
                 </p>
 
-                <div
-                    style="
+                <div style="
                         margin-top: 10px;
                         padding: 8px;
-                        font-size: 14px; /* Reduzido */
+                        font-size: 14px;
                         font-weight: bold;
                         border: 2px solid #679A4C;
                         text-align: center;
@@ -318,7 +266,9 @@
                 </div>
             </div>
         </div>
+        
         <p style="text-align: center; color:#679A4C; margin-top: 10px;">Este voucher deve ser apresentado no momento do check-in.</p>
+        
         <div class="footer">
             <p>Hotel Estação Chico - Fazenda Lago São Francisco | Turistica & Lazer em Garanhuns 09, Garanhuns-PE</p>
             <p>Telefone: (87)9 8141-1088 - Email: hplagosaofrancisco@gmail.com</p>
@@ -326,5 +276,4 @@
         </div>
     </div>
 </body>
-
 </html>

@@ -12,6 +12,9 @@ class PreferenciasHotel extends Model
         'checkin',
         'checkout',
         'limpeza_quarto',
-        'valor_diaria'
+        'valor_diaria',
+        'valor_pet_pequeno',
+        'valor_pet_medio',
+        'valor_pet_grande'
     ];
 }

@@ -155,7 +155,7 @@
                                                 @foreach ($hospedes as $hospede)
                                                     @if ($hospede->nome !== 'Bloqueado')
                                                         <option value="{{ $hospede->id }}"
-                                                            {{ old('hospede_id', $reserva->hospede_id ?? '') == $hospede->id ? 'selected' : '' }}>
+                                                            {{ (old('hospede_id', $reserva->hospede_id ?? '') == $hospede->id) ? 'selected' : '' }}>
                                                             {{ $hospede->nome }}
                                                         </option>
                                                     @endif
@@ -210,7 +210,8 @@
 
                                     @if (isset($reserva))
                                         <input type="hidden" id="reserva_id" value="{{ $reserva->id }}">
-                                        <input type="hidden" id="quarto_selecionado" value="{{ $reserva->quarto_id }}">
+                                        <input type="hidden" id="quarto_selecionado"
+                                            value="{{ $reserva->quarto_id }}">
                                     @endif
 
                                     <div class="form-group row">
@@ -236,36 +237,74 @@
                                         </div>
                                     </div>
 
+                                    {{-- QUANTIDADES DE HÓSPEDES --}}
                                     <div class="form-group row">
                                         <label class="col-md-3 label-control"><strong>Nº hóspedes</strong></label>
-                                        <div class="row col-md-6">
-                                            <div class="col-md-5">
-                                                <label for="n_adultos">* Nº adultos/adolescentes</label>
+                                        <div class="row col-md-9">
+                                            <div class="col-md-4">
+                                                <label for="n_adultos">* Adultos</label>
                                                 <input type="number" name="n_adultos" id="n_adultos"
                                                     class="form-control"
                                                     value="{{ old('n_adultos', isset($reserva) ? $reserva->n_adultos : 1) }}"
                                                     min="1">
                                             </div>
 
-                                            <div class="col-md-5">
-                                                <label for="n_criancas">* Nº crianças (6 a 12 anos)</label>
+                                            <div class="col-md-4">
+                                                <label for="n_criancas">* Crianças (Pagantes)</label>
                                                 <input type="number" name="n_criancas" id="n_criancas"
                                                     class="form-control"
                                                     value="{{ old('n_criancas', $reserva->n_criancas ?? 0) }}"
                                                     min="0">
                                             </div>
+
+                                            <div class="col-md-4">
+                                                <label for="n_criancas_nao_pagantes">Crianças (Não Pagantes)</label>
+                                                <input type="number" name="n_criancas_nao_pagantes" id="n_criancas_nao_pagantes"
+                                                    class="form-control"
+                                                    value="{{ old('n_criancas_nao_pagantes', $reserva->n_criancas_nao_pagantes ?? 0) }}"
+                                                    min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- SEÇÃO DE PETS --}}
+                                    <div class="form-group row">
+                                        <label class="col-md-3 label-control"><strong>Hospedagem Pet</strong></label>
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <label class="small">Pequeno (R$ {{ number_format($preferencias->valor_pet_pequeno ?? 0, 2, ',', '.') }}/dia)</label>
+                                                    <input type="number" name="qtd_pet_pequeno" id="qtd_pet_pequeno" class="form-control input-pet" 
+                                                        data-valor="{{ $preferencias->valor_pet_pequeno ?? 0 }}"
+                                                        value="{{ old('qtd_pet_pequeno', $petsPequeno ?? 0) }}" min="0">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="small">Médio (R$ {{ number_format($preferencias->valor_pet_medio ?? 0, 2, ',', '.') }}/dia)</label>
+                                                    <input type="number" name="qtd_pet_medio" id="qtd_pet_medio" class="form-control input-pet" 
+                                                        data-valor="{{ $preferencias->valor_pet_medio ?? 0 }}"
+                                                        value="{{ old('qtd_pet_medio', $petsMedio ?? 0) }}" min="0">
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <label class="small">Grande (R$ {{ number_format($preferencias->valor_pet_grande ?? 0, 2, ',', '.') }}/dia)</label>
+                                                    <input type="number" name="qtd_pet_grande" id="qtd_pet_grande" class="form-control input-pet" 
+                                                        data-valor="{{ $preferencias->valor_pet_grande ?? 0 }}"
+                                                        value="{{ old('qtd_pet_grande', $petsGrande ?? 0) }}" min="0">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">Informe a quantidade de pets por tamanho. O valor adicional será calculado automaticamente sobre as diárias.</small>
                                         </div>
                                     </div>
 
                                     <div class="form-group row" id="nomes_hospedes_secundarios">
-                                        <label for="nomes_hospedes_secundarios" class="col-md-3 label-control">Hospedes
-                                            Secundários</label>
+                                        <label for="nomes_hospedes_secundarios"
+                                            class="col-md-3 label-control">Hospedes Secundários</label>
                                         <div class="col-md-5">
                                             <textarea class="form-control" name="nomes_hospedes_secundarios" rows="3" id="nomes_hospedes_secundarios">{{ old('nomes_hospedes_secundarios', $reserva->nomes_hospedes_secundarios ?? '') }}</textarea>
                                         </div>
                                     </div>
                                     <div class="form-group row" id="campoPlaca">
-                                        <label for="placa_veiculo" class="col-md-3 label-control">Placa do Veículo</label>
+                                        <label for="placa_veiculo" class="col-md-3 label-control">Placa do
+                                            Veículo</label>
                                         <div class="col-md-4">
                                             <input type="text" name="placa_veiculo" id="placa_veiculo"
                                                 class="form-control"
@@ -279,7 +318,6 @@
                                             <select class="form-control select2" name="canal_venda" id="canal_venda">
                                                 <option value="">Selecione um canal</option>
                                                 @php
-                                                    // Pegamos a variável passada pelo controller
                                                     $opcoesCanal = $canaisVenda ?? [
                                                         'WhatsApp',
                                                         'Instagram',
@@ -325,7 +363,8 @@
 
                                     <div class="card mt-4">
                                         <div class="card-header bg-light">
-                                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">LOGS
+                                            <h5 class="mb-0 text-uppercase text-muted" style="letter-spacing: 1px;">
+                                                LOGS
                                                 DE ATIVIDADES</h5>
                                         </div>
                                         <div class="card-body p-0">
@@ -530,7 +569,7 @@
                                             id="btn-adicionar-item-produto">Adicionar Item</button>
 
                                         <div id="lista-itens-produto">
-                                        </div>
+                                            </div>
 
                                         <div class="form-group mt-3">
                                             <label for="total_produtos_adicionados">Total de Produtos Adicionados</label>
@@ -574,7 +613,7 @@
                             <span id='diaria-media'>R$ 0,00</span>
                         </div>
                         <div class='d-flex justify-content-between mb-2'>
-                            <span>Diárias</span>
+                            <span>Diárias + Pets</span>
                             <span id='total-diarias'>R$ 0,00</span>
                         </div>
                         <div class='d-flex justify-content-between mb-2'>
@@ -627,7 +666,8 @@
                                 </div>
                                 <div class='form-group'>
                                     <label for='valor_transacao'>Valor</label>
-                                    <input type='text' class='form-control' id='valor_transacao' placeholder='0,00'>
+                                    <input type='text' class='form-control' id='valor_transacao'
+                                        placeholder='0,00'>
                                 </div>
                                 <div class='form-group'>
                                     <label for='forma_pagamento_transacao'>Forma de Pagamento</label>
@@ -1413,8 +1453,7 @@
                 carregarResumo();
                 carregarReservaItens(); // Carregar produtos já adicionados à reserva
             }
-
-            function carregarTransacoes() {
+function carregarTransacoes() {
                 $.ajax({
                     url: '/transacoes/reserva/' + reservaId,
                     method: 'GET',
@@ -1422,6 +1461,9 @@
                         if (response.success) {
                             transacoes = response.transacoes;
                             atualizarListaAtividades();
+                            
+                            // --- ADICIONE ESTA LINHA ---
+                            atualizarResumo(); // Recalcula tudo corretamente após ter as transações
                         }
                     },
                     error: function() {
@@ -1478,7 +1520,7 @@
                 $('#valor-recebido').val(valor.toFixed(2));
             }
 
-            function carregarResumo() {
+function carregarResumo() {
                 $.ajax({
                     url: '/transacoes/resumo/' + reservaId,
                     method: 'GET',
@@ -1486,48 +1528,35 @@
                         if (response.success) {
                             const resumo = response.resumo;
 
-                            $('#num-diarias').text(resumo.num_diarias);
-                            // REINTRODUZIDO: Exibir valor da diária, se disponível
-                            if (resumo.valor_diaria > 0) {
-                                $('#diaria-media').text('R$ ' + resumo.valor_diaria.toLocaleString(
-                                    'pt-BR', {
-                                        minimumFractionDigits: 2
-                                    }));
-                            }
-
-                            $('#total-diarias').text('R$ ' + resumo.total_diarias.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
-                            $('#total-produtos').text('R$ ' + resumo.total_produtos.toLocaleString(
-                                'pt-BR', {
-                                    minimumFractionDigits: 2
-                                }));
-                            $('#total-geral').text('R$ ' + resumo.total_geral.toLocaleString('pt-BR', {
-                                minimumFractionDigits: 2
-                            }));
-                            atualizarInputRecebido(resumo.total_recebido);
-                            atualizarInputFaltaLancar(resumo.falta_lancar);
+                            // --- COMENTE OU REMOVA ESTAS LINHAS ABAIXO ---
+                            // O atualizarResumo() já cuida disso com base nos inputs da tela
+                            
+                            // $('#num-diarias').text(resumo.num_diarias);
+                            // if (resumo.valor_diaria > 0) {
+                            //    $('#diaria-media').text('R$ ' + ...);
+                            // }
+                            // $('#total-diarias').text('R$ ' + ...);
+                            // $('#total-produtos').text('R$ ' + ...);
+                            // $('#total-geral').text('R$ ' + ...);
+                            
+                            // Mantenha apenas se precisar de algum dado específico que não tem na tela
+                            // Mas geralmente o atualizarResumo já calcula tudo.
                         }
                     },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        console.log('Erro ao carregar resumo');
-                        console.log('Status:', textStatus);
-                        console.log('Erro retornado:', errorThrown);
-                        console.log('Resposta completa:', jqXHR.responseText);
-                    }
+                    error: function() { console.log('Erro ao carregar resumo'); }
                 });
             }
 
             // Função para atualizar o resumo (para reservas novas)
+            // Função para atualizar o resumo (para reservas novas e edição)
             function atualizarResumo() {
                 const checkin = $('#data_checkin').val();
                 const checkout = $('#data_checkout').val();
-
-                // Tenta pegar o valor manual se preenchido, senão 0
+                
+                // 1. Cálculo das Diárias (Valor Base)
                 let valorDiaria = 0;
                 const valorInput = $('#valor_diaria').val();
-                if (valorInput) {
+                if(valorInput) {
                     valorDiaria = parseFloat(valorInput.replace(/\./g, '').replace(',', '.')) || 0;
                 }
 
@@ -1536,43 +1565,94 @@
                     const inicio = moment(checkin);
                     const fim = moment(checkout);
                     numDiarias = fim.diff(inicio, 'days');
+                    if (numDiarias < 1) numDiarias = 1; // Mínimo de 1 diária
                 }
 
-                const totalDiarias = valorDiaria * numDiarias;
-                const totalProdutos = transacoes.filter(t => (t.categoria === 'produtos' || t.tipo === 'item') && t
-                    .status).reduce((sum, t) => sum + parseFloat(t.valor), 0);
+                const totalDiariasBase = valorDiaria * numDiarias;
+                
+                // 2. Cálculo de PETS (Quantidade * Valor Unitário * Número de Diárias)
+                // Usamos uma função auxiliar para garantir que o data-valor (ex: 50.00 ou 50,00) seja lido corretamente
+                const getValorPet = (selector) => {
+                    let val = $(selector).data('valor');
+                    // Se vier como string do PHP/Blade, pode vir com vírgula dependendo do locale
+                    if (typeof val === 'string') val = val.replace(',', '.');
+                    return parseFloat(val) || 0;
+                };
 
-                const totalGeral = totalDiarias + totalProdutos;
+                const qtdP = parseInt($('#qtd_pet_pequeno').val()) || 0;
+                const valorP = getValorPet('#qtd_pet_pequeno');
+                
+                const qtdM = parseInt($('#qtd_pet_medio').val()) || 0;
+                const valorM = getValorPet('#qtd_pet_medio');
+                
+                const qtdG = parseInt($('#qtd_pet_grande').val()) || 0;
+                const valorG = getValorPet('#qtd_pet_grande');
 
-                const totalRecebido = transacoes.filter(t => t.tipo === 'pagamento' && t.status).reduce((sum, t) =>
-                    sum + parseFloat(t.valor), 0);
-                const totalDescontos = transacoes.filter(t => t.tipo === 'desconto' && t.status).reduce((sum, t) =>
-                    sum + parseFloat(t.valor), 0);
+                // O valor do pet é cobrado por dia
+                const totalPets = (qtdP * valorP + qtdM * valorM + qtdG * valorG) * numDiarias;
+
+                // 3. Cálculo de Produtos (Se houver transações carregadas)
+                let totalProdutos = 0;
+                if (typeof transacoes !== 'undefined') {
+                    totalProdutos = transacoes
+                        .filter(t => (t.categoria === 'produtos' || t.tipo === 'item') && t.status)
+                        .reduce((sum, t) => sum + parseFloat(t.valor), 0);
+                }
+
+                // 4. Total Geral
+                const totalGeral = totalDiariasBase + totalPets + totalProdutos;
+
+                // 5. Cálculos Financeiros (Recebido/Descontos)
+                let totalRecebido = 0;
+                let totalDescontos = 0;
+                
+                if (typeof transacoes !== 'undefined') {
+                    totalRecebido = transacoes.filter(t => t.tipo === 'pagamento' && t.status)
+                        .reduce((sum, t) => sum + parseFloat(t.valor), 0);
+                    
+                    totalDescontos = transacoes.filter(t => t.tipo === 'desconto' && t.status)
+                        .reduce((sum, t) => sum + parseFloat(t.valor), 0);
+                }
+                
                 const faltaLancar = totalGeral - totalRecebido - totalDescontos;
 
-                $('#num-diarias').text(numDiarias);
+                // --- ATUALIZAÇÃO DA TELA (DOM) ---
 
+                // Exibe número de diárias
+                $('#num-diarias').text(numDiarias);
+                
+                // Exibe valor da diária média (base)
                 if (valorDiaria > 0) {
-                    $('#diaria-media').text('R$ ' + valorDiaria.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2
-                    }));
-                    $('#total-diarias').text('R$ ' + totalDiarias.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2
-                    }));
+                     $('#diaria-media').text('R$ ' + valorDiaria.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
                 }
 
-                $('#total-produtos').text('R$ ' + totalProdutos.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2
-                }));
+                // Exibe Total Diárias + Pets
+                // Aqui somamos a base + pets para mostrar no campo "Diárias" ou "Diárias + Pets"
+                const totalHospedagem = totalDiariasBase + totalPets;
+                $('#total-diarias').text('R$ ' + totalHospedagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
 
-                // Total geral fica dependente apenas de produtos se diária for 0 no front
-                // $('#total-geral').text(...) 
+                // Exibe Total Produtos
+                $('#total-produtos').text('R$ ' + totalProdutos.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
 
-                atualizarInputRecebido(totalRecebido)
+                // Exibe Total Geral (A CORREÇÃO PRINCIPAL ESTÁ AQUI)
+                $('#total-geral').text('R$ ' + totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+
+                // Atualiza inputs ocultos e visualização financeira
+                atualizarInputRecebido(totalRecebido);
+                atualizarInputFaltaLancar(faltaLancar);
             }
-
-            // Listener para atualizar resumo quando muda valor manual
-            $('#valor_diaria').on('input', atualizarResumo);
+            
+            // Listeners atualizados: Adicionado change e keyup para garantir atualização imediata
+            $('#valor_diaria, .input-pet, #n_adultos, #n_criancas').on('input change keyup', atualizarResumo);
+            
+            // Atualiza também quando as datas mudam (via DatePicker ou input direto)
+            $('#periodo, #data_checkin, #data_checkout').on('change', function(){
+                // Pequeno delay para garantir que o input hidden de data tenha sido atualizado pelo plugin
+                setTimeout(atualizarResumo, 100);
+            });
+            
+            // Listener para atualizar resumo quando muda valor manual ou qtd pets
+            $('#valor_diaria, .input-pet').on('input', atualizarResumo);
 
             // Mostrar formulário baseado no tipo
             window.mostrarFormulario = function(tipo) {
