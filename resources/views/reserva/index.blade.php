@@ -67,6 +67,7 @@
         'itemsPerPage' => 10, 
         'showTotal' => false,
         'valueColumnIndex' => 0,
+        'order' => [[0, 'desc']], // Tenta forçar a ordenação JS descendente na primeira coluna
     ])
         <thead class="bg-primary text-white">
             <tr>
@@ -82,16 +83,14 @@
             @foreach ($reservas as $reserva)
                 <tr>
                     <td>
-                        <!-- Container Flex para alinhar o indicador, o ID e o botão de excluir -->
                         <div class="d-flex align-items-center">
                             <span class="status-indicator"
                                 style="background-color: {{ getReservaStatusColor($reserva->situacao) }};"></span>
                             
                             <a id="editlink" href="{{ route('reserva.edit', $reserva->id) }}" class="mr-2">
-                                00000{{ $reserva->id }}
+                                {{ str_pad($reserva->id, 6, '0', STR_PAD_LEFT) }}
                             </a>
 
-                            <!-- Botão de Excluir com Supervisor (Apenas para bloqueados) -->
                             @if ($reserva->situacao === 'bloqueado')
                                 <button type="button" 
                                         class="btn btn-link p-0 text-danger btn-excluir-bloqueio-super" 
@@ -108,9 +107,14 @@
                     <td>{{ \Illuminate\Support\Carbon::parse($reserva->data_checkout)->format('d/m/Y') }}</td>
                     <td>
                         {{ $reserva->n_adultos }}
-                        @if ($reserva->n_criancas >= 1)
-                            / ({{ $reserva->n_criancas }})
-                        @else
+                        
+                        {{-- SOMA CORRIGIDA DE CRIANÇAS --}}
+                        @php
+                            $totalCriancas = $reserva->n_criancas + ($reserva->n_criancas_nao_pagantes ?? 0);
+                        @endphp
+
+                        @if ($totalCriancas >= 1)
+                            / ({{ $totalCriancas }})
                         @endif
                     </td>
 
@@ -146,7 +150,6 @@
 @stop
 
 @section('js')
-    <!-- Carrega o SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <script>

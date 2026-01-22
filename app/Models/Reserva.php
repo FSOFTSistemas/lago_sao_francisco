@@ -23,7 +23,7 @@ class Reserva extends Model
         'placa_veiculo',
         'canal_venda',
         'vendedor_id',
-        // 'hospedes_secundarios',
+        'n_criancas_nao_pagantes',
         'nomes_hospedes_secundarios'
     ];
 
@@ -51,5 +51,10 @@ class Reserva extends Model
     public function vendedor()
     {
         return $this->belongsTo(Funcionario::class, 'vendedor_id');
+    }
+
+    public function pets()
+    {
+        return $this->hasMany(ReservaPet::class);
     }
 }

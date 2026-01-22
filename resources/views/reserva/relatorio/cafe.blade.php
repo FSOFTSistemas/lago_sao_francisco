@@ -10,7 +10,8 @@
     {{-- Cálculo dos Totais --}}
     @php
         $totalAdultos = $reservas->sum('n_adultos');
-        $totalCriancas = $reservas->sum('n_criancas');
+        // Soma crianças pagantes + não pagantes
+        $totalCriancas = $reservas->sum('n_criancas') + $reservas->sum('n_criancas_nao_pagantes');
         $totalGeral = $totalAdultos + $totalCriancas;
     @endphp
 
@@ -81,6 +82,11 @@
                     </thead>
                     <tbody>
                         @forelse($reservas as $reserva)
+                            @php
+                                // Soma local para exibição na linha
+                                $totalCriancasReserva = $reserva->n_criancas + ($reserva->n_criancas_nao_pagantes ?? 0);
+                                $totalPessoasReserva = $reserva->n_adultos + $totalCriancasReserva;
+                            @endphp
                             <tr>
                                 <td class="align-middle">
                                     <strong>{{ $reserva->quarto->nome ?? 'N/D' }}</strong>
@@ -95,11 +101,11 @@
                                 </td>
                                 <td class="text-center align-middle">
                                     <span class="badge badge-info" style="font-size: 1rem;">
-                                        {{ $reserva->n_adultos + $reserva->n_criancas }}
+                                        {{ $totalPessoasReserva }}
                                     </span>
                                     <br>
                                     <small class="text-muted">
-                                        ({{ $reserva->n_adultos }} Adt / {{ $reserva->n_criancas }} Cri)
+                                        ({{ $reserva->n_adultos }} Adt / {{ $totalCriancasReserva }} Cri)
                                     </small>
                                 </td>
                                 <td class="align-middle">

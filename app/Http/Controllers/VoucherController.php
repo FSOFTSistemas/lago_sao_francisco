@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reserva;
 use App\Models\PreferenciasHotel;
-use App\Models\Funcionario; // Importante importar o model
+use App\Models\Funcionario;
 use Carbon\Carbon;
 
 class VoucherController extends Controller
@@ -12,9 +12,9 @@ class VoucherController extends Controller
     public function gerarVoucher($id)
     {
         try {
-            $reserva = Reserva::with(['quarto', 'hospede', 'transacoes'])->findOrFail($id);
+            // Adicionado 'pets' ao carregamento
+            $reserva = Reserva::with(['quarto', 'hospede', 'transacoes', 'pets'])->findOrFail($id);
             
-            // Verificar se a situação é válida para gerar voucher
             if (!in_array($reserva->situacao, ['reserva', 'pre-reserva'])) {
                 return back()->with('error', 'Voucher só pode ser gerado para reservas com situação "reserva" ou "pre-reserva".');
             }
@@ -23,37 +23,28 @@ class VoucherController extends Controller
             $hora_checkin = Carbon::parse($preferencias->checkin)->format('H:i');
             $hora_checkout = Carbon::parse($preferencias->checkout)->format('H:i');
 
-            // --- Lógica do Número do Voucher (Atualizada) ---
+            // --- Número do Voucher ---
             $prefixo = '';
-            
             if ($reserva->vendedor_id) {
                 $vendedor = Funcionario::find($reserva->vendedor_id);
                 if ($vendedor) {
-                    // Pega as 2 primeiras letras do nome
                     $iniciais = substr($vendedor->nome, 0, 2);
-                    // Remove acentos (opcional, mas recomendado para códigos) e deixa maiúsculo
                     $iniciais = iconv('UTF-8', 'ASCII//TRANSLIT', $iniciais);
-                    $prefixo = strtoupper($iniciais) . '_'; // Ex: JO_
+                    $prefixo = strtoupper($iniciais) . '_';
                 }
             }
-
-            // Se tiver vendedor fica "JO_000123", se não tiver fica "000123"
             $numeroVoucher = $prefixo . str_pad($reserva->id, 6, '0', STR_PAD_LEFT);
-            // ------------------------------------------------
 
-            // Formatar datas
+            // Dados
             $dataCheckin = Carbon::parse($reserva->data_checkin)->format('d/m/Y');
             $dataCheckout = Carbon::parse($reserva->data_checkout)->format('d/m/Y');
-            
-            // Calcular número de diárias
             $numDiarias = Carbon::parse($reserva->data_checkin)->diffInDays(Carbon::parse($reserva->data_checkout));
             
-            // Calcular valores
             $valorDiaria = $reserva->valor_diaria ?? 0;
-            $valorTotal = $valorDiaria * $numDiarias;
             
+            // CORREÇÃO: Usar o valor total salvo no banco (que já inclui pets)
+            $valorTotal = $reserva->valor_total;
             
-            // Dados para o PDF
             $data = [
                 'reserva' => $reserva,
                 'numeroVoucher' => $numeroVoucher,
@@ -67,10 +58,8 @@ class VoucherController extends Controller
                 'horaCheckout' => $hora_checkout
             ];
             
-            // Gerar o HTML do voucher
             $html = view('vouchers.template', $data)->render();
             
-            // Configurar o DomPDF
             $options = new \Dompdf\Options();
             $options->set('defaultFont', 'Arial');
             $options->setIsRemoteEnabled(true);
@@ -80,10 +69,7 @@ class VoucherController extends Controller
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
             
-            // Definir o nome do arquivo
             $filename = 'voucher_' . $numeroVoucher . '.pdf';
-            
-            // Retornar o PDF para download
             return $dompdf->stream($filename, ['Attachment' => false]);
             
         } catch (\Exception $e) {

@@ -136,6 +136,45 @@
                     </div>
                 </div>
 
+                <hr>
+
+                {{-- 🐾 Taxas PET --}}
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">Taxas Pet (Diária)</label>
+                    <div class="col-sm-10">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="small text-muted font-weight-bold">Pequeno</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                    <input type="text" name="valor_pet_pequeno" class="form-control money" 
+                                        placeholder="0,00"
+                                        value="{{ old('valor_pet_pequeno', number_format($preferencia->valor_pet_pequeno ?? 0, 2, ',', '.')) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-muted font-weight-bold">Médio</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                    <input type="text" name="valor_pet_medio" class="form-control money" 
+                                        placeholder="0,00"
+                                        value="{{ old('valor_pet_medio', number_format($preferencia->valor_pet_medio ?? 0, 2, ',', '.')) }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="small text-muted font-weight-bold">Grande</label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                    <input type="text" name="valor_pet_grande" class="form-control money" 
+                                        placeholder="0,00"
+                                        value="{{ old('valor_pet_grande', number_format($preferencia->valor_pet_grande ?? 0, 2, ',', '.')) }}">
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle"></i> Estes valores serão sugeridos automaticamente ao adicionar pets em uma reserva.</small>
+                    </div>
+                </div>
+
                 <div class="text-right">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Salvar Preferências</button>
                 </div>
@@ -292,7 +331,15 @@
 @stop
 
 @section('js')
+    {{-- Importando JQuery Mask para funcionar a máscara de moeda nos campos novos --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
     <script>
+        $(document).ready(function(){
+            // Aplica a máscara de dinheiro nos campos de valor pet
+            $('.money').mask('#.##0,00', {reverse: true});
+        });
+
         // Função auxiliar para abrir o modal compatível com BS4 e BS5
         function showModal(modalId) {
             var modalEl = document.getElementById(modalId);

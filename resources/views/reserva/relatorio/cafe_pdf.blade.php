@@ -89,7 +89,8 @@
 <body>
     @php
         $totalAdultos = $reservas->sum('n_adultos');
-        $totalCriancas = $reservas->sum('n_criancas');
+        // Alterado aqui: Soma pagantes + não pagantes
+        $totalCriancas = $reservas->sum('n_criancas') + $reservas->sum('n_criancas_nao_pagantes');
         $totalGeral = $totalAdultos + $totalCriancas;
     @endphp
 
@@ -165,7 +166,8 @@
         <tbody>
             @foreach($reservas as $reserva)
                 @php 
-                    $qtdPessoas = $reserva->n_adultos + $reserva->n_criancas;
+                    // Soma pagantes + não pagantes
+                    $qtdPessoas = $reserva->n_adultos + $reserva->n_criancas + ($reserva->n_criancas_nao_pagantes ?? 0);
                 @endphp
                 <tr>
                     <td class="quarto">
