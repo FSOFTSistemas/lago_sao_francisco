@@ -955,43 +955,58 @@ class ReservaController extends Controller
         return $reservas;
     }
 
-   private function calcularDadosVendas($dataInicio, $dataFim)
-    {
-        $vendedores = Funcionario::all();
+       private function calcularDadosVendas($dataInicio, $dataFim)
+{
+    // Prepara as datas uma única vez para limpar o código
+    $dataInicioFormatada = $dataInicio . ' 00:00:00';
+    $dataFimFormatada = $dataFim . ' 23:59:59';
 
-        $relatorio = $vendedores->map(function ($vendedor) use ($dataInicio, $dataFim) {
-            
-            // Lógica ajustada: Soma o valor das TRANSAÇÕES de pagamento (caixa realizado)
-            // Filtra pela data_pagamento e pelo vendedor da reserva associada
-            $totalReservas = Transacao::where('tipo', 'pagamento')
-                ->where('status', true) // Garante que a transação é válida
-                ->whereBetween('data_pagamento', [$dataInicio, $dataFim])
-                ->whereHas('reserva', function ($query) use ($vendedor) {
-                    $query->where('vendedor_id', $vendedor->id);
-                })
-                ->sum('valor');
+    // Inicia a query base
+    $query = Funcionario::query();
 
-            $totalDayUse = 0;
-            if (class_exists('App\Models\DayUse')) {
-                // Mantém a lógica do Day Use conforme solicitado (baseado na criação)
-                $totalDayUse = \App\Models\DayUse::where('vendedor_id', $vendedor->id)
-                    ->whereBetween('created_at', [$dataInicio . ' 00:00:00', $dataFim . ' 23:59:59'])
-                    ->sum('total');
-            }
+    // 1. Carrega a soma das Reservas
+    // O Laravel cria um atributo virtual: reservas_sum_valor_total
+    $query->withSum(['reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
+        $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
+          ->where('situacao', '!=', 'cancelado');
+    }], 'valor_total');
 
-            return [
-                'nome' => $vendedor->nome,
-                'total_reserva' => $totalReservas,
-                'total_dayuse' => $totalDayUse,
-                'total_geral' => $totalReservas + $totalDayUse
-            ];
-        });
-
-        // Filtra para exibir apenas quem teve vendas e ordena pelo maior valor
-        return $relatorio->filter(function ($item) {
-            return $item['total_geral'] > 0;
-        })->sortByDesc('total_geral');
+    // 2. Carrega a soma do DayUse (Condicional)
+    // Se existir, cria o atributo virtual: day_uses_sum_total (depende do nome da relação)
+    $temDayUse = class_exists('App\Models\DayUse');
+    
+    if ($temDayUse) {
+        // Assumindo que o nome da função de relacionamento no Model Funcionario é 'dayUses'
+        $query->withSum(['dayUses' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
+            $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada]);
+        }], 'total');
     }
+
+    // Executa a consulta no banco de dados
+    $vendedores = $query->get();
+
+    // Monta o relatório final
+    $relatorio = $vendedores->map(function ($vendedor) use ($temDayUse) {
+        // O valor vem como null se não houver registros, por isso usamos o operador '?? 0'
+        $totalReservas = $vendedor->reservas_sum_valor_total ?? 0;
+        
+        // Cuidado: O nome do atributo segue o nome do relacionamento snake_case + _sum_ + coluna
+        // Se a função for dayUses(), o atributo será day_uses_sum_total
+        $totalDayUse = $temDayUse ? ($vendedor->day_uses_sum_total ?? 0) : 0;
+
+        return [
+            'nome' => $vendedor->nome,
+            'total_reserva' => $totalReservas,
+            'total_dayuse' => $totalDayUse,
+            'total_geral' => $totalReservas + $totalDayUse
+        ];
+    });
+
+    // Filtra e ordena
+    return $relatorio->filter(function ($item) {
+        return $item['total_geral'] > 0;
+    })->sortByDesc('total_geral')->values(); // values() reindexa o array para evitar índices quebrados no JSON
+}
 
     public function relatorioVendas(Request $request)
     {

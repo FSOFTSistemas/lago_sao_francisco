@@ -32,4 +32,16 @@ class Funcionario extends Model
 {
     return $this->belongsTo(Endereco::class);
 }
+
+public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'vendedor_id');
+    }
+
+    public function dayUses()
+    {
+        if (class_exists(\App\Models\DayUse::class)) {
+            return $this->hasMany(\App\Models\DayUse::class, 'vendedor_id');
+        }
+    }
 }
