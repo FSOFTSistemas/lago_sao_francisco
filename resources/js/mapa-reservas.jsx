@@ -116,15 +116,12 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
     // --- DRAG AND DROP HANDLERS ---
     const handleDragStart = (e, reserva) => {
-        // Salva os dados da reserva que está sendo arrastada
         e.dataTransfer.setData("reservaId", reserva.id);
         e.dataTransfer.setData("hospedeNome", reserva.hospede_nome);
-        // Efeito visual
         e.dataTransfer.effectAllowed = "move";
     };
 
     const handleDragOver = (e) => {
-        // Necessário para permitir o "Drop"
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
     };
@@ -136,7 +133,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
         if (!reservaId) return;
 
-        // Confirmação
         const result = await Swal.fire({
             title: 'Mover Reserva?',
             html: `Deseja mover a reserva de <b>${hospedeNome}</b> para o quarto <b>${quartoDestino.nome}</b> iniciando em <b>${formatDate(dataCheckinDestino)}</b>?`,
@@ -164,7 +160,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                         timer: 1500,
                         showConfirmButton: false
                     });
-                    fetchMapa(); // Atualiza o mapa
+                    fetchMapa();
                 } else {
                     Swal.fire('Erro', response.data.message || 'Erro ao mover reserva.', 'error');
                 }
@@ -290,7 +286,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
             let reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
 
-            // Caso especial: Reserva começou antes do período visível
             if (i === 0 && !reservaInicio) {
                 reservaInicio = quarto.reservas.find(r => 
                     r.data_checkin < dataAtual && 
@@ -320,7 +315,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     <div 
                         key={`${quarto.id}-${dataAtual}-inicio`}
                         className="quarto-cell"
-                        // Adicionando eventos de Drop na célula ocupada (opcional, para troca)
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, quarto, dataAtual)}
                         style={{ 
@@ -333,16 +327,14 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     >
                         <div 
                             className={`reserva-block situacao-${reservaInicio.situacao}`}
-                            // --- HABILITANDO O ARRASTAR ---
                             draggable={true}
                             onDragStart={(e) => handleDragStart(e, reservaInicio)}
-                            // ------------------------------
                             style={{ 
                                 width: `${larguraBarra}px`, 
                                 marginLeft: `${margemEsquerda}px`, 
                                 borderRadius: '4px',
                                 zIndex: 20,
-                                cursor: 'grab' // Cursor de mãozinha
+                                cursor: 'grab'
                             }}
                             onClick={(e) => { e.stopPropagation(); handleCellClick(quarto, dataAtual, reservaInicio); }}
                             title={`Reserva: ${reservaInicio.hospede_nome}`}
@@ -362,10 +354,8 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 <div 
                     key={`${quarto.id}-${dataAtual}-vazio`}
                     className="quarto-cell"
-                    // --- HABILITANDO O SOLTAR EM CÉLULAS VAZIAS ---
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, quarto, dataAtual)}
-                    // ----------------------------------------------
                     style={{ minWidth: `${larguraDia}px`, width: `${larguraDia}px`, flex: `0 0 ${larguraDia}px` }}
                     onClick={() => handleCellClick(quarto, dataAtual)}
                 >
@@ -387,6 +377,41 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         } else {
             setCelulaSelecionada({ quartoId: quarto.id, data: data, quartoNome: quarto.nome });
             setShowModalAcoes(true);
+        }
+    };
+
+    // --- FUNÇÃO RESTAURADA ---
+    const handleRealizarCheckin = async () => {
+        if (!reservaDetalhes) return;
+        
+        const result = await Swal.fire({
+            title: 'Confirmar Check-in',
+            text: `Deseja realizar o check-in para ${reservaDetalhes.hospede_nome}?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sim, confirmar!',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!result.isConfirmed) return;
+
+        setLoadingAction(true);
+        try {
+            const response = await axios.put(`/reserva/${reservaDetalhes.id}/hospedar`);
+            if (response.data.success) {
+                Swal.fire('Sucesso!', 'Check-in realizado com sucesso.', 'success');
+                setShowModalDetalhes(false); 
+                fetchMapa();
+            } else { 
+                Swal.fire('Atenção', response.data.message || 'Erro ao realizar check-in.', 'warning');
+            }
+        } catch (error) { 
+            const msg = error.response?.data?.message || error.message;
+            Swal.fire('Erro', `Não foi possível processar: ${msg}`, 'error');
+        } finally { 
+            setLoadingAction(false); 
         }
     };
 
@@ -639,7 +664,6 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                                     <div className="col-6 mb-2"><label className="text-muted mb-0 small">Nº Diárias</label><div className="font-weight-bold">{financeiroDetalhes ? financeiroDetalhes.num_diarias : '...'}</div></div>
                                     <div className="col-6 mb-2"><label className="text-muted mb-0 small">Total Geral</label>
                                         <div className="text-primary font-weight-bold">
-                                            {/* SOMA CORRETA: TOTAL DO BANCO (DIÁRIAS+PETS) + TOTAL PRODUTOS DA API */}
                                             {financeiroDetalhes 
                                                 ? formatMoney((parseFloat(reservaDetalhes.valor_total) || 0) + (parseFloat(financeiroDetalhes.total_produtos) || 0)) 
                                                 : '...'}
@@ -681,10 +705,8 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 </form>
             </SimpleModal>
 
-            {/* MODAL NOVA RESERVA COM NOVOS CAMPOS */}
             <SimpleModal show={showModalReserva} onClose={() => setShowModalReserva(false)} title="Nova Reserva">
                 <form onSubmit={handleSalvarReserva}>
-                    
                     <div className="form-group mb-2">
                         <label className="small mb-1 font-weight-bold">Hóspede</label>
                         <div className="d-flex">
