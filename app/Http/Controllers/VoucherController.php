@@ -12,7 +12,6 @@ class VoucherController extends Controller
     public function gerarVoucher($id)
     {
         try {
-            // Adicionado 'pets' ao carregamento
             $reserva = Reserva::with(['quarto', 'hospede', 'transacoes', 'pets'])->findOrFail($id);
             
             if (!in_array($reserva->situacao, ['reserva', 'pre-reserva'])) {
@@ -41,9 +40,7 @@ class VoucherController extends Controller
             $numDiarias = Carbon::parse($reserva->data_checkin)->diffInDays(Carbon::parse($reserva->data_checkout));
             
             $valorDiaria = $reserva->valor_diaria ?? 0;
-            
-            // CORREÇÃO: Usar o valor total salvo no banco (que já inclui pets)
-            $valorTotal = $reserva->valor_total;
+            $valorTotal = $reserva->valor_total; // Valor correto do banco
             
             $data = [
                 'reserva' => $reserva,
@@ -70,6 +67,15 @@ class VoucherController extends Controller
             $dompdf->render();
             
             $filename = 'voucher_' . $numeroVoucher . '.pdf';
+
+            // --- CORREÇÃO DO ERRO DE SÍMBOLOS ESTRANHOS ---
+            // Limpa qualquer saída (espaços, logs, erros) que tenha ocorrido antes
+            // para garantir que apenas o binário do PDF seja enviado.
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
+            // ----------------------------------------------
+            
             return $dompdf->stream($filename, ['Attachment' => false]);
             
         } catch (\Exception $e) {
