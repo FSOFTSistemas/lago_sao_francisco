@@ -272,19 +272,19 @@
                                         <label class="col-md-3 label-control"><strong>Hospedagem Pet</strong></label>
                                         <div class="col-md-9">
                                             <div class="row">
-                                                <div class="col-md-4">
+                                                <div class="col-md-4" style="display: none">
                                                     <label class="small">Pequeno (R$ {{ number_format($preferencias->valor_pet_pequeno ?? 0, 2, ',', '.') }}/dia)</label>
                                                     <input type="number" name="qtd_pet_pequeno" id="qtd_pet_pequeno" class="form-control input-pet" 
                                                         data-valor="{{ $preferencias->valor_pet_pequeno ?? 0 }}"
                                                         value="{{ old('qtd_pet_pequeno', $petsPequeno ?? 0) }}" min="0">
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="small">Médio (R$ {{ number_format($preferencias->valor_pet_medio ?? 0, 2, ',', '.') }}/dia)</label>
+                                                    <label class="small">Adicional (R$ {{ number_format($preferencias->valor_pet_medio ?? 0, 2, ',', '.') }}/dia)</label>
                                                     <input type="number" name="qtd_pet_medio" id="qtd_pet_medio" class="form-control input-pet" 
                                                         data-valor="{{ $preferencias->valor_pet_medio ?? 0 }}"
                                                         value="{{ old('qtd_pet_medio', $petsMedio ?? 0) }}" min="0">
                                                 </div>
-                                                <div class="col-md-4">
+                                                <div class="col-md-4" style="display: none">
                                                     <label class="small">Grande (R$ {{ number_format($preferencias->valor_pet_grande ?? 0, 2, ',', '.') }}/dia)</label>
                                                     <input type="number" name="qtd_pet_grande" id="qtd_pet_grande" class="form-control input-pet" 
                                                         data-valor="{{ $preferencias->valor_pet_grande ?? 0 }}"

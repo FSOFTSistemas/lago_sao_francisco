@@ -143,7 +143,7 @@
                     <label class="col-sm-2 col-form-label">Taxas Pet (Diária)</label>
                     <div class="col-sm-10">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-4" style="display: none">
                                 <label class="small text-muted font-weight-bold">Pequeno</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
@@ -153,7 +153,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <label class="small text-muted font-weight-bold">Médio</label>
+                                <label class="small text-muted font-weight-bold">Adicional</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
                                     <input type="text" name="valor_pet_medio" class="form-control money" 
@@ -161,7 +161,7 @@
                                         value="{{ old('valor_pet_medio', number_format($preferencia->valor_pet_medio ?? 0, 2, ',', '.')) }}">
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" style="display: none">
                                 <label class="small text-muted font-weight-bold">Grande</label>
                                 <div class="input-group">
                                     <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
