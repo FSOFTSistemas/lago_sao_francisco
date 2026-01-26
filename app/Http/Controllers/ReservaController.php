@@ -1197,4 +1197,78 @@ class ReservaController extends Controller
             ], 500);
         }
     }
+
+    // ... imports
+
+    public function relatorioVendasDetalhado(Request $request)
+    {
+        $dados = $this->getDadosVendasDetalhado($request);
+        return view('relatorios.vendas_detalhado', $dados);
+    }
+
+    public function relatorioVendasDetalhadoPdf(Request $request)
+    {
+        $dados = $this->getDadosVendasDetalhado($request);
+        
+        $pdf = Pdf::loadView('relatorios.vendas_detalhado_pdf', $dados);
+        
+        // Configuração para paisagem (opcional, melhor se tiver muitas colunas)
+        // $pdf->setPaper('a4', 'landscape');
+        
+        return $pdf->stream('relatorio_vendas_detalhado.pdf');
+    }
+
+    private function getDadosVendasDetalhado(Request $request)
+    {
+        $dataInicio = $request->input('data_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $dataFim = $request->input('data_fim', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        
+        // 1. Busca APENAS vendedores que possuem reservas com ID vinculado
+        $vendedores = Funcionario::whereIn('id', function($query) {
+                $query->select('vendedor_id')
+                      ->from('reservas')
+                      ->whereNotNull('vendedor_id');
+            })
+            ->orderBy('nome')
+            ->get();
+
+        // 2. Lógica de seleção padrão
+        $filtroVendedor = $request->input('vendedor_id');
+
+        // Se não veio nada no request, define o primeiro vendedor da lista como padrão
+        if (is_null($filtroVendedor) && $vendedores->isNotEmpty()) {
+            $filtroVendedor = $vendedores->first()->id;
+        }
+
+        // Formata datas
+        $inicioQuery = $dataInicio . ' 00:00:00';
+        $fimQuery = $dataFim . ' 23:59:59';
+
+        $query = Reserva::with(['quarto', 'hospede', 'vendedor'])
+            ->whereBetween('created_at', [$inicioQuery, $fimQuery])
+            ->where('situacao', '!=', 'cancelado')
+            ->whereNotNull('vendedor_id');
+
+        // Se NÃO for "todos", filtra pelo ID específico
+        if ($filtroVendedor !== 'todos') {
+            $query->where('vendedor_id', $filtroVendedor);
+        }
+
+        $reservas = $query->orderBy('vendedor_id')
+                          ->orderBy('created_at')
+                          ->get();
+
+        // Agrupa
+        $vendasAgrupadas = $reservas->groupBy(function($reserva) {
+            return $reserva->vendedor->nome ?? 'N/D';
+        });
+
+        return [
+            'vendasAgrupadas' => $vendasAgrupadas,
+            'dataInicio' => $dataInicio,
+            'dataFim' => $dataFim,
+            'vendedores' => $vendedores,
+            'vendedorId' => $filtroVendedor // Passamos a variável usada no filtro
+        ];
+    }
 }

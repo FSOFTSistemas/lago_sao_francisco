@@ -317,26 +317,30 @@ return [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
                     'url'  => '/dayuse/create',
-                    'can'  => 'vender dayuse'
+                    'can'  => 'vender dayuse',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/dayuse',
-                    'can'  => 'gerenciar dayuse'
+                    'can'  => 'gerenciar dayuse',
+                    'shift' => 'ml-2'
                 ],
                 ['header' => 'Aluguel de Espaços'],
                 [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-campground',
                     'url'  => '/aluguel/create',
-                    'can'  => 'cadastrar aluguel'
+                    'can'  => 'cadastrar aluguel',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',
-                    'can'  => 'gerenciar aluguel'
+                    'can'  => 'gerenciar aluguel',
+                    'shift' => 'ml-2'
                 ],
             ],
         ],
@@ -349,36 +353,43 @@ return [
                     'text' => 'Home',
                     'icon' => 'fas fa-home',
                     'url'  => '/mapaQuarto',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Mapa',
                     'icon' => 'fas fa-map',
                     'url'  => '/mapa',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Reservas',
                     'icon' => 'fas fa-bed',
                     'url'  => '/reserva',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Hóspedes',
                     'icon' => 'fas fa-user',
                     'url'  => '/hospede',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Transações',
                     'icon' => 'fas fa-credit-card',
                     'url'  => '/transacao',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/relatorios/produtos',
+                    'shift' => 'ml-2'
                 ],
                 [
                     'text' => 'Café da manhã',
                     'icon' => 'fas fa-mug-hot',
                     'url'  => '/relatorios/cafe-da-manha',
+                    'shift' => 'ml-2'
                 ],
             ],
         ],
@@ -452,7 +463,7 @@ return [
                     'submenu' => [
                         [
                             'text'  => 'Contas', // Texto simplificado e mais direto.
-                            'url'   => '/contaCorrente', 
+                            'url'   => '/contaCorrente',
                             'icon'  => 'fas fa-university', // Ícone específico para a lista de contas.
                             'shift' => 'ml-2'
                         ],
@@ -520,10 +531,23 @@ return [
                     ],
                 ],
                 [
-                    'text' => 'Comissão',
-                    'url'  => '/relatorios/vendas-vendedor',
-                    'icon' => 'fas fa-piggy-bank',
+                    'text' => 'Relatórios',
+                    'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar financeiro',
+                    'submenu' => [
+                        [
+                            'text' => 'Comissão',
+                            'url'  => '/relatorios/comissao-vendedor',
+                            'icon' => 'fas fa-piggy-bank',
+                            'shift' => 'ml-2'
+                        ],
+                        [
+                            'text' => 'Vendas por Vendedor',
+                            'url'  => '/relatorios/vendas-vendedor',
+                            'icon' => 'far fa-file-alt',
+                            'shift' => 'ml-2'
+                        ]
+                    ]
                 ],
 
             ],
