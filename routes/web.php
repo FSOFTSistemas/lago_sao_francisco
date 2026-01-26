@@ -316,9 +316,9 @@ Route::get('/relatorios/cafe-da-manha', [App\Http\Controllers\ReservaController:
 
 Route::get('/relatorios/cafe-da-manha/pdf', [App\Http\Controllers\ReservaController::class, 'cafeDaManhaPdf'])->name('relatorios.cafe.pdf');
 
-Route::get('/relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendas'])->name('relatorios.vendas');
+Route::get('/relatorios/comissao-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendas'])->name('relatorios.vendas');
 
-Route::get('/relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
+Route::get('/relatorios/comissao-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
 
 Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [App\Http\Controllers\ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
 Route::post('/mapa/mover-reserva', [ReservaController::class, 'moverReserva']);
@@ -329,3 +329,6 @@ Route::put('/temporadas/{id}', [TemporadaController::class, 'update'])->name('te
 Route::delete('/temporadas/{id}', [TemporadaController::class, 'destroy'])->name('temporadas.destroy');
 
 Route::post('/mapa/hospede-rapido', [App\Http\Controllers\MapaController::class, 'salvarHospedeRapido'])->name('mapa.hospede_rapido');
+
+Route::get('relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhadoPdf'])->name('relatorios.vendas_detalhado_pdf');
+Route::get('relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhado'])->name('relatorios.vendas_detalhado');
