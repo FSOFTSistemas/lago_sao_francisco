@@ -2727,6 +2727,18 @@ function carregarResumo() {
     </script>
     <script>
         $(document).ready(function() {
+
+        $('#modalCadastrarHospede form').on('submit', function() {
+                var $btn = $(this).find('button[type="submit"]');
+                
+                // Bloqueia o botão para evitar novos cliques
+                $btn.prop('disabled', true);
+                
+                // Opcional: Muda o texto para dar feedback visual
+                $btn.html('<i class="fas fa-spinner fa-spin"></i> Salvando...');
+            });
+
+            
             // Inicializa o Select2 com configurações aprimoradas
             // $('.select2-hospedes-sec').select2({
             //     placeholder: "Selecione hóspedes secundários",
