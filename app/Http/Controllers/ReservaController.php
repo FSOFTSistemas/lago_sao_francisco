@@ -1258,11 +1258,10 @@ public function relatorioVendasDetalhado(Request $request)
 
             // --- BUSCA DAY USE ---
             if (class_exists('App\Models\DayUse')) {
-                $queryDayUse = \App\Models\DayUse::with(['vendedor', 'hospede']) 
-                    ->whereBetween('created_at', [$inicioQuery, $fimQuery])
-                    ->whereNotNull('vendedor_id');
+                $queryDayUse = \App\Models\DayUse::with(['vendedor', 'cliente']) 
+                ->whereBetween('created_at', [$inicioQuery, $fimQuery])
+                ->whereNotNull('vendedor_id');
                 
-                // Filtre status se necessário: ->where('status', '!=', 'cancelado')
 
                 if ($filtroVendedor !== 'todos') {
                     $queryDayUse->where('vendedor_id', $filtroVendedor);
