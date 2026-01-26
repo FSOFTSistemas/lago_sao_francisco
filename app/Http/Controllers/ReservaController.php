@@ -1198,9 +1198,7 @@ class ReservaController extends Controller
         }
     }
 
-    // ... imports
-
-    public function relatorioVendasDetalhado(Request $request)
+public function relatorioVendasDetalhado(Request $request)
     {
         $dados = $this->getDadosVendasDetalhado($request);
         return view('relatorios.vendas_detalhado', $dados);
@@ -1209,66 +1207,81 @@ class ReservaController extends Controller
     public function relatorioVendasDetalhadoPdf(Request $request)
     {
         $dados = $this->getDadosVendasDetalhado($request);
+        $tipo = $request->input('tipo', 'reserva'); // Padrão reserva
+
+        if ($tipo === 'dayuse') {
+            $pdf = Pdf::loadView('relatorios.vendas_detalhado_dayuse_pdf', $dados);
+        } else {
+            $pdf = Pdf::loadView('relatorios.vendas_detalhado_pdf', $dados);
+        }
         
-        $pdf = Pdf::loadView('relatorios.vendas_detalhado_pdf', $dados);
-        
-        // Configuração para paisagem (opcional, melhor se tiver muitas colunas)
-        // $pdf->setPaper('a4', 'landscape');
-        
-        return $pdf->stream('relatorio_vendas_detalhado.pdf');
+        return $pdf->stream('relatorio_vendas_' . $tipo . '.pdf');
     }
 
-    private function getDadosVendasDetalhado(Request $request)
+   private function getDadosVendasDetalhado(Request $request)
     {
         $dataInicio = $request->input('data_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $dataFim = $request->input('data_fim', Carbon::now()->endOfMonth()->format('Y-m-d'));
         
-        // 1. Busca APENAS vendedores que possuem reservas com ID vinculado
-        $vendedores = Funcionario::whereIn('id', function($query) {
-                $query->select('vendedor_id')
-                      ->from('reservas')
-                      ->whereNotNull('vendedor_id');
-            })
-            ->orderBy('nome')
-            ->get();
+        // Se não foi enviado nenhum vendedor (primeiro acesso), definimos como null
+        $filtroVendedor = $request->input('vendedor_id'); 
 
-        // 2. Lógica de seleção padrão
-        $filtroVendedor = $request->input('vendedor_id');
-
-        // Se não veio nada no request, define o primeiro vendedor da lista como padrão
-        if (is_null($filtroVendedor) && $vendedores->isNotEmpty()) {
-            $filtroVendedor = $vendedores->first()->id;
+        $vendedoresIds = \App\Models\Reserva::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
+        if (class_exists('App\Models\DayUse')) {
+            $vendedoresDayUse = \App\Models\DayUse::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
+            $vendedoresIds = array_unique(array_merge($vendedoresIds, $vendedoresDayUse));
         }
+        $vendedores = Funcionario::whereIn('id', $vendedoresIds)->orderBy('nome')->get();
 
-        // Formata datas
-        $inicioQuery = $dataInicio . ' 00:00:00';
-        $fimQuery = $dataFim . ' 23:59:59';
+        // INICIALIZA COLEÇÕES VAZIAS (Tela Limpa)
+        $vendasReservasAgrupadas = collect([]);
+        $vendasDayUseAgrupadas = collect([]);
 
-        $query = Reserva::with(['quarto', 'hospede', 'vendedor'])
-            ->whereBetween('created_at', [$inicioQuery, $fimQuery])
-            ->where('situacao', '!=', 'cancelado')
-            ->whereNotNull('vendedor_id');
+        // Só roda as consultas SE o usuário clicou em filtrar (ou seja, tem vendedor_id no request)
+        if ($request->filled('vendedor_id')) {
+            
+            $inicioQuery = $dataInicio . ' 00:00:00';
+            $fimQuery = $dataFim . ' 23:59:59';
 
-        // Se NÃO for "todos", filtra pelo ID específico
-        if ($filtroVendedor !== 'todos') {
-            $query->where('vendedor_id', $filtroVendedor);
+            // --- BUSCA RESERVAS ---
+            $queryReservas = Reserva::with(['quarto', 'hospede', 'vendedor'])
+                ->whereBetween('created_at', [$inicioQuery, $fimQuery])
+                ->where('situacao', '!=', 'cancelado')
+                ->whereNotNull('vendedor_id');
+
+            if ($filtroVendedor !== 'todos') {
+                $queryReservas->where('vendedor_id', $filtroVendedor);
+            }
+
+            $reservas = $queryReservas->orderBy('vendedor_id')->orderBy('created_at')->get();
+            $vendasReservasAgrupadas = $reservas->groupBy(fn($r) => $r->vendedor->nome ?? 'N/D');
+
+            // --- BUSCA DAY USE ---
+            if (class_exists('App\Models\DayUse')) {
+                $queryDayUse = \App\Models\DayUse::with(['vendedor', 'hospede']) 
+                    ->whereBetween('created_at', [$inicioQuery, $fimQuery])
+                    ->whereNotNull('vendedor_id');
+                
+                // Filtre status se necessário: ->where('status', '!=', 'cancelado')
+
+                if ($filtroVendedor !== 'todos') {
+                    $queryDayUse->where('vendedor_id', $filtroVendedor);
+                }
+
+                $dayUses = $queryDayUse->orderBy('vendedor_id')->orderBy('created_at')->get();
+                $vendasDayUseAgrupadas = $dayUses->groupBy(fn($d) => $d->vendedor->nome ?? 'N/D');
+            }
         }
-
-        $reservas = $query->orderBy('vendedor_id')
-                          ->orderBy('created_at')
-                          ->get();
-
-        // Agrupa
-        $vendasAgrupadas = $reservas->groupBy(function($reserva) {
-            return $reserva->vendedor->nome ?? 'N/D';
-        });
 
         return [
-            'vendasAgrupadas' => $vendasAgrupadas,
+            // ATENÇÃO: Os nomes aqui mudaram para separar as tabelas. 
+            // Certifique-se que suas Views usem estes nomes novos.
+            'vendasReservasAgrupadas' => $vendasReservasAgrupadas,
+            'vendasDayUseAgrupadas' => $vendasDayUseAgrupadas,
             'dataInicio' => $dataInicio,
             'dataFim' => $dataFim,
             'vendedores' => $vendedores,
-            'vendedorId' => $filtroVendedor // Passamos a variável usada no filtro
+            'vendedorId' => $filtroVendedor
         ];
     }
 }
