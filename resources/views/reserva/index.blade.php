@@ -77,6 +77,7 @@
                 <th>Check-in</th>
                 <th>Check-out</th>
                 <th>Qtd.</th>
+                <th>Reserva criada em:</th>
             </tr>
         </thead>
         <tbody>
@@ -117,6 +118,7 @@
                             / ({{ $totalCriancas }})
                         @endif
                     </td>
+                    <td>{{ \Illuminate\Support\Carbon::parse($reserva->created_at)->format('d/m/Y') }}</td>
 
                 </tr>
             @endforeach

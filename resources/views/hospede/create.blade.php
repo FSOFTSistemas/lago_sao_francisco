@@ -278,6 +278,16 @@
             $('#telefone').mask('(00) 00000-0000');
             $('#cpf').mask('000.000.000-00');
             $('#rg').mask('000000000'); // Máscara de RG adicionada
+
+            $('#createHospedeForm').on('submit', function() {
+                var $btn = $(this).find('button[type="submit"]');
+                
+                // Desabilita o botão
+                $btn.prop('disabled', true);
+                
+                // Muda o texto e adiciona ícone de carregamento
+                $btn.html('<i class="fas fa-spinner fa-spin"></i> Processando...');
+            });
         })
     </script>
 

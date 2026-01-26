@@ -55,6 +55,8 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null);
     const [loadingAction, setLoadingAction] = useState(false); 
 
+    const [loadingNovoHospede, setLoadingNovoHospede] = useState(false);
+
     // Estado local para controle do desbloqueio de valor
     const [isDiariaUnlocked, setIsDiariaUnlocked] = useState(false);
 
@@ -192,12 +194,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         return reserva.data_checkin <= hoje;
     };
 
-    const handleSalvarNovoHospede = async (e) => {
+const handleSalvarNovoHospede = async (e) => {
         e.preventDefault();
+        
+        // Evita execução se já estiver carregando
+        if (loadingNovoHospede) return;
+
         if (!novoHospedeNome.trim()) {
             Swal.fire('Atenção', 'Informe o nome do hóspede.', 'warning');
             return;
         }
+
+        setLoadingNovoHospede(true); // BLOQUEIA O BOTÃO
 
         try {
             const response = await axios.post('/mapa/hospede-rapido', { 
@@ -223,6 +231,8 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
         } catch (error) {
             console.error(error);
             Swal.fire('Erro', 'Erro ao cadastrar hóspede.', 'error');
+        } finally {
+            setLoadingNovoHospede(false); // DESBLOQUEIA O BOTÃO (se o modal não fechar)
         }
     };
 
@@ -273,7 +283,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
     };
 
     // --- RENDERIZAÇÃO VISUAL (Grid e Células) ---
-    const renderLinhaQuarto = (quarto) => {
+const renderLinhaQuarto = (quarto) => {
         const celulas = [];
         const datas = dadosMapa.datas;
         const totalDias = datas.length;
@@ -286,6 +296,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
 
             let reservaInicio = quarto.reservas.find(r => checkData(r.data_checkin, dataAtual));
 
+            // Lógica para pegar reserva contínua que começou antes da visualização atual
             if (i === 0 && !reservaInicio) {
                 reservaInicio = quarto.reservas.find(r => 
                     r.data_checkin < dataAtual && 
@@ -293,6 +304,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 );
             }
 
+            // Verifica se tem alguém saindo hoje neste quarto (para definir a margem)
             const reservaFim = quarto.reservas.find(r => checkData(r.data_checkout, dataAtual));
 
             if (reservaInicio) {
@@ -303,13 +315,21 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                     slotsOcupados++;
                 }
                 
+                // Tratamentos de borda
                 if (slotsOcupados === 0 && checkData(reservaInicio.data_checkout, dataAtual)) slotsOcupados = 1;
                 if (slotsOcupados === 0 && reservaInicio.data_checkout > datas[totalDias - 1]) slotsOcupados = totalDias - i;
                 if (slotsOcupados === 0) slotsOcupados = 1;
 
-                const larguraGrid = slotsOcupados * larguraDia;
-                const larguraBarra = larguraGrid + 25; 
+                // --- INÍCIO DA CORREÇÃO ---
+                // 1. Se tem reserva terminando hoje, empurramos a nova 30px (metade do slot)
                 const margemEsquerda = reservaFim ? 30 : 0;
+                
+                const larguraGrid = slotsOcupados * larguraDia;
+                
+                // 2. Subtraímos a margem da largura total. 
+                // Se a barra começou 30px depois, ela precisa acabar 30px antes para manter a proporção correta.
+                const larguraBarra = larguraGrid + 25 - margemEsquerda; 
+                // --- FIM DA CORREÇÃO ---
                 
                 celulas.push(
                     <div 
@@ -331,7 +351,7 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                             onDragStart={(e) => handleDragStart(e, reservaInicio)}
                             style={{ 
                                 width: `${larguraBarra}px`, 
-                                marginLeft: `${margemEsquerda}px`, 
+                                marginLeft: `${margemEsquerda}px`, // Aplica o recuo visual
                                 borderRadius: '4px',
                                 zIndex: 20,
                                 cursor: 'grab'
@@ -566,26 +586,32 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 .mapa-header { position: sticky; top: 0; z-index: 103; background-color: #fff; }
             `}</style>
 
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h1>Mapa de Reservas</h1>
-                <div className="d-flex align-items-center">
+            {/* CABEÇALHO UNIFICADO: TÍTULO + LEGENDA + CONTROLES */}
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                
+                {/* Lado Esquerdo: Título e Legenda juntos */}
+                <div className="d-flex align-items-center flex-wrap">
+                    <h1 className="mb-0 mr-4" style={{ whiteSpace: 'nowrap' }}>Mapa de Reservas</h1>
+                    
+                    <div className="d-flex flex-wrap align-items-center gap-2">
+                        {/* Removi o texto "Legenda:" para economizar espaço, mas pode manter se preferir */}
+                        <span className="badge badge-warning text-dark mr-1">Pré-reserva</span>
+                        <span className="badge badge-primary mr-1">Reserva</span>
+                        <span className="badge badge-danger mr-1">Hospedado</span>
+                        <span className="badge badge-info mr-1">Finalizada</span>
+                        <span className="badge badge-dark mr-1">Bloqueado</span>
+                        <span className="badge" style={{backgroundColor: '#e83e8c', color: 'white'}}>No Show</span>
+                    </div>
+                </div>
+
+                {/* Lado Direito: Inputs e Botão (Mantido igual) */}
+                <div className="d-flex align-items-center mt-2 mt-md-0">
                     <input type="date" className="form-control form-control-sm mr-2" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)} />
                     <input type="date" className="form-control form-control-sm mr-2" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} />
                     <button className="btn btn-primary btn-sm" onClick={fetchMapa}><i className="fas fa-search"></i> Atualizar</button>
                 </div>
             </div>
-
-            {/* LEGENDA DE CORES */}
-            <div className="d-flex flex-wrap align-items-center mb-3 gap-2 pl-2">
-                <span className="mr-2 font-weight-bold">Legenda:</span>
-                <span className="badge badge-warning text-dark mr-1">Pré-reserva</span>
-                <span className="badge badge-primary mr-1">Reserva</span>
-                <span className="badge badge-danger mr-1">Hospedado</span>
-                <span className="badge badge-info mr-1">Finalizada</span>
-                <span className="badge badge-dark mr-1">Bloqueado</span>
-                <span className="badge" style={{backgroundColor: '#e83e8c', color: 'white'}}>No Show</span>
-            </div>
-
+            
             {loading && <div className="text-center p-4"><i className="fas fa-spinner fa-spin"></i> Carregando...</div>}
 
             {!loading && dadosMapa && (
@@ -809,11 +835,18 @@ export default function MapaReservas({ hospedesIniciais, dataInicioInicial, data
                 <form onSubmit={handleSalvarNovoHospede}>
                     <div className="form-group">
                         <label className="font-weight-bold">Nome Completo</label>
-                        <input type="text" className="form-control" value={novoHospedeNome} onChange={e => setNovoHospedeNome(e.target.value)} placeholder="Digite o nome..." autoFocus />
+                        <input type="text" className="form-control" value={novoHospedeNome} onChange={e => setNovoHospedeNome(e.target.value)} placeholder="Digite o nome..." autoFocus disabled={loadingNovoHospede} />
                     </div>
                     <div className="d-flex justify-content-end gap-2 mt-3">
-                        <button type="button" className="btn btn-secondary mr-2" onClick={() => setShowModalNovoHospede(false)}>Cancelar</button>
-                        <button type="submit" className="btn btn-success">Salvar</button>
+                        <button type="button" className="btn btn-secondary mr-2" onClick={() => setShowModalNovoHospede(false)} disabled={loadingNovoHospede}>Cancelar</button>
+                        
+                        <button type="submit" className="btn btn-success" disabled={loadingNovoHospede}>
+                            {loadingNovoHospede ? (
+                                <><i className="fas fa-spinner fa-spin"></i> Salvando...</>
+                            ) : (
+                                'Salvar'
+                            )}
+                        </button>
                     </div>
                 </form>
             </SimpleModal>
