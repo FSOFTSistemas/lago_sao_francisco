@@ -19,6 +19,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Holidays\Holidays;
 
 class MapaController extends Controller
 {
@@ -30,11 +31,24 @@ class MapaController extends Controller
         return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
     }
 
-   public function getDadosMapa(Request $request)
+    public function getDadosMapa(Request $request)
     {
         try {
             $dataInicio = Carbon::parse($request->get('data_inicio', Carbon::now()->startOfWeek()));
             $dataFim = Carbon::parse($request->get('data_fim', $dataInicio->copy()->addDays(13)));
+
+            $holidaysInstance = Holidays::for(country: 'br');
+
+            // Obtemos os feriados que caem no ano da data de início 
+            // (ou você pode iterar pelos anos se o mapa cruzar o Réveillon)
+            $feriadosBr = $holidaysInstance->get(year: $dataInicio->year);
+
+            // Formatamos para um array simples de 'MM-DD' para facilitar o match no React
+            $feriadosFormatados = [];
+            foreach ($feriadosBr as $feriado) {
+                // $feriado['date'] é um objeto DateTime/Carbon
+                $feriadosFormatados[] = $feriado['date']->format('m-d');
+            }
 
             $datas = [];
             $dataAtual = $dataInicio->copy();
@@ -52,7 +66,7 @@ class MapaController extends Controller
                     $query->with('hospede')
                         ->where(function ($q) use ($dataInicio, $dataFim) {
                             $q->where('data_checkin', '<=', $dataFim)
-                              ->where('data_checkout', '>', $dataInicio);
+                                ->where('data_checkout', '>', $dataInicio);
                         })
                         ->whereNotIn('situacao', ['cancelado']);
                 }])
@@ -90,7 +104,7 @@ class MapaController extends Controller
                     'id' => $quarto->id,
                     'nome' => $quarto->nome,
                     'posicao' => $quarto->posicao,
-                    'ocupantes' => $quarto->categoria->ocupantes ?? 999, 
+                    'ocupantes' => $quarto->categoria->ocupantes ?? 999,
                     'categoria' => $quarto->categoria,
                     'categoria_nome' => $quarto->categoria->titulo ?? '',
                     'reservas' => $reservasFormatadas
@@ -101,7 +115,8 @@ class MapaController extends Controller
                 'success' => true,
                 'datas' => $datas,
                 'quartos' => $dadosQuartos,
-                'ocupacao' => $ocupacaoPorData
+                'ocupacao' => $ocupacaoPorData,
+                'feriados' => $feriadosFormatados
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
@@ -133,7 +148,7 @@ class MapaController extends Controller
                 'data_checkin'  => 'required|date',
                 'data_checkout' => 'required|date|after:data_checkin',
                 'tipo'          => 'required|in:reserva,bloqueio',
-                'n_adultos'     => 'nullable|integer|min:1', 
+                'n_adultos'     => 'nullable|integer|min:1',
                 'n_criancas'    => 'nullable|integer|min:0',
                 'n_criancas_nao_pagantes' => 'nullable|integer|min:0', // Validar novo campo
                 'qtd_pet_pequeno' => 'nullable|integer|min:0',
@@ -147,7 +162,7 @@ class MapaController extends Controller
             if ($request->tipo === 'reserva') {
                 $quarto = Quarto::with('categoria')->find($request->quarto_id);
                 $capacidadeMaxima = $quarto->categoria ? $quarto->categoria->ocupantes : 999;
-                
+
                 $nAdultos = $request->input('n_adultos', 1);
                 $nCriancas = $request->input('n_criancas', 0);
                 $totalPessoas = $nAdultos + $nCriancas;
@@ -164,7 +179,7 @@ class MapaController extends Controller
             $valorTotalFinal = 0;
             $manualRateUsed = false;
             $diasTotal = 0;
-            
+
             // Variáveis para Pets
             $petsParaSalvar = [];
             $totalValorPets = 0;
@@ -177,7 +192,7 @@ class MapaController extends Controller
 
                 // 1. Valor Base (Manual)
                 if ($request->filled('valor_diaria')) {
-                    $valorDiariaFinal = (float) $request->valor_diaria; 
+                    $valorDiariaFinal = (float) $request->valor_diaria;
                     $manualRateUsed = true;
                 } else {
                     // 2. Cálculo Automático (Tarifário)
@@ -197,7 +212,7 @@ class MapaController extends Controller
                     } else {
                         $queryTarifa->where('alta_temporada', false);
                     }
-                    
+
                     $tarifa = $queryTarifa->first();
 
                     if (!$tarifa) {
@@ -211,7 +226,13 @@ class MapaController extends Controller
 
                         foreach ($periodo as $dia) {
                             $campo = match ($dia->dayOfWeek) {
-                                0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab',
+                                0 => 'dom',
+                                1 => 'seg',
+                                2 => 'ter',
+                                3 => 'qua',
+                                4 => 'qui',
+                                5 => 'sex',
+                                6 => 'sab',
                             };
                             $valorDia = (float) ($tarifa->$campo ?? 0);
                             $totalTarifa += $valorDia;
@@ -240,17 +261,17 @@ class MapaController extends Controller
                 // Importante: O valor dos pets é sempre SOMADO ao total, seja manual ou automático
                 $preferencias = PreferenciasHotel::first();
                 $tiposPet = ['pequeno', 'medio', 'grande'];
-                
+
                 foreach ($tiposPet as $tamanho) {
                     $qtd = (int) $request->input("qtd_pet_{$tamanho}", 0);
                     if ($qtd > 0) {
                         $campoValor = "valor_pet_{$tamanho}";
                         $valorUnitario = $preferencias->$campoValor ?? 0;
-                        
+
                         // Custo = Qtd * Valor * Dias
                         $custoPet = ($qtd * $valorUnitario * $diasTotal);
                         $totalValorPets += $custoPet;
-                        
+
                         $petsParaSalvar[] = [
                             'tamanho' => $tamanho,
                             'quantidade' => $qtd,
@@ -269,7 +290,7 @@ class MapaController extends Controller
                 'data_checkout' => $request->data_checkout,
                 'valor_diaria'  => $valorDiariaFinal,
                 'valor_total'   => $valorTotalFinal,
-                'n_adultos'     => $request->input('n_adultos', 1), 
+                'n_adultos'     => $request->input('n_adultos', 1),
                 'n_criancas'    => $request->input('n_criancas', 0),
                 'n_criancas_nao_pagantes' => $request->input('n_criancas_nao_pagantes', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
@@ -279,12 +300,12 @@ class MapaController extends Controller
             if ($request->tipo === 'bloqueio') {
                 $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
                 if (!$hospedeBloqueado) return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
-                
+
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
                 $dadosReserva['valor_diaria'] = 0;
                 $dadosReserva['valor_total'] = 0;
-                $dadosReserva['vendedor_id'] = Auth::id(); 
+                $dadosReserva['vendedor_id'] = Auth::id();
             } else {
                 $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
                 $dadosReserva['situacao'] = $request->situacao;
@@ -308,7 +329,7 @@ class MapaController extends Controller
             if ($manualRateUsed && $request->filled('supervisor_id_autorizacao')) {
                 $supervisor = Funcionario::find($request->supervisor_id_autorizacao);
                 $nomeSupervisor = $supervisor ? $supervisor->nome : 'Desconhecido';
-                
+
                 LogReserva::create([
                     'reserva_id' => $reserva->id,
                     'usuario_id' => Auth::id(),
@@ -325,7 +346,6 @@ class MapaController extends Controller
                 'message' => 'Reserva criada com sucesso!',
                 'reserva_id' => $reserva->id
             ]);
-
         } catch (\Exception $e) {
             Log::error('Erro criar reserva rápida', ['erro' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
@@ -347,7 +367,6 @@ class MapaController extends Controller
                 'success' => true,
                 'hospede' => $hospede
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
