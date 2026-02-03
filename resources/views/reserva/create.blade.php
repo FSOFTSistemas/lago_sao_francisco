@@ -1862,6 +1862,9 @@ function carregarResumo() {
                                 <div class="atividade-details">
                                     <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                     ${formaPagamento} • ${dataFormatada}
+                                    <br>
+                                <span> OBS: ${transacao.observacoes ?? '-'}</span>
+
                                     @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
                                         
                                         ${linkComprovante} 
