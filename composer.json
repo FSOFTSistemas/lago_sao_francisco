@@ -17,6 +17,7 @@
         "laravel/ui": "^4.6",
         "livewire/livewire": "^3.6",
         "nfephp-org/sped-nfe": "^5.1",
+        "spatie/holidays": "^1.24",
         "spatie/laravel-permission": "^6.15"
     },
     "require-dev": {
