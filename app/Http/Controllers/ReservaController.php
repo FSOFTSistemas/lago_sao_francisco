@@ -992,15 +992,14 @@ class ReservaController extends Controller
 
         // Inicia a query base
         $query = Funcionario::query();
-
         // 1. Carrega a soma das Reservas
         // O Laravel cria um atributo virtual: reservas_sum_valor_total
         $query->withSum([
-            'reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
-                $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
-                    ->where('situacao', '!=', 'cancelado');
-            }
-        ], 'valor_total');
+    'reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
+        $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
+          ->whereNotIn('situacao', ['cancelado', 'pre-reserva']);
+    }
+], 'valor_total');
 
         // 2. Carrega a soma do DayUse (Condicional)
         // Se existir, cria o atributo virtual: day_uses_sum_total (depende do nome da relação)
@@ -1281,7 +1280,7 @@ class ReservaController extends Controller
             // --- BUSCA RESERVAS ---
             $queryReservas = Reserva::with(['quarto', 'hospede', 'vendedor'])
                 ->whereBetween('created_at', [$inicioQuery, $fimQuery])
-                ->where('situacao', '!=', 'cancelado')
+                ->whereNotIn('situacao', ['cancelado', 'pre-reserva'])
                 ->whereNotNull('vendedor_id')
                 ->where('hospede_id', '!=', 1);
 
