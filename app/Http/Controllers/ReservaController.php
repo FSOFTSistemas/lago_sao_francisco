@@ -931,11 +931,14 @@ class ReservaController extends Controller
     private function buscarReservasParaCafe($inicio, $fim)
     {
         $reservas = Reserva::with(['quarto', 'hospede'])
+            ->join('quartos', 'reservas.quarto_id', '=', 'quartos.id')
+            ->select('reservas.*')
             ->whereIn('situacao', ['reserva', 'hospedado'])
             ->where(function ($query) use ($inicio, $fim) {
                 $query->where('data_checkin', '<', $fim)
                     ->where('data_checkout', '>=', $inicio);
             })
+            ->orderBy('quartos.nome', 'asc')
             ->orderBy('data_checkin')
             ->get();
 
