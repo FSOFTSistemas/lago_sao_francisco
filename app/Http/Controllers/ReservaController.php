@@ -986,7 +986,7 @@ class ReservaController extends Controller
         // O Laravel cria um atributo virtual: reservas_sum_valor_total
         $query->withSum(['reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
             $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
-                ->whereNotIn('situacao', ['cancelado', 'pre-reserva']);
+                ->where('situacao', '!=', 'cancelado');
         }], 'valor_total');
 
         // 2. Carrega a soma do DayUse (Condicional)
@@ -1266,7 +1266,7 @@ class ReservaController extends Controller
             //     ->whereNotNull('vendedor_id');
             $queryReservas = Reserva::with(['quarto', 'hospede', 'vendedor'])
                 ->whereBetween('created_at', [$inicioQuery, $fimQuery])
-                ->whereNotIn('situacao', ['cancelado', 'pre-reserva'])
+                ->where('situacao', '!=', 'cancelado')
                 ->whereNotNull('vendedor_id')
                 ->where('hospede_id', '!=', 1);
 
@@ -1294,7 +1294,7 @@ class ReservaController extends Controller
         }
 
         return [
-            // ATENÇÃO: Os nomes aqui mudaram para separar as tabelas.
+            // ATENÇÃO: Os nomes aqui mudaram para separar as tabelas. 
             // Certifique-se que suas Views usem estes nomes novos.
             'vendasReservasAgrupadas' => $vendasReservasAgrupadas,
             'vendasDayUseAgrupadas' => $vendasDayUseAgrupadas,
