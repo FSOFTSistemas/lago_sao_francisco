@@ -401,7 +401,15 @@ class ReservaController extends Controller
         $diasCount = 0;
 
         foreach ($periodo as $dia) {
-            $campo = match ($dia->dayOfWeek) { 0 => 'dom', 1 => 'seg', 2 => 'ter', 3 => 'qua', 4 => 'qui', 5 => 'sex', 6 => 'sab'};
+            $campo = match ($dia->dayOfWeek) {
+                0 => 'dom',
+                1 => 'seg',
+                2 => 'ter',
+                3 => 'qua',
+                4 => 'qui',
+                5 => 'sex',
+                6 => 'sab'
+            };
             $totalBase += (float) $tarifa->$campo;
             $diasCount++;
         }
@@ -712,7 +720,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Check-in realizado com sucesso!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -738,9 +745,7 @@ class ReservaController extends Controller
         }
     }
 
-    public function show()
-    {
-    }
+    public function show() {}
 
     public function marcarNoShowComSupervisor(Request $request, $id)
     {
@@ -859,7 +864,6 @@ class ReservaController extends Controller
             $fileName = 'FNRH_' . str_replace(' ', '_', $hospede->nome) . '_' . $reserva->id . '.pdf';
 
             return $pdf->stream($fileName);
-
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao gerar FNRH: ' . $e->getMessage());
         }
@@ -905,7 +909,6 @@ class ReservaController extends Controller
             Mail::to($reserva->hospede->email)->send(new VoucherReservaEmail($reserva));
 
             return redirect()->back()->with('success', 'Voucher enviado por e-mail com sucesso!');
-
         } catch (\Exception $e) {
             Log::error('Erro ao enviar voucher por e-mail: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Erro ao enviar e-mail. Verifique as configurações.');
@@ -941,11 +944,14 @@ class ReservaController extends Controller
     private function buscarReservasParaCafe($inicio, $fim)
     {
         $reservas = Reserva::with(['quarto', 'hospede'])
+            ->join('quartos', 'reservas.quarto_id', '=', 'quartos.id')
+            ->select('reservas.*')
             ->whereIn('situacao', ['reserva', 'hospedado'])
             ->where(function ($query) use ($inicio, $fim) {
                 $query->where('data_checkin', '<', $fim)
                     ->where('data_checkout', '>=', $inicio);
             })
+            ->orderBy('quartos.nome', 'asc')
             ->orderBy('data_checkin')
             ->get();
 
@@ -995,11 +1001,11 @@ class ReservaController extends Controller
         // 1. Carrega a soma das Reservas
         // O Laravel cria um atributo virtual: reservas_sum_valor_total
         $query->withSum([
-    'reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
-        $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
-          ->whereNotIn('situacao', ['cancelado', 'pre-reserva']);
-    }
-], 'valor_total');
+            'reservas' => function ($q) use ($dataInicioFormatada, $dataFimFormatada) {
+                $q->whereBetween('created_at', [$dataInicioFormatada, $dataFimFormatada])
+                    ->whereNotIn('situacao', ['cancelado', 'pre-reserva']);
+            }
+        ], 'valor_total');
 
         // 2. Carrega a soma do DayUse (Condicional)
         // Se existir, cria o atributo virtual: day_uses_sum_total (depende do nome da relação)
@@ -1138,7 +1144,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Bloqueio removido com sucesso!'
             ]);
-
         } catch (\Throwable $e) {
             DB::rollBack();
             return response()->json([
@@ -1223,7 +1228,6 @@ class ReservaController extends Controller
                 'success' => true,
                 'message' => 'Reserva movida com sucesso!'
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
