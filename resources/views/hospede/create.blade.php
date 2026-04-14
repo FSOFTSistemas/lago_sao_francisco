@@ -254,23 +254,23 @@
 
     <script>
         function validarCPF(cpf) {
-    cpf = cpf.replace(/[^\d]+/g, ''); // Remove caracteres não numéricos
-    if (cpf == '' || cpf.length != 11 || /^(\d)\1{10}$/.test(cpf)) return false;
-    
-    var add = 0;
-    for (var i = 0; i < 9; i++) add += parseInt(cpf.charAt(i)) * (10 - i);
-    var rev = 11 - (add % 11);
-    if (rev == 10 || rev == 11) rev = 0;
-    if (rev != parseInt(cpf.charAt(9))) return false;
-    
-    add = 0;
-    for (i = 0; i < 10; i++) add += parseInt(cpf.charAt(i)) * (11 - i);
-    rev = 11 - (add % 11);
-    if (rev == 10 || rev == 11) rev = 0;
-    if (rev != parseInt(cpf.charAt(10))) return false;
-    
-    return true;
-}
+            cpf = cpf.replace(/[^\d]+/g, ''); // Remove caracteres não numéricos
+            if (cpf == '' || cpf.length != 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+
+            var add = 0;
+            for (var i = 0; i < 9; i++) add += parseInt(cpf.charAt(i)) * (10 - i);
+            var rev = 11 - (add % 11);
+            if (rev == 10 || rev == 11) rev = 0;
+            if (rev != parseInt(cpf.charAt(9))) return false;
+
+            add = 0;
+            for (i = 0; i < 10; i++) add += parseInt(cpf.charAt(i)) * (11 - i);
+            rev = 11 - (add % 11);
+            if (rev == 10 || rev == 11) rev = 0;
+            if (rev != parseInt(cpf.charAt(10))) return false;
+
+            return true;
+        }
         $(document).ready(function() {
             $('.select2').select2({
                 placeholder: "selecione...",
@@ -278,14 +278,14 @@
                 width: '100%'
             });
             $('#cpf').blur(function() {
-        var cpf = $(this).val();
-        
-        if (cpf !== "" && !validarCPF(cpf)) {
-            alert('O CPF digitado é inválido. Por favor, verifique os números.');
-            $(this).val(''); // Limpa o campo para o usuário digitar novamente
-            $(this).focus(); // Retorna o foco ao campo
-        }
-    });
+                var cpf = $(this).val();
+
+                if (cpf !== "" && !validarCPF(cpf)) {
+                    alert('O CPF digitado é inválido. Por favor, verifique os números.');
+                    $(this).val(''); // Limpa o campo para o usuário digitar novamente
+                    $(this).focus(); // Retorna o foco ao campo
+                }
+            });
         });
     </script>
     <script>
@@ -308,10 +308,10 @@
 
             $('#createHospedeForm').on('submit', function() {
                 var $btn = $(this).find('button[type="submit"]');
-                
+
                 // Desabilita o botão
                 $btn.prop('disabled', true);
-                
+
                 // Muda o texto e adiciona ícone de carregamento
                 $btn.html('<i class="fas fa-spinner fa-spin"></i> Processando...');
             });
