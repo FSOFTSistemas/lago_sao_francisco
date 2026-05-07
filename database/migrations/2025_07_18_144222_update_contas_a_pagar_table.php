@@ -9,16 +9,20 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contas_a_pagar', function (Blueprint $table) {
-            // Adicionando a coluna forma_pagamento
-            $table->string('forma_pagamento')->nullable();
+            // Adicionando a coluna forma_pagamento somente se não existir
+            if (!Schema::hasColumn('contas_a_pagar', 'forma_pagamento')) {
+                $table->string('forma_pagamento')->nullable();
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('contas_a_pagar', function (Blueprint $table) {
-            // Removendo forma_pagamento
-            $table->dropColumn('forma_pagamento');
+            // Removendo forma_pagamento somente se existir
+            if (Schema::hasColumn('contas_a_pagar', 'forma_pagamento')) {
+                $table->dropColumn('forma_pagamento');
+            }
         });
     }
 };
