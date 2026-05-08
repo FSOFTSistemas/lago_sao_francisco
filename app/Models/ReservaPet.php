@@ -11,16 +11,16 @@ class ReservaPet extends Model
 
     protected $fillable = [
         'reserva_id',
-        'tamanho',      // pequeno, medio, grande
+        'tamanho',
         'quantidade',
-        'valor_unitario' // valor da diária do pet
+        'valor_unitario'
     ];
 
     public function reserva()
     {
         return $this->belongsTo(Reserva::class);
     }
-    
+
     // Calcula o total deste item (Qtd Pets * Valor Unitario * Dias da Reserva)
     // Note que precisaremos saber os dias da reserva para o calculo final no controller
 }

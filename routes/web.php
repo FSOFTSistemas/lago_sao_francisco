@@ -53,6 +53,7 @@ use App\Http\Controllers\LogReservaController;
 use App\Http\Controllers\MapaController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PreferenciasHotelController;
+use App\Http\Controllers\RelatorioHospedesController;
 use App\Http\Controllers\RelatorioProdutosController;
 use App\Http\Controllers\ReservaItemController;
 use App\Http\Controllers\SouvenirController;
@@ -299,17 +300,17 @@ Route::get('/fornecedores/json/{fornecedor}', [App\Http\Controllers\FornecedorCo
 Route::post('/contasAPagar/{id}/delete', [ContasAPagarController::class, 'destroy'])->name('contasAPagar.forceDelete');
 
 Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relatorio'])
-    ->name('plano-de-contas.relatorio'); 
+    ->name('plano-de-contas.relatorio');
 
-    Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');
+Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');
 
-    Route::get('reservas/relatorio/canal', [ReservaController::class, 'relatorioPorCanal'])->name('reserva.relatorio.canal');
+Route::get('reservas/relatorio/canal', [ReservaController::class, 'relatorioPorCanal'])->name('reserva.relatorio.canal');
 
-    Route::get('reserva/{reserva}/enviar-voucher', [ReservaController::class, 'enviarVoucherPorEmail'])
-     ->name('reserva.enviarVoucher');
+Route::get('reserva/{reserva}/enviar-voucher', [ReservaController::class, 'enviarVoucherPorEmail'])
+    ->name('reserva.enviarVoucher');
 
-     Route::get('/reserva-interativa', function () {
-    return view('reserva.react_page'); 
+Route::get('/reserva-interativa', function () {
+    return view('reserva.react_page');
 })->middleware('auth');
 
 Route::get('/relatorios/cafe-da-manha', [App\Http\Controllers\ReservaController::class, 'cafeDaManha'])->name('relatorios.cafe');
@@ -332,3 +333,7 @@ Route::post('/mapa/hospede-rapido', [App\Http\Controllers\MapaController::class,
 
 Route::get('relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhadoPdf'])->name('relatorios.vendas_detalhado_pdf');
 Route::get('relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhado'])->name('relatorios.vendas_detalhado');
+
+Route::get('/relatorio-hospedes', [RelatorioHospedesController::class, 'index'])->name('relatorio.hospedes.index');
+Route::get('/relatorio-hospedes/filtrar', [RelatorioHospedesController::class, 'filtrar'])->name('relatorio.hospedes.filtrar');
+Route::get('/relatorio-hospedes/pdf', [RelatorioHospedesController::class, 'gerarPdf'])->name('relatorio.hospedes.pdf');
