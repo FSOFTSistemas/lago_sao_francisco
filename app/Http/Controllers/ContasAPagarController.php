@@ -33,28 +33,47 @@ class ContasAPagarController extends Controller
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
 
+        $filtrosSessaoKey = 'contas_a_pagar_filtros';
+        $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id'];
+
+        if ($request->hasAny($camposFiltro)) {
+            $filtros = [];
+
+            foreach ($camposFiltro as $campo) {
+                if ($request->filled($campo)) {
+                    $filtros[$campo] = $request->input($campo);
+                }
+            }
+
+            if (empty($filtros)) {
+                session()->forget($filtrosSessaoKey);
+            } else {
+                session([$filtrosSessaoKey => $filtros]);
+                $request->merge($filtros);
+            }
+        } elseif (session()->has($filtrosSessaoKey)) {
+            $request->merge(session($filtrosSessaoKey, []));
+        }
+
         if ($empresaSelecionada == null) {
             $query = ContasAPagar::query();
         } else {
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
+            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada
+                ? $empresaSelecionada
+                : $usuario->empresa_id;
+
             $query = ContasAPagar::where('empresa_id', $empresa_id);
         }
 
         $query->with(['parcelas', 'fornecedor', 'empresa']);
 
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
-            $inicio = \Carbon\Carbon::parse($request->input('data_inicio'))->startOfDay();
-            $fim = \Carbon\Carbon::parse($request->input('data_fim'))->endOfDay();
-        } elseif (!$request->hasAny(['data_inicio', 'data_fim', 'status', 'fornecedor_id'])) {
-            // Nenhum filtro foi enviado: aplica data de hoje
-            $inicio = \Carbon\Carbon::today()->startOfDay();
-            $fim = \Carbon\Carbon::today()->endOfDay();
+            $inicio = Carbon::parse($request->input('data_inicio'))->startOfDay();
+            $fim = Carbon::parse($request->input('data_fim'))->endOfDay();
         } else {
-            // Mesmo com filtros parciais, mantém o padrão como hoje
-            $inicio = \Carbon\Carbon::today()->startOfDay();
-            $fim = \Carbon\Carbon::today()->endOfDay();
+            $inicio = Carbon::today()->startOfDay();
+            $fim = Carbon::today()->endOfDay();
         }
-
 
         $query->where(function ($q) use ($inicio, $fim) {
             $q->whereBetween('data_vencimento', [$inicio, $fim])
@@ -69,6 +88,7 @@ class ContasAPagarController extends Controller
 
         if ($request->filled('status')) {
             $status = $request->input('status');
+
             $query->where(function ($q) use ($status) {
                 $q->where('status', $status)
                     ->orWhereHas('parcelas', function ($parcelaQuery) use ($status) {
@@ -88,8 +108,6 @@ class ContasAPagarController extends Controller
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
                 $conta->valor_total = $conta->valor;
-
-                // ADIÇÃO: Define valores padrão para contas de pagamento único
                 $conta->numero_parcela = 1;
                 $conta->total_parcelas = 1;
 
@@ -100,7 +118,8 @@ class ContasAPagarController extends Controller
                 $valorTotal = $conta->parcelas->sum('valor');
 
                 foreach ($conta->parcelas as $parcela) {
-                    $parcelaVencimento = \Carbon\Carbon::parse($parcela->data_vencimento);
+                    $parcelaVencimento = Carbon::parse($parcela->data_vencimento);
+
                     if (!$parcelaVencimento->between($inicio, $fim)) {
                         continue;
                     }
@@ -112,7 +131,7 @@ class ContasAPagarController extends Controller
                     $contaClone = clone $conta;
                     $contaClone->id = count($contasComParcelas) + 1;
                     $contaClone->conta_id = $conta->id;
-                    $contaClone->descricao = $conta->descricao; // Mantém a descrição original da conta
+                    $contaClone->descricao = $conta->descricao;
                     $contaClone->valor = $parcela->valor;
                     $contaClone->valor_total = $valorTotal;
                     $contaClone->data_vencimento = $parcela->data_vencimento;

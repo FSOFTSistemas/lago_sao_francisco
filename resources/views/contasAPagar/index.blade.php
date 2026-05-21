@@ -49,7 +49,7 @@
                 <button type="submit" class="btn btn-primary mr-2">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
-                <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary mr-2">
+                <a href="{{ route('contasAPagar.index', ['limpar_filtros' => 1]) }}" class="btn btn-secondary mr-2">
                     <i class="fas fa-sync-alt"></i> Limpar
                 </a>
                 <button type="button" class="btn btn-info" id="btn-gerar-relatorio">
@@ -195,6 +195,15 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.get('limpar_filtros') === '1') {
+                $('#data_inicio').val('');
+                $('#data_fim').val('');
+                $('#status').val('').trigger('change');
+                $('#fornecedor_id').val(null).trigger('change');
+            }
+
             var fornecedorSelect = $('#fornecedor_id');
 
             fornecedorSelect.select2({
