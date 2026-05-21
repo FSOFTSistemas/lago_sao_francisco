@@ -106,7 +106,8 @@
 
             @foreach ($contasComParcelas as $contasAPagar)
                 <tr>
-                    <td>{{ $contasAPagar->conta_id }} / id: {{ $contasAPagar->id }}</td>
+                    @php $modalKey = $contasAPagar->parcela_id ? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id : $contasAPagar->conta_id; @endphp
+                    <td>{{ $contasAPagar->linha ?? $loop->iteration }} / Conta: {{ $contasAPagar->conta_id }}</td>
                     <td>{{ $contasAPagar->parcela_id }}</td>
                     <td>
                         {{ $contasAPagar->descricao }}
@@ -137,19 +138,19 @@
                     <td>
                         @if ($contasAPagar->valor - $contasAPagar->valor_pago > 0)
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
+                                data-target="#pagarContasAPagarModal{{ $modalKey }}">
                                 💰
                             </button>
                         @endif
 
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                            data-target="#showContasAPagar{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
+                            data-target="#showContasAPagar{{ $modalKey }}">
                             👁️
                         </button>
 
-                        @if ($contasAPagar->total_parcelas == 1 && $contasAPagar->status !== 'pago')
+                        @if ( $contasAPagar->status !== 'pago')
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editContasAPagarModal{{ $contasAPagar->conta_id }}">
+                                data-target="#editContasAPagarModal{{ $modalKey }}">
                                 ✏️
                             </button>
                         @endif

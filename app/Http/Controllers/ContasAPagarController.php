@@ -103,7 +103,7 @@ class ContasAPagarController extends Controller
         foreach ($contasAPagar as $conta) {
             if ($conta->parcelas->isEmpty()) {
                 $conta->conta_id = $conta->id;
-                $conta->id = count($contasComParcelas) + 1;
+                $conta->linha = count($contasComParcelas) + 1;
                 $conta->pode_excluir = $conta->status !== 'pago';
                 $conta->conta_descricao = $conta->descricao;
                 $conta->parcela_id = null;
@@ -129,7 +129,7 @@ class ContasAPagarController extends Controller
                     }
 
                     $contaClone = clone $conta;
-                    $contaClone->id = count($contasComParcelas) + 1;
+                    $contaClone->linha = count($contasComParcelas) + 1;
                     $contaClone->conta_id = $conta->id;
                     $contaClone->descricao = $conta->descricao;
                     $contaClone->valor = $parcela->valor;
@@ -277,22 +277,36 @@ class ContasAPagarController extends Controller
     public function update(Request $request, ContasAPagar $contasAPagar)
     {
         try {
+            $parcela = null;
+
+            if ($request->filled('parcela_id')) {
+                $parcela = ParcelaContasAPagar::where('contas_a_pagar_id', $contasAPagar->id)
+                    ->where('id', $request->input('parcela_id'))
+                    ->firstOrFail();
+            }
+
             $validatedData = $request->validate([
                 'descricao' => 'required|string|max:255',
                 'valor' => [
                     'required',
                     'numeric',
                     'min:0.01',
-                    function ($attribute, $value, $fail) use ($contasAPagar) {
-                        if ($contasAPagar->valor_pago > 0 && $value < $contasAPagar->valor) {
-                            $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
+                    function ($attribute, $value, $fail) use ($contasAPagar, $parcela) {
+                        if ($parcela) {
+                            if ($parcela->valor_pago > 0 && $value < $parcela->valor) {
+                                $fail('Não é possível reduzir o valor quando já existe um pagamento registrado nesta parcela.');
+                            }
+                        } else {
+                            if ($contasAPagar->valor_pago > 0 && $value < $contasAPagar->valor) {
+                                $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
+                            }
                         }
                     }
                 ],
                 'data_vencimento' => 'required|date',
                 'status' => [
                     'required',
-                    'in:pendente,finalizado',
+                    'in:pendente,finalizado,pago',
                 ],
                 'plano_de_contas_id' => [
                     'nullable',
@@ -310,7 +324,26 @@ class ContasAPagarController extends Controller
                 ],
             ]);
 
-            $contasAPagar->update($validatedData);
+            DB::transaction(function () use ($validatedData, $contasAPagar, $parcela) {
+                if ($parcela) {
+                    $parcela->update([
+                        'valor' => $validatedData['valor'],
+                        'data_vencimento' => $validatedData['data_vencimento'],
+                        'status' => $validatedData['status'],
+                    ]);
+
+                    $contasAPagar->update([
+                        'descricao' => $validatedData['descricao'],
+                        'plano_de_contas_id' => $validatedData['plano_de_contas_id'] ?? null,
+                        'fornecedor_id' => $validatedData['fornecedor_id'] ?? null,
+                        'valor' => $contasAPagar->parcelas()->sum('valor'),
+                        'valor_pago' => $contasAPagar->parcelas()->sum('valor_pago'),
+                        'status' => $contasAPagar->parcelas()->where('status', '!=', 'pago')->doesntExist() ? 'pago' : 'pendente',
+                    ]);
+                } else {
+                    $contasAPagar->update($validatedData);
+                }
+            });
 
             return redirect()
                 ->route('contasAPagar.index')

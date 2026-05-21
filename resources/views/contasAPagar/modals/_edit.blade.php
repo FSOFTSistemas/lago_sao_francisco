@@ -1,16 +1,22 @@
-<div class="modal fade" id="editContasAPagarModal{{$contasAPagar->conta_id}}" tabindex="-1" aria-labelledby="editContasAPagarModalLabel" aria-hidden="true">
+@php
+    $modalKey = $contasAPagar->parcela_id
+        ? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id
+        : $contasAPagar->conta_id;
+@endphp
+<div class="modal fade" id="editContasAPagarModal{{ $modalKey }}" tabindex="-1" aria-labelledby="editContasAPagarModalLabel{{ $modalKey }}" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editContasAPagarModalLabel">Atualizar Conta a Pagar</h5>
+                <h5 class="modal-title" id="editContasAPagarModalLabel{{ $modalKey }}">Atualizar Conta a Pagar</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                      <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="editContasAPagarForm{{$contasAPagar->conta_id}}" action="{{ route('contasAPagar.update', $contasAPagar->conta_id) }}" method="POST" >
+                <form id="editContasAPagarForm{{ $modalKey }}" action="{{ route('contasAPagar.update', $contasAPagar->conta_id) }}" method="POST">
                     @csrf
                     @method('PUT')
+                    <input type="hidden" name="parcela_id" value="{{ $contasAPagar->parcela_id }}">
                     <div class="mb-3">
                         <label for="descricao">Descrição:</label>
                         <input type="text" class="form-control" name="descricao" required value="{{$contasAPagar->descricao}}">
@@ -46,6 +52,7 @@
                         <select class="form-control" name="status" required>
                             <option value="pendente" {{ old('status', $contasAPagar->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
                             <option value="finalizado" {{ old('status', $contasAPagar->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                            <option value="pago" {{ old('status', $contasAPagar->status) == 'pago' ? 'selected' : '' }}>Pago</option>
                         </select>
                     </div>
 
