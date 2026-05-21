@@ -49,7 +49,7 @@
                 <button type="submit" class="btn btn-primary mr-2">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
-                <a href="{{ route('contasAPagar.index') }}" class="btn btn-secondary mr-2">
+                <a href="{{ route('contasAPagar.index', ['limpar_filtros' => 1]) }}" class="btn btn-secondary mr-2">
                     <i class="fas fa-sync-alt"></i> Limpar
                 </a>
                 <button type="button" class="btn btn-info" id="btn-gerar-relatorio">
@@ -106,7 +106,8 @@
 
             @foreach ($contasComParcelas as $contasAPagar)
                 <tr>
-                    <td>{{ $contasAPagar->conta_id }} / id: {{ $contasAPagar->id }}</td>
+                    @php $modalKey = $contasAPagar->parcela_id ? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id : $contasAPagar->conta_id; @endphp
+                    <td>{{ $contasAPagar->linha ?? $loop->iteration }} / Conta: {{ $contasAPagar->conta_id }}</td>
                     <td>{{ $contasAPagar->parcela_id }}</td>
                     <td>
                         {{ $contasAPagar->descricao }}
@@ -137,19 +138,19 @@
                     <td>
                         @if ($contasAPagar->valor - $contasAPagar->valor_pago > 0)
                             <button type="button" class="btn btn-success btn-sm" data-toggle="modal"
-                                data-target="#pagarContasAPagarModal{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
+                                data-target="#pagarContasAPagarModal{{ $modalKey }}">
                                 💰
                             </button>
                         @endif
 
                         <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
-                            data-target="#showContasAPagar{{ $contasAPagar->id ?? $contasAPagar->conta_id . '_' . $contasAPagar->parcela_id }}">
+                            data-target="#showContasAPagar{{ $modalKey }}">
                             👁️
                         </button>
 
-                        @if ($contasAPagar->total_parcelas == 1 && $contasAPagar->status !== 'pago')
+                        @if ( $contasAPagar->status !== 'pago')
                             <button type="button" class="btn btn-warning btn-sm" data-toggle="modal"
-                                data-target="#editContasAPagarModal{{ $contasAPagar->conta_id }}">
+                                data-target="#editContasAPagarModal{{ $modalKey }}">
                                 ✏️
                             </button>
                         @endif
@@ -195,6 +196,15 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            if (urlParams.get('limpar_filtros') === '1') {
+                $('#data_inicio').val('');
+                $('#data_fim').val('');
+                $('#status').val('').trigger('change');
+                $('#fornecedor_id').val(null).trigger('change');
+            }
+
             var fornecedorSelect = $('#fornecedor_id');
 
             fornecedorSelect.select2({
