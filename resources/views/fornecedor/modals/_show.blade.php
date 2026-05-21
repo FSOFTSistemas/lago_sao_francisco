@@ -8,10 +8,11 @@
             </div>
             <div class="modal-body">
                 <p><strong>Razão Social/Nome:</strong> <span id="razaoSocial">{{$fornecedor->razao_social}}</span></p>
-                <p><strong>Nome Fantasia/Apelido:</strong> <span id="nomeFantasia"></span>{{$fornecedor->nome_fantasia ?? "Não informado"}}</p>
-                <p><strong>CNPJ/CPF:</strong> <span id="cnpjView"></span>{{$fornecedor->cnpj ?? "Não informado"}}</p>
-                <p><strong>Inscrição Estadual/RG:</strong> <span id="inscricaoEstadual"></span>{{$fornecedor->inscricao_estadual ?? "Não informado"}}</p>
-                <p><strong>Forma de Pagamento:</strong> <span id="formaPagamento"></span>{{$fornecedor->forma_pagamento ?? "Não informado"}}</p>
+                <p><strong>Nome Fantasia/Apelido:</strong> {{ $fornecedor->nome_fantasia ?? "Não informado" }}</p>
+                <p><strong>CNPJ/CPF:</strong> {{ $fornecedor->cnpj ?? "Não informado" }}</p>
+                <p><strong>Inscrição Estadual/RG:</strong> {{ $fornecedor->inscricao_estadual ?? "Não informado" }}</p>
+                <p><strong>Forma de Pagamento:</strong> {{ $fornecedor->forma_pagamento ?? "Não informado" }}</p>
+                <p><strong>Plano de Conta:</strong> {{ $fornecedor->planoDeConta->descricao ?? "Não informado" }}</p>
             </div>
         </div>
     </div>

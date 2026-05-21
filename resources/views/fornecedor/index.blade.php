@@ -23,13 +23,15 @@
         ],
         'itemsPerPage' => 10,
         'showTotal' => false,
-        'valueColumnIndex' => 3,
+        'valueColumnIndex' => 5,
     ])
             <thead class="bg-primary text-white">
                 <tr>
                     <th>ID</th>
                     <th>Razão social</th>
                     <th>Nome fantasia</th>
+                    <th>Plano de contas</th>
+                    <th>Forma de pagamento</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -39,6 +41,12 @@
                         <td>{{ $fornecedor->id }}</td>
                         <td>{{ $fornecedor->razao_social }}</td>
                         <td>{{ $fornecedor->nome_fantasia }}</td>
+                        <td>
+                            {{ optional($fornecedor->planoDeConta)->descricao ?? '-' }}
+                        </td>
+                        <td>
+                            {{ $fornecedor->forma_pagamento ?? '-' }}
+                        </td>
                         <td>
                             <button type="button" class="btn btn-info btn-sm" data-toggle="modal"
                                 data-target="#showFornecedor{{ $fornecedor->id }}">
@@ -58,12 +66,17 @@
                     </tr>
 
                     @include('fornecedor.modals._show', ['fornecedor' => $fornecedor])
-                    @include('fornecedor.modals._edit', ['fornecedor' => $fornecedor])
+                    @include('fornecedor.modals._edit', [
+                        'fornecedor' => $fornecedor,
+                        'planosDeContas' => $planosDeContas ?? collect(),
+                    ])
                     @include('fornecedor.modals._delete', ['fornecedor' => $fornecedor])
                 @endforeach
             </tbody>
     @endcomponent
-    @include('fornecedor.modals._create')
+    @include('fornecedor.modals._create', [
+        'planosDeContas' => $planosDeContas ?? collect(),
+    ])
 @stop
 
 @push('js')
@@ -145,4 +158,3 @@
     }
 </style>
 @endsection
-

@@ -25,7 +25,8 @@
               <input type="text" class="form-control cnpjteste cnpj-cpf-field" id="cnpj" name="cnpj">
               <div class="input-group-append">
                 <button class="btn btn-outline-primary btn-buscar-doc" type="button" id="btnBuscarCnpj">
-                            <i class="bi bi-search"></i> Buscar CNPJ
+                  <i class="bi bi-search"></i> Buscar CNPJ
+                </button>
               </div>
             </div>
           </div>
@@ -33,9 +34,21 @@
             <label for="inscricaoEstadual">Inscrição Estadual/RG:</label>
             <input type="number" class="form-control" id="inscricaoEstadual" name="inscricao_estadual">
           </div>
-                    <div class="mb-3">
+          <div class="mb-3">
             <label for="formaPagamento">Forma de Pagamento:</label>
             <input type="text" class="form-control" id="formaPagamento" name="forma_pagamento">
+          </div>
+
+          <div class="mb-3">
+            <label for="planoDeContaId">Plano de Conta:</label>
+            <select class="form-control" id="planoDeContaId" name="plano_de_conta_id">
+              <option value="">Selecione...</option>
+              @foreach($planosDeContas ?? [] as $planoDeConta)
+                <option value="{{ $planoDeConta->id }}" {{ old('plano_de_conta_id') == $planoDeConta->id ? 'selected' : '' }}>
+                  {{ $planoDeConta->descricao }}
+                </option>
+              @endforeach
+            </select>
           </div>
 
           <div class="modal-footer">

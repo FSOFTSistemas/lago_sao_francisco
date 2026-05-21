@@ -13,7 +13,7 @@
                     <div class="mb-3">
                         <label for="razao_social" class="form-label">Razão Social/Nome</label>
                         <input type="text" class="form-control" name="razao_social"
-                            value={{ $fornecedor->razao_social }} required>
+                            value="{{ $fornecedor->razao_social }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="nomeFantasia">Nome Fantasia/Apelido:</label>
@@ -31,9 +31,21 @@
                             value="{{ $fornecedor->inscricao_estadual }}">
                     </div>
                     <div class="mb-3">
-                        <label for="formaPagamento">Forma de Pagamento:</label>
-                        <input type="text" class="form-control" id="formaPagamento" name="forma_pagamento"
+                        <label for="formaPagamento{{ $fornecedor->id }}">Forma de Pagamento:</label>
+                        <input type="text" class="form-control" id="formaPagamento{{ $fornecedor->id }}" name="forma_pagamento"
                             value="{{ $fornecedor->forma_pagamento }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="planoDeContaId{{ $fornecedor->id }}">Plano de Conta:</label>
+                        <select class="form-control" id="planoDeContaId{{ $fornecedor->id }}" name="plano_de_conta_id">
+                            <option value="">Selecione...</option>
+                            @foreach($planosDeContas ?? [] as $planoDeConta)
+                                <option value="{{ $planoDeConta->id }}" {{ old('plano_de_conta_id', $fornecedor->plano_de_conta_id) == $planoDeConta->id ? 'selected' : '' }}>
+                                    {{ $planoDeConta->descricao }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <button type="submit" class="btn btn-primary">Salvar</button>
                 </form>

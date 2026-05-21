@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Fornecedor;
+use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
 
 class FornecedorController extends Controller
@@ -12,8 +13,10 @@ class FornecedorController extends Controller
      */
     public function index()
     {
-        $fornecedores = Fornecedor::all();
-        return view('fornecedor.index', compact('fornecedores'));
+        $fornecedores = Fornecedor::with('planoDeConta')->get();
+        $planosDeContas = PlanoDeConta::orderBy('descricao')->get();
+
+        return view('fornecedor.index', compact('fornecedores', 'planosDeContas'));
     }
 
     public function search(Request $request)
@@ -39,13 +42,15 @@ class FornecedorController extends Controller
                 'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string',
-                'forma_pagamento' => 'nullable|string'
+                'forma_pagamento' => 'nullable|string',
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
             ]);
             Fornecedor::create($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->back()->with('error', 'Erro ao validar dados');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Erro ao cadastrar fornecedor: ' . $e->getMessage());
         }
     }
 
@@ -63,13 +68,15 @@ class FornecedorController extends Controller
                 'cnpj' => 'nullable|string',
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string',
-                'forma_pagamento' => 'nullable|string'
+                'forma_pagamento' => 'nullable|string',
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
             ]);
             $fornecedor->update($request->all());
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');
         } catch (\Exception $e) {
-            dd($e)->getMessage();
-            return redirect()->back()->with('error', 'Erro ao validar dados');
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Erro ao atualizar fornecedor: ' . $e->getMessage());
         }
     }
 

@@ -15,6 +15,12 @@ class Fornecedor extends Model
         'cnpj',
         'endereco',
         'inscricao_estadual',
-        'forma_pagamento'
+        'forma_pagamento',
+        'plano_de_conta_id',
     ];
+
+    public function planoDeConta()
+    {
+        return $this->belongsTo(PlanoDeConta::class, 'plano_de_conta_id');
+    }
 }
