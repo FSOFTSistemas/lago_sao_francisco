@@ -292,6 +292,15 @@ Route::get('/relatorios/produtos', [RelatorioProdutosController::class, 'index']
 Route::get('/relatorios/produtos/filtrar', [RelatorioProdutosController::class, 'filtrar'])->name('relatorio.produtos.filtrar');
 Route::get('/relatorios/produtos/pdf', [RelatorioProdutosController::class, 'gerarPdf'])->name('relatorio.produtos.pdf');
 
+
+Route::get('/contas-a-pagar/calendario', [ContasAPagarController::class, 'calendario'])
+    ->name('contasAPagar.calendario')
+    ->middleware('permission:gerenciar contas a pagar');
+
+Route::get('/contas-a-pagar/calendario/eventos', [ContasAPagarController::class, 'eventosCalendario'])
+    ->name('contasAPagar.calendario.eventos')
+    ->middleware('permission:gerenciar contas a pagar');
+
 Route::get('/contas-a-pagar/relatorio-pdf', [App\Http\Controllers\ContasAPagarController::class, 'gerarRelatorioPDF'])->name('contasAPagar.gerarRelatorioPDF');
 
 Route::get('/fornecedores/busca', [App\Http\Controllers\FornecedorController::class, 'busca'])->name('fornecedores.busca');
@@ -337,3 +346,4 @@ Route::get('relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController
 Route::get('/relatorio-hospedes', [RelatorioHospedesController::class, 'index'])->name('relatorio.hospedes.index');
 Route::get('/relatorio-hospedes/filtrar', [RelatorioHospedesController::class, 'filtrar'])->name('relatorio.hospedes.filtrar');
 Route::get('/relatorio-hospedes/pdf', [RelatorioHospedesController::class, 'gerarPdf'])->name('relatorio.hospedes.pdf');
+

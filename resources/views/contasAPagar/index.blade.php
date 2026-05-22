@@ -52,6 +52,9 @@
                 <a href="{{ route('contasAPagar.index', ['limpar_filtros' => 1]) }}" class="btn btn-secondary mr-2">
                     <i class="fas fa-sync-alt"></i> Limpar
                 </a>
+                <a href="{{ route('contasAPagar.calendario') }}" class="btn btn-primary mr-2">
+                    <i class="fas fa-calendar-alt"></i> Calendário
+                </a>
                 <button type="button" class="btn btn-info" id="btn-gerar-relatorio">
                     <i class="fas fa-file-pdf"></i> Gerar Relatório
                 </button>
