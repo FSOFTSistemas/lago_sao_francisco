@@ -511,4 +511,94 @@ class ContasAPagarController extends Controller
             $empresa_id
         );
     }
+
+
+    public function calendario()
+    {
+        return view('contasAPagar.calendario');
+    }
+
+    public function eventosCalendario(Request $request)
+    {
+        try {
+            $usuario = Auth::user();
+            $empresaSelecionada = session('empresa_id');
+
+            $inicio = $request->filled('start')
+                ? Carbon::parse($request->input('start'))->startOfDay()
+                : Carbon::now()->startOfMonth();
+
+            $fim = $request->filled('end')
+                ? Carbon::parse($request->input('end'))->endOfDay()
+                : Carbon::now()->endOfMonth();
+
+            $query = $empresaSelecionada == null
+                ? ContasAPagar::query()
+                : ContasAPagar::where('empresa_id', $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id);
+
+            $query->with(['parcelas', 'fornecedor', 'empresa']);
+
+            $query->where(function ($q) use ($inicio, $fim) {
+                $q->whereBetween('data_vencimento', [$inicio, $fim])
+                    ->orWhereHas('parcelas', function ($parcelaQuery) use ($inicio, $fim) {
+                        $parcelaQuery->whereBetween('data_vencimento', [$inicio, $fim]);
+                    });
+            });
+
+            $eventos = [];
+
+            foreach ($query->get() as $conta) {
+                if ($conta->parcelas->isEmpty()) {
+                    $eventos[] = [
+                        'id' => 'conta_' . $conta->id,
+                        'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor') . ' - R$ ' . number_format($conta->valor, 2, ',', '.'),
+                        'start' => Carbon::parse($conta->data_vencimento)->format('Y-m-d'),
+                        'color' => $conta->status === 'pago' ? '#28a745' : '#ffc107',
+                        'extendedProps' => [
+                            'conta_id' => $conta->id,
+                            'parcela_id' => null,
+                            'descricao' => $conta->descricao,
+                            'fornecedor' => $conta->fornecedor->nome_fantasia ?? '-',
+                            'valor_formatado' => 'R$ ' . number_format($conta->valor, 2, ',', '.'),
+                            'status' => $conta->status,
+                        ],
+                    ];
+                } else {
+                    $totalParcelas = $conta->parcelas->count();
+
+                    foreach ($conta->parcelas as $parcela) {
+                        $dataVencimento = Carbon::parse($parcela->data_vencimento);
+
+                        if (!$dataVencimento->between($inicio, $fim)) {
+                            continue;
+                        }
+
+                        $eventos[] = [
+                            'id' => 'parcela_' . $parcela->id,
+                            'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor') . ' - ' . $parcela->numero_parcela . '/' . $totalParcelas . ' - R$ ' . number_format($parcela->valor, 2, ',', '.'),
+                            'start' => $dataVencimento->format('Y-m-d'),
+                            'color' => $parcela->status === 'pago' ? '#28a745' : '#ffc107',
+                            'extendedProps' => [
+                                'conta_id' => $conta->id,
+                                'parcela_id' => $parcela->id,
+                                'descricao' => $conta->descricao,
+                                'fornecedor' => $conta->fornecedor->nome_fantasia ?? '-',
+                                'valor_formatado' => 'R$ ' . number_format($parcela->valor, 2, ',', '.'),
+                                'status' => $parcela->status,
+                                'numero_parcela' => $parcela->numero_parcela,
+                                'total_parcelas' => $totalParcelas,
+                            ],
+                        ];
+                    }
+                }
+            }
+
+            return response()->json($eventos);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao carregar eventos do calendário.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

@@ -477,7 +477,7 @@ return [
                 ],
                 [
                     'text' => 'Contas a Pagar',
-                    'url'  => '/contasAPagar',
+                    'url'  => '/contas-a-pagar/calendario',
                     'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar contas a pagar',
                 ],
