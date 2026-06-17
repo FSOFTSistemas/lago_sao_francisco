@@ -49,12 +49,13 @@ class QuartoController extends Controller
             ]);
     
             if (empty($request->posicao)) {
-                $lastPosition = Quarto::max('posicao'); 
-                $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1; 
+                $lastPosition = (int) Quarto::max('posicao');
+                $validatedData['posicao'] = $lastPosition > 0 ? $lastPosition + 1 : 1;
             } else {
                 // Verifica conflito e ajusta posições existentes
-                $this->ajustarConflitoPosicao($request->posicao);
-                $validatedData['posicao'] = $request->posicao;
+                $posicao = (int) $request->posicao;
+                $this->ajustarConflitoPosicao($posicao);
+                $validatedData['posicao'] = $posicao;
             }
 
             Quarto::create($validatedData);
@@ -90,18 +91,22 @@ class QuartoController extends Controller
                 'posicao' => 'nullable|integer|min:1',
             ]);
 
+            
             $quarto = Quarto::findOrFail($quarto->id);
 
             if (empty($request->posicao)) {
                 // Se não informou, mantém a lógica de jogar pro final
-                $lastPosition = Quarto::max('posicao'); 
-                $validatedData['posicao'] = $lastPosition ? $lastPosition + 1 : 1; 
+                $lastPosition = (int) Quarto::max('posicao');
+                $validatedData['posicao'] = $lastPosition > 0 ? $lastPosition + 1 : 1;
             } else {
+                $posicao = (int) $request->posicao;
+
                 // Se a posição mudou, verifica conflitos
-                if ($request->posicao != $quarto->posicao) {
-                    $this->ajustarConflitoPosicao($request->posicao, $quarto->id);
+                if ($posicao !== (int) $quarto->posicao) {
+                    $this->ajustarConflitoPosicao($posicao, $quarto->id);
                 }
-                $validatedData['posicao'] = $request->posicao;
+
+                $validatedData['posicao'] = $posicao;
             }
 
             $quarto->update($validatedData);
@@ -119,6 +124,8 @@ class QuartoController extends Controller
      */
     private function ajustarConflitoPosicao($novaPosicao, $ignorarId = null)
     {
+        $novaPosicao = (int) $novaPosicao;
+
         // Verifica se já existe algum quarto (diferente do atual) nesta posição
         $query = Quarto::where('posicao', $novaPosicao);
         
