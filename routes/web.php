@@ -17,6 +17,7 @@ use App\Http\Controllers\ContaCorrenteLancamentoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\DayUseController;
+use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\EmpresaContadorController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EmpresaPreferenciaController;
@@ -24,58 +25,58 @@ use App\Http\Controllers\EmpresaRTController;
 use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
+use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\FluxoCaixaController;
 use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\FuncionarioController;
-use App\Http\Controllers\HospedeController;
-use App\Http\Controllers\ItensDoCardapioController;
-use App\Http\Controllers\MapaQuartoController;
-use App\Http\Controllers\MapaReservaController;
-use App\Http\Controllers\NotaFiscalController;
-use App\Http\Controllers\PlanoDeContaController;
-use App\Http\Controllers\ProdutoController;
-use App\Http\Controllers\QuartoController;
-use App\Http\Controllers\ReservaController;
-use App\Http\Controllers\TarifaController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\VendaController;
-use App\Http\Controllers\VendaItemController;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HospedeController;
 use App\Http\Controllers\ItensDayUseController;
-use App\Http\Controllers\NotaFiscalItensController;
+use App\Http\Controllers\ItensDoCardapioController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\LogDayuseController;
 use App\Http\Controllers\LogReservaController;
 use App\Http\Controllers\MapaController;
+use App\Http\Controllers\MapaQuartoController;
+use App\Http\Controllers\MapaReservaController;
+use App\Http\Controllers\MotorhomeController;
+use App\Http\Controllers\NotaFiscalController;
+use App\Http\Controllers\NotaFiscalItensController;
 use App\Http\Controllers\ParceiroController;
+use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\PreferenciasHotelController;
+use App\Http\Controllers\ProdutoController;
+use App\Http\Controllers\QuartoController;
 use App\Http\Controllers\RelatorioHospedesController;
+use App\Http\Controllers\RelatorioMovimentacaoController;
 use App\Http\Controllers\RelatorioProdutosController;
+use App\Http\Controllers\ReservaController;
 use App\Http\Controllers\ReservaItemController;
 use App\Http\Controllers\SouvenirController;
+use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\TemporadaController;
 use App\Http\Controllers\TransacaoController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UsuarioSenhaController;
+use App\Http\Controllers\VendaController;
+use App\Http\Controllers\VendaItemController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\VoucherController;
-use App\Livewire\Dayuse\ShowDayuse;
-use App\Models\Hospede;
-use Illuminate\Support\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/login');
 });
 
-
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [HomeController::class, 'index'])->name('home');
 
-Route::get('/financeiro', [App\Http\Controllers\FinanceiroController::class, 'index'])->name('financeiro');
+Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
 
 Route::resource('planoDeConta', PlanoDeContaController::class)->middleware('permission:gerenciar plano de conta');
 
@@ -120,9 +121,9 @@ Route::resource('formaPagamento', FormaPagamentoController::class);
 
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
 
-Route::resource('espaco', EspacoController::class); //->middleware('permission:gerenciar espaco')
+Route::resource('espaco', EspacoController::class); // ->middleware('permission:gerenciar espaco')
 
-Route::resource('tarifa', TarifaController::class); //->middleware('permission:gerenciar tarifa')
+Route::resource('tarifa', TarifaController::class); // ->middleware('permission:gerenciar tarifa')
 
 Route::resource('hospede', HospedeController::class);
 
@@ -132,10 +133,13 @@ Route::resource('quarto', QuartoController::class);
 
 Route::resource('categoria', CategoriaController::class);
 
+Route::resource('motorhome', MotorhomeController::class)->except('show');
+
 Route::resource('mapaQuarto', MapaQuartoController::class);
 
-Route::post('/filtro-empresa', function (Illuminate\Http\Request $request) {
+Route::post('/filtro-empresa', function (Request $request) {
     session(['empresa_id' => $request->empresa_id]);
+
     return back();
 })->name('filtro.empresa');
 
@@ -174,7 +178,7 @@ Route::resource('itemCardapio', ItensDoCardapioController::class);
 
 Route::resource('categoriaItensCardapio', CategoriasDeItensCardapioController::class);
 
-//Rota para gerar PDF de cardapio
+// Rota para gerar PDF de cardapio
 Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('cardapios.pdf');
 
 Route::resource('cfop', CfopController::class);
@@ -219,9 +223,7 @@ Route::get('/fluxo-caixa/pdf', [FluxoCaixaController::class, 'exportResumoPDF'])
 
 Route::post('/contas-a-receber/receber', [ContasAReceberController::class, 'receber'])->name('contasAReceber.receber');
 
-
 Route::post('contas-a-pagar/{conta_id}/{parcela_id?}', [ContasAPagarController::class, 'pagar'])->name('contasAPagar.pagar');
-
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/usuario/alterar-senha', [UsuarioSenhaController::class, 'form'])->name('usuario.senha.form');
@@ -292,7 +294,6 @@ Route::get('/relatorios/produtos', [RelatorioProdutosController::class, 'index']
 Route::get('/relatorios/produtos/filtrar', [RelatorioProdutosController::class, 'filtrar'])->name('relatorio.produtos.filtrar');
 Route::get('/relatorios/produtos/pdf', [RelatorioProdutosController::class, 'gerarPdf'])->name('relatorio.produtos.pdf');
 
-
 Route::get('/contas-a-pagar/calendario', [ContasAPagarController::class, 'calendario'])
     ->name('contasAPagar.calendario')
     ->middleware('permission:gerenciar contas a pagar');
@@ -301,10 +302,10 @@ Route::get('/contas-a-pagar/calendario/eventos', [ContasAPagarController::class,
     ->name('contasAPagar.calendario.eventos')
     ->middleware('permission:gerenciar contas a pagar');
 
-Route::get('/contas-a-pagar/relatorio-pdf', [App\Http\Controllers\ContasAPagarController::class, 'gerarRelatorioPDF'])->name('contasAPagar.gerarRelatorioPDF');
+Route::get('/contas-a-pagar/relatorio-pdf', [ContasAPagarController::class, 'gerarRelatorioPDF'])->name('contasAPagar.gerarRelatorioPDF');
 
-Route::get('/fornecedores/busca', [App\Http\Controllers\FornecedorController::class, 'busca'])->name('fornecedores.busca');
-Route::get('/fornecedores/json/{fornecedor}', [App\Http\Controllers\FornecedorController::class, 'showJson'])->name('fornecedores.showJson');
+Route::get('/fornecedores/busca', [FornecedorController::class, 'busca'])->name('fornecedores.busca');
+Route::get('/fornecedores/json/{fornecedor}', [FornecedorController::class, 'showJson'])->name('fornecedores.showJson');
 
 Route::post('/contasAPagar/{id}/delete', [ContasAPagarController::class, 'destroy'])->name('contasAPagar.forceDelete');
 
@@ -312,6 +313,9 @@ Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relato
     ->name('plano-de-contas.relatorio');
 
 Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');
+
+// Documentos rápidos (ícone na barra superior)
+Route::get('/documentos/fnrh-branco', [DocumentoController::class, 'fnrhBranco'])->name('documentos.fnrh_branco');
 
 Route::get('reservas/relatorio/canal', [ReservaController::class, 'relatorioPorCanal'])->name('reserva.relatorio.canal');
 
@@ -322,28 +326,32 @@ Route::get('/reserva-interativa', function () {
     return view('reserva.react_page');
 })->middleware('auth');
 
-Route::get('/relatorios/cafe-da-manha', [App\Http\Controllers\ReservaController::class, 'cafeDaManha'])->name('relatorios.cafe');
+Route::get('/relatorios/cafe-da-manha', [ReservaController::class, 'cafeDaManha'])->name('relatorios.cafe');
 
-Route::get('/relatorios/cafe-da-manha/pdf', [App\Http\Controllers\ReservaController::class, 'cafeDaManhaPdf'])->name('relatorios.cafe.pdf');
+Route::get('/relatorios/cafe-da-manha/pdf', [ReservaController::class, 'cafeDaManhaPdf'])->name('relatorios.cafe.pdf');
 
-Route::get('/relatorios/comissao-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendas'])->name('relatorios.vendas');
+Route::get('/relatorios/comissao-vendedor', [ReservaController::class, 'relatorioVendas'])->name('relatorios.vendas');
 
-Route::get('/relatorios/comissao-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
+Route::get('/relatorios/comissao-vendedor/pdf', [ReservaController::class, 'relatorioVendasPdf'])->name('relatorios.vendas.pdf');
 
-Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [App\Http\Controllers\ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
+Route::post('/reservas/{reserva}/excluir-bloqueio-supervisor', [ReservaController::class, 'excluirBloqueioComSupervisor'])->name('reservas.excluir.bloqueio.supervisor');
 Route::post('/mapa/mover-reserva', [ReservaController::class, 'moverReserva']);
-Route::post('/validar-supervisor', [App\Http\Controllers\ReservaController::class, 'validarSupervisor'])->name('validar.supervisor');
+Route::post('/validar-supervisor', [ReservaController::class, 'validarSupervisor'])->name('validar.supervisor');
 
 Route::post('/temporadas', [TemporadaController::class, 'store'])->name('temporadas.store');
 Route::put('/temporadas/{id}', [TemporadaController::class, 'update'])->name('temporadas.update');
 Route::delete('/temporadas/{id}', [TemporadaController::class, 'destroy'])->name('temporadas.destroy');
 
-Route::post('/mapa/hospede-rapido', [App\Http\Controllers\MapaController::class, 'salvarHospedeRapido'])->name('mapa.hospede_rapido');
+Route::post('/mapa/hospede-rapido', [MapaController::class, 'salvarHospedeRapido'])->name('mapa.hospede_rapido');
 
-Route::get('relatorios/vendas-vendedor/pdf', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhadoPdf'])->name('relatorios.vendas_detalhado_pdf');
-Route::get('relatorios/vendas-vendedor', [App\Http\Controllers\ReservaController::class, 'relatorioVendasDetalhado'])->name('relatorios.vendas_detalhado');
+Route::post('/mapa/motorhome-rapido', [MapaController::class, 'salvarMotorhomeRapido'])->name('mapa.motorhome_rapido');
+
+Route::get('relatorios/vendas-vendedor/pdf', [ReservaController::class, 'relatorioVendasDetalhadoPdf'])->name('relatorios.vendas_detalhado_pdf');
+Route::get('relatorios/vendas-vendedor', [ReservaController::class, 'relatorioVendasDetalhado'])->name('relatorios.vendas_detalhado');
 
 Route::get('/relatorio-hospedes', [RelatorioHospedesController::class, 'index'])->name('relatorio.hospedes.index');
 Route::get('/relatorio-hospedes/filtrar', [RelatorioHospedesController::class, 'filtrar'])->name('relatorio.hospedes.filtrar');
 Route::get('/relatorio-hospedes/pdf', [RelatorioHospedesController::class, 'gerarPdf'])->name('relatorio.hospedes.pdf');
 
+Route::get('/relatorios/movimentacao', [RelatorioMovimentacaoController::class, 'index'])->name('relatorios.movimentacao');
+Route::get('/relatorios/movimentacao/pdf', [RelatorioMovimentacaoController::class, 'pdf'])->name('relatorios.movimentacao.pdf');

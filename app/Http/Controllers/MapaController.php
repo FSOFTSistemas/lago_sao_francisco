@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Funcionario;
+use App\Models\Hospede;
+use App\Models\LogReserva;
+use App\Models\Motorhome; // Importante
+use App\Models\PreferenciasHotel;
 use App\Models\Quarto;
-use App\Models\Categoria;
 use App\Models\Reserva;
 use App\Models\ReservaPet; // Importante
 use App\Models\Tarifa;
 use App\Models\Temporada;
-use App\Models\Hospede;
-use App\Models\PreferenciasHotel; // Importante
-use App\Models\Funcionario;
 use App\Models\User;
-use App\Models\LogReserva;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Spatie\Holidays\Holidays;
 
 class MapaController extends Controller
@@ -28,7 +27,9 @@ class MapaController extends Controller
         $dataInicio = $request->get('data_inicio', Carbon::now()->subDays(5)->format('Y-m-d'));
         $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
         $hospedes = Hospede::orderBy('nome')->get();
-        return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes'));
+        $motorhomes = Motorhome::orderBy('placa')->get();
+
+        return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes', 'motorhomes'));
     }
 
     public function getDadosMapa(Request $request)
@@ -39,7 +40,7 @@ class MapaController extends Controller
 
             $holidaysInstance = Holidays::for(country: 'br');
 
-            // Obtemos os feriados que caem no ano da data de início 
+            // Obtemos os feriados que caem no ano da data de início
             // (ou você pode iterar pelos anos se o mapa cruzar o Réveillon)
             $feriadosBr = $holidaysInstance->get(year: $dataInicio->year);
 
@@ -63,7 +64,7 @@ class MapaController extends Controller
             $quartos = Quarto::where('status', 1)
                 ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
-                    $query->with('hospede')
+                    $query->with(['hospede', 'motorhome'])
                         ->where(function ($q) use ($dataInicio, $dataFim) {
                             $q->where('data_checkin', '<=', $dataFim)
                                 ->where('data_checkout', '>', $dataInicio);
@@ -94,10 +95,12 @@ class MapaController extends Controller
                         'situacao' => $reserva->situacao,
                         'valor_diaria' => $reserva->valor_diaria,
                         'valor_total' => $reserva->valor_total, // <--- ADICIONADO AQUI
+                        'motorhome_id' => $reserva->motorhome_id,
+                        'motorhome_placa' => $reserva->motorhome->placa ?? $reserva->placa_veiculo,
                         'n_adultos' => $reserva->n_adultos,
                         'n_criancas' => $reserva->n_criancas,
                         'observacoes' => $reserva->observacoes,
-                        'nomes_hospedes_secundarios' => $reserva->nomes_hospedes_secundarios
+                        'nomes_hospedes_secundarios' => $reserva->nomes_hospedes_secundarios,
                     ];
                 }
                 $dadosQuartos[] = [
@@ -107,19 +110,20 @@ class MapaController extends Controller
                     'ocupantes' => $quarto->categoria->ocupantes ?? 999,
                     'categoria' => $quarto->categoria,
                     'categoria_nome' => $quarto->categoria->titulo ?? '',
-                    'reservas' => $reservasFormatadas
+                    'reservas' => $reservasFormatadas,
                 ];
             }
             $ocupacaoPorData = $this->calcularOcupacaoPorData($datas, $quartos);
+
             return response()->json([
                 'success' => true,
                 'datas' => $datas,
                 'quartos' => $dadosQuartos,
                 'ocupacao' => $ocupacaoPorData,
-                'feriados' => $feriadosFormatados
+                'feriados' => $feriadosFormatados,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Erro: '.$e->getMessage()], 500);
         }
     }
 
@@ -130,13 +134,14 @@ class MapaController extends Controller
         foreach ($datas as $data) {
             $quartosOcupados = 0;
             foreach ($quartos as $quarto) {
-                if ($quarto->reservas->contains(fn($r) => $r->data_checkin <= $data && $r->data_checkout > $data)) {
+                if ($quarto->reservas->contains(fn ($r) => $r->data_checkin <= $data && $r->data_checkout > $data)) {
                     $quartosOcupados++;
                 }
             }
             $percentual = $totalQuartos > 0 ? round(($quartosOcupados / $totalQuartos) * 100) : 0;
             $ocupacao[$data] = ['ocupados' => $quartosOcupados, 'total' => $totalQuartos, 'percentual' => $percentual];
         }
+
         return $ocupacao;
     }
 
@@ -144,19 +149,20 @@ class MapaController extends Controller
     {
         try {
             $request->validate([
-                'quarto_id'     => 'required|exists:quartos,id',
-                'data_checkin'  => 'required|date',
+                'quarto_id' => 'required|exists:quartos,id',
+                'motorhome_id' => 'nullable|exists:motorhomes,id',
+                'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after:data_checkin',
-                'tipo'          => 'required|in:reserva,bloqueio',
-                'n_adultos'     => 'nullable|integer|min:1',
-                'n_criancas'    => 'nullable|integer|min:0',
+                'tipo' => 'required|in:reserva,bloqueio',
+                'n_adultos' => 'nullable|integer|min:1',
+                'n_criancas' => 'nullable|integer|min:0',
                 'n_criancas_nao_pagantes' => 'nullable|integer|min:0', // Validar novo campo
                 'qtd_pet_pequeno' => 'nullable|integer|min:0',
-                'qtd_pet_medio'   => 'nullable|integer|min:0',
-                'qtd_pet_grande'  => 'nullable|integer|min:0',
+                'qtd_pet_medio' => 'nullable|integer|min:0',
+                'qtd_pet_grande' => 'nullable|integer|min:0',
                 'nomes_hospedes_secundarios' => 'nullable|string',
-                'valor_diaria'  => 'nullable',
-                'supervisor_id_autorizacao' => 'nullable'
+                'valor_diaria' => 'nullable',
+                'supervisor_id_autorizacao' => 'nullable',
             ]);
 
             if ($request->tipo === 'reserva') {
@@ -170,7 +176,7 @@ class MapaController extends Controller
                 if ($totalPessoas > ($capacidadeMaxima + 10)) {
                     return response()->json([
                         'success' => false,
-                        'message' => "Capacidade excedida! Máximo de {$capacidadeMaxima} pessoas."
+                        'message' => "Capacidade excedida! Máximo de {$capacidadeMaxima} pessoas.",
                     ], 422);
                 }
             }
@@ -188,7 +194,9 @@ class MapaController extends Controller
                 $checkin = Carbon::parse($request->data_checkin);
                 $checkout = Carbon::parse($request->data_checkout);
                 $diasTotal = $checkin->diffInDays($checkout);
-                if ($diasTotal < 1) $diasTotal = 1;
+                if ($diasTotal < 1) {
+                    $diasTotal = 1;
+                }
 
                 // 1. Valor Base (Manual)
                 if ($request->filled('valor_diaria')) {
@@ -197,7 +205,7 @@ class MapaController extends Controller
                 } else {
                     // 2. Cálculo Automático (Tarifário)
                     $quarto = Quarto::with('categoria')->find($request->quarto_id);
-                    if (!$quarto || !$quarto->categoria) {
+                    if (! $quarto || ! $quarto->categoria) {
                         return response()->json(['success' => false, 'message' => 'Quarto ou Categoria não encontrados.'], 422);
                     }
 
@@ -215,7 +223,7 @@ class MapaController extends Controller
 
                     $tarifa = $queryTarifa->first();
 
-                    if (!$tarifa) {
+                    if (! $tarifa) {
                         $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
                     }
 
@@ -275,7 +283,7 @@ class MapaController extends Controller
                         $petsParaSalvar[] = [
                             'tamanho' => $tamanho,
                             'quantidade' => $qtd,
-                            'valor_unitario' => $valorUnitario
+                            'valor_unitario' => $valorUnitario,
                         ];
                     }
                 }
@@ -285,21 +293,24 @@ class MapaController extends Controller
             }
 
             $dadosReserva = [
-                'quarto_id'     => $request->quarto_id,
-                'data_checkin'  => $request->data_checkin,
+                'quarto_id' => $request->quarto_id,
+                'motorhome_id' => $request->motorhome_id,
+                'data_checkin' => $request->data_checkin,
                 'data_checkout' => $request->data_checkout,
-                'valor_diaria'  => $valorDiariaFinal,
-                'valor_total'   => $valorTotalFinal,
-                'n_adultos'     => $request->input('n_adultos', 1),
-                'n_criancas'    => $request->input('n_criancas', 0),
+                'valor_diaria' => $valorDiariaFinal,
+                'valor_total' => $valorTotalFinal,
+                'n_adultos' => $request->input('n_adultos', 1),
+                'n_criancas' => $request->input('n_criancas', 0),
                 'n_criancas_nao_pagantes' => $request->input('n_criancas_nao_pagantes', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
-                'observacoes'   => $request->observacoes,
+                'observacoes' => $request->observacoes,
             ];
 
             if ($request->tipo === 'bloqueio') {
                 $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
-                if (!$hospedeBloqueado) return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
+                if (! $hospedeBloqueado) {
+                    return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
+                }
 
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
@@ -315,13 +326,13 @@ class MapaController extends Controller
             $reserva = Reserva::create($dadosReserva);
 
             // --- SALVAR PETS NA TABELA ---
-            if (!empty($petsParaSalvar)) {
+            if (! empty($petsParaSalvar)) {
                 foreach ($petsParaSalvar as $pet) {
                     ReservaPet::create([
                         'reserva_id' => $reserva->id,
                         'tamanho' => $pet['tamanho'],
                         'quantidade' => $pet['quantidade'],
-                        'valor_unitario' => $pet['valor_unitario']
+                        'valor_unitario' => $pet['valor_unitario'],
                     ]);
                 }
             }
@@ -334,8 +345,8 @@ class MapaController extends Controller
                     'reserva_id' => $reserva->id,
                     'usuario_id' => Auth::id(),
                     'tipo' => 'criacao',
-                    'descricao' => "Reserva criada via Mapa com valor manual de R$ " . number_format($valorDiariaFinal, 2, ',', '.') . ". Autorizado por: {$nomeSupervisor}.",
-                    'dados_novos' => $reserva->toArray()
+                    'descricao' => 'Reserva criada via Mapa com valor manual de R$ '.number_format($valorDiariaFinal, 2, ',', '.').". Autorizado por: {$nomeSupervisor}.",
+                    'dados_novos' => $reserva->toArray(),
                 ]);
             } else {
                 LogReserva::registrarCriacao($reserva, Auth::id());
@@ -344,11 +355,12 @@ class MapaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva criada com sucesso!',
-                'reserva_id' => $reserva->id
+                'reserva_id' => $reserva->id,
             ]);
         } catch (\Exception $e) {
             Log::error('Erro criar reserva rápida', ['erro' => $e->getMessage()]);
-            return response()->json(['success' => false, 'message' => 'Erro: ' . $e->getMessage()], 500);
+
+            return response()->json(['success' => false, 'message' => 'Erro: '.$e->getMessage()], 500);
         }
     }
 
@@ -365,12 +377,35 @@ class MapaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'hospede' => $hospede
+                'hospede' => $hospede,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao cadastrar hóspede: ' . $e->getMessage()
+                'message' => 'Erro ao cadastrar hóspede: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function salvarMotorhomeRapido(Request $request)
+    {
+        try {
+            $request->validate([
+                'placa' => 'required|string|max:10|unique:motorhomes,placa',
+            ]);
+
+            $motorhome = Motorhome::create([
+                'placa' => $request->input('placa'),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'motorhome' => $motorhome,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao cadastrar motorhome: '.$e->getMessage(),
             ], 500);
         }
     }

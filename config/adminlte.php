@@ -368,6 +368,18 @@ return [
                     'shift' => 'ml-2'
                 ],
                 [
+                    'text' => 'Acomodações',
+                    'icon' => 'fas fa-caravan',
+                    'url'  => '/quarto',
+                    'shift' => 'ml-2'
+                ],
+                [
+                    'text' => 'Motorhomes',
+                    'icon' => 'fas fa-truck-pickup',
+                    'url'  => '/motorhome',
+                    'shift' => 'ml-2'
+                ],
+                [
                     'text' => 'Hóspedes',
                     'icon' => 'fas fa-user',
                     'url'  => '/hospede',

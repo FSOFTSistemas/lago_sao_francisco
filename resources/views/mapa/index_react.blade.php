@@ -6,11 +6,12 @@
     @stop
 
 @section('content')
-    <div 
-        id="react-mapa-reservas-root" 
+    <div
+        id="react-mapa-reservas-root"
         data-hospedes="{{ json_encode($hospedes) }}"
         data-data-inicio="{{ $dataInicio }}"
         data-data-fim="{{ $dataFim }}"
+        data-motorhomes="{{ json_encode($motorhomes ?? []) }}"
     >
         <div class="text-center p-5">
             <i class="fas fa-spinner fa-spin fa-3x"></i>

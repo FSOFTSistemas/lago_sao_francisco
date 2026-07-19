@@ -312,6 +312,27 @@
                                         </div>
                                     </div>
 
+                                    <div class="form-group row">
+                                        <label for="motorhome_id" class="col-md-3 label-control">Motorhome</label>
+                                        <div class="col-sm-4">
+                                            <select class="form-control select2" name="motorhome_id" id="motorhome_id">
+                                                <option value="">Selecione um motorhome</option>
+                                                @foreach ($motorhomes as $motorhome)
+                                                    <option value="{{ $motorhome->id }}"
+                                                        {{ (old('motorhome_id', $reserva->motorhome_id ?? '') == $motorhome->id) ? 'selected' : '' }}>
+                                                        {{ $motorhome->placa }} @if ($motorhome->modelo) - {{ $motorhome->modelo }} @endif
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-2">
+                                            <button type="button" id="btn-addmotorhome" class="btn btn-primary"
+                                                data-toggle="modal" data-target="#modalCadastrarMotorhome">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     <div class="form-group row" id="campoCanalVenda">
                                         <label for="canal_venda" class="col-md-3 label-control">Canal de Venda</label>
                                         <div class="col-md-4">
@@ -784,6 +805,45 @@
 
                     <div class="modal-footer">
                         <a href="{{ route('hospede.create') }}" class="btn btn-secondary">Cadastro Completo</a>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCadastrarMotorhome" tabindex="-1" role="dialog"
+        aria-labelledby="modalMotorhomeLabel" aria-hidden="true">
+        <div class="modal-dialog " role="document">
+            <form method="POST" action="{{ route('motorhome.store') }}">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalMotorhomeLabel">Cadastrar Motorhome</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="form-group row">
+                            <label class="col-md-3 label-control" for="placa_motorhome">* Placa:</label>
+                            <div class="col-md-6">
+                                <div><input class="form-control" required="required" type="text" name="placa"
+                                        id="placa_motorhome" maxlength="10" autocomplete="off"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-md-3 label-control" for="modelo_motorhome">Modelo:</label>
+                            <div class="col-md-6">
+                                <div><input class="form-control" type="text" name="modelo" id="modelo_motorhome"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <a href="{{ route('motorhome.create') }}" class="btn btn-secondary">Cadastro Completo</a>
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </div>
                 </div>

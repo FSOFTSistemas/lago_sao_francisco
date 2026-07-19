@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Reserva extends Model
 {
@@ -12,6 +12,7 @@ class Reserva extends Model
     protected $fillable = [
         'quarto_id',
         'hospede_id',
+        'motorhome_id',
         'data_checkin',
         'data_checkout',
         'valor_diaria',
@@ -24,14 +25,12 @@ class Reserva extends Model
         'canal_venda',
         'vendedor_id',
         'n_criancas_nao_pagantes',
-        'nomes_hospedes_secundarios'
+        'nomes_hospedes_secundarios',
     ];
 
     //     protected $casts = [
     //     'hospedes_secundarios' => 'array',
     // ];
-
-
 
     public function quarto()
     {
@@ -41,6 +40,11 @@ class Reserva extends Model
     public function hospede()
     {
         return $this->belongsTo(Hospede::class, 'hospede_id');
+    }
+
+    public function motorhome()
+    {
+        return $this->belongsTo(Motorhome::class);
     }
 
     public function transacoes()

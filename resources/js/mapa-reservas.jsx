@@ -44,9 +44,11 @@ export default function MapaReservas({
     hospedesIniciais,
     dataInicioInicial,
     dataFimInicial,
+    motorhomesIniciais,
 }) {
     // --- ESTADOS ---
     const [hospedes, setHospedes] = useState(hospedesIniciais || []);
+    const [motorhomes, setMotorhomes] = useState(motorhomesIniciais || []);
     const [dadosMapa, setDadosMapa] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -74,9 +76,15 @@ export default function MapaReservas({
     const [showModalNovoHospede, setShowModalNovoHospede] = useState(false);
     const [novoHospedeNome, setNovoHospedeNome] = useState("");
 
+    // Estado para cadastro rápido de motorhome
+    const [showModalNovoMotorhome, setShowModalNovoMotorhome] = useState(false);
+    const [novaMotorhomePlaca, setNovaMotorhomePlaca] = useState("");
+    const [loadingNovoMotorhome, setLoadingNovoMotorhome] = useState(false);
+
     // Forms
     const [formReserva, setFormReserva] = useState({
         hospede_id: "",
+        motorhome_id: "",
         data_checkin: "",
         data_checkout: "",
         situacao: "pre-reserva",
@@ -210,6 +218,13 @@ export default function MapaReservas({
             }));
     };
 
+    const getOptionsMotorhomes = () => {
+        return motorhomes.map((m) => ({
+            value: m.id,
+            label: m.modelo ? `${m.placa} - ${m.modelo}` : m.placa,
+        }));
+    };
+
     const getOptionsQuartos = () => {
         if (!dadosMapa || !dadosMapa.quartos) return [];
         return dadosMapa.quartos.map((q) => ({
@@ -266,6 +281,50 @@ export default function MapaReservas({
             Swal.fire("Erro", "Erro ao cadastrar hóspede.", "error");
         } finally {
             setLoadingNovoHospede(false); // DESBLOQUEIA O BOTÃO (se o modal não fechar)
+        }
+    };
+
+    const handleSalvarNovoMotorhome = async (e) => {
+        e.preventDefault();
+
+        if (loadingNovoMotorhome) return;
+
+        if (!novaMotorhomePlaca.trim()) {
+            Swal.fire("Atenção", "Informe a placa do motorhome.", "warning");
+            return;
+        }
+
+        setLoadingNovoMotorhome(true);
+
+        try {
+            const response = await axios.post("/mapa/motorhome-rapido", {
+                placa: novaMotorhomePlaca,
+            });
+
+            if (response.data.success) {
+                const novoMotorhome = response.data.motorhome;
+                setMotorhomes((prev) => [...prev, novoMotorhome]);
+                setFormReserva((prev) => ({
+                    ...prev,
+                    motorhome_id: novoMotorhome.id,
+                }));
+                setNovaMotorhomePlaca("");
+                setShowModalNovoMotorhome(false);
+                Swal.fire({
+                    icon: "success",
+                    title: "Cadastrado!",
+                    text: "Motorhome cadastrado e selecionado.",
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire("Erro", response.data.message, "error");
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire("Erro", "Erro ao cadastrar motorhome.", "error");
+        } finally {
+            setLoadingNovoMotorhome(false);
         }
     };
 
@@ -415,7 +474,7 @@ export default function MapaReservas({
                                     reservaInicio,
                                 );
                             }}
-                            title={`Reserva: ${reservaInicio.hospede_nome}`}
+                            title={`Reserva: ${reservaInicio.hospede_nome}${reservaInicio.motorhome_placa ? ` (${reservaInicio.motorhome_placa})` : ""}`}
                         >
                             <span
                                 style={{
@@ -426,6 +485,9 @@ export default function MapaReservas({
                                 }}
                             >
                                 {reservaInicio.hospede_nome}
+                                {reservaInicio.motorhome_placa
+                                    ? ` (${reservaInicio.motorhome_placa})`
+                                    : ""}
                             </span>
                         </div>
                     </div>,
@@ -472,6 +534,7 @@ export default function MapaReservas({
                 quartoId: quarto.id,
                 data: data,
                 quartoNome: quarto.nome,
+                categoriaNome: quarto.categoria_nome,
             });
             setShowModalAcoes(true);
         }
@@ -653,6 +716,7 @@ export default function MapaReservas({
         setFormReserva({
             ...formReserva,
             hospede_id: "",
+            motorhome_id: "",
             data_checkin: checkin,
             data_checkout: checkin,
             n_adultos: 1,
@@ -1253,6 +1317,63 @@ export default function MapaReservas({
                         </div>
                     </div>
 
+                    {celulaSelecionada?.categoriaNome === "Motorhome" ? (
+                        <div className="form-group mb-2">
+                            <label className="small mb-1 font-weight-bold">
+                                Motorhome
+                            </label>
+                            <div className="d-flex">
+                                <div className="flex-grow-1">
+                                    <Select
+                                        options={getOptionsMotorhomes()}
+                                        placeholder="Buscar motorhome..."
+                                        value={getOptionsMotorhomes().find(
+                                            (op) =>
+                                                op.value ===
+                                                formReserva.motorhome_id,
+                                        )}
+                                        onChange={(op) =>
+                                            setFormReserva({
+                                                ...formReserva,
+                                                motorhome_id: op
+                                                    ? op.value
+                                                    : "",
+                                            })
+                                        }
+                                        isClearable
+                                        isSearchable
+                                        noOptionsMessage={() =>
+                                            "Nenhum motorhome encontrado"
+                                        }
+                                        styles={{
+                                            control: (base) => ({
+                                                ...base,
+                                                minHeight: "38px",
+                                                borderTopRightRadius: 0,
+                                                borderBottomRightRadius: 0,
+                                                borderColor: "#ced4da",
+                                            }),
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={() =>
+                                        setShowModalNovoMotorhome(true)
+                                    }
+                                    style={{
+                                        borderTopLeftRadius: 0,
+                                        borderBottomLeftRadius: 0,
+                                    }}
+                                    title="Cadastrar Novo Motorhome"
+                                >
+                                    <i className="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <div className="row mb-2">
                         <div className="col-6">
                             <label className="small mb-1">Check-in</label>
@@ -1521,6 +1642,55 @@ export default function MapaReservas({
                     </div>
                 </form>
             </SimpleModal>
+
+            <SimpleModal
+                show={showModalNovoMotorhome}
+                onClose={() => setShowModalNovoMotorhome(false)}
+                title="Novo Motorhome (Rápido)"
+                size="sm"
+            >
+                <form onSubmit={handleSalvarNovoMotorhome}>
+                    <div className="form-group">
+                        <label className="font-weight-bold">Placa</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            value={novaMotorhomePlaca}
+                            onChange={(e) =>
+                                setNovaMotorhomePlaca(e.target.value)
+                            }
+                            placeholder="Digite a placa..."
+                            autoFocus
+                            disabled={loadingNovoMotorhome}
+                        />
+                    </div>
+                    <div className="d-flex justify-content-end gap-2 mt-3">
+                        <button
+                            type="button"
+                            className="btn btn-secondary mr-2"
+                            onClick={() => setShowModalNovoMotorhome(false)}
+                            disabled={loadingNovoMotorhome}
+                        >
+                            Cancelar
+                        </button>
+
+                        <button
+                            type="submit"
+                            className="btn btn-success"
+                            disabled={loadingNovoMotorhome}
+                        >
+                            {loadingNovoMotorhome ? (
+                                <>
+                                    <i className="fas fa-spinner fa-spin"></i>{" "}
+                                    Salvando...
+                                </>
+                            ) : (
+                                "Salvar"
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </SimpleModal>
         </div>
     );
 }
@@ -1533,6 +1703,10 @@ if (rootElement) {
         try {
             hospedes = JSON.parse(rootElement.dataset.hospedes || "[]");
         } catch (e) {}
+        let motorhomes = [];
+        try {
+            motorhomes = JSON.parse(rootElement.dataset.motorhomes || "[]");
+        } catch (e) {}
         const dataInicio = rootElement.dataset.dataInicio;
         const dataFim = rootElement.dataset.dataFim;
         root.render(
@@ -1541,6 +1715,7 @@ if (rootElement) {
                     hospedesIniciais={hospedes}
                     dataInicioInicial={dataInicio}
                     dataFimInicial={dataFim}
+                    motorhomesIniciais={motorhomes}
                 />
             </React.StrictMode>,
         );

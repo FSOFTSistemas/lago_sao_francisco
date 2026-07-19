@@ -2,30 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Reserva;
-use App\Models\Quarto;
-use App\Models\Hospede;
+use App\Mail\VoucherReservaEmail;
 use App\Models\Categoria;
+use App\Models\DayUse;
 use App\Models\FormaPagamento;
 use App\Models\Funcionario;
+use App\Models\Hospede;
 use App\Models\LogReserva;
+use App\Models\Motorhome;
 use App\Models\PreferenciasHotel;
 use App\Models\Produto;
-use App\Models\Transacao;
-use App\Models\User;
-use App\Models\Temporada;
+use App\Models\Quarto;
+use App\Models\Reserva;
+use App\Models\ReservaPet;
 use App\Models\Tarifa;
+use App\Models\Temporada;
+use App\Models\Transacao;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use App\Mail\VoucherReservaEmail;
-use App\Models\ReservaPet;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ReservaController extends Controller
 {
@@ -36,8 +36,11 @@ class ReservaController extends Controller
     {
         $situacao = $request->input('situacao', 'todos');
         $query = Reserva::with(['quarto', 'hospede'])->orderBy('id', 'desc');
-        if ($situacao !== 'todos') $query->where('situacao', $situacao);
+        if ($situacao !== 'todos') {
+            $query->where('situacao', $situacao);
+        }
         $reservas = $query->get();
+
         return view('reserva.index', compact('reservas', 'situacao'));
     }
 
@@ -67,10 +70,11 @@ class ReservaController extends Controller
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
         $canaisVenda = $this->canaisVenda;
         $vendedores = Funcionario::all();
+        $motorhomes = Motorhome::orderBy('placa')->get();
 
         $preferencias = PreferenciasHotel::first();
 
-        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda', 'vendedores', 'preferencias'));
+        return view('reserva.create', compact('quartosAgrupados', 'categorias', 'hospedes', 'hospedeBloqueado', 'formasPagamento', 'produtos', 'checkin', 'checkout', 'canaisVenda', 'vendedores', 'preferencias', 'motorhomes'));
     }
 
     public function validarSupervisor(Request $request)
@@ -80,7 +84,9 @@ class ReservaController extends Controller
 
         foreach ($funcionarios as $f) {
             $hashBanco = trim((string) $f->senha_supervisor);
-            if ($hashBanco === '') continue;
+            if ($hashBanco === '') {
+                continue;
+            }
 
             $isValid = false;
             if (hash_equals($hashBanco, md5($senha))) {
@@ -96,7 +102,7 @@ class ReservaController extends Controller
                 return response()->json([
                     'success' => true,
                     'supervisor_id' => $f->id,
-                    'supervisor_nome' => $f->nome
+                    'supervisor_nome' => $f->nome,
                 ]);
             }
         }
@@ -110,6 +116,7 @@ class ReservaController extends Controller
             $validatedData = $request->validate([
                 'quarto_id' => 'required|exists:quartos,id',
                 'hospede_id' => 'required|exists:hospedes,id',
+                'motorhome_id' => 'nullable|exists:motorhomes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
                 'valor_diaria' => 'nullable',
@@ -120,13 +127,13 @@ class ReservaController extends Controller
                 'n_criancas_nao_pagantes' => 'nullable|integer', // NOVO
                 'observacoes' => 'nullable|string',
                 'placa_veiculo' => 'nullable|string|max:10',
-                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
+                'canal_venda' => 'nullable|string|in:'.implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'nomes_hospedes_secundarios' => 'nullable|string',
                 // Campos de pets (não salvos na tabela reservas diretamente)
                 'qtd_pet_pequeno' => 'nullable|integer|min:0',
-                'qtd_pet_medio'   => 'nullable|integer|min:0',
-                'qtd_pet_grande'  => 'nullable|integer|min:0',
+                'qtd_pet_medio' => 'nullable|integer|min:0',
+                'qtd_pet_grande' => 'nullable|integer|min:0',
             ]);
 
             // Validação de Capacidade (Pessoas)
@@ -134,9 +141,8 @@ class ReservaController extends Controller
             $maxOcupantes = $quarto->categoria->ocupantes;
             $totalPessoas = $validatedData['n_adultos'] + $validatedData['n_criancas'] + ($validatedData['n_criancas_nao_pagantes'] ?? 0);
 
-
             if ($totalPessoas > ($maxOcupantes + 10)) {
-                return redirect()->back()->withInput()->with('error', "Capacidade excedida.");
+                return redirect()->back()->withInput()->with('error', 'Capacidade excedida.');
             }
 
             // Cálculo da Diária Base (Quarto)
@@ -148,7 +154,9 @@ class ReservaController extends Controller
                     $validatedData['n_adultos'],
                     $validatedData['n_criancas']
                 );
-                if (!$calculo['sucesso']) return redirect()->back()->withInput()->with('error', $calculo['mensagem']);
+                if (! $calculo['sucesso']) {
+                    return redirect()->back()->withInput()->with('error', $calculo['mensagem']);
+                }
                 $validatedData['valor_diaria'] = $calculo['valor_diaria'];
             } else {
                 $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
@@ -158,11 +166,13 @@ class ReservaController extends Controller
             $dtCheckin = \Carbon\Carbon::parse($validatedData['data_checkin']);
             $dtCheckout = \Carbon\Carbon::parse($validatedData['data_checkout']);
             $dias = $dtCheckin->diffInDays($dtCheckout);
-            if ($dias < 1) $dias = 1;
+            if ($dias < 1) {
+                $dias = 1;
+            }
 
             // 1. Cria a reserva (sem o valor total final ainda, pois falta somar os pets)
             // A gente calcula o total do quarto primeiro
-            $valorTotalQuarto = (float)$validatedData['valor_diaria'] * $dias;
+            $valorTotalQuarto = (float) $validatedData['valor_diaria'] * $dias;
             $validatedData['valor_total'] = $valorTotalQuarto;
 
             $reserva = Reserva::create($validatedData);
@@ -178,7 +188,7 @@ class ReservaController extends Controller
 
             return redirect()->route('reserva.edit', $reserva->id)->with('success', 'Reserva criada com sucesso!');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Erro: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Erro: '.$e->getMessage());
         }
     }
 
@@ -191,11 +201,12 @@ class ReservaController extends Controller
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
         $vendedores = Funcionario::all();
+        $motorhomes = Motorhome::orderBy('placa')->get();
         $logs = LogReserva::where('reserva_id', $reserva->id)->with('usuario')->orderBy('created_at', 'desc')->get();
 
         $hoje = Carbon::today();
         $dataCheckin = Carbon::parse($reserva->data_checkin);
-        $podeHospedar = $hoje->equalTo($dataCheckin) && in_array($reserva->situacao, ['reserva']) && !in_array($reserva->situacao, ['finalizada', 'cancelado']);
+        $podeHospedar = $hoje->equalTo($dataCheckin) && in_array($reserva->situacao, ['reserva']) && ! in_array($reserva->situacao, ['finalizada', 'cancelado']);
         $canaisVenda = $this->canaisVenda;
 
         $reserva->load('pets');
@@ -220,7 +231,8 @@ class ReservaController extends Controller
             'preferencias',
             'petsPequeno',
             'petsMedio',
-            'petsGrande'
+            'petsGrande',
+            'motorhomes'
         ));
     }
 
@@ -230,6 +242,7 @@ class ReservaController extends Controller
             $validatedData = $request->validate([
                 'quarto_id' => 'required|exists:quartos,id',
                 'hospede_id' => 'nullable|exists:hospedes,id',
+                'motorhome_id' => 'nullable|exists:motorhomes,id',
                 'data_checkin' => 'required|date',
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
                 'valor_diaria' => 'nullable',
@@ -240,24 +253,28 @@ class ReservaController extends Controller
                 'n_criancas_nao_pagantes' => 'nullable|integer',
                 'observacoes' => 'nullable|string',
                 'placa_veiculo' => 'nullable|string|max:10',
-                'canal_venda' => 'nullable|string|in:' . implode(',', $this->canaisVenda),
+                'canal_venda' => 'nullable|string|in:'.implode(',', $this->canaisVenda),
                 'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'nomes_hospedes_secundarios' => 'nullable|string',
                 'supervisor_id_autorizacao' => 'nullable',
                 'qtd_pet_pequeno' => 'nullable|integer|min:0',
-                'qtd_pet_medio'   => 'nullable|integer|min:0',
-                'qtd_pet_grande'  => 'nullable|integer|min:0',
+                'qtd_pet_medio' => 'nullable|integer|min:0',
+                'qtd_pet_grande' => 'nullable|integer|min:0',
             ]);
 
             $situacaoAtual = $reserva->situacao;
             $novaSituacao = $validatedData['situacao'];
-            if ($situacaoAtual === 'hospedado' && $novaSituacao !== 'hospedado') return redirect()->back()->withInput()->with('error', 'Não é possível alterar reserva hospedada.');
-            if (in_array($situacaoAtual, ['finalizada', 'cancelado']) && $novaSituacao !== $situacaoAtual) return redirect()->back()->withInput()->with('error', 'Reserva finalizada/cancelada não pode ser alterada.');
+            if ($situacaoAtual === 'hospedado' && $novaSituacao !== 'hospedado') {
+                return redirect()->back()->withInput()->with('error', 'Não é possível alterar reserva hospedada.');
+            }
+            if (in_array($situacaoAtual, ['finalizada', 'cancelado']) && $novaSituacao !== $situacaoAtual) {
+                return redirect()->back()->withInput()->with('error', 'Reserva finalizada/cancelada não pode ser alterada.');
+            }
 
             $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
             $maxOcupantes = $quarto->categoria->ocupantes;
             if (($validatedData['n_adultos'] + $validatedData['n_criancas']) > ($maxOcupantes + 10)) {
-                return redirect()->back()->withInput()->with('error', "Capacidade excedida.");
+                return redirect()->back()->withInput()->with('error', 'Capacidade excedida.');
             }
 
             if (empty($validatedData['valor_diaria'])) {
@@ -268,7 +285,9 @@ class ReservaController extends Controller
                     $validatedData['n_adultos'],
                     $validatedData['n_criancas']
                 );
-                if (!$calculo['sucesso']) return redirect()->back()->withInput()->with('error', $calculo['mensagem']);
+                if (! $calculo['sucesso']) {
+                    return redirect()->back()->withInput()->with('error', $calculo['mensagem']);
+                }
                 $validatedData['valor_diaria'] = $calculo['valor_diaria'];
             } else {
                 $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
@@ -277,9 +296,11 @@ class ReservaController extends Controller
             $dtCheckin = \Carbon\Carbon::parse($validatedData['data_checkin']);
             $dtCheckout = \Carbon\Carbon::parse($validatedData['data_checkout']);
             $dias = $dtCheckin->diffInDays($dtCheckout);
-            if ($dias < 1) $dias = 1;
+            if ($dias < 1) {
+                $dias = 1;
+            }
 
-            $valorTotalQuarto = (float)$validatedData['valor_diaria'] * $dias;
+            $valorTotalQuarto = (float) $validatedData['valor_diaria'] * $dias;
             $validatedData['valor_total'] = $valorTotalQuarto; // Temporário, vai somar pets depois
 
             // Dados antigos para log
@@ -306,7 +327,7 @@ class ReservaController extends Controller
             $descricaoLog = null;
 
             // Se houve mudança de valor e tem supervisor, cria mensagem detalhada
-            if (abs((float)$valorAntigo - (float)$valorNovo) > 0.01 && $supervisorId) {
+            if (abs((float) $valorAntigo - (float) $valorNovo) > 0.01 && $supervisorId) {
                 $supervisor = Funcionario::find($supervisorId);
                 $nomeSupervisor = $supervisor ? $supervisor->nome : 'N/D';
                 $vAnt = number_format($valorAntigo, 2, ',', '.');
@@ -324,7 +345,7 @@ class ReservaController extends Controller
 
             return redirect()->back()->with('success', 'Reserva atualizada com sucesso!');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Erro ao atualizar: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Erro ao atualizar: '.$e->getMessage());
         }
     }
 
@@ -335,14 +356,14 @@ class ReservaController extends Controller
 
         $tipos = [
             'pequeno' => 'qtd_pet_pequeno',
-            'medio'   => 'qtd_pet_medio',
-            'grande'  => 'qtd_pet_grande'
+            'medio' => 'qtd_pet_medio',
+            'grande' => 'qtd_pet_grande',
         ];
 
         $valoresRef = [
             'pequeno' => $preferencias->valor_pet_pequeno ?? 0,
-            'medio'   => $preferencias->valor_pet_medio ?? 0,
-            'grande'  => $preferencias->valor_pet_grande ?? 0,
+            'medio' => $preferencias->valor_pet_medio ?? 0,
+            'grande' => $preferencias->valor_pet_grande ?? 0,
         ];
 
         foreach ($tipos as $tamanho => $campoInput) {
@@ -355,7 +376,7 @@ class ReservaController extends Controller
                     'reserva_id' => $reserva->id,
                     'tamanho' => $tamanho,
                     'quantidade' => $quantidade,
-                    'valor_unitario' => $valorUnitario
+                    'valor_unitario' => $valorUnitario,
                 ]);
 
                 // Cálculo: Quantidade * Valor Diária Pet * Dias da Reserva
@@ -369,23 +390,29 @@ class ReservaController extends Controller
     private function calcularTarifaAutomatica($quartoId, $checkinData, $checkoutData, $nAdultos, $nCriancas)
     {
         $quarto = Quarto::with('categoria')->find($quartoId);
-        if (!$quarto || !$quarto->categoria) return ['sucesso' => false, 'mensagem' => 'Quarto/Categoria não encontrados.'];
+        if (! $quarto || ! $quarto->categoria) {
+            return ['sucesso' => false, 'mensagem' => 'Quarto/Categoria não encontrados.'];
+        }
 
         $checkin = \Carbon\Carbon::parse($checkinData);
         $temporada = Temporada::where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin)->first();
         $isAlta = $temporada ? true : false;
 
         $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', $isAlta);
-        if ($isAlta) $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
+        if ($isAlta) {
+            $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
+        }
 
         $tarifa = $queryTarifa->first();
-        if (!$tarifa) {
+        if (! $tarifa) {
             $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
-            if (!$tarifa) return ['sucesso' => false, 'mensagem' => 'Nenhuma tarifa encontrada.'];
+            if (! $tarifa) {
+                return ['sucesso' => false, 'mensagem' => 'Nenhuma tarifa encontrada.'];
+            }
         }
 
         $checkout = \Carbon\Carbon::parse($checkoutData);
-        $periodo = \Carbon\CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+        $periodo = CarbonPeriod::create($checkin, $checkout->copy()->subDay());
         $totalBase = 0;
         $diasCount = 0;
 
@@ -399,7 +426,7 @@ class ReservaController extends Controller
                 5 => 'sex',
                 6 => 'sab'
             };
-            $totalBase += (float)$tarifa->$campo;
+            $totalBase += (float) $tarifa->$campo;
             $diasCount++;
         }
 
@@ -416,6 +443,7 @@ class ReservaController extends Controller
     {
         try {
             $reserva->delete();
+
             return redirect()->route('reserva.index')->with('success', 'Reserva removida com sucesso!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao remover reserva!');
@@ -455,9 +483,9 @@ class ReservaController extends Controller
                         'id' => $quarto->id,
                         'nome' => $quarto->nome,
                         'categoria_id' => $quarto->categoria_id,
-                        'ocupantes' => $quarto->categoria->ocupantes
+                        'ocupantes' => $quarto->categoria->ocupantes,
                     ];
-                })
+                }),
             ];
         }
 
@@ -472,7 +500,7 @@ class ReservaController extends Controller
             if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta reserva já foi finalizada ou cancelada.'
+                    'message' => 'Esta reserva já foi finalizada ou cancelada.',
                 ], 400);
             }
 
@@ -495,7 +523,7 @@ class ReservaController extends Controller
             if ($faltaLancar > 0.01) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Não é possível finalizar a reserva. Ainda há valores pendentes de recebimento.'
+                    'message' => 'Não é possível finalizar a reserva. Ainda há valores pendentes de recebimento.',
                 ], 400);
             }
 
@@ -508,12 +536,12 @@ class ReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva finalizada com sucesso!'
+                'message' => 'Reserva finalizada com sucesso!',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao finalizar reserva: ' . $e->getMessage()
+                'message' => 'Erro ao finalizar reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -528,9 +556,10 @@ class ReservaController extends Controller
 
             if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
                 DB::rollBack();
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta reserva já foi finalizada ou cancelada.'
+                    'message' => 'Esta reserva já foi finalizada ou cancelada.',
                 ], 400);
             }
 
@@ -558,13 +587,14 @@ class ReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva cancelada com sucesso! Todas as transações foram processadas.'
+                'message' => 'Reserva cancelada com sucesso! Todas as transações foram processadas.',
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao cancelar reserva: ' . $e->getMessage()
+                'message' => 'Erro ao cancelar reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -580,7 +610,7 @@ class ReservaController extends Controller
         if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Esta reserva já foi finalizada ou cancelada.'
+                'message' => 'Esta reserva já foi finalizada ou cancelada.',
             ], 400);
         }
 
@@ -590,7 +620,9 @@ class ReservaController extends Controller
         foreach ($funcionarios as $f) {
             $senhaDigitada = (string) $request->input('senha_supervisor');
             $hashBanco = trim((string) $f->senha_supervisor);
-            if ($hashBanco === '') continue;
+            if ($hashBanco === '') {
+                continue;
+            }
 
             if (hash_equals($hashBanco, md5($senhaDigitada))) {
                 $supervisor = $f;
@@ -606,7 +638,7 @@ class ReservaController extends Controller
             }
         }
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             return response()->json(['success' => false, 'message' => 'Senha de supervisor inválida.'], 403);
         }
 
@@ -638,18 +670,18 @@ class ReservaController extends Controller
             LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
 
             LogReserva::create([
-                'reserva_id'   => $reserva->id,
-                'usuario_id'   => Auth::id(),
-                'tipo'         => 'exclusao',
-                'descricao'    => "Exclusão da reserva #{$reserva->id}",
+                'reserva_id' => $reserva->id,
+                'usuario_id' => Auth::id(),
+                'tipo' => 'exclusao',
+                'descricao' => "Exclusão da reserva #{$reserva->id}",
                 'dados_antigos' => $dadosAntigos,
-                'dados_novos'  => [
-                    'acao'            => "Exclusão da reserva #{$reserva->id}",
-                    'executante_id'   => Auth::id(),
+                'dados_novos' => [
+                    'acao' => "Exclusão da reserva #{$reserva->id}",
+                    'executante_id' => Auth::id(),
                     'executante_nome' => Auth::user()->name ?? Auth::user()->nome,
-                    'supervisor_id'   => $supervisor->id,
+                    'supervisor_id' => $supervisor->id,
                     'supervisor_nome' => $supervisor->nome ?? $supervisor->name,
-                    'data_hora'       => now()->toDateTimeString(),
+                    'data_hora' => now()->toDateTimeString(),
                 ],
             ]);
 
@@ -657,13 +689,14 @@ class ReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva cancelada com sucesso! Todas as transações foram processadas.'
+                'message' => 'Reserva cancelada com sucesso! Todas as transações foram processadas.',
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao cancelar reserva: ' . $e->getMessage()
+                'message' => 'Erro ao cancelar reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -680,7 +713,7 @@ class ReservaController extends Controller
             if ($hoje->lt($dataCheckin)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'O check-in só pode ser realizado a partir de ' . $dataCheckin->format('d/m/Y') . '.'
+                    'message' => 'O check-in só pode ser realizado a partir de '.$dataCheckin->format('d/m/Y').'.',
                 ], 400);
             }
 
@@ -693,6 +726,7 @@ class ReservaController extends Controller
                 } elseif ($reserva->situacao === 'pre-reserva') {
                     $msg = 'Confirme a pré-reserva antes de realizar o check-in.';
                 }
+
                 return response()->json(['success' => false, 'message' => $msg], 400);
             }
 
@@ -701,17 +735,17 @@ class ReservaController extends Controller
             $reserva->save();
 
             if (class_exists('App\Models\LogReserva')) {
-                \App\Models\LogReserva::registrarAlteracaoStatus($reserva, \Illuminate\Support\Facades\Auth::id(), $statusAntigo);
+                LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Check-in realizado com sucesso!'
+                'message' => 'Check-in realizado com sucesso!',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao realizar check-in: ' . $e->getMessage()
+                'message' => 'Erro ao realizar check-in: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -746,7 +780,7 @@ class ReservaController extends Controller
         if ($reserva->situacao !== 'reserva') {
             return response()->json([
                 'success' => false,
-                'message' => 'Apenas reservas em situação "reserva" podem ser marcadas como No Show.'
+                'message' => 'Apenas reservas em situação "reserva" podem ser marcadas como No Show.',
             ], 400);
         }
 
@@ -756,7 +790,9 @@ class ReservaController extends Controller
 
         foreach ($funcionarios as $f) {
             $hashBanco = trim((string) $f->senha_supervisor);
-            if ($hashBanco === '') continue;
+            if ($hashBanco === '') {
+                continue;
+            }
 
             if (hash_equals($hashBanco, md5($senhaDigitada))) {
                 $supervisor = $f;
@@ -772,10 +808,10 @@ class ReservaController extends Controller
             }
         }
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             return response()->json([
                 'success' => false,
-                'message' => 'Senha de supervisor inválida.'
+                'message' => 'Senha de supervisor inválida.',
             ], 403);
         }
 
@@ -791,18 +827,18 @@ class ReservaController extends Controller
             LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
 
             LogReserva::create([
-                'reserva_id'    => $reserva->id,
-                'usuario_id'    => Auth::id(),
-                'tipo'          => 'status_alterado',
-                'descricao'     => "No Show da reserva #{$reserva->id}",
+                'reserva_id' => $reserva->id,
+                'usuario_id' => Auth::id(),
+                'tipo' => 'status_alterado',
+                'descricao' => "No Show da reserva #{$reserva->id}",
                 'dados_antigos' => $dadosAntigos,
-                'dados_novos'   => [
-                    'acao'            => "No Show da reserva #{$reserva->id}",
-                    'executante_id'   => Auth::id(),
+                'dados_novos' => [
+                    'acao' => "No Show da reserva #{$reserva->id}",
+                    'executante_id' => Auth::id(),
                     'executante_nome' => Auth::user()->name ?? Auth::user()->nome,
-                    'supervisor_id'   => $supervisor->id,
+                    'supervisor_id' => $supervisor->id,
                     'supervisor_nome' => $supervisor->nome ?? $supervisor->name,
-                    'data_hora'       => now()->toDateTimeString(),
+                    'data_hora' => now()->toDateTimeString(),
                 ],
             ]);
 
@@ -810,13 +846,14 @@ class ReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva marcada como No Show com sucesso!'
+                'message' => 'Reserva marcada como No Show com sucesso!',
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao marcar No Show: ' . $e->getMessage()
+                'message' => 'Erro ao marcar No Show: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -826,7 +863,7 @@ class ReservaController extends Controller
         try {
             $reserva->load('hospede', 'quarto');
             $hospede = $reserva->hospede;
-            if (!$hospede) {
+            if (! $hospede) {
                 return redirect()->back()->with('error', 'Reserva sem hóspede principal definido.');
             }
 
@@ -848,11 +885,11 @@ class ReservaController extends Controller
             ];
 
             $pdf = Pdf::loadView('reserva.fnrh', $data);
-            $fileName = 'FNRH_' . str_replace(' ', '_', $hospede->nome) . '_' . $reserva->id . '.pdf';
+            $fileName = 'FNRH_'.str_replace(' ', '_', $hospede->nome).'_'.$reserva->id.'.pdf';
 
             return $pdf->stream($fileName);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao gerar FNRH: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao gerar FNRH: '.$e->getMessage());
         }
     }
 
@@ -871,6 +908,7 @@ class ReservaController extends Controller
             ->get()
             ->map(function ($item) {
                 $item->canal_venda = $item->canal_venda ?: 'Não Preenchido';
+
                 return $item;
             })
             ->groupBy('canal_venda')
@@ -880,8 +918,8 @@ class ReservaController extends Controller
 
         return view('reserva.relatorio_canal', [
             'dadosRelatorio' => $dadosRelatorio,
-            'data_inicio'    => $dataInicio,
-            'data_fim'       => $dataFim,
+            'data_inicio' => $dataInicio,
+            'data_fim' => $dataFim,
         ]);
     }
 
@@ -890,14 +928,15 @@ class ReservaController extends Controller
         try {
             $reserva->load('hospede');
 
-            if (!$reserva->hospede || !$reserva->hospede->email) {
+            if (! $reserva->hospede || ! $reserva->hospede->email) {
                 return redirect()->back()->with('error', 'Hóspede não possui e-mail cadastrado.');
             }
             Mail::to($reserva->hospede->email)->send(new VoucherReservaEmail($reserva));
 
             return redirect()->back()->with('success', 'Voucher enviado por e-mail com sucesso!');
         } catch (\Exception $e) {
-            Log::error('Erro ao enviar voucher por e-mail: ' . $e->getMessage());
+            Log::error('Erro ao enviar voucher por e-mail: '.$e->getMessage());
+
             return redirect()->back()->with('error', 'Erro ao enviar e-mail. Verifique as configurações.');
         }
     }
@@ -922,7 +961,7 @@ class ReservaController extends Controller
         $pdf = Pdf::loadView('reserva.relatorio.cafe_pdf', [
             'reservas' => $reservas,
             'dataInicio' => $dataInicio,
-            'dataFim' => $dataFim
+            'dataFim' => $dataFim,
         ]);
 
         return $pdf->stream('lista_cafe_manha.pdf');
@@ -961,7 +1000,9 @@ class ReservaController extends Controller
         foreach ($reservas as $reserva) {
             $listaObjetos = collect([]);
             $secundarios = $reserva->hospedes_secundarios;
-            if (is_string($secundarios)) $secundarios = json_decode($secundarios, true);
+            if (is_string($secundarios)) {
+                $secundarios = json_decode($secundarios, true);
+            }
 
             if (is_array($secundarios)) {
                 foreach ($secundarios as $id) {
@@ -979,8 +1020,8 @@ class ReservaController extends Controller
     private function calcularDadosVendas($dataInicio, $dataFim)
     {
         // Prepara as datas uma única vez para limpar o código
-        $dataInicioFormatada = $dataInicio . ' 00:00:00';
-        $dataFimFormatada = $dataFim . ' 23:59:59';
+        $dataInicioFormatada = $dataInicio.' 00:00:00';
+        $dataFimFormatada = $dataFim.' 23:59:59';
 
         // Inicia a query base
         $query = Funcionario::query();
@@ -1019,7 +1060,7 @@ class ReservaController extends Controller
                 'nome' => $vendedor->nome,
                 'total_reserva' => $totalReservas,
                 'total_dayuse' => $totalDayUse,
-                'total_geral' => $totalReservas + $totalDayUse
+                'total_geral' => $totalReservas + $totalDayUse,
             ];
         });
 
@@ -1049,7 +1090,7 @@ class ReservaController extends Controller
         $pdf = Pdf::loadView('relatorios.vendas_pdf', [
             'relatorio' => $relatorio,
             'dataInicio' => $dataInicio,
-            'dataFim' => $dataFim
+            'dataFim' => $dataFim,
         ]);
 
         return $pdf->stream('relatorio_vendas.pdf');
@@ -1066,7 +1107,7 @@ class ReservaController extends Controller
         if ($reserva->situacao !== 'bloqueado') {
             return response()->json([
                 'success' => false,
-                'message' => 'Esta função é exclusiva para remover bloqueios de data.'
+                'message' => 'Esta função é exclusiva para remover bloqueios de data.',
             ], 400);
         }
 
@@ -1076,7 +1117,9 @@ class ReservaController extends Controller
 
         foreach ($funcionarios as $f) {
             $hashBanco = trim((string) $f->senha_supervisor);
-            if ($hashBanco === '') continue;
+            if ($hashBanco === '') {
+                continue;
+            }
 
             if (hash_equals($hashBanco, md5($senhaDigitada))) {
                 $supervisor = $f;
@@ -1092,10 +1135,10 @@ class ReservaController extends Controller
             }
         }
 
-        if (!$supervisor) {
+        if (! $supervisor) {
             return response()->json([
                 'success' => false,
-                'message' => 'Senha de supervisor inválida.'
+                'message' => 'Senha de supervisor inválida.',
             ], 403);
         }
 
@@ -1105,16 +1148,16 @@ class ReservaController extends Controller
             $dadosAntigos = $reserva->toArray();
 
             LogReserva::create([
-                'reserva_id'    => $reserva->id,
-                'usuario_id'    => Auth::id(),
-                'tipo'          => 'exclusao',
-                'descricao'     => "Exclusão de bloqueio ID #{$reserva->id} via Supervisor",
+                'reserva_id' => $reserva->id,
+                'usuario_id' => Auth::id(),
+                'tipo' => 'exclusao',
+                'descricao' => "Exclusão de bloqueio ID #{$reserva->id} via Supervisor",
                 'dados_antigos' => $dadosAntigos,
-                'dados_novos'   => [
-                    'acao'            => "Exclusão de bloqueio",
-                    'supervisor_id'   => $supervisor->id,
+                'dados_novos' => [
+                    'acao' => 'Exclusão de bloqueio',
+                    'supervisor_id' => $supervisor->id,
                     'supervisor_nome' => $supervisor->nome,
-                    'motivo'          => 'Liberação de data bloqueada'
+                    'motivo' => 'Liberação de data bloqueada',
                 ],
             ]);
 
@@ -1124,13 +1167,14 @@ class ReservaController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Bloqueio removido com sucesso!'
+                'message' => 'Bloqueio removido com sucesso!',
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao excluir bloqueio: ' . $e->getMessage()
+                'message' => 'Erro ao excluir bloqueio: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1150,7 +1194,9 @@ class ReservaController extends Controller
             $fimOriginal = \Carbon\Carbon::parse($reserva->data_checkout);
             $diasDuracao = $inicioOriginal->diffInDays($fimOriginal);
 
-            if ($diasDuracao < 1) $diasDuracao = 1;
+            if ($diasDuracao < 1) {
+                $diasDuracao = 1;
+            }
 
             $novoInicio = \Carbon\Carbon::parse($request->nova_data_checkin);
             $novoFim = $novoInicio->copy()->addDays($diasDuracao);
@@ -1159,11 +1205,11 @@ class ReservaController extends Controller
                 ->where('id', '!=', $reserva->id)
                 ->where('situacao', '!=', 'cancelado')
                 ->where(function ($query) use ($novoInicio, $novoFim) {
-                    $query->where(function ($q) use ($novoInicio, $novoFim) {
+                    $query->where(function ($q) use ($novoInicio) {
                         $q->where('data_checkin', '<=', $novoInicio)
                             ->where('data_checkout', '>', $novoInicio);
                     })
-                        ->orWhere(function ($q) use ($novoInicio, $novoFim) {
+                        ->orWhere(function ($q) use ($novoFim) {
                             $q->where('data_checkin', '<', $novoFim)
                                 ->where('data_checkout', '>=', $novoFim);
                         })
@@ -1176,7 +1222,7 @@ class ReservaController extends Controller
             if ($conflito) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'O quarto selecionado já está ocupado neste período.'
+                    'message' => 'O quarto selecionado já está ocupado neste período.',
                 ], 422);
             }
 
@@ -1193,26 +1239,26 @@ class ReservaController extends Controller
                 'reserva_id' => $reserva->id,
                 'usuario_id' => Auth::id(),
                 'tipo' => 'edicao',
-                'descricao' => "Reserva movida via Mapa (Arrastar e Soltar)",
+                'descricao' => 'Reserva movida via Mapa (Arrastar e Soltar)',
                 'dados_antigos' => $dadosAntigos,
                 'dados_novos' => [
                     'acao' => 'Movimentação Mapa',
                     'de_quarto' => $quartoAntigoNome,
                     'para_quarto' => $quartoNovoNome,
-                    'de_periodo' => $inicioOriginal->format('d/m/Y') . ' a ' . $fimOriginal->format('d/m/Y'),
-                    'para_periodo' => $novoInicio->format('d/m/Y') . ' a ' . $novoFim->format('d/m/Y'),
-                    'responsavel' => Auth::user()->name ?? 'Sistema'
-                ]
+                    'de_periodo' => $inicioOriginal->format('d/m/Y').' a '.$fimOriginal->format('d/m/Y'),
+                    'para_periodo' => $novoInicio->format('d/m/Y').' a '.$novoFim->format('d/m/Y'),
+                    'responsavel' => Auth::user()->name ?? 'Sistema',
+                ],
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva movida com sucesso!'
+                'message' => 'Reserva movida com sucesso!',
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao mover reserva: ' . $e->getMessage()
+                'message' => 'Erro ao mover reserva: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1220,6 +1266,7 @@ class ReservaController extends Controller
     public function relatorioVendasDetalhado(Request $request)
     {
         $dados = $this->getDadosVendasDetalhado($request);
+
         return view('relatorios.vendas_detalhado', $dados);
     }
 
@@ -1234,7 +1281,7 @@ class ReservaController extends Controller
             $pdf = Pdf::loadView('relatorios.vendas_detalhado_pdf', $dados);
         }
 
-        return $pdf->stream('relatorio_vendas_' . $tipo . '.pdf');
+        return $pdf->stream('relatorio_vendas_'.$tipo.'.pdf');
     }
 
     private function getDadosVendasDetalhado(Request $request)
@@ -1245,9 +1292,9 @@ class ReservaController extends Controller
         // Se não foi enviado nenhum vendedor (primeiro acesso), definimos como null
         $filtroVendedor = $request->input('vendedor_id');
 
-        $vendedoresIds = \App\Models\Reserva::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
+        $vendedoresIds = Reserva::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
         if (class_exists('App\Models\DayUse')) {
-            $vendedoresDayUse = \App\Models\DayUse::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
+            $vendedoresDayUse = DayUse::whereNotNull('vendedor_id')->distinct()->pluck('vendedor_id')->toArray();
             $vendedoresIds = array_unique(array_merge($vendedoresIds, $vendedoresDayUse));
         }
         $vendedores = Funcionario::whereIn('id', $vendedoresIds)->orderBy('nome')->get();
@@ -1259,8 +1306,8 @@ class ReservaController extends Controller
         // Só roda as consultas SE o usuário clicou em filtrar (ou seja, tem vendedor_id no request)
         if ($request->filled('vendedor_id')) {
 
-            $inicioQuery = $dataInicio . ' 00:00:00';
-            $fimQuery = $dataFim . ' 23:59:59';
+            $inicioQuery = $dataInicio.' 00:00:00';
+            $fimQuery = $dataFim.' 23:59:59';
 
             // --- BUSCA RESERVAS ---
             // $queryReservas = Reserva::with(['quarto', 'hospede', 'vendedor'])
@@ -1278,33 +1325,32 @@ class ReservaController extends Controller
             }
 
             $reservas = $queryReservas->orderBy('vendedor_id')->orderBy('created_at')->get();
-            $vendasReservasAgrupadas = $reservas->groupBy(fn($r) => $r->vendedor->nome ?? 'N/D');
+            $vendasReservasAgrupadas = $reservas->groupBy(fn ($r) => $r->vendedor->nome ?? 'N/D');
 
             // --- BUSCA DAY USE ---
             if (class_exists('App\Models\DayUse')) {
-                $queryDayUse = \App\Models\DayUse::with(['vendedor', 'cliente'])
+                $queryDayUse = DayUse::with(['vendedor', 'cliente'])
                     ->whereBetween('created_at', [$inicioQuery, $fimQuery])
                     ->whereNotNull('vendedor_id');
-
 
                 if ($filtroVendedor !== 'todos') {
                     $queryDayUse->where('vendedor_id', $filtroVendedor);
                 }
 
                 $dayUses = $queryDayUse->orderBy('vendedor_id')->orderBy('created_at')->get();
-                $vendasDayUseAgrupadas = $dayUses->groupBy(fn($d) => $d->vendedor->nome ?? 'N/D');
+                $vendasDayUseAgrupadas = $dayUses->groupBy(fn ($d) => $d->vendedor->nome ?? 'N/D');
             }
         }
 
         return [
-            // ATENÇÃO: Os nomes aqui mudaram para separar as tabelas. 
+            // ATENÇÃO: Os nomes aqui mudaram para separar as tabelas.
             // Certifique-se que suas Views usem estes nomes novos.
             'vendasReservasAgrupadas' => $vendasReservasAgrupadas,
             'vendasDayUseAgrupadas' => $vendasDayUseAgrupadas,
             'dataInicio' => $dataInicio,
             'dataFim' => $dataFim,
             'vendedores' => $vendedores,
-            'vendedorId' => $filtroVendedor
+            'vendedorId' => $filtroVendedor,
         ];
     }
 }

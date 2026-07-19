@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Transacao;
-use App\Models\Reserva;
 use App\Models\Caixa;
 use App\Models\ContasAPagar;
 use App\Models\LogReserva;
 use App\Models\Movimento;
+use App\Models\PlanoDeConta;
+use App\Models\Reserva;
+use App\Models\Transacao;
 use App\Services\CaixaService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -30,7 +31,7 @@ class TransacaoController extends Controller
         $transacoes = Transacao::with(['formaPagamento', 'reserva'])
             ->latest()
             ->paginate(10);
-        
+
         return view('transacoes.index', compact('transacoes'));
     }
 
@@ -40,7 +41,7 @@ class TransacaoController extends Controller
             $request->validate([
                 'descricao' => 'required|string|max:255',
                 'forma_pagamento_id' => 'required|exists:forma_pagamentos,id',
-                'categoria' => 'required|in:hospedagem,alimentos,servicos,produtos',
+                'categoria' => 'required|in:hospedagem,alimentos,servicos,produtos,motorhome',
                 'data_pagamento' => 'required|date',
                 'tipo' => 'required|in:pagamento,desconto',
                 'valor' => 'required|numeric|min:0',
@@ -50,10 +51,10 @@ class TransacaoController extends Controller
             ]);
 
             $comprovantePath = null;
-        if ($request->hasFile('comprovante')) { 
-           
-            $comprovantePath = $request->file('comprovante')->store('comprovantes', 'public'); 
-        }
+            if ($request->hasFile('comprovante')) {
+
+                $comprovantePath = $request->file('comprovante')->store('comprovantes', 'public');
+            }
 
             DB::beginTransaction();
 
@@ -81,19 +82,19 @@ class TransacaoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transação criada com sucesso!',
-                'transacao' => $transacao->load('formaPagamento')
+                'transacao' => $transacao->load('formaPagamento'),
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
 
-            if (isset($comprovantePath) && Storage::disk('public')->exists($comprovantePath)) { 
-            Storage::disk('public')->delete($comprovantePath); 
-        }
-            
+            if (isset($comprovantePath) && Storage::disk('public')->exists($comprovantePath)) {
+                Storage::disk('public')->delete($comprovantePath);
+            }
+
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao criar transação: ' . $e->getMessage()
+                'message' => 'Erro ao criar transação: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -101,6 +102,7 @@ class TransacaoController extends Controller
     public function show(Transacao $transacao)
     {
         $transacao->load(['formaPagamento', 'reserva']);
+
         return view('transacao.show', compact('transacao'));
     }
 
@@ -118,61 +120,60 @@ class TransacaoController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transação atualizada com sucesso!',
-                'transacao' => $transacao
+                'transacao' => $transacao,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao atualizar transação: ' . $e->getMessage()
+                'message' => 'Erro ao atualizar transação: '.$e->getMessage(),
             ], 500);
         }
     }
 
     public function destroy($id)
-{
-    try {
-        DB::beginTransaction();
-        $transacao = Transacao::findOrFail($id);
+    {
+        try {
+            DB::beginTransaction();
+            $transacao = Transacao::findOrFail($id);
 
-        // Verificar se a transação é do mesmo dia ou de dias anteriores
-        $dataTransacao = Carbon::parse($transacao->data_pagamento);
-        $hoje = Carbon::today();
+            // Verificar se a transação é do mesmo dia ou de dias anteriores
+            $dataTransacao = Carbon::parse($transacao->data_pagamento);
+            $hoje = Carbon::today();
 
-        if ($dataTransacao->isSameDay($hoje)) {
-            // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
-            $this->cancelarMovimentacaoCaixa($transacao);
-        } else {
-            // Transação de dias anteriores: criar ContasAPagar
-            $this->criarContasAPagar($transacao);
+            if ($dataTransacao->isSameDay($hoje)) {
+                // Transação do mesmo dia: criar movimentação de cancelamento no FluxoCaixa
+                $this->cancelarMovimentacaoCaixa($transacao);
+            } else {
+                // Transação de dias anteriores: criar ContasAPagar
+                $this->criarContasAPagar($transacao);
+            }
+            LogReserva::registrarPagamentoRemovido($transacao->reserva->id, Auth::id(), $transacao);
+
+            // 5. APAGAR O ARQUIVO DO DISCO QUANDO A TRANSAÇÃO FOR REMOVIDA
+            if ($transacao->comprovante_path) {
+                Storage::disk('public')->delete($transacao->comprovante_path);
+            }
+
+            // Remover a transação
+            $transacao->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transação removida com sucesso!',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover transação: '.$e->getMessage(),
+            ], 500);
         }
-        LogReserva::registrarPagamentoRemovido($transacao->reserva->id, Auth::id(), $transacao);
-
-        // 5. APAGAR O ARQUIVO DO DISCO QUANDO A TRANSAÇÃO FOR REMOVIDA
-        if ($transacao->comprovante_path) { 
-            Storage::disk('public')->delete($transacao->comprovante_path); 
-        }
-
-        // Remover a transação
-        $transacao->delete();
-
-        DB::commit();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Transação removida com sucesso!'
-        ]);
-
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Erro ao remover transação: ' . $e->getMessage()
-        ], 500);
     }
-}
-
 
     public function getByReserva($reservaId)
     {
@@ -185,13 +186,13 @@ class TransacaoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'transacoes' => $transacoes
+                'transacoes' => $transacoes,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao buscar transações: ' . $e->getMessage()
+                'message' => 'Erro ao buscar transações: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -200,30 +201,30 @@ class TransacaoController extends Controller
     {
         try {
             $reserva = Reserva::findOrFail($reservaId);
-            
+
             // Calcular número de diárias
             $checkin = Carbon::parse($reserva->data_checkin);
             $checkout = Carbon::parse($reserva->data_checkout);
             $numDiarias = $checkin->diffInDays($checkout);
-            
+
             // Buscar transações da reserva
             $transacoes = Transacao::where('reserva_id', $reservaId)
                 ->where('status', true)
                 ->get();
-            
+
             // Calcular totais por categoria
             $totalDiarias = $reserva->valor_diaria * $numDiarias;
             $totalProdutos = $transacoes->where('categoria', 'produtos')->sum('valor');
-            
+
             // Calcular total geral
             $totalGeral = $totalDiarias + $totalProdutos;
-            
+
             // Calcular total recebido (pagamentos)
             $totalRecebido = $transacoes->where('tipo', 'pagamento')->sum('valor');
-            
+
             // Calcular total de descontos
             $totalDescontos = $transacoes->where('tipo', 'desconto')->sum('valor');
-            
+
             // Calcular falta lançar
             $faltaLancar = $totalGeral - $totalRecebido - $totalDescontos;
 
@@ -240,13 +241,13 @@ class TransacaoController extends Controller
 
             return response()->json([
                 'success' => true,
-                'resumo' => $resumo
+                'resumo' => $resumo,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Erro ao calcular resumo: ' . $e->getMessage()
+                'message' => 'Erro ao calcular resumo: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -267,8 +268,9 @@ class TransacaoController extends Controller
                 ->where('usuario_id', Auth::id())
                 ->first();
 
-            if (!$caixa) {
+            if (! $caixa) {
                 session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+
                 return;
             }
 
@@ -282,39 +284,45 @@ class TransacaoController extends Controller
 
             // Criar slug da forma de pagamento (seguindo o padrão do AluguelController)
             $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
-            
+
             // Determinar o tipo de movimento baseado na categoria da transação
-            $tipoMov = match($transacao->categoria) {
-                'hospedagem' => 'venda-' . $slug,
-                'produtos' => 'venda-' . $slug,
-                default => 'venda-' . $slug
+            $tipoMov = match ($transacao->categoria) {
+                'hospedagem' => 'venda-'.$slug,
+                'produtos' => 'venda-'.$slug,
+                default => 'venda-'.$slug
             };
 
             // Buscar o movimento_id baseado na descrição (seguindo o padrão do AluguelController)
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 // Se não encontrar o movimento específico, tenta um movimento genérico
-                $movimentoId = Movimento::where('descricao', 'venda-' . $slug)->value('id');
-                
-                if (!$movimentoId) {
+                $movimentoId = Movimento::where('descricao', 'venda-'.$slug)->value('id');
+
+                if (! $movimentoId) {
                     return; // pula se não encontrar o movimento
                 }
             }
 
+            // Motorhome tem plano de contas próprio (separado de Hospedagem para relatórios financeiros);
+            // resolvido por nome pois o id 44 usado abaixo não existe em todo ambiente (foi criado manualmente em produção).
+            $planoContaId = $transacao->categoria === 'motorhome'
+                ? (PlanoDeConta::where('descricao', 'Motorhome')->value('id') ?? 44)
+                : 44;
+
             // Usar o CaixaService para inserir a movimentação (seguindo o padrão do AluguelController)
             app(CaixaService::class)->inserirMovimentacao($caixa, [
-                'descricao' => 'Reserva #' . $transacao->reserva_id . ' - ' . $transacao->descricao,
+                'descricao' => 'Reserva #'.$transacao->reserva_id.' - '.$transacao->descricao,
                 'valor' => $transacao->valor,
                 'valor_total' => $transacao->valor,
                 'tipo' => $transacao->tipo === 'pagamento' ? 'entrada' : 'saida',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 44, // 44-> Hospedagem
+                'plano_de_conta_id' => $planoContaId,
             ]);
 
         } catch (\Exception $e) {
             // Log do erro mas não interrompe o fluxo (seguindo o padrão do AluguelController)
-            Log::error('Erro ao criar movimentação no caixa: ' . $e->getMessage());
+            Log::error('Erro ao criar movimentação no caixa: '.$e->getMessage());
         }
     }
 
@@ -333,8 +341,9 @@ class TransacaoController extends Controller
                 ->where('usuario_id', Auth::id())
                 ->first();
 
-            if (!$caixa) {
+            if (! $caixa) {
                 session()->flash('error', 'Nenhum caixa aberto encontrado para registrar cancelamento.');
+
                 return;
             }
 
@@ -348,21 +357,22 @@ class TransacaoController extends Controller
 
             // Criar slug da forma de pagamento
             $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
-            
+
             // Buscar movimento de cancelamento específico ou genérico
-            $tipoMovimentoCancelamento = 'cancelamento-' . $slug;
+            $tipoMovimentoCancelamento = 'cancelamento-'.$slug;
             $movimentoId = Movimento::where('descricao', $tipoMovimentoCancelamento)->value('id');
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 $movimentoId = Movimento::where('descricao', 'cancelamento')->value('id');
             }
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 Log::error("Movimento de cancelamento não encontrado para: {$tipoMovimentoCancelamento} ou cancelamento");
+
                 return;
             }
 
             // Inserir movimentação de cancelamento via CaixaService
             app(CaixaService::class)->inserirMovimentacao($caixa, [
-                'descricao' => 'CANCELAMENTO: ' . $transacao->descricao . ' - Reserva #' . $transacao->reserva_id,
+                'descricao' => 'CANCELAMENTO: '.$transacao->descricao.' - Reserva #'.$transacao->reserva_id,
                 'valor' => $transacao->valor,
                 'valor_total' => $transacao->valor,
                 'tipo' => 'cancelamento',
@@ -371,7 +381,7 @@ class TransacaoController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Erro ao cancelar movimentação no caixa: ' . $e->getMessage());
+            Log::error('Erro ao cancelar movimentação no caixa: '.$e->getMessage());
         }
     }
 
@@ -382,21 +392,21 @@ class TransacaoController extends Controller
     {
         try {
             ContasAPagar::create([
-                'descricao' => 'ESTORNO: ' . $transacao->descricao . ' - Reserva #' . $transacao->reserva_id,
+                'descricao' => 'ESTORNO: '.$transacao->descricao.' - Reserva #'.$transacao->reserva_id,
                 'valor' => $transacao->valor,
                 'data_vencimento' => Carbon::today(), // Data de vencimento é o dia atual
                 'plano_de_contas_id' => 1, // Plano de conta padrão
                 'status' => 'pendente', // Status padrão
                 'empresa_id' => Auth::user()->empresa_id ?? 1,
-                'observacoes' => 'Estorno de transação cancelada em ' . Carbon::now()->format('d/m/Y H:i:s') . 
-                               '. Transação original de ' . Carbon::parse($transacao->data_pagamento)->format('d/m/Y'),
+                'observacoes' => 'Estorno de transação cancelada em '.Carbon::now()->format('d/m/Y H:i:s').
+                               '. Transação original de '.Carbon::parse($transacao->data_pagamento)->format('d/m/Y'),
             ]);
 
             Log::info("ContasAPagar criada para estorno da transação ID: {$transacao->id}");
 
         } catch (\Exception $e) {
-            Log::error('Erro ao criar ContasAPagar: ' . $e->getMessage());
-            throw new \Exception('Erro ao criar conta a pagar para estorno: ' . $e->getMessage());
+            Log::error('Erro ao criar ContasAPagar: '.$e->getMessage());
+            throw new \Exception('Erro ao criar conta a pagar para estorno: '.$e->getMessage());
         }
     }
 }
