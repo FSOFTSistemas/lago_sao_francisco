@@ -87,6 +87,7 @@ class MapaController extends Controller
                     }
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
+                        'hospede_id' => $reserva->hospede_id,
                         'hospede_nome' => $reserva->hospede ? $reserva->hospede->nome : 'Sem hóspede',
                         'hospede_telefone' => $reserva->hospede ? $reserva->hospede->telefone : null,
                         'vendedor_nome' => $nomeVendedor,

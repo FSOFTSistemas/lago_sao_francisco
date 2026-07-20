@@ -12,7 +12,14 @@ const SimpleModal = ({ show, onClose, title, children, size = "md" }) => {
         <div className="react-modal-backdrop" onClick={onClose}>
             <div
                 className="react-modal-dialog"
-                style={{ maxWidth: size === "sm" ? "300px" : "600px" }}
+                style={{
+                    maxWidth:
+                        size === "sm"
+                            ? "300px"
+                            : size === "lg"
+                              ? "750px"
+                              : "600px",
+                }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="modal-header">
@@ -37,6 +44,29 @@ const formatDate = (dateString) => {
     if (!dateString) return "-";
     const [year, month, day] = dateString.split("-");
     return `${day}/${month}/${year}`;
+};
+const SITUACAO_LABELS = {
+    "pre-reserva": "Pré-reserva",
+    reserva: "Reserva",
+    hospedado: "Hospedado",
+    finalizada: "Finalizada",
+    bloqueado: "Bloqueado",
+    noshow: "No Show",
+};
+const getTotalGeralReserva = (reserva, financeiro) => {
+    if (!reserva || !financeiro) return 0;
+    return (
+        (parseFloat(reserva.valor_total) || 0) +
+        (parseFloat(financeiro.total_produtos) || 0)
+    );
+};
+const getFaltaReceberReserva = (reserva, financeiro) => {
+    if (!reserva || !financeiro) return 0;
+    return (
+        getTotalGeralReserva(reserva, financeiro) -
+        (parseFloat(financeiro.total_recebido) || 0) -
+        (parseFloat(financeiro.total_descontos) || 0)
+    );
 };
 
 // --- COMPONENTE PRINCIPAL ---
@@ -65,6 +95,7 @@ export default function MapaReservas({
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [reservaDetalhes, setReservaDetalhes] = useState(null);
     const [financeiroDetalhes, setFinanceiroDetalhes] = useState(null);
+    const [showObservacaoDetalhes, setShowObservacaoDetalhes] = useState(false);
     const [loadingAction, setLoadingAction] = useState(false);
 
     const [loadingNovoHospede, setLoadingNovoHospede] = useState(false);
@@ -517,8 +548,9 @@ export default function MapaReservas({
 
     const handleCellClick = async (quarto, data, reserva = null) => {
         if (reserva) {
-            setReservaDetalhes(reserva);
+            setReservaDetalhes({ ...reserva, quarto_nome: quarto.nome });
             setFinanceiroDetalhes(null);
+            setShowObservacaoDetalhes(false);
             setShowModalDetalhes(true);
             try {
                 const response = await axios.get(
@@ -976,199 +1008,286 @@ export default function MapaReservas({
             <SimpleModal
                 show={showModalDetalhes}
                 onClose={() => setShowModalDetalhes(false)}
-                title="Detalhes da Reserva"
+                title={
+                    reservaDetalhes
+                        ? `FA:${String(reservaDetalhes.id).padStart(6, "0")}${reservaDetalhes.quarto_nome ? ` - ${reservaDetalhes.quarto_nome}` : ""}`
+                        : "Detalhes da Reserva"
+                }
+                size="lg"
             >
                 {reservaDetalhes && (
                     <div>
-                        <div className="alert alert-info d-flex justify-content-between align-items-center">
-                            <strong>Reserva #{reservaDetalhes.id}</strong>
+                        <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <h5 className="font-weight-bold mb-0">
+                                {reservaDetalhes.hospede_nome}
+                            </h5>
                             <span
                                 className={`badge situacao-${reservaDetalhes.situacao} text-uppercase px-3 py-2`}
                             >
-                                {reservaDetalhes.situacao}
+                                {SITUACAO_LABELS[reservaDetalhes.situacao] ||
+                                    reservaDetalhes.situacao}
                             </span>
                         </div>
-                        <h5 className="font-weight-bold mb-1">
-                            {reservaDetalhes.hospede_nome}
-                        </h5>
-                        {reservaDetalhes.hospede_telefone && (
-                            <div className="mb-2">
-                                <a
-                                    href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, "")}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-success font-weight-bold"
-                                    style={{ textDecoration: "none" }}
-                                >
-                                    <i className="fab fa-whatsapp mr-1"></i>{" "}
-                                    {reservaDetalhes.hospede_telefone}
-                                </a>
-                            </div>
-                        )}
-                        {reservaDetalhes.vendedor_nome && (
-                            <div className="mb-3 text-muted small">
-                                <i className="fas fa-user-tag mr-1"></i>{" "}
-                                Vendedor:{" "}
-                                <strong>{reservaDetalhes.vendedor_nome}</strong>
-                            </div>
-                        )}
-                        <div className="row mb-3 mt-3">
-                            <div className="col-6">
-                                <small className="text-muted">Check-in</small>
-                                <div>
-                                    {formatDate(reservaDetalhes.data_checkin)}
-                                </div>
-                            </div>
-                            <div className="col-6">
-                                <small className="text-muted">Check-out</small>
-                                <div>
-                                    {formatDate(reservaDetalhes.data_checkout)}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="row mb-3">
-                            <div className="col-12">
-                                <label className="text-muted mb-0 small">
-                                    Hóspedes
-                                </label>
-                                <div className="font-weight-bold">
-                                    {reservaDetalhes.n_adultos} Adulto(s){" "}
-                                    {reservaDetalhes.n_criancas > 0
-                                        ? ` e ${reservaDetalhes.n_criancas} Criança(s)`
-                                        : ""}
-                                </div>
-                            </div>
-                        </div>
-                        {reservaDetalhes.nomes_hospedes_secundarios && (
-                            <div className="row mb-3">
-                                <div className="col-12">
-                                    <label className="text-muted mb-0 small">
-                                        Hóspedes Secundários
-                                    </label>
-                                    <div className="font-weight-bold text-dark">
-                                        {
-                                            reservaDetalhes.nomes_hospedes_secundarios
-                                        }
+
+                        <div className="row">
+                            <div className="col-md-7">
+                                {reservaDetalhes.hospede_telefone && (
+                                    <div className="mb-2">
+                                        <a
+                                            href={`https://wa.me/55${reservaDetalhes.hospede_telefone.replace(/\D/g, "")}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-success font-weight-bold"
+                                            style={{ textDecoration: "none" }}
+                                        >
+                                            <i className="fab fa-whatsapp mr-1"></i>{" "}
+                                            {reservaDetalhes.hospede_telefone}
+                                        </a>
+                                    </div>
+                                )}
+                                {reservaDetalhes.vendedor_nome && (
+                                    <div className="mb-3 text-muted small">
+                                        <i className="fas fa-user-tag mr-1"></i>{" "}
+                                        Vendedor:{" "}
+                                        <strong>
+                                            {reservaDetalhes.vendedor_nome}
+                                        </strong>
+                                    </div>
+                                )}
+
+                                <div className="row">
+                                    <div className="col-6 mb-3">
+                                        <small className="text-muted d-block">
+                                            Check-in
+                                        </small>
+                                        <strong>
+                                            {formatDate(
+                                                reservaDetalhes.data_checkin,
+                                            )}
+                                        </strong>
+                                    </div>
+                                    <div className="col-6 mb-3">
+                                        <small className="text-muted d-block">
+                                            Check-out
+                                        </small>
+                                        <strong>
+                                            {formatDate(
+                                                reservaDetalhes.data_checkout,
+                                            )}
+                                        </strong>
+                                    </div>
+                                    {reservaDetalhes.situacao !==
+                                        "bloqueado" && (
+                                        <div className="col-6 mb-3">
+                                            <small className="text-muted d-block">
+                                                Diárias
+                                            </small>
+                                            <strong>
+                                                {financeiroDetalhes
+                                                    ? financeiroDetalhes.num_diarias
+                                                    : "..."}
+                                            </strong>
+                                        </div>
+                                    )}
+                                    <div className="col-6 mb-3">
+                                        <small className="text-muted d-block">
+                                            Nº adultos
+                                        </small>
+                                        <strong>
+                                            {reservaDetalhes.n_adultos}
+                                        </strong>
+                                    </div>
+                                    <div className="col-6 mb-3">
+                                        <small className="text-muted d-block">
+                                            Nº crianças
+                                        </small>
+                                        <strong>
+                                            {reservaDetalhes.n_criancas}
+                                        </strong>
                                     </div>
                                 </div>
+
+                                {reservaDetalhes.nomes_hospedes_secundarios && (
+                                    <div className="mb-3">
+                                        <small className="text-muted d-block">
+                                            Hóspedes Secundários
+                                        </small>
+                                        <span>
+                                            {
+                                                reservaDetalhes.nomes_hospedes_secundarios
+                                            }
+                                        </span>
+                                    </div>
+                                )}
+
+                                {reservaDetalhes.situacao !== "bloqueado" && (
+                                    <div className="row mt-2">
+                                        <div className="col-6">
+                                            <small className="text-muted d-block">
+                                                Total
+                                            </small>
+                                            <strong className="text-primary">
+                                                {financeiroDetalhes
+                                                    ? formatMoney(
+                                                          getTotalGeralReserva(
+                                                              reservaDetalhes,
+                                                              financeiroDetalhes,
+                                                          ),
+                                                      )
+                                                    : "..."}
+                                            </strong>
+                                        </div>
+                                        <div className="col-6">
+                                            <small className="text-muted d-block">
+                                                À receber
+                                            </small>
+                                            <strong
+                                                className={
+                                                    financeiroDetalhes &&
+                                                    getFaltaReceberReserva(
+                                                        reservaDetalhes,
+                                                        financeiroDetalhes,
+                                                    ) <= 0
+                                                        ? "text-success"
+                                                        : "text-danger"
+                                                }
+                                            >
+                                                {financeiroDetalhes
+                                                    ? formatMoney(
+                                                          getFaltaReceberReserva(
+                                                              reservaDetalhes,
+                                                              financeiroDetalhes,
+                                                          ),
+                                                      )
+                                                    : "..."}
+                                            </strong>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {reservaDetalhes.observacoes && (
+                                    <div className="mt-3">
+                                        <button
+                                            type="button"
+                                            className="btn btn-link btn-sm p-0 text-muted"
+                                            style={{ textDecoration: "none" }}
+                                            onClick={() =>
+                                                setShowObservacaoDetalhes(
+                                                    !showObservacaoDetalhes,
+                                                )
+                                            }
+                                        >
+                                            Observação{" "}
+                                            <i
+                                                className={`fas fa-chevron-${showObservacaoDetalhes ? "up" : "down"}`}
+                                            ></i>
+                                        </button>
+                                        {showObservacaoDetalhes && (
+                                            <div
+                                                className="p-2 mt-1 rounded border bg-white"
+                                                style={{
+                                                    fontSize: "0.85rem",
+                                                    fontStyle: "italic",
+                                                    whiteSpace: "pre-wrap",
+                                                }}
+                                            >
+                                                {reservaDetalhes.observacoes}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                        {reservaDetalhes.observacoes && (
-                            <div className="row mb-3">
-                                <div className="col-12">
-                                    <label className="text-muted mb-0 small">
-                                        Observações
-                                    </label>
-                                    <div
-                                        className="p-2 rounded border bg-white"
+
+                            <div className="col-md-5 border-left">
+                                <small
+                                    className="text-muted text-uppercase d-block mb-2"
+                                    style={{
+                                        fontSize: "0.7rem",
+                                        letterSpacing: "0.5px",
+                                    }}
+                                >
+                                    O que você deseja fazer
+                                </small>
+                                <div className="d-flex flex-column">
+                                    {podeFazerCheckin(reservaDetalhes) && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-link btn-sm text-left p-0 mb-2 text-success font-weight-bold"
+                                            style={{
+                                                textDecoration: "none",
+                                                fontSize: "0.85rem",
+                                            }}
+                                            onClick={handleRealizarCheckin}
+                                            disabled={loadingAction}
+                                        >
+                                            <i
+                                                className={`fas ${loadingAction ? "fa-spinner fa-spin" : "fa-arrow-right"} mr-1`}
+                                            ></i>{" "}
+                                            fazer check-in
+                                        </button>
+                                    )}
+                                    <a
+                                        href={`/reserva/${reservaDetalhes.id}/edit`}
+                                        className="text-primary font-weight-bold mb-2"
                                         style={{
-                                            fontSize: "0.9rem",
-                                            fontStyle: "italic",
-                                            whiteSpace: "pre-wrap",
+                                            textDecoration: "none",
+                                            fontSize: "0.85rem",
                                         }}
                                     >
-                                        {reservaDetalhes.observacoes}
-                                    </div>
+                                        <i className="fas fa-arrow-right mr-1"></i>{" "}
+                                        editar reserva
+                                    </a>
+                                    {reservaDetalhes.hospede_id && (
+                                        <a
+                                            href={`/hospede/${reservaDetalhes.hospede_id}/edit`}
+                                            className="text-primary font-weight-bold mb-2"
+                                            style={{
+                                                textDecoration: "none",
+                                                fontSize: "0.85rem",
+                                            }}
+                                        >
+                                            <i className="fas fa-arrow-right mr-1"></i>{" "}
+                                            ir para o hóspede
+                                        </a>
+                                    )}
+                                    {reservaDetalhes.situacao !==
+                                        "bloqueado" && (
+                                        <>
+                                            <a
+                                                href={`/reserva/${reservaDetalhes.id}/edit#produtos`}
+                                                className="text-primary font-weight-bold mb-2"
+                                                style={{
+                                                    textDecoration: "none",
+                                                    fontSize: "0.85rem",
+                                                }}
+                                            >
+                                                <i className="fas fa-arrow-right mr-1"></i>{" "}
+                                                pagamentos
+                                            </a>
+                                            <a
+                                                href={`/reserva/${reservaDetalhes.id}/edit#produtos`}
+                                                className="text-primary font-weight-bold mb-2"
+                                                style={{
+                                                    textDecoration: "none",
+                                                    fontSize: "0.85rem",
+                                                }}
+                                            >
+                                                <i className="fas fa-arrow-right mr-1"></i>{" "}
+                                                lançar itens
+                                            </a>
+                                        </>
+                                    )}
                                 </div>
                             </div>
-                        )}
-                        {reservaDetalhes.situacao !== "bloqueado" && (
-                            <div className="bg-light p-3 rounded mb-3 border">
-                                <div className="row">
-                                    <div className="col-6 mb-2">
-                                        <label className="text-muted mb-0 small">
-                                            Nº Diárias
-                                        </label>
-                                        <div className="font-weight-bold">
-                                            {financeiroDetalhes
-                                                ? financeiroDetalhes.num_diarias
-                                                : "..."}
-                                        </div>
-                                    </div>
-                                    <div className="col-6 mb-2">
-                                        <label className="text-muted mb-0 small">
-                                            Total Geral
-                                        </label>
-                                        <div className="text-primary font-weight-bold">
-                                            {financeiroDetalhes
-                                                ? formatMoney(
-                                                      (parseFloat(
-                                                          reservaDetalhes.valor_total,
-                                                      ) || 0) +
-                                                          (parseFloat(
-                                                              financeiroDetalhes.total_produtos,
-                                                          ) || 0),
-                                                  )
-                                                : "..."}
-                                        </div>
-                                    </div>
-                                    <div className="col-6">
-                                        <label className="text-muted mb-0 small">
-                                            Recebido
-                                        </label>
-                                        <div className="text-success font-weight-bold">
-                                            {financeiroDetalhes
-                                                ? formatMoney(
-                                                      financeiroDetalhes.total_recebido,
-                                                  )
-                                                : "..."}
-                                        </div>
-                                    </div>
-                                    <div className="col-6">
-                                        <label className="text-muted mb-0 small">
-                                            Falta Receber
-                                        </label>
-                                        <div className="text-danger font-weight-bold h5 mb-0">
-                                            {financeiroDetalhes
-                                                ? formatMoney(
-                                                      (parseFloat(
-                                                          reservaDetalhes.valor_total,
-                                                      ) || 0) +
-                                                          (parseFloat(
-                                                              financeiroDetalhes.total_produtos,
-                                                          ) || 0) -
-                                                          parseFloat(
-                                                              financeiroDetalhes.total_recebido,
-                                                          ) -
-                                                          parseFloat(
-                                                              financeiroDetalhes.total_descontos ||
-                                                                  0,
-                                                          ),
-                                                  )
-                                                : "..."}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                        <div className="border-top pt-3 mt-2 text-right">
-                            {podeFazerCheckin(reservaDetalhes) && (
-                                <button
-                                    type="button"
-                                    className="btn btn-success mr-2"
-                                    onClick={handleRealizarCheckin}
-                                    disabled={loadingAction}
-                                >
-                                    {loadingAction ? (
-                                        <i className="fas fa-spinner fa-spin"></i>
-                                    ) : (
-                                        <i className="fas fa-check"></i>
-                                    )}{" "}
-                                    Fazer Check-in
-                                </button>
-                            )}
+                        </div>
+
+                        <div className="border-top pt-3 mt-3 text-right">
                             <button
-                                className="btn btn-secondary mr-2"
+                                className="btn btn-secondary"
                                 onClick={() => setShowModalDetalhes(false)}
                             >
                                 Fechar
                             </button>
-                            <a
-                                href={`/reserva/${reservaDetalhes.id}/edit`}
-                                className="btn btn-primary"
-                            >
-                                <i className="fas fa-edit"></i> Editar
-                            </a>
                         </div>
                     </div>
                 )}

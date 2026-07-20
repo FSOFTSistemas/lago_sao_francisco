@@ -461,6 +461,16 @@
                                                 target="_blank">
                                                 <i class="fas fa-address-card"></i> Emitir FNRH
                                             </a>
+
+                                            <a href="{{ route('reserva.recibo', $reserva->id) }}" class="btn btn-outline-secondary"
+                                                target="_blank">
+                                                <i class="fas fa-receipt"></i> Recibo
+                                            </a>
+
+                                            <a href="{{ route('reserva.extrato', $reserva->id) }}" class="btn btn-outline-secondary"
+                                                target="_blank">
+                                                <i class="fas fa-file-invoice"></i> Extrato
+                                            </a>
                                             @if (isset($reserva) && $reserva->situacao === 'reserva')
                                                 <button type="button" class="btn btn-cancelar-noshow" id="btn-noshow"
                                                     data-reserva-id="{{ $reserva->id }}"

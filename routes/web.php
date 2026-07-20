@@ -314,6 +314,8 @@ Route::get('/relatorio/plano-de-contas', [PlanoDeContaController::class, 'relato
     ->name('plano-de-contas.relatorio');
 
 Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])->name('reserva.fnrh');
+Route::get('/reserva/{reserva}/recibo', [ReservaController::class, 'gerarRecibo'])->name('reserva.recibo');
+Route::get('/reserva/{reserva}/extrato', [ReservaController::class, 'gerarExtrato'])->name('reserva.extrato');
 
 // Documentos rápidos (ícone na barra superior)
 Route::get('/documentos/fnrh-branco', [DocumentoController::class, 'fnrhBranco'])->name('documentos.fnrh_branco');

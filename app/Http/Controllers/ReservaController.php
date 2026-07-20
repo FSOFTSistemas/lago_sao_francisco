@@ -893,6 +893,80 @@ class ReservaController extends Controller
         }
     }
 
+    public function gerarRecibo(Reserva $reserva)
+    {
+        return $this->gerarReciboOuExtrato($reserva, 'recibo');
+    }
+
+    public function gerarExtrato(Reserva $reserva)
+    {
+        return $this->gerarReciboOuExtrato($reserva, 'extrato');
+    }
+
+    private function gerarReciboOuExtrato(Reserva $reserva, string $tipo)
+    {
+        try {
+            $reserva->load('hospede.endereco', 'quarto');
+            $hospede = $reserva->hospede;
+            if (! $hospede) {
+                return redirect()->back()->with('error', 'Reserva sem hóspede principal definido.');
+            }
+
+            $checkin = Carbon::parse($reserva->data_checkin);
+            $checkout = Carbon::parse($reserva->data_checkout);
+            $numDiarias = max(1, $checkin->diffInDays($checkout));
+
+            $transacoes = Transacao::with('formaPagamento')
+                ->where('reserva_id', $reserva->id)
+                ->where('status', true)
+                ->orderBy('data_pagamento')
+                ->get();
+
+            $pagamentos = $transacoes->where('tipo', 'pagamento');
+            $descontos = $transacoes->where('tipo', 'desconto');
+
+            $totalDiarias = $reserva->valor_diaria * $numDiarias;
+            $totalServicos = $transacoes->where('categoria', 'servicos')->sum('valor');
+            $totalProdutos = $transacoes->where('categoria', 'produtos')->sum('valor');
+            $totalReserva = $totalDiarias + $totalServicos + $totalProdutos;
+            $totalConsumido = $totalServicos + $totalProdutos;
+
+            $hoje = Carbon::today();
+            $totalPago = $pagamentos->filter(fn ($t) => $t->data_pagamento && $t->data_pagamento->lte($hoje))->sum('valor');
+            $totalDescontos = $descontos->sum('valor');
+            $totalAPagar = max(0, $totalReserva - $totalPago - $totalDescontos);
+
+            $data = [
+                'tipo' => $tipo,
+                'reserva' => $reserva,
+                'hospede' => $hospede,
+                'quarto' => $reserva->quarto,
+                'dataEmissao' => Carbon::now()->format('d/m/Y \à\s H:i'),
+                'periodo' => $checkin->format('d/m/Y').' - '.$checkout->format('d/m/Y'),
+                'numDiarias' => $numDiarias,
+                'valorDiaria' => $reserva->valor_diaria,
+                'totalServicos' => $totalServicos,
+                'totalProdutos' => $totalProdutos,
+                'totalDiarias' => $totalDiarias,
+                'pagamentos' => $pagamentos,
+                'totalReserva' => $totalReserva,
+                'totalConsumido' => $totalConsumido,
+                'totalPago' => $totalPago,
+                'totalAPagar' => $totalAPagar,
+                'assinatura' => $tipo === 'recibo'
+                    ? (optional(Auth::user())->name ?? '')
+                    : $hospede->nome,
+            ];
+
+            $pdf = Pdf::loadView('reserva.recibo_extrato', $data);
+            $fileName = strtoupper($tipo).'_'.str_replace(' ', '_', $hospede->nome).'_'.$reserva->id.'.pdf';
+
+            return $pdf->stream($fileName);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao gerar '.ucfirst($tipo).': '.$e->getMessage());
+        }
+    }
+
     public function relatorioPorCanal(Request $request)
     {
         $query = Reserva::query();
