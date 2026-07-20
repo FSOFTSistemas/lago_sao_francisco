@@ -44,6 +44,7 @@ use App\Http\Controllers\MapaReservaController;
 use App\Http\Controllers\MotorhomeController;
 use App\Http\Controllers\NotaFiscalController;
 use App\Http\Controllers\NotaFiscalItensController;
+use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\ParceiroController;
 use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\PreferenciasHotelController;
@@ -316,6 +317,11 @@ Route::get('/reserva/{reserva}/fnrh', [ReservaController::class, 'emitirFNRH'])-
 
 // Documentos rápidos (ícone na barra superior)
 Route::get('/documentos/fnrh-branco', [DocumentoController::class, 'fnrhBranco'])->name('documentos.fnrh_branco');
+
+// Notificações
+Route::get('/notificacoes', [NotificacaoController::class, 'index'])->name('notificacoes.index');
+Route::get('/notificacoes/{id}/abrir', [NotificacaoController::class, 'abrir'])->name('notificacoes.abrir');
+Route::post('/notificacoes/marcar-todas-lidas', [NotificacaoController::class, 'marcarTodasLidas'])->name('notificacoes.marcar_todas_lidas');
 
 Route::get('reservas/relatorio/canal', [ReservaController::class, 'relatorioPorCanal'])->name('reserva.relatorio.canal');
 

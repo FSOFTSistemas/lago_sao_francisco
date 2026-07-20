@@ -62,6 +62,50 @@
         {{-- Configured right links --}}
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 
+        {{-- Notificações --}}
+        @if(Auth::user())
+            @php
+                $notificacoesRecentes = Auth::user()->notifications()->latest()->take(8)->get();
+                $totalNaoLidas = Auth::user()->unreadNotifications()->count();
+                $corHexMap = ['danger' => '#dc3545', 'warning' => '#e8590c', 'info' => '#1971c2', 'success' => '#3e7222'];
+            @endphp
+            <li class="nav-item dropdown">
+                <a class="nav-link" data-toggle="dropdown" href="#" title="Notificações">
+                    <i class="fas fa-bell"></i>
+                    @if($totalNaoLidas > 0)
+                        <span class="badge badge-danger navbar-badge">{{ $totalNaoLidas > 9 ? '9+' : $totalNaoLidas }}</span>
+                    @endif
+                </a>
+                <div class="dropdown-menu dropdown-menu-right" style="min-width: 320px;">
+                    <span class="dropdown-item dropdown-header">Notificações</span>
+                    <div class="dropdown-divider"></div>
+
+                    @forelse($notificacoesRecentes as $notificacao)
+                        <a href="{{ route('notificacoes.abrir', $notificacao->id) }}" class="dropdown-item" style="white-space: normal; {{ $notificacao->read_at ? '' : 'background-color:#f8faf7;' }}">
+                            <i class="{{ $notificacao->data['icone'] ?? 'fas fa-bell' }} mr-2" style="color: {{ $corHexMap[$notificacao->data['cor'] ?? ''] ?? '#6c757d' }};"></i>
+                            <strong>{{ $notificacao->data['titulo'] ?? 'Notificação' }}</strong>
+                            <div class="text-muted" style="font-size: .78rem; white-space: normal;">{{ $notificacao->data['mensagem'] ?? '' }}</div>
+                            <div class="text-muted" style="font-size: .7rem;">{{ $notificacao->created_at->diffForHumans() }}</div>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                    @empty
+                        <span class="dropdown-item text-muted">Nenhuma notificação por aqui.</span>
+                        <div class="dropdown-divider"></div>
+                    @endforelse
+
+                    <a href="{{ route('notificacoes.index') }}" class="dropdown-item dropdown-footer">Ver todas</a>
+                    @if($totalNaoLidas > 0)
+                        <form action="{{ route('notificacoes.marcar_todas_lidas') }}" method="POST" class="px-3 pb-2">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-block btn-outline-secondary">
+                                <i class="fas fa-check-double mr-1"></i> Marcar todas como lidas
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </li>
+        @endif
+
         {{-- User menu link --}}
         @if(Auth::user())
             @if(config('adminlte.usermenu_enabled'))
