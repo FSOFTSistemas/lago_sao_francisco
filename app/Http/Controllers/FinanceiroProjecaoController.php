@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContasAReceber;
+use App\Models\Reserva;
 use App\Models\Transacao;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +36,44 @@ class FinanceiroProjecaoController extends Controller
         $reservasRecebido = $transacoesPeriodo->filter(fn ($t) => Carbon::parse($t->data_pagamento)->lte($hoje));
         $reservasProjetado = $transacoesPeriodo->filter(fn ($t) => Carbon::parse($t->data_pagamento)->gt($hoje));
 
+        // Saldo em aberto de reservas: cobre o saldo que falta pagar mesmo quando
+        // não há nenhuma parcela futura cadastrada para ele (valor_total - já pago - descontos),
+        // atribuído à data de check-out (quando o hóspede normalmente acerta a conta).
+        $saldosReservas = collect();
+
+        $reservasEmAberto = Reserva::whereNotIn('situacao', ['cancelado', 'bloqueado', 'noshow'])
+            ->whereBetween('data_checkout', [$dataInicio->toDateString(), $dataFim->toDateString()])
+            ->with(['hospede', 'quarto', 'transacoes' => fn ($q) => $q->where('status', true)])
+            ->get();
+
+        foreach ($reservasEmAberto as $reserva) {
+            $pagoAteHoje = $reserva->transacoes->where('tipo', 'pagamento')
+                ->filter(fn ($t) => Carbon::parse($t->data_pagamento)->lte($hoje))
+                ->sum('valor');
+            $descontos = $reserva->transacoes->where('tipo', 'desconto')->sum('valor');
+            $agendadoFuturo = $reserva->transacoes->where('tipo', 'pagamento')
+                ->filter(fn ($t) => Carbon::parse($t->data_pagamento)->gt($hoje))
+                ->sum('valor');
+
+            $saldoTotal = round((float) $reserva->valor_total - $pagoAteHoje - $descontos, 2);
+            $naoAgendado = round(max(0, $saldoTotal - $agendadoFuturo), 2);
+
+            if ($naoAgendado > 0.01) {
+                $checkout = Carbon::parse($reserva->data_checkout);
+
+                $saldosReservas->push([
+                    'descricao' => 'FA:'.str_pad($reserva->id, 6, '0', STR_PAD_LEFT).' - '.($reserva->quarto->nome ?? '-'),
+                    'cliente' => $reserva->hospede->nome ?? '-',
+                    'vencimento' => $checkout,
+                    'status' => $checkout->lt($hoje) ? 'atrasado' : 'pendente',
+                    'valor' => $naoAgendado,
+                ]);
+            }
+        }
+
+        $reservasSaldoPendente = round((float) $saldosReservas->where('status', 'pendente')->sum('valor'), 2);
+        $reservasSaldoAtrasado = round((float) $saldosReservas->where('status', 'atrasado')->sum('valor'), 2);
+
         // --- Contas a Receber (aluguel de espaço, lançamentos avulsos) ---
         $contasQuery = $empresaSelecionada === null
             ? ContasAReceber::query()
@@ -56,12 +95,15 @@ class FinanceiroProjecaoController extends Controller
         $totalReservasProjetado = round((float) $reservasProjetado->sum('valor'), 2);
 
         $totalRecebido = $totalReservasRecebido + $carRecebido;
-        $totalAReceber = $totalReservasProjetado + $carPendente;
-        $totalAtrasado = $carAtrasado;
+        $totalAReceber = $totalReservasProjetado + $carPendente + $reservasSaldoPendente;
+        $totalAtrasado = $carAtrasado + $reservasSaldoAtrasado;
         $totalProjetado = $totalRecebido + $totalAReceber + $totalAtrasado;
 
-        $qtdPendentes = $contasPeriodo->where('status', 'pendente')->count() + $reservasProjetado->count();
-        $qtdAtrasados = $contasPeriodo->where('status', 'atrasado')->count();
+        $qtdPendentes = $contasPeriodo->where('status', 'pendente')->count()
+            + $reservasProjetado->count()
+            + $saldosReservas->where('status', 'pendente')->count();
+        $qtdAtrasados = $contasPeriodo->where('status', 'atrasado')->count()
+            + $saldosReservas->where('status', 'atrasado')->count();
 
         // --- Recebido por forma de pagamento (reservas) ---
         $porFormaPagamento = $reservasRecebido
@@ -92,6 +134,9 @@ class FinanceiroProjecaoController extends Controller
         }
         foreach ($reservasProjetado as $t) {
             $adicionarAoBucket(Carbon::parse($t->data_pagamento), 'projetado', (float) $t->valor);
+        }
+        foreach ($saldosReservas as $s) {
+            $adicionarAoBucket($s['vencimento'], 'projetado', (float) $s['valor']);
         }
         foreach ($contasPeriodo as $c) {
             if ($c->status === 'recebido' && $c->data_recebimento) {
@@ -127,6 +172,10 @@ class FinanceiroProjecaoController extends Controller
                 'status' => 'pendente',
                 'valor' => (float) $t->valor,
             ]);
+        }
+
+        foreach ($saldosReservas as $s) {
+            $proximos->push($s);
         }
 
         $proximos = $proximos->sortBy('vencimento')->take(15)->values();
