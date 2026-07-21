@@ -500,6 +500,12 @@ return [
                     'can'  => 'gerenciar contas a receber',
                 ],
                 [
+                    'text' => 'Projeção Financeira',
+                    'url'  => '/financeiro/projecao',
+                    'icon' => 'fas fa-chart-line',
+                    'can'  => 'gerenciar financeiro',
+                ],
+                [
                     'text' => 'Plano de Contas',
                     'url'  => '/planoDeConta',
                     'icon' => 'fas fa-file-invoice',

@@ -27,6 +27,7 @@ use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\FinanceiroController;
+use App\Http\Controllers\FinanceiroProjecaoController;
 use App\Http\Controllers\FluxoCaixaController;
 use App\Http\Controllers\FormaPagamentoController;
 use App\Http\Controllers\FornecedorController;
@@ -78,6 +79,9 @@ Auth::routes();
 Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
+Route::get('/financeiro/projecao', [FinanceiroProjecaoController::class, 'index'])
+    ->name('financeiro.projecao')
+    ->middleware('permission:gerenciar financeiro');
 
 Route::resource('planoDeConta', PlanoDeContaController::class)->middleware('permission:gerenciar plano de conta');
 
