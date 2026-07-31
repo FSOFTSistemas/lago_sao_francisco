@@ -36,7 +36,9 @@ class ContasAPagarController extends Controller
         $filtrosSessaoKey = 'contas_a_pagar_filtros';
         $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id'];
 
-        if ($request->hasAny($camposFiltro)) {
+        if ($request->boolean('limpar_filtros')) {
+            session()->forget($filtrosSessaoKey);
+        } elseif ($request->hasAny($camposFiltro)) {
             $filtros = [];
 
             foreach ($camposFiltro as $campo) {

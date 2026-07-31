@@ -108,5 +108,6 @@ backed by the `NotaFiscal`/`NotaFiscalItens` models and the `NFeNew` Livewire co
 
 ### Scheduled jobs
 
-`routes/console.php` schedules `App\Console\Commands\AtualizarStatusContasAtrasadas` daily at 01:00
-to update overdue accounts-payable status.
+`routes/console.php` schedules two daily commands: `AtualizarStatusContasAtrasadas` at 01:00 (marks
+overdue accounts-payable as late) and `EnviarNotificacoesDiarias` at 06:00 (notifies about accounts
+payable coming due and the day's cash movement).
