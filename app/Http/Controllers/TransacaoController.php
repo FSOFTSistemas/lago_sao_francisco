@@ -300,6 +300,8 @@ class TransacaoController extends Controller
                 $movimentoId = Movimento::where('descricao', 'venda-'.$slug)->value('id');
 
                 if (! $movimentoId) {
+                    Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (transação #{$transacao->id}, forma de pagamento '{$formaPagamento->descricao}').");
+
                     return; // pula se não encontrar o movimento
                 }
             }

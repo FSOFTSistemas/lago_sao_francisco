@@ -68,6 +68,7 @@
                             <form action="{{ route('formaPagamento.update', $formaPagamento->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
+                                <input type="hidden" name="_origem" value="editFormaPagamentoModal{{ $formaPagamento->id }}">
                                 <div class="modal-header bg-warning text-dark">
                                     <h5 class="modal-title">
                                         <i class="fas fa-edit"></i> Editar Forma de Pagamento
@@ -78,8 +79,11 @@
                                 <div class="modal-body">
                                     <div class="form-group">
                                         <label for="descricao">Descrição</label>
-                                        <input type="text" name="descricao" id="descricao" class="form-control"
-                                            value="{{ $formaPagamento->descricao }}" required>
+                                        <input type="text" name="descricao" id="descricao" class="form-control @error('descricao') is-invalid @enderror"
+                                            value="{{ old('descricao', $formaPagamento->descricao) }}" required>
+                                        @error('descricao')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -129,6 +133,7 @@
             <div class="modal-content">
                 <form action="{{ route('formaPagamento.store') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="_origem" value="createFormaPagamentoModal">
                     <div class="modal-header text-white">
                         <h5 class="modal-title">
                             <i class="fas fa-cogs"></i> Adicionar Nova Forma de Pagamento
@@ -138,7 +143,11 @@
                     <div class="modal-body">
                         <div class="form-group">
                             <label for="descricao">Descrição</label>
-                            <input type="text" name="descricao" id="descricao" class="form-control" required>
+                            <input type="text" name="descricao" id="descricao" class="form-control @error('descricao') is-invalid @enderror"
+                                value="{{ old('descricao') }}" required>
+                            @error('descricao')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -155,6 +164,16 @@
     <script>
         $(document).ready(function() {
             $('.select2').select2();
+
+            @if ($errors->any())
+                var origemComErro = @json(old('_origem'));
+                if (origemComErro) {
+                    var modalEl = document.getElementById(origemComErro);
+                    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        new bootstrap.Modal(modalEl).show();
+                    }
+                }
+            @endif
         });
     </script>
 @stop

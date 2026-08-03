@@ -19,6 +19,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AluguelController extends Controller
 {
@@ -459,6 +460,8 @@ class AluguelController extends Controller
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
             if (!$movimentoId) {
+                Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (aluguel #{$aluguel->id}, forma de pagamento '{$formaPagamento->descricao}').");
+
                 continue; // pula se não encontrar o movimento
             }
 

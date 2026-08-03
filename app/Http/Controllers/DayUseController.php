@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DayUseController extends Controller
@@ -255,6 +256,8 @@ class DayUseController extends Controller
                                 'movimento_id' => $movimento->id,
                                 'plano_de_conta_id' => 52, // Receita->DAYUSE
                             ]);
+                        } else {
+                            Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para 'cancelamento-{$slug}' (DayUse #{$dayUse->id}, forma de pagamento '{$pagamento->formaPagamento->descricao}').");
                         }
                     }
                 }

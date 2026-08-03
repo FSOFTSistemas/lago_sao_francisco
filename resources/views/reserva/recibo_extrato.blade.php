@@ -183,6 +183,12 @@
                 <span class="value">{{ $hospede->telefone ?? '-' }}</span>
             </td>
         </tr>
+        <tr>
+            <td>
+                <span class="label">CEP</span>
+                <span class="value">{{ $hospede->endereco->cep ?? '-' }}</span>
+            </td>
+        </tr>
     </table>
 
     <div class="section-title">Informações da reserva</div>

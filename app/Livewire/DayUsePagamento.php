@@ -12,6 +12,7 @@ use App\Models\DayUseSouvenir;
 use App\Models\Movimento;
 use App\Models\Souvenir;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DayUsePagamento extends Component
 {
@@ -209,7 +210,11 @@ class DayUsePagamento extends Component
             $tipoMov = 'venda-' . strtolower(str_replace(' ', '-', $formaPagamento->descricao));
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
-            if (!$movimentoId) continue;
+            if (!$movimentoId) {
+                Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (DayUse #{$dayUse->id}, forma de pagamento '{$formaPagamento->descricao}').");
+
+                continue;
+            }
 
             $this->caixaService->inserirMovimentacao($caixa, [
                 'descricao' => 'DayUse #' . $dayUse->id,
