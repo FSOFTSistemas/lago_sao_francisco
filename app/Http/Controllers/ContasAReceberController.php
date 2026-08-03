@@ -7,6 +7,7 @@ use App\Models\ContasAReceber;
 use App\Models\Cliente;
 use App\Models\ContaPagamentos;
 use App\Models\Empresa;
+use App\Models\FormaPagamento;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use App\Models\Venda;
@@ -222,7 +223,7 @@ class ContasAReceberController extends Controller
             ]);
 
             // Movimento
-            $slug = 'recebimento-' . strtolower(str_replace(' ', '-', $data['forma_pagamento']));
+            $slug = FormaPagamento::descricaoMovimento('recebimento', $data['forma_pagamento']);
             $movimentoId = Movimento::where('descricao', $slug)->value('id');
 
             if (!$movimentoId) {

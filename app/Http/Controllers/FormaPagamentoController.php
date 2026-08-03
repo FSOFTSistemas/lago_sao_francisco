@@ -26,7 +26,7 @@ class FormaPagamentoController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    if ($this->slugJaUtilizado($this->slug($value))) {
+                    if ($this->slugJaUtilizado(FormaPagamento::slugMovimento($value))) {
                         $fail('Já existe uma forma de pagamento equivalente a "'.$value.'" (mesmo nome ignorando espaços/maiúsculas). Escolha uma descrição diferente para não misturar os relatórios de caixa.');
                     }
                 },
@@ -35,7 +35,7 @@ class FormaPagamentoController extends Controller
 
         $formaPagamento = FormaPagamento::create($validated);
 
-        $this->sincronizarMovimentos($this->slug($formaPagamento->descricao));
+        $this->sincronizarMovimentos($formaPagamento->movimentoSlug());
 
         return redirect()->route('formaPagamento.index')->with('success', 'Registro criado com sucesso!');
     }
@@ -53,7 +53,7 @@ class FormaPagamentoController extends Controller
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) use ($formaPagamento) {
-                    if ($this->slugJaUtilizado($this->slug($value), excetoId: $formaPagamento->id)) {
+                    if ($this->slugJaUtilizado(FormaPagamento::slugMovimento($value), excetoId: $formaPagamento->id)) {
                         $fail('Já existe uma forma de pagamento equivalente a "'.$value.'" (mesmo nome ignorando espaços/maiúsculas). Escolha uma descrição diferente para não misturar os relatórios de caixa.');
                     }
                 },
@@ -62,7 +62,7 @@ class FormaPagamentoController extends Controller
 
         $formaPagamento->update($validated);
 
-        $this->sincronizarMovimentos($this->slug($formaPagamento->descricao));
+        $this->sincronizarMovimentos($formaPagamento->movimentoSlug());
 
         return redirect()->route('formaPagamento.index')->with('success', 'Registro atualizado com sucesso!');
     }
@@ -82,20 +82,11 @@ class FormaPagamentoController extends Controller
         }
     }
 
-    /**
-     * Gera o mesmo slug usado em TransacaoController/AluguelController/DayUse* para
-     * casar a forma de pagamento com os Movimentos de caixa (venda-, recebimento-, cancelamento-).
-     */
-    private function slug(string $descricao): string
-    {
-        return strtolower(str_replace([' ', '_'], '-', trim($descricao)));
-    }
-
     private function slugJaUtilizado(string $slug, ?int $excetoId = null): bool
     {
         return FormaPagamento::when($excetoId, fn ($q) => $q->where('id', '!=', $excetoId))
             ->get()
-            ->contains(fn ($forma) => $this->slug($forma->descricao) === $slug);
+            ->contains(fn ($forma) => $forma->movimentoSlug() === $slug);
     }
 
     /**

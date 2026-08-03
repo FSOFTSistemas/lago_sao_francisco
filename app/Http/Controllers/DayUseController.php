@@ -239,9 +239,8 @@ class DayUseController extends Controller
 
                 if ($caixa) {
                     foreach ($dayUse->formaPag as $pagamento) {
-                        $descricao = strtolower($pagamento->formaPagamento->descricao); // Ex: "Cartão Crédito"
-                        $slug = str_replace([' ', '_'], '-', $descricao); // "cartão-crédito"
-                        $movimento = Movimento::where('descricao', 'cancelamento-' . $slug)->first();
+                        $slug = $pagamento->formaPagamento->movimentoSlug();
+                        $movimento = Movimento::where('descricao', $pagamento->formaPagamento->movimentoDescricao('cancelamento'))->first();
 
                         if ($movimento) {
                             FluxoCaixa::create([

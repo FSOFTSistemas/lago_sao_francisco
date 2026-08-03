@@ -283,7 +283,7 @@ class TransacaoController extends Controller
             }
 
             // Criar slug da forma de pagamento (seguindo o padrão do AluguelController)
-            $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
+            $slug = $formaPagamento->movimentoSlug();
 
             // Determinar o tipo de movimento baseado na categoria da transação
             $tipoMov = match ($transacao->categoria) {
@@ -358,7 +358,7 @@ class TransacaoController extends Controller
             }
 
             // Criar slug da forma de pagamento
-            $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
+            $slug = $formaPagamento->movimentoSlug();
 
             // Buscar movimento de cancelamento específico ou genérico
             $tipoMovimentoCancelamento = 'cancelamento-'.$slug;

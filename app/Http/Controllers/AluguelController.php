@@ -454,8 +454,7 @@ class AluguelController extends Controller
                 continue;
             }
 
-            $slug = strtolower(str_replace(' ', '-', $formaPagamento->slug ?? $formaPagamento->descricao ?? ''));
-            $tipoMov = 'venda-' . $slug;
+            $tipoMov = $formaPagamento->movimentoDescricao('venda');
 
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 

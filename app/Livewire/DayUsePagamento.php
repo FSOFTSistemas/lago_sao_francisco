@@ -207,7 +207,7 @@ class DayUsePagamento extends Component
         // Criar movimentações no Fluxo de Caixa
         foreach ($this->pagamentosAtuais as $payment) {
             $formaPagamento = FormaPagamento::find($payment['pagamento_id']);
-            $tipoMov = 'venda-' . strtolower(str_replace(' ', '-', $formaPagamento->descricao));
+            $tipoMov = $formaPagamento->movimentoDescricao('venda');
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
             if (!$movimentoId) {
