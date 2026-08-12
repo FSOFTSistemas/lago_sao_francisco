@@ -6,6 +6,7 @@ use App\Models\PlanoDeConta;
 use App\Models\FluxoCaixa; // Garanta que o nome do Model está correto
 use App\Models\ContasAPagar;
 use App\Models\ContasAReceber;
+use App\Models\ParcelaContasAPagar;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -52,14 +53,33 @@ class PlanoDeContasService
             $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;
         }
 
+        // Contas a pagar não parceladas: pagamento único registrado direto na conta.
         $pagarQuery = ContasAPagar::query()
             ->select('plano_de_contas_id', DB::raw('SUM(valor_pago) as total'))
+            ->whereNull('total_parcelas')
             ->where('status', 'pago')->whereNotNull('plano_de_contas_id')->groupBy('plano_de_contas_id');
         $pagarQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
         if ($dataInicio && $dataFim) $pagarQuery->whereBetween('data_pagamento', [$dataInicio, $dataFim]);
 
         foreach ($pagarQuery->get() as $item) {
-            $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) - $item->total;
+            $totais[$item->plano_de_contas_id] = ($totais[$item->plano_de_contas_id] ?? 0) - $item->total;
+        }
+
+        // Contas a pagar parceladas: o status/"data_pagamento" da conta-pai só fecha quando a
+        // última parcela é quitada, então cada parcela paga é somada individualmente pela sua
+        // própria data de pagamento (senão parcelas já pagas somem do relatório até a conta
+        // inteira ser quitada).
+        $parcelaQuery = ParcelaContasAPagar::query()
+            ->join('contas_a_pagar', 'contas_a_pagar.id', '=', 'parcelas_contas_a_pagar.contas_a_pagar_id')
+            ->select('contas_a_pagar.plano_de_contas_id', DB::raw('SUM(parcelas_contas_a_pagar.valor_pago) as total'))
+            ->where('parcelas_contas_a_pagar.status', 'pago')
+            ->whereNotNull('contas_a_pagar.plano_de_contas_id')
+            ->groupBy('contas_a_pagar.plano_de_contas_id');
+        $parcelaQuery->when($empresaId, fn($q) => $q->where('contas_a_pagar.empresa_id', $empresaId));
+        if ($dataInicio && $dataFim) $parcelaQuery->whereBetween('parcelas_contas_a_pagar.data_pagamento', [$dataInicio, $dataFim]);
+
+        foreach ($parcelaQuery->get() as $item) {
+            $totais[$item->plano_de_contas_id] = ($totais[$item->plano_de_contas_id] ?? 0) - $item->total;
         }
 
         $receberQuery = ContasAReceber::query()
@@ -69,9 +89,9 @@ class PlanoDeContasService
         if ($dataInicio && $dataFim) $receberQuery->whereBetween('data_recebimento', [$dataInicio, $dataFim]);
 
         foreach ($receberQuery->get() as $item) {
-            $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;
+            $totais[$item->plano_de_contas_id] = ($totais[$item->plano_de_contas_id] ?? 0) + $item->total;
         }
-        
+
         return $totais;
     }
     
