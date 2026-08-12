@@ -30,9 +30,13 @@
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-adicional"
                             role="tab">Mobília</a>
                     </li>
-                    <li class="nav-item" id="pacotesEventoAba">
-                        <a class="nav-link editlink" data-toggle="tab" href="#tab-pacotes-evento"
-                            role="tab">Ilhas &amp; Staff</a>
+                    <li class="nav-item" id="ilhasAba" style="display: none">
+                        <a class="nav-link editlink" data-toggle="tab" href="#tab-ilhas"
+                            role="tab">Ilhas Adicionais</a>
+                    </li>
+                    <li class="nav-item" id="staffAba" style="display: none">
+                        <a class="nav-link editlink" data-toggle="tab" href="#tab-staff"
+                            role="tab">Refeição Staff</a>
                     </li>
                     <li class="nav-item" id="pagamentoTab">
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-pagamento"
@@ -135,6 +139,32 @@
                                 <input type="text" class="form-control" id="cerimonial_responsavel"
                                     name="cerimonial_responsavel"
                                     value="{{ old('cerimonial_responsavel', $aluguel->cerimonial_responsavel ?? '') }}">
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-md-3 label-control form-lab d-block">* Ilhas Adicionais?</label>
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="ilhas_ativo" value="0">
+                                <input class="form-check-input" type="checkbox" id="ilhasAtivoSwitch"
+                                    name="ilhas_ativo" value="1"
+                                    {{ old('ilhas_ativo', $ilhasAdicionaisAtivo ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label ms-2" for="ilhasAtivoSwitch" id="ilhasAtivoLabel">
+                                    {{ old('ilhas_ativo', $ilhasAdicionaisAtivo ?? false) ? 'Sim' : 'Não' }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label class="col-md-3 label-control form-lab d-block">* Refeição Staff?</label>
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="staff_ativo" value="0">
+                                <input class="form-check-input" type="checkbox" id="staffAtivoSwitch"
+                                    name="staff_ativo" value="1"
+                                    {{ old('staff_ativo', $refeicaoStaffAtivo ?? false) ? 'checked' : '' }}>
+                                <label class="form-check-label ms-2" for="staffAtivoSwitch" id="staffAtivoLabel">
+                                    {{ old('staff_ativo', $refeicaoStaffAtivo ?? false) ? 'Sim' : 'Não' }}
+                                </label>
                             </div>
                         </div>
 
@@ -345,108 +375,44 @@
 
                     </div>
 
-                    {{-- Aba: Ilhas Adicionais / Refeição Staff --}}
-                    <div class="tab-pane fade" id="tab-pacotes-evento">
+                    @php
+                        $pacotesSelecionadosArray = collect($pacotesEventoSelecionados)->keyBy('pacote_evento_id');
+                    @endphp
+
+                    {{-- Aba: Ilhas Adicionais --}}
+                    <div class="tab-pane fade" id="tab-ilhas">
                         <div class="d-flex align-items-center justify-content-end">
-                            <button type="button" id="btnProximoPacotesEvento" class="btn btn-primary w-25">Próximo</button>
+                            <button type="button" id="btnProximoIlhas" class="btn btn-primary w-25">Próximo</button>
                         </div>
-                        @php
-                            $pacotesSelecionadosArray = collect($pacotesEventoSelecionados)->keyBy('pacote_evento_id');
-                        @endphp
 
-                        @foreach (['ilha_adicional' => 'Ilhas Adicionais', 'refeicao_staff' => 'Refeição Staff'] as $categoriaChave => $categoriaLabel)
-                            @php
-                                $pacotesDaCategoria = ($pacotesEvento[$categoriaChave] ?? collect())->groupBy('nome');
-                            @endphp
-
-                            <div class="card mt-4">
-                                <div class="card-header bg-success text-white">
-                                    <strong>{{ $categoriaLabel }}</strong>
-                                </div>
-                                <div class="card-body">
-                                    @forelse ($pacotesDaCategoria as $nomePacote => $anosDoPacote)
-                                        @php
-                                            $anosOrdenados = $anosDoPacote->sortBy('ano')->values();
-                                            $primeiroAno = $anosOrdenados->first();
-                                            $grupo = \Illuminate\Support\Str::slug($nomePacote);
-
-                                            $selecionado = null;
-                                            $anoSelecionado = null;
-                                            foreach ($anosOrdenados as $opcaoAno) {
-                                                if ($pacotesSelecionadosArray->has($opcaoAno->id)) {
-                                                    $selecionado = $pacotesSelecionadosArray->get($opcaoAno->id);
-                                                    $anoSelecionado = $opcaoAno->ano;
-                                                    break;
-                                                }
-                                            }
-                                            $quantidade = $selecionado->quantidade ?? 0;
-                                            $observacao = $selecionado->observacao ?? '';
-                                            $valorTotal = $selecionado->valor_total ?? 0;
-                                            $anoAtivo = $anoSelecionado ?? $primeiroAno->ano;
-                                            $idAtivo = $selecionado->pacote_evento_id ?? $primeiroAno->id;
-                                        @endphp
-
-                                        <div class="row mb-3 align-items-start border-bottom pb-2 pacote-evento-linha"
-                                            data-grupo="{{ $grupo }}">
-                                            <div class="col-md-4">
-                                                <strong>{{ $nomePacote }}</strong>
-                                                @if ($primeiroAno->observacao_padrao)
-                                                    <br><small class="text-info">{{ $primeiroAno->observacao_padrao }}</small>
-                                                @endif
-                                                @if ($primeiroAno->descricao)
-                                                    <br><small class="text-muted">{{ $primeiroAno->descricao }}</small>
-                                                @endif
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label>Ano:</label>
-                                                <select class="form-control pacote-evento-ano">
-                                                    @foreach ($anosOrdenados as $opcaoAno)
-                                                        <option value="{{ $opcaoAno->id }}"
-                                                            data-valor="{{ $opcaoAno->valor }}"
-                                                            {{ $anoAtivo == $opcaoAno->ano ? 'selected' : '' }}>
-                                                            {{ $opcaoAno->ano }} (R$
-                                                            {{ number_format($opcaoAno->valor, 2, ',', '.') }})
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="hidden" class="pacote-evento-id"
-                                                    name="pacotes_evento[{{ $grupo }}][pacote_evento_id]"
-                                                    value="{{ $idAtivo }}">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label>Nº de Pessoas:</label>
-                                                <input type="number" min="0"
-                                                    class="form-control pacote-evento-quantidade"
-                                                    name="pacotes_evento[{{ $grupo }}][quantidade]"
-                                                    value="{{ $quantidade }}">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label>Observação:</label>
-                                                <input type="text" class="form-control"
-                                                    name="pacotes_evento[{{ $grupo }}][observacao]"
-                                                    value="{{ $observacao }}">
-                                            </div>
-
-                                            <div class="col-md-2">
-                                                <label>Total:</label>
-                                                <input type="text" readonly class="form-control pacote-evento-total"
-                                                    value="{{ $quantidade > 0 ? 'R$ ' . number_format($valorTotal, 2, ',', '.') : '' }}">
-                                            </div>
-                                        </div>
-                                    @empty
-                                        <p class="text-muted mb-0">Nenhum pacote cadastrado.</p>
-                                    @endforelse
-                                </div>
-                            </div>
-                        @endforeach
+                        @include('aluguel.partials._pacote_evento_categoria', [
+                            'categoriaChave' => 'ilha_adicional',
+                            'categoriaLabel' => 'Ilhas Adicionais',
+                        ])
 
                         <div class="form-group row mt-3">
-                            <label class="col-md-3 label-control">Total Ilhas &amp; Staff Estimado:</label>
+                            <label class="col-md-3 label-control">Total Ilhas Adicionais Estimado:</label>
                             <div class="col-md-3">
-                                <input type="text" id="totalPacotesEvento" class="form-control" readonly>
+                                <input type="text" id="totalIlhas" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Aba: Refeição Staff --}}
+                    <div class="tab-pane fade" id="tab-staff">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <button type="button" id="btnProximoStaff" class="btn btn-primary w-25">Próximo</button>
+                        </div>
+
+                        @include('aluguel.partials._pacote_evento_categoria', [
+                            'categoriaChave' => 'refeicao_staff',
+                            'categoriaLabel' => 'Refeição Staff',
+                        ])
+
+                        <div class="form-group row mt-3">
+                            <label class="col-md-3 label-control">Total Refeição Staff Estimado:</label>
+                            <div class="col-md-3">
+                                <input type="text" id="totalStaff" class="form-control" readonly>
                             </div>
                         </div>
                     </div>
@@ -806,9 +772,13 @@
                 const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(
                         /[^\d,]/g, '')
                     .replace(',', '.')) || 0;
-                const valorPacotesEvento = parseFloat(document.getElementById('totalPacotesEvento').value.replace(
+                const valorIlhas = parseFloat((document.getElementById('totalIlhas')?.value || '').replace(
                         /[^\d,]/g, '')
                     .replace(',', '.')) || 0;
+                const valorStaff = parseFloat((document.getElementById('totalStaff')?.value || '').replace(
+                        /[^\d,]/g, '')
+                    .replace(',', '.')) || 0;
+                const valorPacotesEvento = valorIlhas + valorStaff;
 
                 valorAluguelDisplay.value = formatarMoeda(valorAluguel);
                 valorBuffetDisplay.value = formatarMoeda(valorBuffet);
@@ -1093,10 +1063,15 @@
             // Cálculo inicial
             calcularTotalAdicionais();
 
-            function calcularTotalPacotesEvento() {
+            function calcularTotalPacotesEvento(containerId, totalInputId) {
                 let totalGeral = 0;
+                const container = document.getElementById(containerId);
 
-                document.querySelectorAll('.pacote-evento-linha').forEach(linha => {
+                if (!container) {
+                    return;
+                }
+
+                container.querySelectorAll('.pacote-evento-linha').forEach(linha => {
                     const anoSelect = linha.querySelector('.pacote-evento-ano');
                     const idHidden = linha.querySelector('.pacote-evento-id');
                     const quantidadeInput = linha.querySelector('.pacote-evento-quantidade');
@@ -1113,7 +1088,7 @@
                     totalGeral += totalItem;
                 });
 
-                const totalInput = document.getElementById('totalPacotesEvento');
+                const totalInput = document.getElementById(totalInputId);
 
                 if (totalInput) {
                     totalInput.value = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
@@ -1121,14 +1096,27 @@
                 calcularSubtotal()
             }
 
-            // Atualiza ao alterar quantidade ou o ano escolhido
-            document.querySelectorAll('.pacote-evento-quantidade, .pacote-evento-ano').forEach(input => {
-                input.addEventListener('input', calcularTotalPacotesEvento);
-                input.addEventListener('change', calcularTotalPacotesEvento);
+            function calcularTotalIlhas() {
+                calcularTotalPacotesEvento('tab-ilhas', 'totalIlhas');
+            }
+
+            function calcularTotalStaff() {
+                calcularTotalPacotesEvento('tab-staff', 'totalStaff');
+            }
+
+            // Atualiza ao alterar quantidade ou o ano escolhido, em cada aba separadamente
+            document.querySelectorAll('#tab-ilhas .pacote-evento-quantidade, #tab-ilhas .pacote-evento-ano').forEach(input => {
+                input.addEventListener('input', calcularTotalIlhas);
+                input.addEventListener('change', calcularTotalIlhas);
+            });
+            document.querySelectorAll('#tab-staff .pacote-evento-quantidade, #tab-staff .pacote-evento-ano').forEach(input => {
+                input.addEventListener('input', calcularTotalStaff);
+                input.addEventListener('change', calcularTotalStaff);
             });
 
             // Cálculo inicial
-            calcularTotalPacotesEvento();
+            calcularTotalIlhas();
+            calcularTotalStaff();
 
 
 
@@ -1259,6 +1247,33 @@
 
             // Monitorando mudanças no checkbox em tempo real
             checkbox.addEventListener("change", atualizarEstilo);
+        });
+    </script>
+
+    <script>
+        // Switches de Ilhas Adicionais / Refeição Staff: label Sim/Não + exibição da aba
+        document.addEventListener('DOMContentLoaded', function() {
+            [
+                { switchId: 'ilhasAtivoSwitch', labelId: 'ilhasAtivoLabel', abaId: 'ilhasAba' },
+                { switchId: 'staffAtivoSwitch', labelId: 'staffAtivoLabel', abaId: 'staffAba' },
+            ].forEach(function(config) {
+                const switchInput = document.getElementById(config.switchId);
+                const label = document.getElementById(config.labelId);
+                const aba = document.getElementById(config.abaId);
+
+                function atualizar() {
+                    label.textContent = switchInput.checked ? 'Sim' : 'Não';
+
+                    if (switchInput.checked) {
+                        aba.removeAttribute('style');
+                    } else {
+                        aba.style.display = 'none';
+                    }
+                }
+
+                atualizar();
+                switchInput.addEventListener('change', atualizar);
+            });
         });
     </script>
     <script>
@@ -1616,16 +1631,28 @@
             }
         });
         document.getElementById('btnProximoAdicional').addEventListener('click', function() {
-            const abaPacotesEvento = document.querySelector('a[href="#tab-pacotes-evento"]');
-            if (abaPacotesEvento) {
-                abaPacotesEvento.click();
+            const ilhasAtivo = document.getElementById('ilhasAtivoSwitch').checked;
+            const staffAtivo = document.getElementById('staffAtivoSwitch').checked;
+
+            if (ilhasAtivo) {
+                document.querySelector('a[href="#tab-ilhas"]').click();
+            } else if (staffAtivo) {
+                document.querySelector('a[href="#tab-staff"]').click();
+            } else {
+                document.querySelector('a[href="#tab-pagamento"]').click();
             }
         });
-        document.getElementById('btnProximoPacotesEvento').addEventListener('click', function() {
-            const abaPagamentos = document.querySelector('a[href="#tab-pagamento"]');
-            if (abaPagamentos) {
-                abaPagamentos.click();
+        document.getElementById('btnProximoIlhas').addEventListener('click', function() {
+            const staffAtivo = document.getElementById('staffAtivoSwitch').checked;
+
+            if (staffAtivo) {
+                document.querySelector('a[href="#tab-staff"]').click();
+            } else {
+                document.querySelector('a[href="#tab-pagamento"]').click();
             }
+        });
+        document.getElementById('btnProximoStaff').addEventListener('click', function() {
+            document.querySelector('a[href="#tab-pagamento"]').click();
         });
     </script>
 

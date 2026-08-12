@@ -184,6 +184,13 @@ class AluguelController extends Controller
         $pacotesEvento = PacoteEvento::orderBy('nome')->orderBy('ano')->get()->groupBy('categoria');
         $pacotesEventoSelecionados = $aluguel->pacoteEventoAluguel()->get();
 
+        // Estado inicial dos switches: liga se já existe alguma escolha salva daquela categoria
+        $pacotesEventoIdsSelecionados = $pacotesEventoSelecionados->pluck('pacote_evento_id');
+        $ilhasAdicionaisAtivo = PacoteEvento::whereIn('id', $pacotesEventoIdsSelecionados)
+            ->where('categoria', 'ilha_adicional')->exists();
+        $refeicaoStaffAtivo = PacoteEvento::whereIn('id', $pacotesEventoIdsSelecionados)
+            ->where('categoria', 'refeicao_staff')->exists();
+
         return view('aluguel.create', compact(
             'aluguel',
             'espacos',
@@ -195,7 +202,9 @@ class AluguelController extends Controller
             'opcaoSelecionada',
             'adicionaisSelecionados',
             'pacotesEvento',
-            'pacotesEventoSelecionados'
+            'pacotesEventoSelecionados',
+            'ilhasAdicionaisAtivo',
+            'refeicaoStaffAtivo'
         ));
     }
 
