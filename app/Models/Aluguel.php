@@ -28,7 +28,8 @@ class Aluguel extends Model
         'forma_pagamento_id',
         'numero_pessoas_buffet',
         'cardapio_id',
-        'tipo'
+        'tipo',
+        'cerimonial_responsavel'
     ];
 
     protected $casts = [
@@ -88,6 +89,13 @@ class Aluguel extends Model
     public function pagamentos()
     {
         return $this->hasMany(AluguelPagamento::class);
+    }
+
+    // === Relacionamento com Pacotes de Evento (Ilhas Adicionais / Refeição Staff) ===
+
+    public function pacoteEventoAluguel()
+    {
+        return $this->hasMany(PacoteEventoAluguel::class);
     }
 
     // === Métodos auxiliares para o Buffet ===

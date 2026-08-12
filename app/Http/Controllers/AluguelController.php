@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Espaco;
 use App\Models\FormaPagamento;
 use App\Models\Adicional;
+use App\Models\PacoteEvento;
 use App\Models\Cardapio;
 use App\Models\BuffetEscolha;
 use App\Models\AluguelPagamento;
@@ -44,6 +45,8 @@ class AluguelController extends Controller
         $adicionais = Adicional::all();
         $cardapios = Cardapio::all();
         $adicionaisSelecionados = collect();
+        $pacotesEvento = PacoteEvento::orderBy('nome')->orderBy('ano')->get()->groupBy('categoria');
+        $pacotesEventoSelecionados = collect();
 
 
         return view('aluguel.create', compact(
@@ -52,7 +55,9 @@ class AluguelController extends Controller
             'formasPagamento',
             'adicionais',
             'cardapios',
-            'adicionaisSelecionados'
+            'adicionaisSelecionados',
+            'pacotesEvento',
+            'pacotesEventoSelecionados'
         ));
     }
 
@@ -77,6 +82,7 @@ class AluguelController extends Controller
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
                 'tipo' => 'string|required',
+                'cerimonial_responsavel' => 'nullable|string|max:255',
                 // Campos do buffet vindos do JavaScript
                 'buffet_categorias_escolhidas' => 'nullable|string',
                 'buffet_opcao_escolhida' => 'nullable|integer',
@@ -95,6 +101,9 @@ class AluguelController extends Controller
 
                 // Relacionar itens adicionais
                 $this->salvarAdicionais($aluguel, $request);
+
+                // Relacionar pacotes de evento (Ilhas Adicionais / Refeição Staff)
+                $this->salvarPacotesEvento($aluguel, $request);
 
 
                 // Salvar escolhas do buffet se existirem
@@ -171,6 +180,10 @@ class AluguelController extends Controller
         // Adicionais já escolhidos para o aluguel (com quantidade, observação e valor total)
         $adicionaisSelecionados = $aluguel->adicionaisAluguel()->with('adicional')->get();
 
+        // Pacotes de evento (Ilhas Adicionais / Refeição Staff)
+        $pacotesEvento = PacoteEvento::orderBy('nome')->orderBy('ano')->get()->groupBy('categoria');
+        $pacotesEventoSelecionados = $aluguel->pacoteEventoAluguel()->get();
+
         return view('aluguel.create', compact(
             'aluguel',
             'espacos',
@@ -180,7 +193,9 @@ class AluguelController extends Controller
             'adicionais',
             'itensSelecionados',
             'opcaoSelecionada',
-            'adicionaisSelecionados'
+            'adicionaisSelecionados',
+            'pacotesEvento',
+            'pacotesEventoSelecionados'
         ));
     }
 
@@ -205,6 +220,7 @@ class AluguelController extends Controller
                 'contrato' => 'nullable|string',
                 'status' => 'nullable|string',
                 'tipo' => 'string|required',
+                'cerimonial_responsavel' => 'nullable|string|max:255',
                 'numero_pessoas_buffet' => 'nullable|integer|min:1',
                 'cardapio_id' => 'nullable|exists:cardapios,id',
                 // Campos do buffet vindos do JavaScript
@@ -224,6 +240,9 @@ class AluguelController extends Controller
 
                 // Atualizar itens adicionais
                 $this->salvarAdicionais($aluguel, $request);
+
+                // Atualizar pacotes de evento (Ilhas Adicionais / Refeição Staff)
+                $this->salvarPacotesEvento($aluguel, $request);
 
                 // Remover escolhas antigas do buffet
                 BuffetEscolha::where('aluguel_id', $aluguel->id)->delete();
@@ -424,6 +443,42 @@ class AluguelController extends Controller
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Salva os pacotes de evento selecionados (Ilhas Adicionais / Refeição Staff).
+     * Cada linha do request já traz o pacote_evento_id do ano escolhido pelo usuário,
+     * então o valor unitário é sempre o cadastrado naquele registro específico.
+     */
+    private function salvarPacotesEvento(Aluguel $aluguel, Request $request)
+    {
+        DB::table('pacote_evento_aluguel')->where('aluguel_id', $aluguel->id)->delete();
+
+        if ($request->has('pacotes_evento')) {
+            foreach ($request->pacotes_evento as $dados) {
+                $quantidade = intval($dados['quantidade'] ?? 0);
+                $pacoteEventoId = $dados['pacote_evento_id'] ?? null;
+                $observacao = $dados['observacao'] ?? '';
+
+                if ($quantidade > 0 && $pacoteEventoId) {
+                    $pacote = PacoteEvento::find($pacoteEventoId);
+
+                    if ($pacote) {
+                        $valorTotal = $quantidade * $pacote->valor;
+
+                        DB::table('pacote_evento_aluguel')->insert([
+                            'aluguel_id' => $aluguel->id,
+                            'pacote_evento_id' => $pacoteEventoId,
+                            'quantidade' => $quantidade,
+                            'valor_total' => $valorTotal,
+                            'observacao' => $observacao,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
                 }
             }
         }

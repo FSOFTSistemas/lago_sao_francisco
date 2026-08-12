@@ -30,6 +30,10 @@
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-adicional"
                             role="tab">Mobília</a>
                     </li>
+                    <li class="nav-item" id="pacotesEventoAba">
+                        <a class="nav-link editlink" data-toggle="tab" href="#tab-pacotes-evento"
+                            role="tab">Ilhas &amp; Staff</a>
+                    </li>
                     <li class="nav-item" id="pagamentoTab">
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-pagamento"
                             role="tab">Pagamento</a>
@@ -124,6 +128,15 @@
                             </div>
                         </div>
 
+                        <div class="form-group row">
+                            <label for="cerimonial_responsavel" class="form-label col-md-3 label-control">Cerimonial
+                                Responsável:</label>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="cerimonial_responsavel"
+                                    name="cerimonial_responsavel"
+                                    value="{{ old('cerimonial_responsavel', $aluguel->cerimonial_responsavel ?? '') }}">
+                            </div>
+                        </div>
 
 
 
@@ -332,6 +345,112 @@
 
                     </div>
 
+                    {{-- Aba: Ilhas Adicionais / Refeição Staff --}}
+                    <div class="tab-pane fade" id="tab-pacotes-evento">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <button type="button" id="btnProximoPacotesEvento" class="btn btn-primary w-25">Próximo</button>
+                        </div>
+                        @php
+                            $pacotesSelecionadosArray = collect($pacotesEventoSelecionados)->keyBy('pacote_evento_id');
+                        @endphp
+
+                        @foreach (['ilha_adicional' => 'Ilhas Adicionais', 'refeicao_staff' => 'Refeição Staff'] as $categoriaChave => $categoriaLabel)
+                            @php
+                                $pacotesDaCategoria = ($pacotesEvento[$categoriaChave] ?? collect())->groupBy('nome');
+                            @endphp
+
+                            <div class="card mt-4">
+                                <div class="card-header bg-success text-white">
+                                    <strong>{{ $categoriaLabel }}</strong>
+                                </div>
+                                <div class="card-body">
+                                    @forelse ($pacotesDaCategoria as $nomePacote => $anosDoPacote)
+                                        @php
+                                            $anosOrdenados = $anosDoPacote->sortBy('ano')->values();
+                                            $primeiroAno = $anosOrdenados->first();
+                                            $grupo = \Illuminate\Support\Str::slug($nomePacote);
+
+                                            $selecionado = null;
+                                            $anoSelecionado = null;
+                                            foreach ($anosOrdenados as $opcaoAno) {
+                                                if ($pacotesSelecionadosArray->has($opcaoAno->id)) {
+                                                    $selecionado = $pacotesSelecionadosArray->get($opcaoAno->id);
+                                                    $anoSelecionado = $opcaoAno->ano;
+                                                    break;
+                                                }
+                                            }
+                                            $quantidade = $selecionado->quantidade ?? 0;
+                                            $observacao = $selecionado->observacao ?? '';
+                                            $valorTotal = $selecionado->valor_total ?? 0;
+                                            $anoAtivo = $anoSelecionado ?? $primeiroAno->ano;
+                                            $idAtivo = $selecionado->pacote_evento_id ?? $primeiroAno->id;
+                                        @endphp
+
+                                        <div class="row mb-3 align-items-start border-bottom pb-2 pacote-evento-linha"
+                                            data-grupo="{{ $grupo }}">
+                                            <div class="col-md-4">
+                                                <strong>{{ $nomePacote }}</strong>
+                                                @if ($primeiroAno->observacao_padrao)
+                                                    <br><small class="text-info">{{ $primeiroAno->observacao_padrao }}</small>
+                                                @endif
+                                                @if ($primeiroAno->descricao)
+                                                    <br><small class="text-muted">{{ $primeiroAno->descricao }}</small>
+                                                @endif
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label>Ano:</label>
+                                                <select class="form-control pacote-evento-ano">
+                                                    @foreach ($anosOrdenados as $opcaoAno)
+                                                        <option value="{{ $opcaoAno->id }}"
+                                                            data-valor="{{ $opcaoAno->valor }}"
+                                                            {{ $anoAtivo == $opcaoAno->ano ? 'selected' : '' }}>
+                                                            {{ $opcaoAno->ano }} (R$
+                                                            {{ number_format($opcaoAno->valor, 2, ',', '.') }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="hidden" class="pacote-evento-id"
+                                                    name="pacotes_evento[{{ $grupo }}][pacote_evento_id]"
+                                                    value="{{ $idAtivo }}">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label>Nº de Pessoas:</label>
+                                                <input type="number" min="0"
+                                                    class="form-control pacote-evento-quantidade"
+                                                    name="pacotes_evento[{{ $grupo }}][quantidade]"
+                                                    value="{{ $quantidade }}">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label>Observação:</label>
+                                                <input type="text" class="form-control"
+                                                    name="pacotes_evento[{{ $grupo }}][observacao]"
+                                                    value="{{ $observacao }}">
+                                            </div>
+
+                                            <div class="col-md-2">
+                                                <label>Total:</label>
+                                                <input type="text" readonly class="form-control pacote-evento-total"
+                                                    value="{{ $quantidade > 0 ? 'R$ ' . number_format($valorTotal, 2, ',', '.') : '' }}">
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <p class="text-muted mb-0">Nenhum pacote cadastrado.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        @endforeach
+
+                        <div class="form-group row mt-3">
+                            <label class="col-md-3 label-control">Total Ilhas &amp; Staff Estimado:</label>
+                            <div class="col-md-3">
+                                <input type="text" id="totalPacotesEvento" class="form-control" readonly>
+                            </div>
+                        </div>
+                    </div>
+
 
                     {{-- Aba 4: Pagamento --}}
                     <div class="tab-pane fade" id="tab-pagamento">
@@ -342,24 +461,31 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Valor do Aluguel:</label>
                                             <input type="text" id="valor_aluguel_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Valor do Buffet:</label>
                                             <input type="text" id="valor_buffet_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label>Valor da Mobília:</label>
                                             <input type="text" id="valor_adicional_display" class="form-control"
+                                                readonly>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Valor Ilhas &amp; Staff:</label>
+                                            <input type="text" id="valor_pacotes_evento_display" class="form-control"
                                                 readonly>
                                         </div>
                                     </div>
@@ -624,6 +750,7 @@
             const valorAluguelDisplay = document.getElementById('valor_aluguel_display');
             const valorBuffetDisplay = document.getElementById('valor_buffet_display');
             const valorAdicionalDisplay = document.getElementById('valor_adicional_display');
+            const valorPacotesEventoDisplay = document.getElementById('valor_pacotes_evento_display');
             const subtotalDisplay = document.getElementById('subtotal_display');
             const subtotalHidden = document.getElementById('subtotal');
             const acrescimoInput = document.getElementById('acrescimo');
@@ -679,12 +806,16 @@
                 const valorAdicional = parseFloat(document.getElementById('totalAdicionais').value.replace(
                         /[^\d,]/g, '')
                     .replace(',', '.')) || 0;
+                const valorPacotesEvento = parseFloat(document.getElementById('totalPacotesEvento').value.replace(
+                        /[^\d,]/g, '')
+                    .replace(',', '.')) || 0;
 
                 valorAluguelDisplay.value = formatarMoeda(valorAluguel);
                 valorBuffetDisplay.value = formatarMoeda(valorBuffet);
                 valorAdicionalDisplay.value = formatarMoeda(valorAdicional);
+                valorPacotesEventoDisplay.value = formatarMoeda(valorPacotesEvento);
 
-                const subtotal = valorAluguel + valorBuffet + valorAdicional;
+                const subtotal = valorAluguel + valorBuffet + valorAdicional + valorPacotesEvento;
                 subtotalDisplay.value = formatarMoeda(subtotal);
                 subtotalHidden.value = subtotal.toFixed(2);
 
@@ -961,6 +1092,43 @@
 
             // Cálculo inicial
             calcularTotalAdicionais();
+
+            function calcularTotalPacotesEvento() {
+                let totalGeral = 0;
+
+                document.querySelectorAll('.pacote-evento-linha').forEach(linha => {
+                    const anoSelect = linha.querySelector('.pacote-evento-ano');
+                    const idHidden = linha.querySelector('.pacote-evento-id');
+                    const quantidadeInput = linha.querySelector('.pacote-evento-quantidade');
+                    const totalField = linha.querySelector('.pacote-evento-total');
+                    const opcaoSelecionada = anoSelect.options[anoSelect.selectedIndex];
+
+                    idHidden.value = opcaoSelecionada.value;
+
+                    const valorUnitario = parseFloat(opcaoSelecionada.dataset.valor) || 0;
+                    const quantidade = parseFloat(quantidadeInput.value.replace(',', '.')) || 0;
+                    const totalItem = quantidade * valorUnitario;
+
+                    totalField.value = totalItem > 0 ? `R$ ${totalItem.toFixed(2).replace('.', ',')}` : '';
+                    totalGeral += totalItem;
+                });
+
+                const totalInput = document.getElementById('totalPacotesEvento');
+
+                if (totalInput) {
+                    totalInput.value = `R$ ${totalGeral.toFixed(2).replace('.', ',')}`;
+                }
+                calcularSubtotal()
+            }
+
+            // Atualiza ao alterar quantidade ou o ano escolhido
+            document.querySelectorAll('.pacote-evento-quantidade, .pacote-evento-ano').forEach(input => {
+                input.addEventListener('input', calcularTotalPacotesEvento);
+                input.addEventListener('change', calcularTotalPacotesEvento);
+            });
+
+            // Cálculo inicial
+            calcularTotalPacotesEvento();
 
 
 
@@ -1448,6 +1616,12 @@
             }
         });
         document.getElementById('btnProximoAdicional').addEventListener('click', function() {
+            const abaPacotesEvento = document.querySelector('a[href="#tab-pacotes-evento"]');
+            if (abaPacotesEvento) {
+                abaPacotesEvento.click();
+            }
+        });
+        document.getElementById('btnProximoPacotesEvento').addEventListener('click', function() {
             const abaPagamentos = document.querySelector('a[href="#tab-pagamento"]');
             if (abaPagamentos) {
                 abaPagamentos.click();
