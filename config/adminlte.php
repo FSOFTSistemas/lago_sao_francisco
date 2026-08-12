@@ -327,10 +327,29 @@ return [
                     'can'  => 'gerenciar dayuse',
                     'shift' => 'ml-2'
                 ],
-                ['header' => 'Aluguel de Espaços'],
+            ],
+        ],
+        [
+            'text'    => 'Eventos',
+            'icon'    => 'fas fa-campground',
+            'submenu' => [
+                [
+                    'text' => 'Home',
+                    'icon' => 'fas fa-home',
+                    'url'  => '/eventos',
+                    'can'  => 'gerenciar aluguel',
+                    'shift' => 'ml-2'
+                ],
+                [
+                    'text' => 'Planner',
+                    'icon' => 'fas fa-calendar-alt',
+                    'url'  => '/eventos/planner',
+                    'can'  => 'gerenciar aluguel',
+                    'shift' => 'ml-2'
+                ],
                 [
                     'text' => 'Cadastrar',
-                    'icon' => 'fas fa-campground',
+                    'icon' => 'fas fa-plus',
                     'url'  => '/aluguel/create',
                     'can'  => 'cadastrar aluguel',
                     'shift' => 'ml-2'

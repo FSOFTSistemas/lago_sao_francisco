@@ -26,6 +26,7 @@ use App\Http\Controllers\EnderecoController;
 use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
 use App\Http\Controllers\EstoqueController;
+use App\Http\Controllers\EventoController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\FinanceiroProjecaoController;
 use App\Http\Controllers\FluxoCaixaController;
@@ -155,6 +156,10 @@ Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('map
 Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('caixa.aberto')->name('aluguel.create');
 
 Route::resource('aluguel', AluguelController::class)->except(['create']);
+
+Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
+Route::get('/eventos/planner', [EventoController::class, 'planner'])->name('eventos.planner');
+Route::get('/eventos/planner/eventos', [EventoController::class, 'plannerEventos'])->name('eventos.planner.eventos');
 
 Route::resource('cardapios', CardapioController::class);
 
