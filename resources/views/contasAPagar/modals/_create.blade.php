@@ -56,7 +56,7 @@
                         <label for="status">Situação</label>
                         <select class="form-control" id="status" name="status" required>
                             <option value="pendente">Pendente</option>
-                            <option value="finalizado">Finalizado</option>
+                            <option value="pago">Pago</option>
                         </select>
                     </div>
 

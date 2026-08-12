@@ -57,15 +57,10 @@ class ContasAPagarController extends Controller
             $request->merge(session($filtrosSessaoKey, []));
         }
 
-        if ($empresaSelecionada == null) {
-            $query = ContasAPagar::query();
-        } else {
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada
-                ? $empresaSelecionada
-                : $usuario->empresa_id;
-
-            $query = ContasAPagar::where('empresa_id', $empresa_id);
-        }
+        // Master sem empresa selecionada enxerga tudo; demais usuários ficam sempre
+        // restritos à própria empresa, mesmo que a sessão não tenha empresa_id definido.
+        $empresa_id = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+        $query = $empresa_id ? ContasAPagar::where('empresa_id', $empresa_id) : ContasAPagar::query();
 
         $query->with(['parcelas', 'fornecedor', 'empresa']);
 
@@ -167,12 +162,13 @@ class ContasAPagarController extends Controller
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
 
-        if ($empresaSelecionada == null) {
+        $empresa_id = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+
+        if ($empresa_id == null) {
             $planoDeContas = PlanoDeConta::all();
             $contas_corrente = ContaCorrente::all();
             $caixas = Caixa::all();
         } else {
-            $empresa_id = $usuario->hasRole('Master') && $empresaSelecionada ? $empresaSelecionada : $usuario->empresa_id;
             $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
             $contas_corrente = ContaCorrente::all(); // Atenção: este não está filtrado por empresa.
             $caixas = Caixa::where('empresa_id', $empresa_id)->get();
@@ -211,7 +207,7 @@ class ContasAPagarController extends Controller
                 'valor' => 'required|numeric|min:0.01',
                 'valor_pago' => 'numeric|min:0.00',
                 'data_vencimento' => 'required|date',
-                'status' => 'required|in:pendente,finalizado',
+                'status' => 'required|in:pendente,pago',
                 'plano_de_contas_id' => [
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
@@ -308,7 +304,7 @@ class ContasAPagarController extends Controller
                 'data_vencimento' => 'required|date',
                 'status' => [
                     'required',
-                    'in:pendente,finalizado,pago',
+                    'in:pendente,pago',
                 ],
                 'plano_de_contas_id' => [
                     'nullable',
@@ -534,9 +530,8 @@ class ContasAPagarController extends Controller
                 ? Carbon::parse($request->input('end'))->endOfDay()
                 : Carbon::now()->endOfMonth();
 
-            $query = $empresaSelecionada == null
-                ? ContasAPagar::query()
-                : ContasAPagar::where('empresa_id', $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id);
+            $empresa_id = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+            $query = $empresa_id ? ContasAPagar::where('empresa_id', $empresa_id) : ContasAPagar::query();
 
             $query->with(['parcelas', 'fornecedor', 'empresa']);
 

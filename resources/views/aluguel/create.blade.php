@@ -111,6 +111,15 @@
                                     <option value="confraternizacao"
                                         {{ old('tipo', $aluguel->tipo ?? '') == 'confraternizacao' ? 'selected' : '' }}>
                                         Confraternização</option>
+                                    <option value="formatura"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'formatura' ? 'selected' : '' }}>
+                                        Formatura</option>
+                                    <option value="cafe_da_manha_em_grupo"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'cafe_da_manha_em_grupo' ? 'selected' : '' }}>
+                                        Café da Manhã em Grupo</option>
+                                    <option value="reserva_de_mesa"
+                                        {{ old('tipo', $aluguel->tipo ?? '') == 'reserva_de_mesa' ? 'selected' : '' }}>
+                                        Reserva de Mesa</option>
                                 </select>
                             </div>
                         </div>

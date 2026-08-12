@@ -361,17 +361,17 @@ class AluguelController extends Controller
         $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
         $total = 0;
 
-        if ($capela) {
-            if ($tipo_evento == 'casamento') {
-                foreach ($periodo as $data) {
-                    $total += $valor_fim;
-                }
-            } else  if ($tipo_evento == 'batizado') {
-                foreach ($periodo as $data) {
-                    $total += $valor_semana;
-                }
+        if ($capela && $tipo_evento == 'casamento') {
+            foreach ($periodo as $data) {
+                $total += $valor_fim;
+            }
+        } elseif ($capela && $tipo_evento == 'batizado') {
+            foreach ($periodo as $data) {
+                $total += $valor_semana;
             }
         } else {
+            // Demais tipos de evento (inclusive em capela): mesma regra dos espaços
+            // sem capela, tarifa de semana (seg-qui) e tarifa de fim de semana (sex-dom).
             foreach ($periodo as $data) {
                 $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
             }
