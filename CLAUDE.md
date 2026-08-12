@@ -111,3 +111,10 @@ backed by the `NotaFiscal`/`NotaFiscalItens` models and the `NFeNew` Livewire co
 `routes/console.php` schedules two daily commands: `AtualizarStatusContasAtrasadas` at 01:00 (marks
 overdue accounts-payable as late) and `EnviarNotificacoesDiarias` at 06:00 (notifies about accounts
 payable coming due and the day's cash movement).
+
+## Conventions
+
+- Commit messages: short, in Portuguese, with a `feat:`/`fix:` prefix (e.g. `fix: ajuste filtro de
+  reservas`) — match this style for new commits.
+- Models are singular PascalCase matching the domain term (`Reserva`, `Aluguel`); controllers append
+  `Controller` (`ReservaController`).

@@ -30,16 +30,23 @@ class PlanoDeContasService
     private function calcularTotaisIndividuais(?int $empresaId = null, $dataInicio = null, $dataFim): array
     {
         $totais = [];
-        $idsDeMovimentoParaIgnorar = [17, 18, 19, 20]; // sangria, suprimento, abertura, fechamento
+
+        // Movimentos que não são receita/despesa (sangria/suprimento/abertura/fechamento de caixa)
+        // ou que são apenas o reflexo, no FluxoCaixa, de uma baixa que já é somada abaixo a partir
+        // de ContasAPagar/ContasAReceber ('pagamento-caixa' e todo 'recebimento-*') — mantê-los
+        // aqui também contaria a mesma baixa duas vezes.
+        $descricoesParaIgnorar = ['sangria', 'suprimento', 'abertura de caixa', 'fechamento de caixa', 'pagamento-caixa'];
 
         $fluxoQuery = FluxoCaixa::query()
-            ->select('plano_de_conta_id', DB::raw("SUM(CASE WHEN tipo = 'entrada' THEN valor WHEN tipo = 'saida' THEN -valor ELSE 0 END) as total"))
-            ->whereNotNull('plano_de_conta_id')
-            ->whereNotIn('movimento_id', $idsDeMovimentoParaIgnorar) // A CLÁUSULA CORRETA
-            ->where('tipo', '!=', 'cancelamento')
-            ->groupBy('plano_de_conta_id');
-        $fluxoQuery->when($empresaId, fn($q) => $q->where('empresa_id', $empresaId));
-        if ($dataInicio && $dataFim) $fluxoQuery->whereBetween('data', [$dataInicio, $dataFim]);
+            ->join('movimentos', 'movimentos.id', '=', 'fluxo_caixas.movimento_id')
+            ->select('fluxo_caixas.plano_de_conta_id', DB::raw("SUM(CASE WHEN fluxo_caixas.tipo = 'entrada' THEN fluxo_caixas.valor WHEN fluxo_caixas.tipo = 'saida' THEN -fluxo_caixas.valor ELSE 0 END) as total"))
+            ->whereNotNull('fluxo_caixas.plano_de_conta_id')
+            ->whereNotIn('movimentos.descricao', $descricoesParaIgnorar)
+            ->where('movimentos.descricao', 'not like', 'recebimento-%')
+            ->where('fluxo_caixas.tipo', '!=', 'cancelamento')
+            ->groupBy('fluxo_caixas.plano_de_conta_id');
+        $fluxoQuery->when($empresaId, fn($q) => $q->where('fluxo_caixas.empresa_id', $empresaId));
+        if ($dataInicio && $dataFim) $fluxoQuery->whereBetween('fluxo_caixas.data', [$dataInicio, $dataFim]);
 
         foreach ($fluxoQuery->get() as $item) {
             $totais[$item->plano_de_conta_id] = ($totais[$item->plano_de_conta_id] ?? 0) + $item->total;

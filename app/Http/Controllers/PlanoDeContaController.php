@@ -58,7 +58,7 @@ class PlanoDeContaController extends Controller
             $request->validate([
                 'descricao' => 'required|string',
                 'tipo' => 'required|in:receita,despesa',
-                'plano_de_contas_pai' => 'nullable|exists:plano_de_contas,id',
+                'plano_de_conta_pai' => 'nullable|exists:plano_de_contas,id',
             ]);
             $planoDeConta = PlanoDeConta::find($id);
             $planoDeConta->update([
@@ -111,8 +111,15 @@ class PlanoDeContaController extends Controller
             }
             // ===================================================================
 
+            // Escopo por empresa: Master enxerga tudo se nenhuma empresa estiver selecionada,
+            // demais usuários ficam sempre restritos à própria empresa (mesmo padrão usado em
+            // FluxoCaixaController e ContasAPagarController::handleCaixaPayment).
+            $usuario = Auth::user();
+            $empresaSelecionada = session('empresa_id');
+            $empresaId = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+
             // Chama o service para pegar os dados reais do banco, já com o filtro
-            $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico(null, $dataInicio, $dataFim);
+            $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico($empresaId, $dataInicio, $dataFim);
 
             // Encontra as contas raiz de despesa e receita
             $despesas = collect($arvoreContas)->first(function ($node) {
