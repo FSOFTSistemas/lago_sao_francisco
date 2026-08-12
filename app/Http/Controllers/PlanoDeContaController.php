@@ -121,14 +121,31 @@ class PlanoDeContaController extends Controller
             // Chama o service para pegar os dados reais do banco, já com o filtro
             $arvoreContas = $this->planoDeContasService->gerarRelatorioHierarquico($empresaId, $dataInicio, $dataFim);
 
-            // Encontra as contas raiz de despesa e receita
-            $despesas = collect($arvoreContas)->first(function ($node) {
-                return strtolower($node['model']->descricao) === 'despesa';
-            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+            // Agrupa por tipo todas as contas raiz (sem pai) de despesa e de receita.
+            // No plano de contas não existe um único nó guarda-chuva "Despesa"/"Receita":
+            // cada categoria (Despesas Administrativas, Despesas Operacionais, Impostos e
+            // Taxas, Salários e Benefícios, Receitas Operacionais...) é sua própria raiz. Uma
+            // versão anterior buscava só a raiz cujo nome fosse exatamente "despesa"/"receita",
+            // o que escondia qualquer outra categoria raiz do mesmo tipo.
+            $despesasRaizes = collect($arvoreContas)->filter(
+                fn ($node) => $node['model']->tipo === 'despesa'
+            )->values();
 
-            $receitas = collect($arvoreContas)->first(function ($node) {
-                return strtolower($node['model']->descricao) === 'receita';
-            }) ?? ['model' => null, 'filhos' => [], 'total_cumulativo' => 0];
+            $receitasRaizes = collect($arvoreContas)->filter(
+                fn ($node) => $node['model']->tipo === 'receita'
+            )->values();
+
+            $despesas = [
+                'model' => null,
+                'filhos' => $despesasRaizes->all(),
+                'total_cumulativo' => $despesasRaizes->sum('total_cumulativo'),
+            ];
+
+            $receitas = [
+                'model' => null,
+                'filhos' => $receitasRaizes->all(),
+                'total_cumulativo' => $receitasRaizes->sum('total_cumulativo'),
+            ];
 
             // Envia os dados para a view
             return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
