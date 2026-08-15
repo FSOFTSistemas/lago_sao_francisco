@@ -52,6 +52,7 @@ use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
+use App\Http\Controllers\ReceitaAvulsaController;
 use App\Http\Controllers\RelatorioHospedesController;
 use App\Http\Controllers\RelatorioMovimentacaoController;
 use App\Http\Controllers\RelatorioProdutosController;
@@ -82,6 +83,12 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/financeiro', [FinanceiroController::class, 'index'])->name('financeiro');
 Route::get('/financeiro/projecao', [FinanceiroProjecaoController::class, 'index'])
     ->name('financeiro.projecao')
+    ->middleware('permission:gerenciar financeiro');
+Route::get('/financeiro/receitas-avulsas', [ReceitaAvulsaController::class, 'index'])
+    ->name('receitas-avulsas.index')
+    ->middleware('permission:gerenciar financeiro');
+Route::post('/financeiro/receitas-avulsas', [ReceitaAvulsaController::class, 'store'])
+    ->name('receitas-avulsas.store')
     ->middleware('permission:gerenciar financeiro');
 
 Route::resource('planoDeConta', PlanoDeContaController::class)->middleware('permission:gerenciar plano de conta');
@@ -167,7 +174,7 @@ Route::resource('estoques', EstoqueController::class);
 
 Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
-Route::resource('logs', LogController::class);
+Route::resource('logs', LogController::class)->middleware('permission:gerenciar financeiro');
 
 Route::resource('nota_fiscal', NotaFiscalController::class);
 

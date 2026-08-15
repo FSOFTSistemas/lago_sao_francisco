@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Log;
-use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class LogController extends Controller
 {
@@ -17,9 +17,10 @@ class LogController extends Controller
     {
         try {
             $logs = Log::orderBy('data_hora', 'desc')->paginate(20);
+
             return view('logs.index', compact('logs'));
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao listar logs: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao listar logs: '.$e->getMessage());
         }
     }
 
@@ -38,7 +39,7 @@ class LogController extends Controller
     {
         try {
             $validated = $request->validate([
-                'tipo_acao' => 'required|in:create,read,update,delete',
+                'tipo_acao' => 'required|in:Criou,Vizualizou,Atualizou,Excluiu',
                 'descricao' => 'required|string',
                 'data_hora' => 'nullable|date',
             ]);
@@ -46,10 +47,10 @@ class LogController extends Controller
             Log::create($validated);
 
             return redirect()->back()->with('success', 'Log criado com sucesso!');
-        } catch (\Illuminate\Validation\ValidationException $ve) {
+        } catch (ValidationException $ve) {
             return redirect()->back()->withErrors($ve->errors())->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao criar log: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao criar log: '.$e->getMessage());
         }
     }
 
@@ -78,7 +79,7 @@ class LogController extends Controller
             $log = Log::findOrFail($id);
 
             $validated = $request->validate([
-                'tipo_acao' => 'required|in:create,read,update,delete',
+                'tipo_acao' => 'required|in:Criou,Vizualizou,Atualizou,Excluiu',
                 'descricao' => 'required|string',
                 'usuario_id' => 'required|exists:users,id',
                 'data_hora' => 'nullable|date',
@@ -89,13 +90,12 @@ class LogController extends Controller
             return redirect()->back()->with('success', 'Log atualizado com sucesso!');
         } catch (ModelNotFoundException $mnfe) {
             return redirect()->back()->with('error', 'Log não encontrado.');
-        } catch (\Illuminate\Validation\ValidationException $ve) {
+        } catch (ValidationException $ve) {
             return redirect()->back()->withErrors($ve->errors())->withInput();
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao atualizar log: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao atualizar log: '.$e->getMessage());
         }
     }
-    
 
     /**
      * Remove the specified resource from storage.
@@ -110,8 +110,7 @@ class LogController extends Controller
         } catch (ModelNotFoundException $mnfe) {
             return redirect()->back()->with('error', 'Log não encontrado.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao remover log: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao remover log: '.$e->getMessage());
         }
     }
-    
 }

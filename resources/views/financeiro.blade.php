@@ -34,24 +34,35 @@
       </div>
     </div>
     <!-- ./col -->
-    <div class="col-lg-3 col-6">
-      <!-- small box -->
-      <div class="small-box bg-success">
-        <div class="inner">
-          <h2>Contas a receber</h2>
+	    <div class="col-lg-3 col-6">
+	      <!-- small box -->
+	      <div class="small-box bg-success">
+	        <div class="inner">
+	          <h2>Contas a receber</h2>
         </div>
         <div class="icon">
           <i class="ion ion-person-add"></i>
         </div>
-        <a href="{{route('contasAReceber.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
-      </div>
-    </div>
-    <!-- ./col -->
-    <div class="col-lg-3 col-6">
-      <!-- small box -->
-      <div class="small-box bg-success">
-        <div class="inner">
-          <h2>Caixas</h2>
+	        <a href="{{route('contasAReceber.index')}}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+	      </div>
+	    </div>
+	    <div class="col-lg-3 col-6">
+	      <div class="small-box bg-success">
+	        <div class="inner">
+	          <h2>Receitas Avulsas</h2>
+	        </div>
+	        <div class="icon">
+	          <i class="ion ion-plus"></i>
+	        </div>
+	        <a href="{{ route('receitas-avulsas.index') }}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
+	      </div>
+	    </div>
+	    <!-- ./col -->
+	    <div class="col-lg-3 col-6">
+	      <!-- small box -->
+	      <div class="small-box bg-success">
+	        <div class="inner">
+	          <h2>Caixas</h2>
         </div>
         <div class="icon">
           <i class="ion ion-pie-graph"></i>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\Empresa;
 use App\Models\FluxoCaixa;
+use App\Models\Log as LogSistema;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use App\Services\CaixaService;
@@ -231,7 +232,9 @@ class FluxoCaixaController extends Controller
             $caixa = Caixa::findOrFail($request->caixa_id);
 
             // Chama o serviço para inserir movimentação (com validação de saldo)
-            $this->caixaService->inserirMovimentacao($caixa, $request->all());
+            $fluxo = $this->caixaService->inserirMovimentacao($caixa, $request->all());
+
+            $this->registrarLogFluxoCaixa('Criou', $fluxo, 'Lançamento manual criado no fluxo de caixa.');
 
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa cadastrado com sucesso!');
         } catch (\InvalidArgumentException $e) {
@@ -296,7 +299,21 @@ class FluxoCaixaController extends Controller
                 ],
             ]);
             $request['usuario_id'] = Auth::user()->id;
+            $dadosAntigos = $fluxoCaixa->only([
+                'descricao',
+                'valor',
+                'data',
+                'tipo',
+                'caixa_id',
+                'empresa_id',
+                'movimento_id',
+                'valor_total',
+                'plano_de_conta_id',
+            ]);
+
             $fluxoCaixa->update($request->all());
+
+            $this->registrarLogFluxoCaixa('Atualizou', $fluxoCaixa->fresh(), 'Lançamento do fluxo de caixa atualizado.', $dadosAntigos);
 
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa atualizado com sucesso!');
         } catch (\Exception $e) {
@@ -312,9 +329,35 @@ class FluxoCaixaController extends Controller
     public function destroy(FluxoCaixa $fluxoCaixa)
     {
         $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
+        $this->registrarLogFluxoCaixa('Excluiu', $fluxoCaixa, 'Lançamento do fluxo de caixa excluído.');
         $fluxoCaixa->delete();
 
         return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa excluído com sucesso!');
+    }
+
+    private function registrarLogFluxoCaixa(string $tipoAcao, FluxoCaixa $fluxoCaixa, string $mensagem, ?array $dadosAntigos = null): void
+    {
+        $descricao = $mensagem
+            .' | Fluxo ID: '.$fluxoCaixa->id
+            .' | Empresa: '.$fluxoCaixa->empresa_id
+            .' | Caixa: '.$fluxoCaixa->caixa_id
+            .' | Data: '.$fluxoCaixa->data
+            .' | Tipo: '.$fluxoCaixa->tipo
+            .' | Valor: R$ '.number_format((float) $fluxoCaixa->valor, 2, ',', '.')
+            .' | Plano de conta ID: '.$fluxoCaixa->plano_de_conta_id
+            .' | Movimento ID: '.$fluxoCaixa->movimento_id
+            .' | Descrição: '.$fluxoCaixa->descricao;
+
+        if ($dadosAntigos) {
+            $descricao .= ' | Antes: '.json_encode($dadosAntigos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        LogSistema::create([
+            'tipo_acao' => $tipoAcao,
+            'descricao' => $descricao,
+            'usuario_id' => Auth::id(),
+            'data_hora' => now(),
+        ]);
     }
 
     public function exportResumoPDF(Request $request)

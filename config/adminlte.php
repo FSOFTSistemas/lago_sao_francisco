@@ -519,6 +519,12 @@ return [
                     'can'  => 'gerenciar contas a receber',
                 ],
                 [
+                    'text' => 'Receitas Avulsas',
+                    'url'  => '/financeiro/receitas-avulsas',
+                    'icon' => 'fas fa-plus-circle',
+                    'can'  => 'gerenciar financeiro',
+                ],
+                [
                     'text' => 'Projeção Financeira',
                     'url'  => '/financeiro/projecao',
                     'icon' => 'fas fa-chart-line',
@@ -535,6 +541,12 @@ return [
                     'url'  => '/relatorio/plano-de-contas',
                     'icon' => 'fas fa-file-invoice',
                     'can'  => 'gerenciar plano de conta',
+                ],
+                [
+                    'text' => 'Logs',
+                    'url'  => '/logs',
+                    'icon' => 'fas fa-history',
+                    'can'  => 'gerenciar financeiro',
                 ],
                 [
                     'text'    => 'NFe',

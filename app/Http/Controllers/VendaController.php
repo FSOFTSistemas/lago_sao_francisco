@@ -18,7 +18,7 @@ class VendaController extends Controller
         $vendas = Venda::with(['cliente', 'formaPagamento', 'vendaItens.produto'])
             ->latest()
             ->paginate(10);
-        
+
         return view('venda.index', compact('vendas'));
     }
 
@@ -39,7 +39,7 @@ class VendaController extends Controller
             // Calcular totais
             $subtotal = 0;
             $totalGeral = 0;
-            
+
             foreach ($request->itens as $item) {
                 $subtotal += $item['total'];
                 $totalGeral += $item['total'];
@@ -107,7 +107,7 @@ class VendaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao salvar produtos: ' . $e->getMessage()
@@ -174,7 +174,7 @@ class VendaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao remover venda: ' . $e->getMessage()
