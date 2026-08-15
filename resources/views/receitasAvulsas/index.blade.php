@@ -82,7 +82,7 @@
                                     <option value="{{ $plano->id }}"
                                         data-empresa="{{ $plano->empresa_id }}"
                                         {{ old('plano_de_conta_id') == $plano->id ? 'selected' : '' }}>
-                                        {{ $plano->descricao }}
+                                        {{ $plano->descricao }}{{ $plano->empresa ? ' - ' . $plano->empresa->nome_fantasia : '' }}
                                     </option>
                                 @endforeach
                             </select>
@@ -204,14 +204,28 @@
     </div>
 @stop
 
+@push('css')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+@endpush
+
 @push('js')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         (function () {
             const empresa = document.getElementById('empresa_id');
             const caixa = document.getElementById('caixa_id');
-            const plano = document.getElementById('plano_de_conta_id');
 
-            function filtrarPorEmpresa(select) {
+            $('#plano_de_conta_id').select2({
+                placeholder: 'Busque pelo plano de receita',
+                width: '100%'
+            });
+
+            $('#movimento_id').select2({
+                placeholder: 'Busque pela forma/movimento',
+                width: '100%'
+            });
+
+            function filtrarCaixaPorEmpresa(select) {
                 if (!empresa || !select) return;
 
                 const empresaId = empresa.value;
@@ -229,8 +243,7 @@
             }
 
             function atualizarOpcoes() {
-                filtrarPorEmpresa(caixa);
-                filtrarPorEmpresa(plano);
+                filtrarCaixaPorEmpresa(caixa);
             }
 
             if (empresa) {

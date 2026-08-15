@@ -33,13 +33,8 @@ class ReceitaAvulsaController extends Controller
             ->get();
 
         $planosDeConta = PlanoDeConta::query()
+            ->with('empresa')
             ->where('tipo', 'receita')
-            ->when($empresaSelecionada, function ($query) use ($empresaSelecionada) {
-                $query->where(function ($q) use ($empresaSelecionada) {
-                    $q->where('empresa_id', $empresaSelecionada)
-                        ->orWhereNull('empresa_id');
-                });
-            })
             ->orderBy('descricao')
             ->get();
 
@@ -92,14 +87,9 @@ class ReceitaAvulsaController extends Controller
             'plano_de_conta_id' => [
                 'required',
                 'exists:plano_de_contas,id',
-                function ($attribute, $value, $fail) use ($empresaId) {
-                    if (! PlanoDeConta::where('id', $value)
-                        ->where('tipo', 'receita')
-                        ->where(function ($query) use ($empresaId) {
-                            $query->where('empresa_id', $empresaId)
-                                ->orWhereNull('empresa_id');
-                        })->exists()) {
-                        $fail('Selecione um plano de contas de receita desta empresa.');
+                function ($attribute, $value, $fail) {
+                    if (! PlanoDeConta::where('id', $value)->where('tipo', 'receita')->exists()) {
+                        $fail('Selecione um plano de contas de receita.');
                     }
                 },
             ],
