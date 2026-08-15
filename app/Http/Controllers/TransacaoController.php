@@ -309,8 +309,8 @@ class TransacaoController extends Controller
             // Motorhome tem plano de contas próprio (separado de Hospedagem para relatórios financeiros);
             // resolvido por nome pois o id 44 usado abaixo não existe em todo ambiente (foi criado manualmente em produção).
             $planoContaId = $transacao->categoria === 'motorhome'
-                ? (PlanoDeConta::where('descricao', 'Motorhome')->value('id') ?? 44)
-                : 44;
+                ? PlanoDeConta::idPorDescricao(['Motorhome', 'Hospedagem'], Auth::user()->empresa_id, 'receita')
+                : PlanoDeConta::idPorDescricao('Hospedagem', Auth::user()->empresa_id, 'receita');
 
             // Usar o CaixaService para inserir a movimentação (seguindo o padrão do AluguelController)
             app(CaixaService::class)->inserirMovimentacao($caixa, [
@@ -379,7 +379,7 @@ class TransacaoController extends Controller
                 'valor_total' => $transacao->valor,
                 'tipo' => 'cancelamento',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 49, // 49-> Serviços Cancelados
+                'plano_de_conta_id' => PlanoDeConta::idPorDescricao('Serviços Cancelados', Auth::user()->empresa_id, 'receita'),
             ]);
 
         } catch (\Exception $e) {
@@ -397,7 +397,7 @@ class TransacaoController extends Controller
                 'descricao' => 'ESTORNO: '.$transacao->descricao.' - Reserva #'.$transacao->reserva_id,
                 'valor' => $transacao->valor,
                 'data_vencimento' => Carbon::today(), // Data de vencimento é o dia atual
-                'plano_de_contas_id' => 1, // Plano de conta padrão
+                'plano_de_contas_id' => PlanoDeConta::idPorDescricao('Despesa', Auth::user()->empresa_id, 'despesa'),
                 'status' => 'pendente', // Status padrão
                 'empresa_id' => Auth::user()->empresa_id ?? 1,
                 'observacoes' => 'Estorno de transação cancelada em '.Carbon::now()->format('d/m/Y H:i:s').

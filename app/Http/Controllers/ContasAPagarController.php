@@ -8,24 +8,23 @@ use App\Models\ContasAPagar;
 use App\Models\Fornecedor;
 use App\Models\ParcelaContasAPagar;
 use App\Models\PlanoDeConta;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use App\Services\CaixaService;
 use App\Services\ContaCorrenteService;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ContasAPagarController extends Controller
 {
-
     /**
      * Método privado para centralizar a lógica de busca e filtragem de contas a pagar.
      *
-     * @param Request $request
      * @return array
      */
     private function getContasFiltradas(Request $request)
@@ -110,14 +109,14 @@ class ContasAPagarController extends Controller
 
                 $contasComParcelas[] = $conta;
             } else {
-                $temParcelaPaga = $conta->parcelas->contains(fn($p) => $p->status === 'pago');
+                $temParcelaPaga = $conta->parcelas->contains(fn ($p) => $p->status === 'pago');
                 $totalParcelas = $conta->parcelas->count();
                 $valorTotal = $conta->parcelas->sum('valor');
 
                 foreach ($conta->parcelas as $parcela) {
                     $parcelaVencimento = Carbon::parse($parcela->data_vencimento);
 
-                    if (!$parcelaVencimento->between($inicio, $fim)) {
+                    if (! $parcelaVencimento->between($inicio, $fim)) {
                         continue;
                     }
 
@@ -138,7 +137,7 @@ class ContasAPagarController extends Controller
                     $contaClone->total_parcelas = $totalParcelas;
                     $contaClone->parcela_id = $parcela->id;
                     $contaClone->conta_descricao = $conta->descricao;
-                    $contaClone->pode_excluir = !$temParcelaPaga;
+                    $contaClone->pode_excluir = ! $temParcelaPaga;
                     $contaClone->valor_pago = $parcela->valor_pago;
                     $contaClone->forma_pagamento = $parcela->forma_pagamento;
 
@@ -169,7 +168,10 @@ class ContasAPagarController extends Controller
             $contas_corrente = ContaCorrente::all();
             $caixas = Caixa::all();
         } else {
-            $planoDeContas = PlanoDeConta::where('empresa_id', $empresa_id)->get();
+            $planoDeContas = PlanoDeConta::where(function ($query) use ($empresa_id) {
+                $query->where('empresa_id', $empresa_id)
+                    ->orWhereNull('empresa_id');
+            })->get();
             $contas_corrente = ContaCorrente::all(); // Atenção: este não está filtrado por empresa.
             $caixas = Caixa::where('empresa_id', $empresa_id)->get();
         }
@@ -187,13 +189,13 @@ class ContasAPagarController extends Controller
         $fim = $request->filled('data_fim') ? Carbon::parse($request->input('data_fim')) : Carbon::now()->endOfMonth();
 
         $dadosFiltro = [
-            'periodo' => 'De ' . $inicio->format('d/m/Y') . ' a ' . $fim->format('d/m/Y'),
-            'situacao' => $request->input('status') ? ucfirst($request->input('status')) : 'Todas'
+            'periodo' => 'De '.$inicio->format('d/m/Y').' a '.$fim->format('d/m/Y'),
+            'situacao' => $request->input('status') ? ucfirst($request->input('status')) : 'Todas',
         ];
 
         $pdf = Pdf::loadView('contasAPagar.relatorio', [
             'contas' => $contasComParcelas,
-            'filtros' => $dadosFiltro
+            'filtros' => $dadosFiltro,
         ]);
 
         return $pdf->stream('relatorio_contas_a_pagar.pdf');
@@ -207,28 +209,54 @@ class ContasAPagarController extends Controller
                 'valor' => 'required|numeric|min:0.01',
                 'valor_pago' => 'numeric|min:0.00',
                 'data_vencimento' => 'required|date',
+                'data_pagamento' => 'nullable|date',
                 'status' => 'required|in:pendente,pago',
                 'plano_de_contas_id' => [
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
-                        if ($value && !PlanoDeConta::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
+                        $usuario = Auth::user();
+                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
+                            ? session('empresa_id')
+                            : $usuario->empresa_id;
+
+                        if ($value && ! PlanoDeConta::where('id', $value)
+                            ->where(function ($query) use ($empresaId) {
+                                $query->where('empresa_id', $empresaId)
+                                    ->orWhereNull('empresa_id');
+                            })->exists()) {
                             $fail('O plano de contas selecionado não pertence à sua empresa.');
                         }
-                    }
+                    },
                 ],
                 'fornecedor_id' => [
                     'nullable',
                     'exists:fornecedors,id',
                 ],
                 'parcelas' => 'nullable|integer|min:1',
-                'periodo' => 'nullable|integer|min:1'
+                'periodo' => 'nullable|integer|min:1',
             ]);
 
             $validatedData['empresa_id'] = Auth::user()->empresa_id;
-            if (((int) $validatedData['valor_pago']) == ((int) $validatedData['valor'])) {
+
+            if (($validatedData['valor_pago'] ?? 0) > $validatedData['valor']) {
+                return redirect()
+                    ->route('contasAPagar.index')
+                    ->withInput()
+                    ->with('error', 'O valor pago não pode ser maior que o valor da conta.');
+            }
+
+            if ($validatedData['status'] === 'pago' && empty($validatedData['valor_pago'])) {
+                $validatedData['valor_pago'] = $validatedData['valor'];
+            }
+
+            if (($validatedData['valor_pago'] ?? 0) >= $validatedData['valor']) {
                 $validatedData['status'] = 'pago';
             }
+
+            if ($validatedData['status'] === 'pago' && empty($validatedData['data_pagamento'])) {
+                $validatedData['data_pagamento'] = now()->toDateString();
+            }
+
             $numParcelas = $request->input('parcelas', 1);
             $numParcelas = (int) $numParcelas;
             $periodo = (int) $request->input('periodo', 30);
@@ -255,7 +283,9 @@ class ContasAPagarController extends Controller
                         'numero_parcela' => $i,
                         'valor' => $valorParcela,
                         'data_vencimento' => $dataBase->copy()->addDays(($i - 1) * $periodo),
-                        'status' => 'pendente',
+                        'status' => $validatedData['status'] === 'pago' ? 'pago' : 'pendente',
+                        'valor_pago' => $validatedData['status'] === 'pago' ? $valorParcela : 0,
+                        'data_pagamento' => $validatedData['status'] === 'pago' ? $validatedData['data_pagamento'] : null,
                     ]);
                     $valor_total -= $valorParcela;
                 }
@@ -267,10 +297,9 @@ class ContasAPagarController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('contasAPagar.index')
-                ->with('error', 'Erro ao cadastrar conta: ' . $e->getMessage());
+                ->with('error', 'Erro ao cadastrar conta: '.$e->getMessage());
         }
     }
-
 
     public function update(Request $request, ContasAPagar $contasAPagar)
     {
@@ -299,7 +328,7 @@ class ContasAPagarController extends Controller
                                 $fail('Não é possível reduzir o valor quando já existe um pagamento registrado.');
                             }
                         }
-                    }
+                    },
                 ],
                 'data_vencimento' => 'required|date',
                 'status' => [
@@ -310,11 +339,19 @@ class ContasAPagarController extends Controller
                     'nullable',
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
-                        if ($value && !PlanoDeConta::where('id', $value)
-                            ->where('empresa_id', Auth::user()->empresa_id)->exists()) {
+                        $usuario = Auth::user();
+                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
+                            ? session('empresa_id')
+                            : $usuario->empresa_id;
+
+                        if ($value && ! PlanoDeConta::where('id', $value)
+                            ->where(function ($query) use ($empresaId) {
+                                $query->where('empresa_id', $empresaId)
+                                    ->orWhereNull('empresa_id');
+                            })->exists()) {
                             $fail('O plano de contas selecionado não pertence à sua empresa.');
                         }
-                    }
+                    },
                 ],
                 'fornecedor_id' => [
                     'nullable',
@@ -336,7 +373,7 @@ class ContasAPagarController extends Controller
                         'fornecedor_id' => $validatedData['fornecedor_id'] ?? null,
                         'valor' => $contasAPagar->parcelas()->sum('valor'),
                         'valor_pago' => $contasAPagar->parcelas()->sum('valor_pago'),
-                        'status' => $contasAPagar->parcelas()->where('status', '!=', 'pago')->doesntExist() ? 'pago' : 'pendente',
+                        'status' => $contasAPagar->parcelas()->whereNotIn('status', ['pago', 'finalizado'])->doesntExist() ? 'pago' : 'pendente',
                     ]);
                 } else {
                     $contasAPagar->update($validatedData);
@@ -349,7 +386,7 @@ class ContasAPagarController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('contasAPagar.index')
-                ->with('error', 'Erro ao atualizar conta: ' . $e->getMessage());
+                ->with('error', 'Erro ao atualizar conta: '.$e->getMessage());
         }
     }
 
@@ -358,26 +395,25 @@ class ContasAPagarController extends Controller
         try {
             $contasAPagar = ContasAPagar::findOrFail($id);
             $contasAPagar->delete();
+
             return redirect()->route('contasAPagar.index')->with('success', 'Conta a pagar excluída com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage;
         }
     }
 
-
     /**
      * Registra o pagamento de uma conta ou de uma parcela.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function pagar(Request $request, $conta_id, $parcela_id = null)
     {
         // 1. Validação aprimorada
         $request->validate([
-            'data_pagamento'    => 'required|date',
-            'valor_pago'        => 'required|numeric|min:0.01',
-            'fonte_pagadora'    => 'required|in:caixa,conta_corrente',
+            'data_pagamento' => 'required|date',
+            'valor_pago' => 'required|numeric|min:0.01',
+            'fonte_pagadora' => 'required|in:caixa,conta_corrente',
             // Exige o ID da conta corrente se a fonte for 'conta_corrente'
             'conta_corrente_id' => 'required_if:fonte_pagadora,conta_corrente|exists:contas_correntes,id',
         ]);
@@ -395,10 +431,10 @@ class ContasAPagarController extends Controller
                 if ($parcela_id) {
                     $parcela = ParcelaContasAPagar::findOrFail($parcela_id);
                     $conta = $parcela->conta;
-                    $description = 'Pagamento #' . $conta->descricao . " " . $parcela->numero_parcela . '/' . $conta->total_parcelas;
+                    $description = 'Pagamento #'.$conta->descricao.' '.$parcela->numero_parcela.'/'.$conta->total_parcelas;
                 } else {
                     $conta = ContasAPagar::findOrFail($conta_id);
-                    $description = 'Pagamento #' . $conta->descricao;
+                    $description = 'Pagamento #'.$conta->descricao;
                 }
 
                 if ($request->fonte_pagadora === 'caixa') {
@@ -412,13 +448,13 @@ class ContasAPagarController extends Controller
                     $dadosUpdate = [
                         'valor_pago' => $valor_pago_total,
                         'data_pagamento' => $request->data_pagamento,
-                        'forma_pagamento' => $parcela->forma_pagamento
+                        'forma_pagamento' => $parcela->forma_pagamento,
                     ];
                     $fonte = $request->fonte_pagadora;
                     $forma = $dadosUpdate['forma_pagamento'];
 
-                    if (!str_contains($forma, $fonte)) {
-                        $dadosUpdate['forma_pagamento'] = trim($forma . "\n" . $fonte);
+                    if (! str_contains($forma, $fonte)) {
+                        $dadosUpdate['forma_pagamento'] = trim($forma."\n".$fonte);
                     }
 
                     if ($valor_pago_total >= $parcela->valor) {
@@ -428,8 +464,8 @@ class ContasAPagarController extends Controller
 
                     $conta->update([
                         'valor_pago' => $conta->parcelas()->sum('valor_pago'),
-                        'status' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? 'pago' : $conta->status,
-                        'data_pagamento' => $conta->parcelas()->where('status', '!=', 'pago')->doesntExist() ? now()->toDateString() : null,
+                        'status' => $conta->parcelas()->whereNotIn('status', ['pago', 'finalizado'])->doesntExist() ? 'pago' : $conta->status,
+                        'data_pagamento' => $conta->parcelas()->whereNotIn('status', ['pago', 'finalizado'])->doesntExist() ? now()->toDateString() : null,
                     ]);
                 } else {
                     $conta->update([
@@ -451,7 +487,8 @@ class ContasAPagarController extends Controller
                 ->route('contasAPagar.index')
                 ->with('error', $e->getMessage());
         } catch (Throwable $e) {
-            Log::error('Erro ao registrar pagamento: ' . $e->getMessage() . ' no arquivo ' . $e->getFile() . ' na linha ' . $e->getLine());
+            Log::error('Erro ao registrar pagamento: '.$e->getMessage().' no arquivo '.$e->getFile().' na linha '.$e->getLine());
+
             return redirect()
                 ->route('contasAPagar.index')
                 ->with('error', 'Erro inesperado ao registrar o pagamento. Tente novamente mais tarde.');
@@ -473,7 +510,7 @@ class ContasAPagarController extends Controller
             ->where('usuario_id', $usuario->id)
             ->first();
 
-        if (!$caixa) {
+        if (! $caixa) {
             throw new InvalidArgumentException('Nenhum caixa aberto encontrado para registrar a movimentação.');
         }
 
@@ -488,7 +525,7 @@ class ContasAPagarController extends Controller
     }
 
     /**
-     * Lida com a lógica de pagamento via Conta Corrente. 
+     * Lida com a lógica de pagamento via Conta Corrente.
      */
     private function handleContaCorrentePayment(Request $request, ContasAPagar $conta, string $description, float $valorPago): void
     {
@@ -500,16 +537,15 @@ class ContasAPagarController extends Controller
 
         app(ContaCorrenteService::class)->registrarLancamento(
             [
-                'conta_corrente_id'  => $contaCorrenteId,
-                'valor'     => $valorPago,
-                'tipo'      => 'saida',
+                'conta_corrente_id' => $contaCorrenteId,
+                'valor' => $valorPago,
+                'tipo' => 'saida',
                 'descricao' => $description,
-                'data'      => $request->data_pagamento
+                'data' => $request->data_pagamento,
             ],
             $empresa_id
         );
     }
-
 
     public function calendario()
     {
@@ -547,8 +583,8 @@ class ContasAPagarController extends Controller
             foreach ($query->get() as $conta) {
                 if ($conta->parcelas->isEmpty()) {
                     $eventos[] = [
-                        'id' => 'conta_' . $conta->id,
-                        'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor') . ' - R$ ' . number_format($conta->valor, 2, ',', '.'),
+                        'id' => 'conta_'.$conta->id,
+                        'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor').' - R$ '.number_format($conta->valor, 2, ',', '.'),
                         'start' => Carbon::parse($conta->data_vencimento)->format('Y-m-d'),
                         'color' => $conta->status === 'pago' ? '#28a745' : '#ffc107',
                         'extendedProps' => [
@@ -556,7 +592,7 @@ class ContasAPagarController extends Controller
                             'parcela_id' => null,
                             'descricao' => $conta->descricao,
                             'fornecedor' => $conta->fornecedor->nome_fantasia ?? '-',
-                            'valor_formatado' => 'R$ ' . number_format($conta->valor, 2, ',', '.'),
+                            'valor_formatado' => 'R$ '.number_format($conta->valor, 2, ',', '.'),
                             'status' => $conta->status,
                         ],
                     ];
@@ -566,13 +602,13 @@ class ContasAPagarController extends Controller
                     foreach ($conta->parcelas as $parcela) {
                         $dataVencimento = Carbon::parse($parcela->data_vencimento);
 
-                        if (!$dataVencimento->between($inicio, $fim)) {
+                        if (! $dataVencimento->between($inicio, $fim)) {
                             continue;
                         }
 
                         $eventos[] = [
-                            'id' => 'parcela_' . $parcela->id,
-                            'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor') . ' - ' . $parcela->numero_parcela . '/' . $totalParcelas . ' - R$ ' . number_format($parcela->valor, 2, ',', '.'),
+                            'id' => 'parcela_'.$parcela->id,
+                            'title' => ($conta->fornecedor->nome_fantasia ?? 'Sem fornecedor').' - '.$parcela->numero_parcela.'/'.$totalParcelas.' - R$ '.number_format($parcela->valor, 2, ',', '.'),
                             'start' => $dataVencimento->format('Y-m-d'),
                             'color' => $parcela->status === 'pago' ? '#28a745' : '#ffc107',
                             'extendedProps' => [
@@ -580,7 +616,7 @@ class ContasAPagarController extends Controller
                                 'parcela_id' => $parcela->id,
                                 'descricao' => $conta->descricao,
                                 'fornecedor' => $conta->fornecedor->nome_fantasia ?? '-',
-                                'valor_formatado' => 'R$ ' . number_format($parcela->valor, 2, ',', '.'),
+                                'valor_formatado' => 'R$ '.number_format($parcela->valor, 2, ',', '.'),
                                 'status' => $parcela->status,
                                 'numero_parcela' => $parcela->numero_parcela,
                                 'total_parcelas' => $totalParcelas,

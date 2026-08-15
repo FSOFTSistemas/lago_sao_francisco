@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Fornecedor;
 use App\Models\PlanoDeConta;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FornecedorController extends Controller
 {
@@ -13,8 +14,20 @@ class FornecedorController extends Controller
      */
     public function index()
     {
+        $usuario = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        $empresaId = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+
         $fornecedores = Fornecedor::with('planoDeConta')->get();
-        $planosDeContas = PlanoDeConta::orderBy('descricao')->get();
+        $planosDeContas = PlanoDeConta::query()
+            ->when($empresaId, function ($query) use ($empresaId) {
+                $query->where(function ($q) use ($empresaId) {
+                    $q->where('empresa_id', $empresaId)
+                        ->orWhereNull('empresa_id');
+                });
+            })
+            ->orderBy('descricao')
+            ->get();
 
         return view('fornecedor.index', compact('fornecedores', 'planosDeContas'));
     }
@@ -27,8 +40,6 @@ class FornecedorController extends Controller
             ->limit(20)
             ->get(['id', 'nome_fantasia']);
     }
-
-
 
     /**
      * Store a newly created resource in storage.
@@ -43,17 +54,17 @@ class FornecedorController extends Controller
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string',
                 'forma_pagamento' => 'nullable|string',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id',
             ]);
             Fornecedor::create($request->all());
+
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor cadastrado com sucesso');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Erro ao cadastrar fornecedor: ' . $e->getMessage());
+                ->with('error', 'Erro ao cadastrar fornecedor: '.$e->getMessage());
         }
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -69,14 +80,15 @@ class FornecedorController extends Controller
                 'endereco' => 'nullable|string',
                 'inscricao_estadual' => 'nullable|string',
                 'forma_pagamento' => 'nullable|string',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
+                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id',
             ]);
             $fornecedor->update($request->all());
+
             return redirect()->route('fornecedor.index')->with('success', 'Fornecedor atualizado com sucesso');
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Erro ao atualizar fornecedor: ' . $e->getMessage());
+                ->with('error', 'Erro ao atualizar fornecedor: '.$e->getMessage());
         }
     }
 
@@ -87,20 +99,22 @@ class FornecedorController extends Controller
     {
         $fornecedor = Fornecedor::findOrFail($fornecedor->id);
         $fornecedor->delete();
+
         return redirect()->route('fornecedor.index')->with('success', 'Fornecedor deletado com sucesso');
     }
 
     public function buscar(Request $request)
-{
-    $termo = $request->input('q');
+    {
+        $termo = $request->input('q');
 
-    $fornecedores = Fornecedor::where('razao_social', 'LIKE', $termo . '%')
-        ->orderBy('razao_social')
-        ->limit(20)
-        ->get(['id', 'razao_social']);
+        $fornecedores = Fornecedor::where('razao_social', 'LIKE', $termo.'%')
+            ->orderBy('razao_social')
+            ->limit(20)
+            ->get(['id', 'razao_social']);
 
-    return response()->json($fornecedores);
-}
+        return response()->json($fornecedores);
+    }
+
     public function busca(Request $request)
     {
         $termo = $request->query('q');
@@ -125,8 +139,7 @@ class FornecedorController extends Controller
     {
         return response()->json([
             'id' => $fornecedor->id,
-            'text' => $fornecedor->razao_social // O Select2 espera a chave 'text'
+            'text' => $fornecedor->razao_social, // O Select2 espera a chave 'text'
         ]);
     }
-
 }

@@ -90,8 +90,6 @@ class FluxoCaixaController extends Controller
                 ->where('usuario_id', $usuario->id);
         }
 
-
-
         // Filtros opcionais de tipo e data e caixa
         if ($request->filled('tipo')) {
             $fluxoQuery->where('tipo', $request->tipo);
@@ -100,7 +98,7 @@ class FluxoCaixaController extends Controller
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $fluxoQuery->whereBetween('data', [$request->data_inicio, $request->data_fim]);
         } else {
-            $fluxoQuery->whereDate('data', \Carbon\Carbon::today());
+            $fluxoQuery->whereDate('data', Carbon::today());
         }
 
         if ($request->filled('caixa_id')) {
@@ -114,7 +112,7 @@ class FluxoCaixaController extends Controller
         // -----------------------------
         $totaisPorMovimento = FluxoCaixa::selectRaw('movimento_id, SUM(valor) as total')
             ->with('movimento')
-            ->when(!$usuario->hasRole('Master'), function ($q) use ($usuario) {
+            ->when(! $usuario->hasRole('Master'), function ($q) use ($usuario) {
                 $q->where('empresa_id', $usuario->empresa_id);
             })
             ->when($request->filled('tipo'), function ($q) use ($request) {
@@ -123,7 +121,7 @@ class FluxoCaixaController extends Controller
             ->when($request->filled('data_inicio') && $request->filled('data_fim'), function ($q) use ($request) {
                 $q->whereBetween('data', [$request->data_inicio, $request->data_fim]);
             }, function ($q) {
-                $q->whereDate('data', \Carbon\Carbon::today());
+                $q->whereDate('data', Carbon::today());
             })
             ->when($request->filled('caixa_id'), function ($q) use ($request) {
                 $q->where('caixa_id', $request->caixa_id);
@@ -143,9 +141,6 @@ class FluxoCaixaController extends Controller
                     ? $total - $valor
                     : $total + $valor;
             }, 0);
-
-
-
 
         // -----------------------------
         // CAIXAS
@@ -169,7 +164,16 @@ class FluxoCaixaController extends Controller
         // DEMAIS DADOS
         // -----------------------------
         $empresas = Empresa::all();
-        $planoDeContas = PlanoDeConta::all();
+        $empresaPlanosId = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+        $planoDeContas = PlanoDeConta::query()
+            ->when($empresaPlanosId, function ($query) use ($empresaPlanosId) {
+                $query->where(function ($q) use ($empresaPlanosId) {
+                    $q->where('empresa_id', $empresaPlanosId)
+                        ->orWhereNull('empresa_id');
+                });
+            })
+            ->orderBy('descricao')
+            ->get();
         $movimento = Movimento::all();
 
         return view('fluxoCaixa.index', compact(
@@ -183,7 +187,6 @@ class FluxoCaixaController extends Controller
             'totaisPorMovimento'
         ));
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -204,7 +207,23 @@ class FluxoCaixaController extends Controller
             'caixa_id' => 'required|exists:caixas,id',
             'empresa_id' => 'required|exists:empresas,id',
             'valor_total' => 'required|numeric|min:0',
-            'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
+            'plano_de_conta_id' => [
+                'nullable',
+                'exists:plano_de_contas,id',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (! $value) {
+                        return;
+                    }
+
+                    if (! PlanoDeConta::where('id', $value)
+                        ->where(function ($query) use ($request) {
+                            $query->where('empresa_id', $request->empresa_id)
+                                ->orWhereNull('empresa_id');
+                        })->exists()) {
+                        $fail('O plano de contas selecionado não pertence à empresa do lançamento.');
+                    }
+                },
+            ],
         ]);
 
         try {
@@ -222,13 +241,13 @@ class FluxoCaixaController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
     public function show(FluxoCaixa $fluxoCaixa)
     {
         $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
+
         return view('fluxoCaixa.show', compact('fluxoCaixa'));
     }
 
@@ -238,6 +257,7 @@ class FluxoCaixaController extends Controller
     public function edit(FluxoCaixa $fluxoCaixa)
     {
         $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
+
         return view('fluxoCaixa.edit', compact('fluxoCaixa'));
     }
 
@@ -257,13 +277,31 @@ class FluxoCaixaController extends Controller
                 'caixa_id' => 'required|exists:caixas,id',
                 'empresa_id' => 'required|exists:empresas,id',
                 'valor_total' => 'required|numeric',
-                'plano_de_conta_id' => 'nullable|exists:plano_de_contas,id'
+                'plano_de_conta_id' => [
+                    'nullable',
+                    'exists:plano_de_contas,id',
+                    function ($attribute, $value, $fail) use ($request) {
+                        if (! $value) {
+                            return;
+                        }
+
+                        if (! PlanoDeConta::where('id', $value)
+                            ->where(function ($query) use ($request) {
+                                $query->where('empresa_id', $request->empresa_id)
+                                    ->orWhereNull('empresa_id');
+                            })->exists()) {
+                            $fail('O plano de contas selecionado não pertence à empresa do lançamento.');
+                        }
+                    },
+                ],
             ]);
             $request['usuario_id'] = Auth::user()->id;
             $fluxoCaixa->update($request->all());
+
             return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa atualizado com sucesso!');
         } catch (\Exception $e) {
             dd($e)->getMessage();
+
             return redirect()->route('fluxoCaixa.index')->with('error', 'Erro ao atualizar fluxo de caixa!');
         }
     }
@@ -275,6 +313,7 @@ class FluxoCaixaController extends Controller
     {
         $fluxoCaixa = FluxoCaixa::findOrFail($fluxoCaixa->id);
         $fluxoCaixa->delete();
+
         return redirect()->route('fluxoCaixa.index')->with('success', 'Fluxo de caixa excluído com sucesso!');
     }
 
@@ -319,17 +358,16 @@ class FluxoCaixaController extends Controller
         $resumo = $fluxos
             ->filter(function ($fluxo) {
                 $descricao = optional($fluxo->movimento)->descricao;
-                return !in_array($descricao, ['abertura de caixa', 'fechamento de caixa']);
+
+                return ! in_array($descricao, ['abertura de caixa', 'fechamento de caixa']);
             })
             ->groupBy('movimento.descricao')
             ->map(function ($grupo) {
                 return $grupo->sum('valor');
             });
 
-
-
         $empresa = Empresa::find($request->empresa_id) ?? Auth::user()->empresa;
-        $periodo = $dataInicio->format('d/m/Y') . ' a ' . $dataFim->format('d/m/Y');
+        $periodo = $dataInicio->format('d/m/Y').' a '.$dataFim->format('d/m/Y');
         $dataEmissao = now()->format('d/m/Y H:i');
 
         $pdf = Pdf::loadView('fluxoCaixa.pdf_resumo', compact(

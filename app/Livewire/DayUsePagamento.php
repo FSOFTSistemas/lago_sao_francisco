@@ -2,41 +2,57 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
+use App\Models\Caixa;
 use App\Models\DayUse;
 use App\Models\DayUsePag;
-use App\Models\FormaPagamento;
-use App\Services\CaixaService;
-use App\Models\Caixa;
 use App\Models\DayUseSouvenir;
+use App\Models\FormaPagamento;
 use App\Models\Movimento;
+use App\Models\PlanoDeConta;
 use App\Models\Souvenir;
+use App\Services\CaixaService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Livewire\Component;
 
 class DayUsePagamento extends Component
 {
     public $dayUseId;
+
     public $itemSubtotal;
 
     public $acrescimo = 0;
+
     public $desconto = 0;
+
     public $finalPagamentoTotal = 0;
 
     public $formaPagamento;
+
     public $metodoSelecionadoID;
+
     public $pagamentoValor;
+
     public $pagamentosAtuais = []; // Array para armazenar os pagamentos adicionados na tela
+
     public $restante = 0; // Valor restante a ser pago
+
     public $inputKey;
 
     public $souvenirs; // Collection vinda do banco
+
     public $souvenirsAdicionados = []; // Lista de adicionados
+
     public $souvenirSelecionadoId;
+
     public $souvenirQuantidade = 1;
+
     public $subtotalSouvenir = 0;
+
     public $estoqueDisponivel;
+
     public $subtotalOriginal = 0;
+
     public bool $pagamentoFinalizado = false;
 
     protected CaixaService $caixaService;
@@ -166,12 +182,14 @@ class DayUsePagamento extends Component
         // Validação final: o valor restante deve ser zero (ou muito próximo de zero para evitar problemas de float)
         if (abs($this->restante) > 0.01) {
             $this->addError('restante', 'O valor restante a pagar deve ser zero.');
+
             return;
         }
 
         $dayUse = DayUse::find($this->dayUseId);
-        if (!$dayUse) {
+        if (! $dayUse) {
             session()->flash('error', 'DayUse não encontrado para salvar pagamentos.');
+
             return;
         }
 
@@ -199,8 +217,9 @@ class DayUsePagamento extends Component
             ->where('usuario_id', Auth::id())
             ->first();
 
-        if (!$caixa) {
+        if (! $caixa) {
             session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+
             return;
         }
 
@@ -210,19 +229,19 @@ class DayUsePagamento extends Component
             $tipoMov = $formaPagamento->movimentoDescricao('venda');
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (DayUse #{$dayUse->id}, forma de pagamento '{$formaPagamento->descricao}').");
 
                 continue;
             }
 
             $this->caixaService->inserirMovimentacao($caixa, [
-                'descricao' => 'DayUse #' . $dayUse->id,
+                'descricao' => 'DayUse #'.$dayUse->id,
                 'valor' => $payment['valor'],
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
                 'valor_total' => $payment['valor'],
-                'plano_de_conta_id' => 52, //52->DayUse
+                'plano_de_conta_id' => PlanoDeConta::idPorDescricao(['DAY USE', 'Entradas Day Use Parque'], $empresaId, 'receita'),
             ]);
         }
 
@@ -234,7 +253,8 @@ class DayUsePagamento extends Component
                 $souvenir->estoque -= $souvenirItem['quantidade'];
                 $souvenir->save();
             } else {
-                session()->flash('error', 'Estoque insuficiente ao salvar o pagamento para: ' . $souvenirItem['descricao']);
+                session()->flash('error', 'Estoque insuficiente ao salvar o pagamento para: '.$souvenirItem['descricao']);
+
                 return;
             }
         }
@@ -252,13 +272,10 @@ class DayUsePagamento extends Component
             ]);
         }
 
-
-
         $this->pagamentoFinalizado = true;
 
         return redirect()->route('dayuse.create')->with('success', 'Cadastro Day Use realizado com sucesso!');
     }
-
 
     public function render()
     {
@@ -268,7 +285,9 @@ class DayUsePagamento extends Component
     public function updatedSouvenirQuantidade()
     {
         $this->resetErrorBag('souvenirQuantidade');
-        if (!$this->souvenirSelecionadoId) return;
+        if (! $this->souvenirSelecionadoId) {
+            return;
+        }
 
         $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
 
@@ -278,16 +297,18 @@ class DayUsePagamento extends Component
         }
     }
 
-
     public function addSouvenir()
     {
         $this->resetErrorBag('souvenirQuantidade');
-        if (!$this->souvenirSelecionadoId || !$this->souvenirQuantidade) return;
+        if (! $this->souvenirSelecionadoId || ! $this->souvenirQuantidade) {
+            return;
+        }
 
         $souvenir = $this->souvenirs->firstWhere('id', $this->souvenirSelecionadoId);
 
-        if (!$souvenir) {
+        if (! $souvenir) {
             $this->addError('souvenirSelecionadoId', 'Souvenir inválido.');
+
             return;
         }
 
@@ -300,6 +321,7 @@ class DayUsePagamento extends Component
 
         if ($this->souvenirQuantidade > $estoqueRestante) {
             $this->addError('souvenirQuantidade', "Estoque insuficiente. Máximo disponível: {$estoqueRestante}");
+
             return;
         }
 
@@ -310,6 +332,7 @@ class DayUsePagamento extends Component
                 $item['valor_total'] = $item['quantidade'] * $item['valor_unitario'];
                 $this->atualizarSubtotal();
                 $this->resetSouvenirInputs();
+
                 return;
             }
         }
@@ -327,10 +350,11 @@ class DayUsePagamento extends Component
         $this->resetSouvenirInputs();
     }
 
-
     public function removeSouvenir($index)
     {
-        if (!isset($this->souvenirsAdicionados[$index])) return;
+        if (! isset($this->souvenirsAdicionados[$index])) {
+            return;
+        }
 
         unset($this->souvenirsAdicionados[$index]);
         $this->souvenirsAdicionados = array_values($this->souvenirsAdicionados); // Reindexa
@@ -338,11 +362,9 @@ class DayUsePagamento extends Component
         $this->atualizarSubtotal();
     }
 
-
     public function atualizarSubtotal()
     {
         $this->subtotalSouvenir = collect($this->souvenirsAdicionados)->sum('valor_total');
-
 
         $this->finalPagamentoTotal = $this->itemSubtotal + $this->subtotalSouvenir;
 
@@ -351,13 +373,13 @@ class DayUsePagamento extends Component
 
     public function getEstoqueDisponivelProperty()
     {
-        if (!$this->souvenirSelecionadoId) {
+        if (! $this->souvenirSelecionadoId) {
             return null; // ou 0, se preferir
         }
 
         // Encontra o souvenir selecionado no estoque total
         $souvenir = $this->souvenirs->find($this->souvenirSelecionadoId);
-        if (!$souvenir) {
+        if (! $souvenir) {
             return null;
         }
 

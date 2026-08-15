@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Caixa;
-use App\Models\ContasAReceber;
 use App\Models\Cliente;
 use App\Models\ContaPagamentos;
+use App\Models\ContasAReceber;
 use App\Models\Empresa;
 use App\Models\FormaPagamento;
 use App\Models\Movimento;
@@ -27,18 +27,23 @@ class ContasAReceberController extends Controller
      */
     public function index(Request $request)
     {
-        $query = ContasAReceber::query();
+        $user = Auth::user();
+        $empresaSelecionada = session('empresa_id');
+        $empresaId = $user->hasRole('Master') ? $empresaSelecionada : $user->empresa_id;
+
+        $query = ContasAReceber::query()
+            ->when($empresaId, fn ($q) => $q->where('empresa_id', $empresaId));
 
         // Filtrar por intervalo de datas
         if ($request->filled('data_inicio') && $request->filled('data_fim')) {
             $query->whereBetween('data_vencimento', [
                 $request->input('data_inicio'),
-                $request->input('data_fim')
+                $request->input('data_fim'),
             ]);
         } else {
             $query->whereBetween('data_vencimento', [
                 Carbon::now()->startOfDay(),
-                Carbon::now()->endOfDay()
+                Carbon::now()->endOfDay(),
             ]);
         }
 
@@ -50,12 +55,19 @@ class ContasAReceberController extends Controller
         // Obter dados e carregar com relacionamentos
         $contasAReceber = $query->with('cliente')->orderByRaw('MONTH(data_vencimento)')->get();
 
-
-        $user = Auth::user();
         $clientes = Cliente::all();
         $empresas = Empresa::all();
-        $planoDeContas = PlanoDeConta::all();
+        $planoDeContas = PlanoDeConta::query()
+            ->when($empresaId, function ($query) use ($empresaId) {
+                $query->where(function ($q) use ($empresaId) {
+                    $q->where('empresa_id', $empresaId)
+                        ->orWhereNull('empresa_id');
+                });
+            })
+            ->orderBy('descricao')
+            ->get();
         $vendas = Venda::all();
+
         return view('contasAReceber.index', compact('contasAReceber', 'clientes', 'empresas', 'planoDeContas', 'vendas', 'user'));
     }
 
@@ -71,11 +83,32 @@ class ContasAReceberController extends Controller
                 'valor_recebido' => 'nullable|numeric',
                 'data_vencimento' => 'required|date',
                 'data_recebimento' => 'nullable|date',
-                'status' => 'required|string',
+                'status' => 'required|in:pendente,recebido,atrasado',
                 'venda_id' => 'nullable|exists:vendas,id',
                 'parcela' => 'nullable|integer|min:1',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
+                'plano_de_contas_id' => [
+                    'nullable',
+                    'exists:plano_de_contas,id',
+                    function ($attribute, $value, $fail) {
+                        if (! $value) {
+                            return;
+                        }
+
+                        $usuario = Auth::user();
+                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
+                            ? session('empresa_id')
+                            : $usuario->empresa_id;
+
+                        if (! PlanoDeConta::where('id', $value)
+                            ->where(function ($query) use ($empresaId) {
+                                $query->where('empresa_id', $empresaId)
+                                    ->orWhereNull('empresa_id');
+                            })->exists()) {
+                            $fail('O plano de contas selecionado não pertence à sua empresa.');
+                        }
+                    },
+                ],
             ]);
 
             $dadosBase = $request->all();
@@ -86,11 +119,31 @@ class ContasAReceberController extends Controller
 
             // Divide o valor pelas parcelas
             $valorTotal = $request->valor;
+            $valorRecebido = (float) ($request->valor_recebido ?? 0);
+
+            if ($valorRecebido > (float) $valorTotal) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'O valor recebido não pode ser maior que o valor da conta.');
+            }
+
+            if ($dadosBase['status'] === 'recebido' && $valorRecebido <= 0) {
+                $dadosBase['valor_recebido'] = $valorTotal;
+                $valorRecebido = (float) $valorTotal;
+            }
+
+            if ($valorRecebido >= (float) $valorTotal) {
+                $dadosBase['status'] = 'recebido';
+            }
+
+            if ($dadosBase['status'] === 'recebido' && empty($dadosBase['data_recebimento'])) {
+                $dadosBase['data_recebimento'] = now()->toDateString();
+            }
+
             $valorParcela = round($valorTotal / $qtdParcelas, 2); // arredondamento simples
 
             // Gera um grupo_id único se for parcelado
             $grupoId = $qtdParcelas > 1 ? mt_rand(100000, 999999999) : null;
-
 
             if ($qtdParcelas > 1) {
                 $descricaoOriginal = $dadosBase['descricao'];
@@ -99,6 +152,9 @@ class ContasAReceberController extends Controller
                     $dadosParcela = $dadosBase;
                     $dadosParcela['data_vencimento'] = $vencimento;
                     $dadosParcela['valor'] = $valorParcela;
+                    $dadosParcela['valor_recebido'] = 0;
+                    $dadosParcela['data_recebimento'] = null;
+                    $dadosParcela['status'] = 'pendente';
                     $dadosParcela['descricao'] = "{$descricaoOriginal} | {$i}/{$qtdParcelas}";
                     $dadosParcela['grupo_id'] = $grupoId;
 
@@ -113,12 +169,9 @@ class ContasAReceberController extends Controller
 
             return redirect()->route('contasAReceber.index')->with('success', 'Conta a receber criada com sucesso');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao cadastrar conta a receber: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao cadastrar conta a receber: '.$e->getMessage());
         }
     }
-
-
-
 
     /**
      * Update the specified resource in storage.
@@ -131,18 +184,76 @@ class ContasAReceberController extends Controller
                 'valor' => 'required|numeric',
                 'valor_recebido' => 'nullable|numeric',
                 'data_vencimento' => 'required|date',
-                'data_pagamento' => 'nullable|date',
-                'status' => 'required|string',
+                'data_recebimento' => 'nullable|date',
+                'status' => 'required|in:pendente,recebido,atrasado',
                 'venda_id' => 'nullable|exists:vendas,id',
                 'parcela' => 'nullable|integer',
                 'cliente_id' => 'required|exists:clientes,id',
-                'plano_de_contas_id' => 'nullable|exists:plano_de_contas,id',
+                'plano_de_contas_id' => [
+                    'nullable',
+                    'exists:plano_de_contas,id',
+                    function ($attribute, $value, $fail) {
+                        if (! $value) {
+                            return;
+                        }
+
+                        $usuario = Auth::user();
+                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
+                            ? session('empresa_id')
+                            : $usuario->empresa_id;
+
+                        if (! PlanoDeConta::where('id', $value)
+                            ->where(function ($query) use ($empresaId) {
+                                $query->where('empresa_id', $empresaId)
+                                    ->orWhereNull('empresa_id');
+                            })->exists()) {
+                            $fail('O plano de contas selecionado não pertence à sua empresa.');
+                        }
+                    },
+                ],
             ]);
 
-            $contasAReceber->update($request->all());
+            $dados = $request->only([
+                'descricao',
+                'valor',
+                'valor_recebido',
+                'data_vencimento',
+                'data_recebimento',
+                'status',
+                'venda_id',
+                'parcela',
+                'cliente_id',
+                'plano_de_contas_id',
+            ]);
+
+            $valorRecebido = (float) ($dados['valor_recebido'] ?? 0);
+            $valor = (float) $dados['valor'];
+
+            if ($valorRecebido > $valor) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'O valor recebido não pode ser maior que o valor da conta.');
+            }
+
+            if ($dados['status'] === 'recebido' && $valorRecebido <= 0) {
+                $dados['valor_recebido'] = $valor;
+                $valorRecebido = $valor;
+            }
+
+            if ($valorRecebido >= $valor) {
+                $dados['status'] = 'recebido';
+            }
+
+            if ($dados['status'] === 'recebido' && empty($dados['data_recebimento'])) {
+                $dados['data_recebimento'] = now()->toDateString();
+            }
+
+            $contasAReceber->update($dados);
+
             return redirect()->route('contasAReceber.index')->with('success', 'Conta a receber atualizada com sucesso');
         } catch (\Exception $e) {
             dd($e->getMessage());
+
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
@@ -165,14 +276,13 @@ class ContasAReceberController extends Controller
                     $contasAReceber->delete();
                     $mensagem = 'Conta a receber deletada com sucesso.';
                 }
-    
+
                 return redirect()->route('contasAReceber.index')->with('success', $mensagem);
             }
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao deletar conta a receber: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao deletar conta a receber: '.$e->getMessage());
         }
     }
-
 
     public function receber(Request $request)
     {
@@ -191,8 +301,8 @@ class ContasAReceberController extends Controller
                 ->where('empresa_id', $empresaId)
                 ->first();
 
-            if (!$caixa) {
-                throw new \Exception("Nenhum caixa aberto encontrado para registrar o recebimento.");
+            if (! $caixa) {
+                throw new \Exception('Nenhum caixa aberto encontrado para registrar o recebimento.');
             }
 
             $pagamento = ContasAReceber::findOrFail($data['pagamento_id']);
@@ -226,7 +336,7 @@ class ContasAReceberController extends Controller
             $slug = FormaPagamento::descricaoMovimento('recebimento', $data['forma_pagamento']);
             $movimentoId = Movimento::where('descricao', $slug)->value('id');
 
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 throw new \Exception("Movimento '{$slug}' não encontrado.");
             }
 
@@ -235,7 +345,8 @@ class ContasAReceberController extends Controller
                 'valor' => $data['valor_pago'],
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => $pagamento->plano_de_contas_id ?? 36, // 36-> Receita
+                'plano_de_conta_id' => $pagamento->plano_de_contas_id
+                    ?? PlanoDeConta::idPorDescricao('Receita', $empresaId, 'receita'),
             ]);
         });
 
@@ -247,26 +358,26 @@ class ContasAReceberController extends Controller
             'valor' => number_format($data['valor_pago'], 2, ',', '.'),
             'forma_pagamento' => $data['forma_pagamento'],
             'data_pagamento' => now()->format('d/m/Y'),
-            'data_vencimento' => \Carbon\Carbon::parse($pagamento->data_vencimento)->format('d/m/Y'),
+            'data_vencimento' => Carbon::parse($pagamento->data_vencimento)->format('d/m/Y'),
             'parcela' => $this->extrairParcela($pagamento->descricao),
         ];
 
         $pdf = Pdf::loadView('contasAReceber.recibo', $pdfData);
-        $fileName = 'recibos/recibo_' . now()->format('Ymd_His') . '.pdf';
+        $fileName = 'recibos/recibo_'.now()->format('Ymd_His').'.pdf';
         Storage::disk('public')->put($fileName, $pdf->output());
 
         return redirect()->back()->with(
             'success',
-            'Pagamento efetuado com sucesso! <a href="' . asset('storage/' . $fileName) . '" target="_blank" rel="noopener noreferrer">Ver recibo</a>'
+            'Pagamento efetuado com sucesso! <a href="'.asset('storage/'.$fileName).'" target="_blank" rel="noopener noreferrer">Ver recibo</a>'
         );
     }
-
 
     private function extrairParcela($descricao)
     {
         if (preg_match('/\b(\d+\/\d+)\b/', $descricao, $matches)) {
             return $matches[1];
         }
+
         return 'Única';
     }
 

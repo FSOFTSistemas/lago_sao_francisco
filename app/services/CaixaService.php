@@ -6,9 +6,9 @@ use App\Models\Caixa;
 use App\Models\FluxoCaixa;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
@@ -25,7 +25,7 @@ class CaixaService
             ]);
 
             $movimentoId = Movimento::where('descricao', 'abertura de caixa')->value('id');
-            $planoId = PlanoDeConta::where('descricao', 'Abertura/Fechamento de caixa')->value('id');
+            $planoId = PlanoDeConta::idPorDescricao('Abertura/Fechamento de caixa', $caixa->empresa_id, 'receita');
 
             FluxoCaixa::create([
                 'descricao' => $descricao,
@@ -55,7 +55,7 @@ class CaixaService
             ]);
 
             $movimentoId = Movimento::where('descricao', 'fechamento de caixa')->value('id');
-            $planoId = PlanoDeConta::where('descricao', 'Abertura/Fechamento de caixa')->value('id');
+            $planoId = PlanoDeConta::idPorDescricao('Abertura/Fechamento de caixa', $caixa->empresa_id, 'receita');
             FluxoCaixa::create([
                 'descricao' => $descricao,
                 'valor' => $valorFinal,
@@ -74,37 +74,36 @@ class CaixaService
     }
 
     public function inserirMovimentacao(Caixa $caixa, array $dados)
-{
-    try {
-        // Ajusta dados obrigatórios
-        $dados['caixa_id'] = $caixa->id;
-        $dados['usuario_id'] = Auth::id();
-        $dados['empresa_id'] = $caixa->empresa_id;
-        $dados['data'] = $dados['data'] ?? Carbon::now();
+    {
+        try {
+            // Ajusta dados obrigatórios
+            $dados['caixa_id'] = $caixa->id;
+            $dados['usuario_id'] = Auth::id();
+            $dados['empresa_id'] = $caixa->empresa_id;
+            $dados['data'] = $dados['data'] ?? Carbon::now();
 
-        // Validação do saldo para movimentação do tipo saida
-        if (isset($dados['tipo']) && $dados['tipo'] === 'saida') {
-            $saldoAtual = $this->saldoAtual($caixa);
-            $valor = $dados['valor'] ?? 0;
+            // Validação do saldo para movimentação do tipo saida
+            if (isset($dados['tipo']) && $dados['tipo'] === 'saida') {
+                $saldoAtual = $this->saldoAtual($caixa);
+                $valor = $dados['valor'] ?? 0;
 
-            if ($valor > $saldoAtual) {
-                throw new InvalidArgumentException(
-                    'Valor da saida não pode ser maior que o saldo atual do caixa (R$ ' .
-                    number_format($saldoAtual, 2, ',', '.') . ').'
-                );
+                if ($valor > $saldoAtual) {
+                    throw new InvalidArgumentException(
+                        'Valor da saida não pode ser maior que o saldo atual do caixa (R$ '.
+                        number_format($saldoAtual, 2, ',', '.').').'
+                    );
+                }
             }
+
+            return FluxoCaixa::create($dados);
+
+        } catch (InvalidArgumentException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('Erro ao inserir movimentação no caixa: '.$e->getMessage());
+            throw new \Exception('Erro inesperado ao registrar a movimentação no caixa.');
         }
-
-        return FluxoCaixa::create($dados);
-
-    } catch (\InvalidArgumentException $e) {
-        throw $e;
-    } catch (\Throwable $e) {
-        Log::error('Erro ao inserir movimentação no caixa: ' . $e->getMessage());
-        throw new \Exception('Erro inesperado ao registrar a movimentação no caixa.');
     }
-}
-
 
     public function removerMovimentacao(FluxoCaixa $movimentacao)
     {
@@ -112,12 +111,12 @@ class CaixaService
     }
 
     public function saldoAtual(Caixa $caixa): float
-{
-    $fluxos = FluxoCaixa::where('caixa_id', $caixa->id)->get();
+    {
+        $fluxos = FluxoCaixa::where('caixa_id', $caixa->id)->get();
 
-    $saldo = $fluxos->where('tipo', 'entrada')->sum('valor') 
-           - $fluxos->where('tipo', 'saida')->sum('valor');
+        $saldo = $fluxos->where('tipo', 'entrada')->sum('valor')
+               - $fluxos->where('tipo', 'saida')->sum('valor');
 
-    return $saldo;
-}
+        return $saldo;
+    }
 }

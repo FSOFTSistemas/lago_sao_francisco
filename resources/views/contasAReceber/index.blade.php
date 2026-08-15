@@ -80,7 +80,7 @@
                     <td>{{ $conta->id }}</td>
                     <td>{{ $conta->descricao }}</td>
                     <td>{{ Illuminate\Support\Carbon::parse($conta->data_vencimento)->format('d/m/Y') }}</td>
-                    <td>{{ $conta->data_recebimento ? Illuminate\Support\Carbon::parse($conta->data_vencimento)->format('d/m/Y') : '' }}
+                    <td>{{ $conta->data_recebimento ? Illuminate\Support\Carbon::parse($conta->data_recebimento)->format('d/m/Y') : '' }}
                     </td>
                     <td>R${{ $conta->valor }}</td>
                     <td>

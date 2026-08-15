@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Adicional;
 use App\Models\Aluguel;
+use App\Models\AluguelPagamento;
+use App\Models\BuffetEscolha;
+use App\Models\Caixa;
+use App\Models\Cardapio;
 use App\Models\Cliente;
+use App\Models\ContasAReceber;
 use App\Models\Espaco;
 use App\Models\FormaPagamento;
-use App\Models\Adicional;
-use App\Models\PacoteEvento;
-use App\Models\Cardapio;
-use App\Models\BuffetEscolha;
-use App\Models\AluguelPagamento;
-use App\Models\Caixa;
-use App\Models\ContasAReceber;
-use App\Models\FluxoCaixa;
 use App\Models\Movimento;
+use App\Models\PacoteEvento;
+use App\Models\PlanoDeConta;
 use App\Services\CaixaService;
+use App\Services\ContasService;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,7 @@ class AluguelController extends Controller
     public function index()
     {
         $aluguel = Aluguel::with(['cliente', 'espaco'])->latest()->paginate(15);
+
         return view('aluguel.index', compact('aluguel'));
     }
 
@@ -47,7 +50,6 @@ class AluguelController extends Controller
         $adicionaisSelecionados = collect();
         $pacotesEvento = PacoteEvento::orderBy('nome')->orderBy('ano')->get()->groupBy('categoria');
         $pacotesEventoSelecionados = collect();
-
 
         return view('aluguel.create', compact(
             'clientes',
@@ -105,7 +107,6 @@ class AluguelController extends Controller
                 // Relacionar pacotes de evento (Ilhas Adicionais / Refeição Staff)
                 $this->salvarPacotesEvento($aluguel, $request);
 
-
                 // Salvar escolhas do buffet se existirem
                 if ($request->filled('buffet_categorias_escolhidas') || $request->filled('buffet_opcao_escolhida')) {
                     $this->salvarEscolhasBuffet($aluguel, $request);
@@ -129,7 +130,6 @@ class AluguelController extends Controller
                     }
                 }
 
-
                 // ✅ Criar fluxo de caixa com os pagamentos
                 $this->salvarFluxosDePagamento($aluguel);
 
@@ -141,7 +141,7 @@ class AluguelController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao cadastrar Aluguel: '.$e->getMessage());
         }
     }
 
@@ -207,8 +207,6 @@ class AluguelController extends Controller
             'refeicaoStaffAtivo'
         ));
     }
-
-
 
     public function update(Request $request, Aluguel $aluguel)
     {
@@ -280,7 +278,7 @@ class AluguelController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao atualizar Aluguel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Erro ao atualizar Aluguel: '.$e->getMessage());
         }
     }
 
@@ -308,7 +306,8 @@ class AluguelController extends Controller
             return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
         } catch (\Exception $e) {
             DB::rollback();
-            return redirect()->back()->with('error', 'Erro ao deletar Aluguel: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Erro ao deletar Aluguel: '.$e->getMessage());
         }
     }
 
@@ -370,12 +369,12 @@ class AluguelController extends Controller
         try {
             $cardapio = Cardapio::with([
                 'secoes.categorias.itens',
-                'opcoes.categorias.itens'
+                'opcoes.categorias.itens',
             ])->findOrFail($cardapioId);
 
             return response()->json([
                 'secoes' => $cardapio->secoes,
-                'opcoes' => $cardapio->opcoes
+                'opcoes' => $cardapio->opcoes,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Cardápio não encontrado'], 404);
@@ -384,9 +383,9 @@ class AluguelController extends Controller
 
     private function calcularValorAluguel($data_inicio, $data_fim, $valor_semana, $valor_fim, $capela, $tipo_evento)
     {
-        $inicio = \Carbon\Carbon::parse($data_inicio);
-        $fim = \Carbon\Carbon::parse($data_fim);
-        $periodo = \Carbon\CarbonPeriod::create($inicio, $fim);
+        $inicio = Carbon::parse($data_inicio);
+        $fim = Carbon::parse($data_fim);
+        $periodo = CarbonPeriod::create($inicio, $fim);
         $total = 0;
 
         if ($capela && $tipo_evento == 'casamento') {
@@ -404,7 +403,6 @@ class AluguelController extends Controller
                 $total += in_array($data->dayOfWeek, [1, 2, 3, 4]) ? $valor_semana : $valor_fim;
             }
         }
-
 
         return $total;
     }
@@ -424,7 +422,6 @@ class AluguelController extends Controller
 
         return response()->json(['total' => $total]);
     }
-
 
     /**
      * Salva os adicionais escolhidos no aluguel
@@ -504,8 +501,9 @@ class AluguelController extends Controller
             ->where('usuario_id', Auth::id())
             ->first();
 
-        if (!$caixa) {
+        if (! $caixa) {
             session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
+
             return;
         }
 
@@ -522,23 +520,24 @@ class AluguelController extends Controller
 
             $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
 
-            if (!$movimentoId) {
+            if (! $movimentoId) {
                 Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (aluguel #{$aluguel->id}, forma de pagamento '{$formaPagamento->descricao}').");
 
                 continue; // pula se não encontrar o movimento
             }
 
+            $planoContaId = PlanoDeConta::idPorDescricao('Aluguel de Espaços', $aluguel->empresa_id, 'receita');
+
             app(CaixaService::class)->inserirMovimentacao($caixa, [
-                'descricao' => 'Aluguel #' . $aluguel->id,
+                'descricao' => 'Aluguel #'.$aluguel->id,
                 'valor' => $pagamento->valor,
                 'valor_total' => $pagamento->valor,
                 'tipo' => 'entrada',
                 'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => 42, // 42->Receita/Aluguel
+                'plano_de_conta_id' => $planoContaId,
             ]);
         }
     }
-
 
     private function criarContasAReceber(Aluguel $aluguel, float $valorTotal, int $formaPagamentoId, int $qtdParcelas)
     {
@@ -558,11 +557,11 @@ class AluguelController extends Controller
                 'cliente_id' => $clienteId,
                 'empresa_id' => $empresaId,
                 'grupo_id' => $grupoId,
-                'plano_de_contas_id' => 1, // ou qualquer plano default
+                'plano_de_contas_id' => PlanoDeConta::idPorDescricao('Aluguel de Espaços', $empresaId, 'receita'),
                 'venda_id' => null,
             ]);
 
-            $vencimento = \App\Services\ContasService::proximoMes($vencimento);
+            $vencimento = ContasService::proximoMes($vencimento);
         }
     }
 }

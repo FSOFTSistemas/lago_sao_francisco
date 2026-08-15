@@ -43,7 +43,8 @@
                                 <label for="tipo">Situação</label>
                                 <select class="form-control" id="status" name="status" required>
                                     <option value="pendente" {{ old('status', $contasAReceber->status) == 'pendente' ? 'selected' : '' }}>Pendente</option>
-                                    <option value="finalizado" {{ old('status', $contasAReceber->status) == 'finalizado' ? 'selected' : '' }}>Finalizado</option>
+                                    <option value="recebido" {{ old('status', $contasAReceber->status) == 'recebido' ? 'selected' : '' }}>Recebido</option>
+                                    <option value="atrasado" {{ old('status', $contasAReceber->status) == 'atrasado' ? 'selected' : '' }}>Atrasado</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -95,4 +96,3 @@
         </div>
     </div>
 </div>
-

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DayUse;
-use App\Http\Controllers\Controller;
 use App\Models\Caixa;
+use App\Models\DayUse;
 use App\Models\DayUsePag;
 use App\Models\FluxoCaixa;
 use App\Models\Funcionario;
 use App\Models\LogDayuse;
 use App\Models\MovDayUse;
 use App\Models\Movimento;
+use App\Models\PlanoDeConta;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class DayUseController extends Controller
 {
@@ -48,7 +47,7 @@ class DayUseController extends Controller
             'vendedor',
             'itens.item',
             'formaPag.formaPagamento',
-            'souvenirs'
+            'souvenirs',
         ])
             ->whereBetween('data', [$dataInicio, $dataFim])
             ->orderByDesc('data')
@@ -58,6 +57,7 @@ class DayUseController extends Controller
 
                 $valorSouvenirs = $dayuse->souvenirs->sum(function ($souvenir) {
                     $valorUnitario = $souvenir->pivot->valor_unitario ?? $souvenir->valor;
+
                     return $valorUnitario * ($souvenir->pivot->quantidade ?? 0);
                 });
 
@@ -67,10 +67,9 @@ class DayUseController extends Controller
                     + $valorSouvenirs;
 
                 $dayuse->saldo = $valorLiquido - $valorPago;
+
                 return $dayuse;
             });
-
-
 
         // Agrupar MovDayUse por item para contagem dos cards
         $movimentos = MovDayUse::with('item')
@@ -83,6 +82,7 @@ class DayUseController extends Controller
             ->map(function ($mov) {
                 $mov->item_nome = $mov->item->descricao ?? 'Item';
                 $mov->passeio = $mov->item->passeio ?? false;
+
                 return $mov;
             });
 
@@ -91,7 +91,7 @@ class DayUseController extends Controller
         $fimMesAtual = now()->endOfMonth()->toDateString();
 
         $movimentosPorDia = MovDayUse::with('item', 'dayuse')
-            ->whereHas('dayuse', function ($query) use ($inicioMesAtual,  $fimMesAtual) {
+            ->whereHas('dayuse', function ($query) use ($inicioMesAtual, $fimMesAtual) {
                 $query->whereBetween('data', [$inicioMesAtual,  $fimMesAtual]);
             })
             ->get()
@@ -115,7 +115,7 @@ class DayUseController extends Controller
         // Preenche dias ausentes com zero
         foreach ($itens as $nome => $datas) {
             foreach ($labels as $dataLabel) {
-                if (!isset($itens[$nome][$dataLabel])) {
+                if (! isset($itens[$nome][$dataLabel])) {
                     $itens[$nome][$dataLabel] = 0;
                 }
             }
@@ -141,7 +141,6 @@ class DayUseController extends Controller
         ));
     }
 
-
     public function deletarDayuseSemPag()
     {
         try {
@@ -151,11 +150,11 @@ class DayUseController extends Controller
             foreach ($dayuses as $dayuse) {
                 $temMov = MovDayUse::where('dayuse_id', $dayuse->id)->exists();
                 $temPag = DayUsePag::where('dayuse_id', $dayuse->id)->exists();
-                if ($temMov && !$temPag) {
+                if ($temMov && ! $temPag) {
                     $dayuse->delete();
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
     }
@@ -202,8 +201,9 @@ class DayUseController extends Controller
         try {
             $dayuse = DayUse::findOrFail($id);
             $dayuse->delete();
+
             return redirect()->route('dayuse.index')->with('success', 'Day Use deletado com sucesso!');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()->back()->with('error', 'Erro ao deletar Day Use!', $e);
         }
     }
@@ -228,7 +228,7 @@ class DayUseController extends Controller
                     'supervisor' => $func->nome,
                     'acao' => 'Exclusão de DayUse',
                     'data_hora' => now(),
-                    'observacao' => 'DayUse #' . $dayUse->id . ' excluído.',
+                    'observacao' => 'DayUse #'.$dayUse->id.' excluído.',
                 ]);
 
                 // Buscar caixa aberto da empresa
@@ -244,7 +244,7 @@ class DayUseController extends Controller
 
                         if ($movimento) {
                             FluxoCaixa::create([
-                                'descricao' => 'Cancelamento DayUse #' . $dayUse->id,
+                                'descricao' => 'Cancelamento DayUse #'.$dayUse->id,
                                 'valor' => -$pagamento->valor,
                                 'valor_total' => -$pagamento->valor,
                                 'tipo' => 'cancelamento',
@@ -253,7 +253,7 @@ class DayUseController extends Controller
                                 'empresa_id' => Auth::user()->empresa_id,
                                 'data' => now(),
                                 'movimento_id' => $movimento->id,
-                                'plano_de_conta_id' => 52, // Receita->DAYUSE
+                                'plano_de_conta_id' => PlanoDeConta::idPorDescricao(['DAY USE', 'Entradas Day Use Parque'], Auth::user()->empresa_id, 'receita'),
                             ]);
                         } else {
                             Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para 'cancelamento-{$slug}' (DayUse #{$dayUse->id}, forma de pagamento '{$pagamento->formaPagamento->descricao}').");

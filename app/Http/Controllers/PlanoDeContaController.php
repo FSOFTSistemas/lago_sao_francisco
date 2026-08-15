@@ -17,6 +17,7 @@ class PlanoDeContaController extends Controller
     {
         $this->planoDeContasService = $planoDeContasService;
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -24,7 +25,18 @@ class PlanoDeContaController extends Controller
     {
         $user = Auth::user();
         $empresas = Empresa::all();
-        $planoDeContas = PlanoDeConta::all();
+        $empresaSelecionada = session('empresa_id');
+        $empresaId = $user->hasRole('Master') ? $empresaSelecionada : $user->empresa_id;
+        $planoDeContas = PlanoDeConta::query()
+            ->when($empresaId, function ($query) use ($empresaId) {
+                $query->where(function ($q) use ($empresaId) {
+                    $q->where('empresa_id', $empresaId)
+                        ->orWhereNull('empresa_id');
+                });
+            })
+            ->orderBy('descricao')
+            ->get();
+
         return view('planoDeConta.index', compact('planoDeContas', 'empresas', 'user'));
     }
 
@@ -42,9 +54,11 @@ class PlanoDeContaController extends Controller
             ]);
             $request['empresa_id'] = Auth::user()->empresa_id;
             PlanoDeConta::create($request->all());
+
             return redirect()->route('planoDeConta.index')->with('success', 'Plano de Conta criado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
+
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
@@ -66,9 +80,11 @@ class PlanoDeContaController extends Controller
                 'tipo' => $request->tipo,
                 'plano_de_conta_pai' => $request->plano_de_conta_pai,
             ]);
+
             return redirect()->route('planoDeConta.index')->with('success', 'Plano de Conta atualizado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
+
             return redirect()->back()->with('error', 'Erro ao validar dados');
         }
     }
@@ -81,9 +97,11 @@ class PlanoDeContaController extends Controller
         try {
             $planoDeConta = PlanoDeConta::find($id);
             $planoDeConta->delete();
+
             return redirect()->route('planoDeConta.index')->with('success', 'Plano de Conta deletado com sucesso');
         } catch (\Exception $e) {
             dd($e)->getMessage();
+
             return redirect()->back()->with('error', 'Erro ao deletar Plano de Conta');
         }
     }
@@ -93,12 +111,12 @@ class PlanoDeContaController extends Controller
         try {
             $request->validate([
                 'data_inicio' => 'nullable|date',
-                'data_fim'    => 'nullable|date|after_or_equal:data_inicio',
+                'data_fim' => 'nullable|date|after_or_equal:data_inicio',
             ]);
-            
+
             // Pega as datas do formulário
             $dataInicio = $request->input('data_inicio');
-            $dataFim    = $request->input('data_fim');
+            $dataFim = $request->input('data_fim');
 
             // ===================================================================
             // LÓGICA PARA O FILTRO PADRÃO DO MÊS ATUAL
@@ -149,9 +167,9 @@ class PlanoDeContaController extends Controller
 
             // Envia os dados para a view
             return view('relatorios.plano_de_contas', compact('receitas', 'despesas', 'dataInicio', 'dataFim'));
-            
+
         } catch (\Exception $e) {
-            dd($e); 
+            dd($e);
         }
     }
 }

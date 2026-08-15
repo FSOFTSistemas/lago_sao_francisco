@@ -3,6 +3,7 @@
     $hasChildren = !empty($node['filhos']);
     $totalCumulativo = $node['total_cumulativo'];
     $collapseId = 'collapse-' . $conta->id;
+    $prefixoValor = $conta->tipo === 'receita' && $totalCumulativo < 0 ? '- ' : '';
 @endphp
 
 <div class="card mb-1">
@@ -23,7 +24,7 @@
                     {{ $conta->descricao }}
                 </span>
                 <span class="font-weight-bold {{ $totalCumulativo >= 0 ? 'text-primary' : 'text-danger' }}">
-                    R$ {{ number_format(abs($totalCumulativo), 2, ',', '.') }}
+                    {{ $prefixoValor }}R$ {{ number_format(abs($totalCumulativo), 2, ',', '.') }}
                 </span>
             </button>
         </h5>
