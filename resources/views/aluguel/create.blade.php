@@ -68,7 +68,7 @@
                         <div class="form-group row">
                             <label for="cliente_id" class="col-md-3 label-control">* Cliente</label>
                             <div class="col-sm-4">
-                                <select class="form-control select2" name="cliente_id" id="cliente_id" style="width: 100%;">
+                                <select class="form-control select2" name="cliente_id" id="cliente_id" style="width: 100%;" required>
                                     @if ($clienteSelecionadoId && $clienteSelecionadoNome)
                                         <option value="{{ $clienteSelecionadoId }}" selected>{{ $clienteSelecionadoNome }}
                                         </option>
@@ -261,7 +261,7 @@
                             <label for="numero_pessoas_buffet" class="col-md-3 label-control">* Número de Pessoas:</label>
                             <div class="col-md-3">
                                 <input type="number" name="numero_pessoas_buffet" id="numero_pessoas_buffet"
-                                    class="form-control"
+                                    class="form-control" min="1"
                                     value="{{ old('numero_pessoas_buffet', $aluguel->numero_pessoas_buffet ?? '') }}">
                             </div>
                         </div>
@@ -1610,7 +1610,141 @@
     </script>
 
     <script>
+        function limparValidacaoEtapa(tabPane) {
+            tabPane.querySelectorAll('.is-invalid').forEach(function(campo) {
+                campo.classList.remove('is-invalid');
+            });
+            tabPane.querySelectorAll('.step-validation-alert').forEach(function(alerta) {
+                alerta.remove();
+            });
+            tabPane.querySelectorAll('.step-invalid-group').forEach(function(grupo) {
+                grupo.classList.remove('step-invalid-group');
+            });
+        }
+
+        function exibirErrosEtapa(tabPane, erros) {
+            const alerta = document.createElement('div');
+            alerta.className = 'alert alert-danger step-validation-alert';
+            alerta.setAttribute('role', 'alert');
+            alerta.innerHTML = '<i class="fas fa-exclamation-circle mr-2" aria-hidden="true"></i>' +
+                '<strong>Preencha os campos obrigatórios antes de continuar:</strong><ul class="mb-0 mt-2">' +
+                erros.map(function(erro) { return '<li>' + erro.mensagem + '</li>'; }).join('') + '</ul>';
+
+            tabPane.insertBefore(alerta, tabPane.firstChild);
+
+            erros.forEach(function(erro) {
+                if (!erro.campo) return;
+
+                erro.campo.classList.add('is-invalid');
+                const grupo = erro.campo.closest('.form-group, .card');
+                if (grupo) grupo.classList.add('step-invalid-group');
+
+                if ($(erro.campo).hasClass('select2')) {
+                    $(erro.campo).next('.select2-container').find('.select2-selection').addClass('is-invalid');
+                }
+            });
+
+            alerta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const primeiroCampoVisivel = erros.map(function(erro) { return erro.campo; })
+                .find(function(campo) { return campo && campo.type !== 'hidden'; });
+            if (primeiroCampoVisivel) primeiroCampoVisivel.focus();
+        }
+
+        function validarEtapaReserva() {
+            const tabPane = document.getElementById('info');
+            limparValidacaoEtapa(tabPane);
+            $('.select2-selection.is-invalid').removeClass('is-invalid');
+
+            const cliente = document.getElementById('cliente_id');
+            const tipoEvento = document.getElementById('tipo_evento');
+            const dataInicio = document.getElementById('data_inicio');
+            const dataFim = document.getElementById('data_fim');
+            const espaco = document.getElementById('espaco_id_hidden');
+            const erros = [];
+
+            if (!cliente.value) erros.push({ campo: cliente, mensagem: 'Selecione o cliente.' });
+            if (!tipoEvento.value) erros.push({ campo: tipoEvento, mensagem: 'Selecione o tipo de evento.' });
+            if (!dataInicio.value || !dataFim.value || !espaco.value) {
+                erros.push({ campo: espaco, mensagem: 'Selecione o período e o espaço no mapa de reservas.' });
+                document.getElementById('reservation_map_container').classList.add('step-invalid-group');
+            }
+            if (dataInicio.value && dataFim.value && dataFim.value < dataInicio.value) {
+                erros.push({ campo: dataFim, mensagem: 'A data final não pode ser anterior à data inicial.' });
+            }
+
+            if (erros.length) {
+                exibirErrosEtapa(tabPane, erros);
+                return false;
+            }
+
+            return true;
+        }
+
+        function validarEtapaBuffet() {
+            const tabPane = document.getElementById('tab-buffet');
+            limparValidacaoEtapa(tabPane);
+
+            const numeroPessoas = document.getElementById('numero_pessoas_buffet');
+            const cardapio = document.getElementById('cardapio_id');
+            const erros = [];
+
+            if (!numeroPessoas.value || Number(numeroPessoas.value) < 1) {
+                erros.push({ campo: numeroPessoas, mensagem: 'Informe o número de pessoas do buffet.' });
+            }
+            if (!cardapio.value) erros.push({ campo: cardapio, mensagem: 'Selecione o cardápio.' });
+
+            if (erros.length) {
+                exibirErrosEtapa(tabPane, erros);
+                return false;
+            }
+
+            return true;
+        }
+
+        document.querySelectorAll('#info input, #info select, #tab-buffet input, #tab-buffet select').forEach(function(campo) {
+            campo.addEventListener('change', function() {
+                campo.classList.remove('is-invalid');
+                if ($(campo).hasClass('select2')) {
+                    $(campo).next('.select2-container').find('.select2-selection').removeClass('is-invalid');
+                }
+            });
+        });
+
+        document.querySelectorAll('#aluguelTabs a[data-toggle="tab"]').forEach(function(aba) {
+            aba.addEventListener('click', function(event) {
+                const abaAtiva = document.querySelector('#aluguelTabsContent .tab-pane.active');
+                const destino = aba.getAttribute('href');
+
+                if (abaAtiva && abaAtiva.id === 'info' && destino !== '#info' && !validarEtapaReserva()) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    return;
+                }
+
+                if (abaAtiva && abaAtiva.id === 'tab-buffet' && destino !== '#tab-buffet' &&
+                    document.getElementById('ativoSwitch').checked && !validarEtapaBuffet()) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
+        });
+
+        document.getElementById('aluguelform').addEventListener('submit', function(event) {
+            if (!validarEtapaReserva()) {
+                event.preventDefault();
+                $('#info-tab').tab('show');
+                return;
+            }
+
+            if (document.getElementById('ativoSwitch').checked && !validarEtapaBuffet()) {
+                event.preventDefault();
+                $('#buffet-tab').tab('show');
+            }
+        });
+
         document.getElementById('btnProximo').addEventListener('click', function() {
+            if (!validarEtapaReserva()) return;
+
             const buffetAtivo = document.getElementById('ativoSwitch').checked;
 
             if (buffetAtivo) {
@@ -1625,6 +1759,8 @@
         });
 
         document.getElementById('btnProximoBuffet').addEventListener('click', function() {
+            if (!validarEtapaBuffet()) return;
+
             const abaAdicional = document.querySelector('a[href="#tab-adicional"]');
             if (abaAdicional) {
                 abaAdicional.click();
@@ -1736,6 +1872,26 @@
 @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
+        .step-validation-alert {
+            border: 0;
+            border-left: 4px solid #dc3545;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, .12);
+        }
+
+        .step-validation-alert ul {
+            padding-left: 1.25rem;
+        }
+
+        .step-invalid-group {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 .15rem rgba(220, 53, 69, .12);
+        }
+
+        .select2-selection.is-invalid {
+            border-color: #dc3545 !important;
+        }
+
         /* Estilos para o container do mapa */
         #reservation_map_container {
             overflow-x: auto;
