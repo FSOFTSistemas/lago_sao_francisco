@@ -80,13 +80,14 @@ class EventoController extends Controller
                     'color' => match ($excursao->status) {
                         Excursao::STATUS_REALIZADO => '#28a745',
                         Excursao::STATUS_CANCELADO => '#dc3545',
+                        Excursao::STATUS_EM_ANDAMENTO => '#007bff',
                         default => '#6f42c1',
                     },
                     'extendedProps' => [
                         'categoria' => 'excursao',
                         'tipo' => 'Excursão',
                         'qtd_pessoas' => $excursao->qtd_pessoas,
-                        'status' => ucfirst(strtolower($excursao->status)),
+                        'status' => ucfirst(strtolower(str_replace('_', ' ', $excursao->status))),
                         'responsavel' => $excursao->responsavel,
                         'telefone_responsavel' => $excursao->telefone_responsavel,
                         'descricao' => $excursao->descricao,

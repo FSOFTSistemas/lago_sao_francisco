@@ -169,9 +169,12 @@ Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
 Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('eventos.excursoes.index');
 Route::get('/eventos/excursoes/cadastrar', [ExcursaoController::class, 'create'])->name('eventos.excursoes.create');
 Route::post('/eventos/excursoes', [ExcursaoController::class, 'store'])->name('eventos.excursoes.store');
+Route::get('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'show'])->name('eventos.excursoes.show');
 Route::get('/eventos/excursoes/{excursao}/editar', [ExcursaoController::class, 'edit'])->name('eventos.excursoes.edit');
 Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'])->name('eventos.excursoes.update');
 Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
+Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
+Route::patch('/eventos/excursoes/{excursao}/finalizar', [ExcursaoController::class, 'finish'])->name('eventos.excursoes.finish');
 Route::get('/eventos/planner', [EventoController::class, 'planner'])->name('eventos.planner');
 Route::get('/eventos/planner/eventos', [EventoController::class, 'plannerEventos'])->name('eventos.planner.eventos');
 

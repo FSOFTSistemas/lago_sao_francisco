@@ -29,6 +29,15 @@
         </div>
     @endif
 
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
     <div class="card card-outline card-secondary shadow-sm">
         <div class="card-body">
             <form action="{{ route('eventos.excursoes.index') }}" method="GET">
@@ -38,6 +47,7 @@
                         <select class="form-control" id="filtro-status" name="status">
                             <option value="">Todos os status</option>
                             <option value="AGENDADO" @selected($status === 'AGENDADO')>Agendado</option>
+                            <option value="EM_ANDAMENTO" @selected($status === 'EM_ANDAMENTO')>Em andamento</option>
                             <option value="REALIZADO" @selected($status === 'REALIZADO')>Realizado</option>
                             <option value="CANCELADO" @selected($status === 'CANCELADO')>Cancelado</option>
                         </select>
@@ -109,7 +119,7 @@
             <h3 class="card-title">
                 <i class="fas fa-list mr-2"></i>Excursões cadastradas
                 @if ($status)
-                    <span class="badge badge-light ml-2">{{ ucfirst(strtolower($status)) }}</span>
+                    <span class="badge badge-light ml-2">{{ ucfirst(strtolower(str_replace('_', ' ', $status))) }}</span>
                 @endif
                 @if ($busca !== '')
                     <span class="badge badge-light ml-1">Busca: {{ $busca }}</span>
@@ -150,40 +160,45 @@
                                         $statusClass = match ($excursao->status) {
                                             'REALIZADO' => 'badge-success',
                                             'CANCELADO' => 'badge-danger',
+                                            'EM_ANDAMENTO' => 'badge-primary',
                                             default => 'badge-warning',
                                         };
                                     @endphp
-                                    <span class="badge {{ $statusClass }} px-2 py-1">{{ ucfirst(strtolower($excursao->status)) }}</span>
+                                    <span class="badge {{ $statusClass }} px-2 py-1">{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}</span>
                                 </td>
                                 <td class="align-middle text-right font-weight-bold pr-4">
                                     R$ {{ number_format($excursao->valor, 2, ',', '.') }}
                                 </td>
                                 <td class="align-middle text-center text-nowrap">
-                                    <a
-                                        href="{{ route('eventos.excursoes.edit', $excursao) }}"
-                                        class="btn btn-sm btn-outline-primary"
-                                        title="Editar excursão #{{ $excursao->id }}"
-                                        aria-label="Editar excursão #{{ $excursao->id }}"
-                                    >
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <form
-                                        action="{{ route('eventos.excursoes.destroy', $excursao) }}"
-                                        method="POST"
-                                        class="d-inline"
-                                        onsubmit="return confirm('Deseja realmente excluir esta excursão? Esta ação não poderá ser desfeita.');"
-                                    >
-                                        @csrf
-                                        @method('DELETE')
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                            title="Excluir excursão #{{ $excursao->id }}"
-                                            aria-label="Excluir excursão #{{ $excursao->id }}"
-                                        >
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    @if ($excursao->status === 'REALIZADO')
+                                        <a href="{{ route('eventos.excursoes.show', $excursao) }}" class="btn btn-sm btn-outline-secondary" title="Visualizar excursão" aria-label="Visualizar excursão #{{ $excursao->id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('eventos.excursoes.edit', $excursao) }}" class="btn btn-sm btn-outline-primary" title="Editar excursão" aria-label="Editar excursão #{{ $excursao->id }}">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        @if ($excursao->status === 'AGENDADO')
+                                            <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja iniciar esta excursão?');">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-success" title="Iniciar excursão" aria-label="Iniciar excursão #{{ $excursao->id }}"><i class="fas fa-play"></i></button>
+                                            </form>
+                                        @elseif ($excursao->status === 'EM_ANDAMENTO')
+                                            <form action="{{ route('eventos.excursoes.finish', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja finalizar esta excursão? Após finalizar, ela não poderá ser alterada.');">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-success" title="Finalizar excursão" aria-label="Finalizar excursão #{{ $excursao->id }}"><i class="fas fa-flag-checkered"></i></button>
+                                            </form>
+                                        @endif
+
+                                        <form action="{{ route('eventos.excursoes.destroy', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta excursão? Esta ação não poderá ser desfeita.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir excursão" aria-label="Excluir excursão #{{ $excursao->id }}"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

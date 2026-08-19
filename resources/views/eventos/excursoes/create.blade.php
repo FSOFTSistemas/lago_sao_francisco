@@ -1,12 +1,14 @@
 @extends('adminlte::page')
 
-@section('title', isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão')
+@php($somenteLeitura = $visualizacao ?? false)
+
+@section('title', $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão'))
 
 @section('content_header')
     <div class="d-flex align-items-center justify-content-between">
         <div>
-            <h1 class="mb-1">{{ isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão' }}</h1>
-            <p class="text-muted mb-0">{{ isset($excursao) ? 'Atualize os dados da excursão selecionada.' : 'Informe os dados da excursão para incluí-la nos eventos.' }}</p>
+            <h1 class="mb-1">{{ $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão') }}</h1>
+            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados da excursão finalizada.' : (isset($excursao) ? 'Atualize os dados da excursão selecionada.' : 'Informe os dados da excursão para incluí-la nos eventos.') }}</p>
         </div>
         <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Voltar para excursões
@@ -29,7 +31,7 @@
             <div class="card card-outline card-primary shadow-sm">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-bus mr-2"></i>{{ isset($excursao) ? 'Editar dados da excursão' : 'Dados da excursão' }}
+                        <i class="fas fa-bus mr-2"></i>{{ $somenteLeitura ? 'Dados da excursão' : (isset($excursao) ? 'Editar dados da excursão' : 'Dados da excursão') }}
                     </h3>
                 </div>
 
@@ -63,7 +65,7 @@
                                     id="data"
                                     name="data"
                                     value="{{ old('data', isset($excursao) ? $excursao->data->format('Y-m-d') : '') }}"
-                                    required
+                                    required @disabled($somenteLeitura)
                                     autofocus
                                 >
                                 @error('data')
@@ -88,7 +90,7 @@
                                         min="1"
                                         step="1"
                                         placeholder="Ex.: 40"
-                                        required
+                                        required @disabled($somenteLeitura)
                                     >
                                     @error('qtd_pessoas')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -112,7 +114,7 @@
                                         step="0.01"
                                         inputmode="decimal"
                                         placeholder="0,00"
-                                        required
+                                        required @disabled($somenteLeitura)
                                     >
                                     @error('valor')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -122,22 +124,12 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="status">Status <span class="text-danger">*</span></label>
-                            <select
-                                class="form-control @error('status') is-invalid @enderror"
-                                id="status"
-                                name="status"
-                                required
-                            >
-                                <option value="AGENDADO" @selected(old('status', $excursao->status ?? 'AGENDADO') === 'AGENDADO')>Agendado</option>
-                                <option value="REALIZADO" @selected(old('status', $excursao->status ?? '') === 'REALIZADO')>Realizado</option>
-                                <option value="CANCELADO" @selected(old('status', $excursao->status ?? '') === 'CANCELADO')>Cancelado</option>
-                            </select>
-                            @error('status')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        @isset($excursao)
+                            <div class="form-group">
+                                <label>Status</label>
+                                <input class="form-control" value="{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}" disabled>
+                            </div>
+                        @endisset
 
                         <div class="form-row">
                             <div class="form-group col-md-7">
@@ -150,7 +142,7 @@
                                     value="{{ old('responsavel', $excursao->responsavel ?? '') }}"
                                     maxlength="255"
                                     placeholder="Nome do responsável pela excursão"
-                                    required
+                                    required @disabled($somenteLeitura)
                                 >
                                 @error('responsavel')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -167,7 +159,7 @@
                                     value="{{ old('telefone_responsavel', $excursao->telefone_responsavel ?? '') }}"
                                     maxlength="20"
                                     placeholder="(00) 00000-0000"
-                                    required
+                                    required @disabled($somenteLeitura)
                                 >
                                 @error('telefone_responsavel')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -184,7 +176,7 @@
                                 rows="4"
                                 maxlength="1000"
                                 placeholder="Descreva a excursão"
-                                required
+                                required @disabled($somenteLeitura)
                             >{{ old('descricao', $excursao->descricao ?? '') }}</textarea>
                             @error('descricao')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -194,9 +186,11 @@
 
                     <div class="card-footer d-flex justify-content-between">
                         <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-light border">Cancelar</a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="fas fa-save mr-1"></i> {{ isset($excursao) ? 'Salvar alterações' : 'Cadastrar excursão' }}
-                        </button>
+                        @unless($somenteLeitura)
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save mr-1"></i> {{ isset($excursao) ? 'Salvar alterações' : 'Cadastrar excursão' }}
+                            </button>
+                        @endunless
                     </div>
                 </form>
             </div>

@@ -125,7 +125,6 @@ class ExcursaoCadastroTest extends TestCase
                 'data' => '',
                 'qtd_pessoas' => 0,
                 'valor' => -1,
-                'status' => 'INVALIDO',
                 'responsavel' => '',
                 'telefone_responsavel' => '',
                 'descricao' => '',
@@ -136,7 +135,6 @@ class ExcursaoCadastroTest extends TestCase
                 'data',
                 'qtd_pessoas',
                 'valor',
-                'status',
                 'responsavel',
                 'telefone_responsavel',
                 'descricao',
@@ -184,7 +182,6 @@ class ExcursaoCadastroTest extends TestCase
             'data' => '2026-09-20',
             'qtd_pessoas' => 45,
             'valor' => 3000,
-            'status' => 'REALIZADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
             'descricao' => 'Excursão empresarial atualizada',
@@ -196,7 +193,7 @@ class ExcursaoCadastroTest extends TestCase
             'data' => '2026-09-20',
             'qtd_pessoas' => 45,
             'valor' => 3000,
-            'status' => 'REALIZADO',
+            'status' => 'AGENDADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
             'descricao' => 'Excursão empresarial atualizada',
@@ -219,5 +216,65 @@ class ExcursaoCadastroTest extends TestCase
 
         $response->assertRedirect(route('eventos.excursoes.index'));
         $this->assertDatabaseMissing('excursoes', ['id' => $excursao->id]);
+    }
+
+    public function test_uma_excursao_pode_ser_iniciada_e_finalizada(): void
+    {
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor' => 2500.50,
+            'status' => 'AGENDADO',
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão escolar',
+        ]);
+
+        $this->patch(route('eventos.excursoes.start', $excursao))
+            ->assertRedirect(route('eventos.excursoes.index'));
+        $this->assertDatabaseHas('excursoes', [
+            'id' => $excursao->id,
+            'status' => 'EM_ANDAMENTO',
+        ]);
+
+        $this->patch(route('eventos.excursoes.finish', $excursao))
+            ->assertRedirect(route('eventos.excursoes.index'));
+        $this->assertDatabaseHas('excursoes', [
+            'id' => $excursao->id,
+            'status' => 'REALIZADO',
+        ]);
+    }
+
+    public function test_uma_excursao_finalizada_nao_pode_ser_alterada_ou_excluida(): void
+    {
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor' => 2500.50,
+            'status' => 'REALIZADO',
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão finalizada',
+        ]);
+
+        $dadosAlterados = [
+            'data' => '2026-10-01',
+            'qtd_pessoas' => 50,
+            'valor' => 3000,
+            'responsavel' => 'Outro responsável',
+            'telefone_responsavel' => '(11) 98888-8888',
+            'descricao' => 'Tentativa de alteração',
+        ];
+
+        $this->put(route('eventos.excursoes.update', $excursao), $dadosAlterados)
+            ->assertSessionHas('error');
+        $this->delete(route('eventos.excursoes.destroy', $excursao))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('excursoes', [
+            'id' => $excursao->id,
+            'data' => '2026-09-15',
+            'status' => 'REALIZADO',
+        ]);
     }
 }

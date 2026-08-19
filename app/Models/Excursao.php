@@ -13,10 +13,13 @@ class Excursao extends Model
 
     public const STATUS_REALIZADO = 'REALIZADO';
 
+    public const STATUS_EM_ANDAMENTO = 'EM_ANDAMENTO';
+
     public const STATUS_CANCELADO = 'CANCELADO';
 
     public const STATUS = [
         self::STATUS_AGENDADO,
+        self::STATUS_EM_ANDAMENTO,
         self::STATUS_REALIZADO,
         self::STATUS_CANCELADO,
     ];

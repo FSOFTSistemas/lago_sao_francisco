@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Excursao;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ExcursaoController extends Controller
@@ -49,6 +48,7 @@ class ExcursaoController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $this->validateRequest($request);
+        $validated['status'] = Excursao::STATUS_AGENDADO;
 
         Excursao::create($validated);
 
@@ -57,13 +57,29 @@ class ExcursaoController extends Controller
             ->with('success', 'Excursão cadastrada com sucesso!');
     }
 
-    public function edit(Excursao $excursao): View
+    public function show(Excursao $excursao): View
     {
+        return view('eventos.excursoes.create', [
+            'excursao' => $excursao,
+            'visualizacao' => true,
+        ]);
+    }
+
+    public function edit(Excursao $excursao): View|RedirectResponse
+    {
+        if ($excursao->status === Excursao::STATUS_REALIZADO) {
+            return redirect()->route('eventos.excursoes.show', $excursao);
+        }
+
         return view('eventos.excursoes.create', compact('excursao'));
     }
 
     public function update(Request $request, Excursao $excursao): RedirectResponse
     {
+        if ($excursao->status === Excursao::STATUS_REALIZADO) {
+            return $this->finishedExcursionRedirect();
+        }
+
         $excursao->update($this->validateRequest($request));
 
         return redirect()
@@ -73,11 +89,45 @@ class ExcursaoController extends Controller
 
     public function destroy(Excursao $excursao): RedirectResponse
     {
+        if ($excursao->status === Excursao::STATUS_REALIZADO) {
+            return $this->finishedExcursionRedirect();
+        }
+
         $excursao->delete();
 
         return redirect()
             ->route('eventos.excursoes.index')
             ->with('success', 'Excursão excluída com sucesso!');
+    }
+
+    public function start(Excursao $excursao): RedirectResponse
+    {
+        if ($excursao->status !== Excursao::STATUS_AGENDADO) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'Somente excursões agendadas podem ser iniciadas.');
+        }
+
+        $excursao->update(['status' => Excursao::STATUS_EM_ANDAMENTO]);
+
+        return redirect()
+            ->route('eventos.excursoes.index')
+            ->with('success', 'Excursão iniciada com sucesso!');
+    }
+
+    public function finish(Excursao $excursao): RedirectResponse
+    {
+        if ($excursao->status !== Excursao::STATUS_EM_ANDAMENTO) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'Somente excursões em andamento podem ser finalizadas.');
+        }
+
+        $excursao->update(['status' => Excursao::STATUS_REALIZADO]);
+
+        return redirect()
+            ->route('eventos.excursoes.index')
+            ->with('success', 'Excursão finalizada com sucesso!');
     }
 
     private function validateRequest(Request $request): array
@@ -87,7 +137,6 @@ class ExcursaoController extends Controller
                 'data' => ['required', 'date'],
                 'qtd_pessoas' => ['required', 'integer', 'min:1'],
                 'valor' => ['required', 'numeric', 'min:0'],
-                'status' => ['required', Rule::in(Excursao::STATUS)],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
                 'descricao' => ['required', 'string', 'max:1000'],
@@ -101,8 +150,6 @@ class ExcursaoController extends Controller
                 'valor.required' => 'Informe o valor da excursão.',
                 'valor.numeric' => 'Informe um valor válido.',
                 'valor.min' => 'O valor não pode ser negativo.',
-                'status.required' => 'Informe o status da excursão.',
-                'status.in' => 'Informe um status válido para a excursão.',
                 'responsavel.required' => 'Informe o responsável pela excursão.',
                 'responsavel.max' => 'O nome do responsável deve ter no máximo 255 caracteres.',
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',
@@ -111,5 +158,12 @@ class ExcursaoController extends Controller
                 'descricao.max' => 'A descrição deve ter no máximo 1000 caracteres.',
             ],
         );
+    }
+
+    private function finishedExcursionRedirect(): RedirectResponse
+    {
+        return redirect()
+            ->route('eventos.excursoes.index')
+            ->with('error', 'Excursões finalizadas estão disponíveis apenas para visualização.');
     }
 }
