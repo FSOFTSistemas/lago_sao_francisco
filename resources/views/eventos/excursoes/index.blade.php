@@ -29,6 +29,34 @@
         </div>
     @endif
 
+    <div class="card card-outline card-secondary shadow-sm">
+        <div class="card-body">
+            <form action="{{ route('eventos.excursoes.index') }}" method="GET">
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-5 mb-md-0">
+                        <label for="filtro-status">Status</label>
+                        <select class="form-control" id="filtro-status" name="status">
+                            <option value="">Todos os status</option>
+                            <option value="AGENDADO" @selected($status === 'AGENDADO')>Agendado</option>
+                            <option value="REALIZADO" @selected($status === 'REALIZADO')>Realizado</option>
+                            <option value="CANCELADO" @selected($status === 'CANCELADO')>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-7 mb-0">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter mr-1"></i> Filtrar
+                        </button>
+                        @if ($status)
+                            <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary ml-1">
+                                <i class="fas fa-times mr-1"></i> Limpar filtro
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-4">
             <div class="info-box shadow-sm">
@@ -61,7 +89,12 @@
 
     <div class="card card-outline card-primary shadow-sm">
         <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-list mr-2"></i>Excursões cadastradas</h3>
+            <h3 class="card-title">
+                <i class="fas fa-list mr-2"></i>Excursões cadastradas
+                @if ($status)
+                    <span class="badge badge-light ml-2">{{ ucfirst(strtolower($status)) }}</span>
+                @endif
+            </h3>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">

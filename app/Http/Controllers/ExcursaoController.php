@@ -10,20 +10,28 @@ use Illuminate\View\View;
 
 class ExcursaoController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $excursoes = Excursao::query()
+        $status = in_array($request->query('status'), Excursao::STATUS, true)
+            ? $request->query('status')
+            : null;
+
+        $query = Excursao::query()
+            ->when($status, fn ($query) => $query->where('status', $status));
+
+        $excursoes = (clone $query)
             ->orderByDesc('data')
             ->orderByDesc('id')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         $resumo = [
-            'total' => Excursao::count(),
-            'pessoas' => Excursao::sum('qtd_pessoas'),
-            'valor' => Excursao::sum('valor'),
+            'total' => (clone $query)->count(),
+            'pessoas' => (clone $query)->sum('qtd_pessoas'),
+            'valor' => (clone $query)->sum('valor'),
         ];
 
-        return view('eventos.excursoes.index', compact('excursoes', 'resumo'));
+        return view('eventos.excursoes.index', compact('excursoes', 'resumo', 'status'));
     }
 
     public function create(): View

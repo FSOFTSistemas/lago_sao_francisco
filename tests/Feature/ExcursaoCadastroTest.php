@@ -39,6 +39,27 @@ class ExcursaoCadastroTest extends TestCase
             ->assertSee('Quantidade de pessoas');
     }
 
+    public function test_a_listagem_pode_ser_filtrada_por_status(): void
+    {
+        foreach (['AGENDADO', 'CANCELADO'] as $status) {
+            Excursao::create([
+                'data' => '2026-09-15',
+                'qtd_pessoas' => 40,
+                'valor' => 2500.50,
+                'status' => $status,
+                'responsavel' => 'Responsável '.$status,
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Excursão '.$status,
+            ]);
+        }
+
+        $response = $this->get(route('eventos.excursoes.index', ['status' => 'CANCELADO']));
+
+        $response->assertOk()
+            ->assertSee('Responsável CANCELADO')
+            ->assertDontSee('Responsável AGENDADO');
+    }
+
     public function test_uma_excursao_pode_ser_cadastrada(): void
     {
         $response = $this->post(route('eventos.excursoes.store'), [
