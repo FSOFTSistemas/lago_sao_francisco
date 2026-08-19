@@ -141,6 +141,22 @@ class ExcursaoCadastroTest extends TestCase
             ]);
     }
 
+    public function test_a_descricao_da_excursao_tem_limite_de_200_caracteres(): void
+    {
+        $response = $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), [
+                'data' => '2026-09-15',
+                'qtd_pessoas' => 40,
+                'valor' => 2500.50,
+                'responsavel' => 'Maria Silva',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => str_repeat('a', 201),
+            ]);
+
+        $response->assertRedirect(route('eventos.excursoes.create'))
+            ->assertSessionHasErrors('descricao');
+    }
+
     public function test_a_excursao_e_exibida_no_periodo_do_planner(): void
     {
         $excursao = Excursao::create([

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('excursoes', function (Blueprint $table) {
             $table->string('responsavel')->default('Não informado')->after('status');
             $table->string('telefone_responsavel', 20)->default('Não informado')->after('responsavel');
-            $table->string('descricao', 1000)->default('Não informado')->after('telefone_responsavel');
+            $table->string('descricao', 200)->default('Não informado')->after('telefone_responsavel');
         });
     }
 

@@ -139,7 +139,7 @@ class ExcursaoController extends Controller
                 'valor' => ['required', 'numeric', 'min:0'],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
-                'descricao' => ['required', 'string', 'max:1000'],
+                'descricao' => ['required', 'string', 'max:200'],
             ],
             [
                 'data.required' => 'Informe a data da excursão.',
@@ -155,7 +155,7 @@ class ExcursaoController extends Controller
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',
                 'telefone_responsavel.max' => 'O telefone deve ter no máximo 20 caracteres.',
                 'descricao.required' => 'Informe a descrição da excursão.',
-                'descricao.max' => 'A descrição deve ter no máximo 1000 caracteres.',
+                'descricao.max' => 'A descrição deve ter no máximo 200 caracteres.',
             ],
         );
     }

@@ -135,6 +135,7 @@
                             <th>Data</th>
                             <th class="text-center">Pessoas</th>
                             <th>Responsável</th>
+                            <th>Descrição</th>
                             <th class="text-center">Status</th>
                             <th class="text-right pr-4">Valor</th>
                             <th class="text-center">Ações</th>
@@ -155,6 +156,7 @@
                                     <div class="font-weight-semibold">{{ $excursao->responsavel }}</div>
                                     <small class="text-muted"><i class="fas fa-phone mr-1"></i>{{ $excursao->telefone_responsavel }}</small>
                                 </td>
+                                <td class="align-middle descricao-excursao">{{ $excursao->descricao }}</td>
                                 <td class="align-middle text-center">
                                     @php
                                         $statusClass = match ($excursao->status) {
@@ -175,23 +177,23 @@
                                             <i class="fas fa-eye"></i>
                                         </a>
                                     @else
+                                    @if ($excursao->status === 'AGENDADO')
+                                        <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja iniciar esta excursão?');">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-sm btn-success" title="Iniciar excursão" aria-label="Iniciar excursão #{{ $excursao->id }}"><i class="fas fa-play"></i></button>
+                                        </form>
+                                    @elseif ($excursao->status === 'EM_ANDAMENTO')
+                                        <form action="{{ route('eventos.excursoes.finish', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja finalizar esta excursão? Após finalizar, ela não poderá ser alterada.');">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-sm btn-success" title="Finalizar excursão" aria-label="Finalizar excursão #{{ $excursao->id }}"><i class="fas fa-flag-checkered"></i></button>
+                                        </form>
+                                    @endif
                                         <a href="{{ route('eventos.excursoes.edit', $excursao) }}" class="btn btn-sm btn-outline-primary" title="Editar excursão" aria-label="Editar excursão #{{ $excursao->id }}">
                                             <i class="fas fa-edit"></i>
                                         </a>
 
-                                        @if ($excursao->status === 'AGENDADO')
-                                            <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja iniciar esta excursão?');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-sm btn-success" title="Iniciar excursão" aria-label="Iniciar excursão #{{ $excursao->id }}"><i class="fas fa-play"></i></button>
-                                            </form>
-                                        @elseif ($excursao->status === 'EM_ANDAMENTO')
-                                            <form action="{{ route('eventos.excursoes.finish', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja finalizar esta excursão? Após finalizar, ela não poderá ser alterada.');">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-sm btn-success" title="Finalizar excursão" aria-label="Finalizar excursão #{{ $excursao->id }}"><i class="fas fa-flag-checkered"></i></button>
-                                            </form>
-                                        @endif
 
                                         <form action="{{ route('eventos.excursoes.destroy', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta excursão? Esta ação não poderá ser desfeita.');">
                                             @csrf
@@ -203,7 +205,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <i class="fas fa-bus fa-3x text-muted mb-3 d-block"></i>
                                     <p class="text-muted mb-3">Nenhuma excursão cadastrada.</p>
                                     <a href="{{ route('eventos.excursoes.create') }}" class="btn btn-primary btn-sm">
@@ -222,4 +224,14 @@
             </div>
         @endif
     </div>
+@stop
+
+@section('css')
+    <style>
+        .descricao-excursao {
+            min-width: 220px;
+            max-width: 360px;
+            white-space: normal;
+        }
+    </style>
 @stop

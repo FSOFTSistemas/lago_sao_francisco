@@ -174,13 +174,14 @@
                                 id="descricao"
                                 name="descricao"
                                 rows="4"
-                                maxlength="1000"
+                                maxlength="200"
                                 placeholder="Descreva a excursão"
                                 required @disabled($somenteLeitura)
                             >{{ old('descricao', $excursao->descricao ?? '') }}</textarea>
                             @error('descricao')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                            <small class="form-text text-muted">Máximo de 200 caracteres.</small>
                         </div>
                     </div>
 
