@@ -27,7 +27,7 @@ class ExcursaoCadastroTest extends TestCase
         $response->assertOk()
             ->assertSee('Excursões cadastradas')
             ->assertSee('15/09/2026')
-            ->assertSee('2.500,50');
+            ->assertSee('100.020,00');
     }
 
     public function test_a_listagem_ordena_as_excursoes_da_data_mais_antiga_para_a_mais_futura(): void
@@ -205,8 +205,8 @@ class ExcursaoCadastroTest extends TestCase
                 return $resumo['agendadas'] === 1
                     && $resumo['realizadas'] === 1
                     && (int) $resumo['pessoas'] === 10
-                    && (float) $resumo['receita_prevista'] === 1000.0
-                    && (float) $resumo['receita_realizada'] === 500.0;
+                    && (float) $resumo['receita_prevista'] === 20000.0
+                    && (float) $resumo['receita_realizada'] === 5000.0;
             });
     }
 

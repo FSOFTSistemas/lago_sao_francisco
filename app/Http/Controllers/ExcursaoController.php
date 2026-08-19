@@ -92,8 +92,8 @@ class ExcursaoController extends Controller
     {
         $validated = $this->validateRequest($request);
         $validated['status'] = Excursao::STATUS_AGENDADO;
-        $validated['subtotal'] = $validated['valor_pessoa'];
-        $validated['total'] = $validated['valor_pessoa'];
+        $validated['subtotal'] = $validated['valor_pessoa'] * $validated['qtd_pessoas'];
+        $validated['total'] = $validated['subtotal'];
 
         Excursao::create($validated);
 
@@ -126,8 +126,8 @@ class ExcursaoController extends Controller
         }
 
         $validated = $this->validateRequest($request);
-        $validated['subtotal'] = $validated['valor_pessoa'];
-        $validated['total'] = $validated['valor_pessoa'];
+        $validated['subtotal'] = $validated['valor_pessoa'] * $validated['qtd_pessoas'];
+        $validated['total'] = $validated['subtotal'];
 
         $excursao->update($validated);
 
@@ -142,7 +142,10 @@ class ExcursaoController extends Controller
             return $this->immutableExcursionRedirect();
         }
 
-        $excursao->update(['status' => Excursao::STATUS_CANCELADO]);
+        $excursao->update([
+            'status' => Excursao::STATUS_CANCELADO,
+            'cancelada_em' => now(),
+        ]);
 
         return redirect()
             ->route('eventos.excursoes.index')
@@ -157,7 +160,10 @@ class ExcursaoController extends Controller
                 ->with('error', 'Somente excursões agendadas podem ser iniciadas.');
         }
 
-        $excursao->update(['status' => Excursao::STATUS_EM_ANDAMENTO]);
+        $excursao->update([
+            'status' => Excursao::STATUS_EM_ANDAMENTO,
+            'iniciada_em' => now(),
+        ]);
 
         return redirect()
             ->route('eventos.excursoes.index')
@@ -172,7 +178,10 @@ class ExcursaoController extends Controller
                 ->with('error', 'Somente excursões em andamento podem ser finalizadas.');
         }
 
-        $excursao->update(['status' => Excursao::STATUS_REALIZADO]);
+        $excursao->update([
+            'status' => Excursao::STATUS_REALIZADO,
+            'finalizada_em' => now(),
+        ]);
 
         return redirect()
             ->route('eventos.excursoes.index')

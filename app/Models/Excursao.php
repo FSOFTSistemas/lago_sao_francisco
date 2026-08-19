@@ -31,7 +31,7 @@ class Excursao extends Model
         'data',
         'qtd_pessoas',
         'valor_pessoa',
-        'comissao',
+        'percentual_comissao',
         'valor_almoco',
         'qtd_almoco',
         'total_almoco',
@@ -40,6 +40,10 @@ class Excursao extends Model
         'desconto',
         'total',
         'status',
+        'iniciada_em',
+        'finalizada_em',
+        'cancelada_em',
+        'motivo_cancelamento',
         'responsavel',
         'telefone_responsavel',
         'descricao',
@@ -49,7 +53,7 @@ class Excursao extends Model
         'data' => 'date',
         'qtd_pessoas' => 'integer',
         'valor_pessoa' => 'decimal:2',
-        'comissao' => 'decimal:2',
+        'percentual_comissao' => 'decimal:2',
         'valor_almoco' => 'decimal:2',
         'qtd_almoco' => 'integer',
         'total_almoco' => 'decimal:2',
@@ -57,13 +61,21 @@ class Excursao extends Model
         'acrescimo' => 'decimal:2',
         'desconto' => 'decimal:2',
         'total' => 'decimal:2',
+        'iniciada_em' => 'datetime',
+        'finalizada_em' => 'datetime',
+        'cancelada_em' => 'datetime',
     ];
 
     protected static function booted(): void
     {
         static::creating(function (Excursao $excursao) {
-            $excursao->subtotal ??= $excursao->valor_pessoa;
-            $excursao->total ??= $excursao->valor_pessoa;
+            $excursao->percentual_comissao ??= 10;
+            $excursao->total_almoco ??= (float) $excursao->valor_almoco * (int) $excursao->qtd_almoco;
+            $excursao->subtotal ??= ((float) $excursao->valor_pessoa * (int) $excursao->qtd_pessoas)
+                + (float) $excursao->total_almoco;
+            $excursao->total ??= (float) $excursao->subtotal
+                + (float) $excursao->acrescimo
+                - (float) $excursao->desconto;
         });
     }
 

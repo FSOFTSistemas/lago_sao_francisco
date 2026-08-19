@@ -13,6 +13,11 @@ class FormaPagamento extends Model
     protected $fillable = [
         'id',
         'descricao',
+        'exige_comprovante',
+    ];
+
+    protected $casts = [
+        'exige_comprovante' => 'boolean',
     ];
 
     public static function slugMovimento(?string $descricao): string
