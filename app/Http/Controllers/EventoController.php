@@ -91,7 +91,7 @@ class EventoController extends Controller
                         'responsavel' => $excursao->responsavel,
                         'telefone_responsavel' => $excursao->telefone_responsavel,
                         'descricao' => $excursao->descricao,
-                        'total_formatado' => 'R$ '.number_format($excursao->valor, 2, ',', '.'),
+                        'total_formatado' => 'R$ '.number_format($excursao->total, 2, ',', '.'),
                         'data_inicio' => $excursao->data->format('d/m/Y'),
                         'data_fim' => $excursao->data->format('d/m/Y'),
                     ],

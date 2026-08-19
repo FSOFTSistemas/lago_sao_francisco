@@ -67,10 +67,10 @@ class ExcursaoController extends Controller
                 ->sum('qtd_pessoas'),
             'receita_prevista' => (clone $query)
                 ->where('status', Excursao::STATUS_AGENDADO)
-                ->sum('valor'),
+                ->sum('total'),
             'receita_realizada' => (clone $query)
                 ->where('status', Excursao::STATUS_REALIZADO)
-                ->sum('valor'),
+                ->sum('total'),
         ];
 
         return view('eventos.excursoes.index', compact(
@@ -92,6 +92,8 @@ class ExcursaoController extends Controller
     {
         $validated = $this->validateRequest($request);
         $validated['status'] = Excursao::STATUS_AGENDADO;
+        $validated['subtotal'] = $validated['valor_pessoa'];
+        $validated['total'] = $validated['valor_pessoa'];
 
         Excursao::create($validated);
 
@@ -123,7 +125,11 @@ class ExcursaoController extends Controller
             return $this->immutableExcursionRedirect();
         }
 
-        $excursao->update($this->validateRequest($request));
+        $validated = $this->validateRequest($request);
+        $validated['subtotal'] = $validated['valor_pessoa'];
+        $validated['total'] = $validated['valor_pessoa'];
+
+        $excursao->update($validated);
 
         return redirect()
             ->route('eventos.excursoes.index')
@@ -179,7 +185,7 @@ class ExcursaoController extends Controller
             [
                 'data' => ['required', 'date'],
                 'qtd_pessoas' => ['required', 'integer', 'min:1'],
-                'valor' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+                'valor_pessoa' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
                 'descricao' => ['required', 'string', 'max:200'],
@@ -190,10 +196,10 @@ class ExcursaoController extends Controller
                 'qtd_pessoas.required' => 'Informe a quantidade de pessoas.',
                 'qtd_pessoas.integer' => 'A quantidade de pessoas deve ser um número inteiro.',
                 'qtd_pessoas.min' => 'A excursão deve ter pelo menos uma pessoa.',
-                'valor.required' => 'Informe o valor da excursão.',
-                'valor.numeric' => 'Informe um valor válido.',
-                'valor.min' => 'O valor não pode ser negativo.',
-                'valor.max' => 'O valor deve ser menor que R$ 100.000.000,00.',
+                'valor_pessoa.required' => 'Informe o valor por pessoa.',
+                'valor_pessoa.numeric' => 'Informe um valor por pessoa válido.',
+                'valor_pessoa.min' => 'O valor por pessoa não pode ser negativo.',
+                'valor_pessoa.max' => 'O valor por pessoa deve ser menor que R$ 100.000.000,00.',
                 'responsavel.required' => 'Informe o responsável pela excursão.',
                 'responsavel.max' => 'O nome do responsável deve ter no máximo 255 caracteres.',
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',

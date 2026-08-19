@@ -2,7 +2,7 @@
 
 @php
     $somenteLeitura = $visualizacao ?? false;
-    $valorAtual = old('valor', $excursao->valor ?? null);
+    $valorAtual = old('valor_pessoa', $excursao->valor_pessoa ?? null);
     $valorFormatado = $valorAtual !== null && $valorAtual !== ''
         ? number_format((float) $valorAtual, 2, ',', '.')
         : '';
@@ -105,14 +105,14 @@
                             </div>
 
                             <div class="form-group col-md-6">
-                                <label for="valor">Valor <span class="text-danger">*</span></label>
+                                <label for="valor_display">Valor por pessoa <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <span class="input-group-text">R$</span>
                                     </div>
                                     <input
                                         type="text"
-                                        class="form-control @error('valor') is-invalid @enderror"
+                                        class="form-control @error('valor_pessoa') is-invalid @enderror"
                                         id="valor_display"
                                         value="{{ $valorFormatado }}"
                                         inputmode="numeric"
@@ -120,12 +120,12 @@
                                         autocomplete="off"
                                         required @disabled($somenteLeitura)
                                     >
-                                    <input type="hidden" id="valor" name="valor" value="{{ $valorAtual }}">
-                                    @error('valor')
+                                    <input type="hidden" id="valor_pessoa" name="valor_pessoa" value="{{ $valorAtual }}">
+                                    @error('valor_pessoa')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <small class="form-text text-muted">Informe o valor total da excursão.</small>
+                                <small class="form-text text-muted">Informe o valor cobrado por pessoa.</small>
                             </div>
                         </div>
 
@@ -211,7 +211,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             const telefone = document.getElementById('telefone_responsavel');
             const valorDisplay = document.getElementById('valor_display');
-            const valorInput = document.getElementById('valor');
+            const valorInput = document.getElementById('valor_pessoa');
 
             function formatarTelefone(valor) {
                 const digitos = valor.replace(/\D/g, '').slice(0, 11);

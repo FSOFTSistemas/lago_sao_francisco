@@ -30,7 +30,15 @@ class Excursao extends Model
     protected $fillable = [
         'data',
         'qtd_pessoas',
-        'valor',
+        'valor_pessoa',
+        'comissao',
+        'valor_almoco',
+        'qtd_almoco',
+        'total_almoco',
+        'subtotal',
+        'acrescimo',
+        'desconto',
+        'total',
         'status',
         'responsavel',
         'telefone_responsavel',
@@ -40,8 +48,24 @@ class Excursao extends Model
     protected $casts = [
         'data' => 'date',
         'qtd_pessoas' => 'integer',
-        'valor' => 'decimal:2',
+        'valor_pessoa' => 'decimal:2',
+        'comissao' => 'decimal:2',
+        'valor_almoco' => 'decimal:2',
+        'qtd_almoco' => 'integer',
+        'total_almoco' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'acrescimo' => 'decimal:2',
+        'desconto' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Excursao $excursao) {
+            $excursao->subtotal ??= $excursao->valor_pessoa;
+            $excursao->total ??= $excursao->valor_pessoa;
+        });
+    }
 
     public function recebimentos(): HasMany
     {

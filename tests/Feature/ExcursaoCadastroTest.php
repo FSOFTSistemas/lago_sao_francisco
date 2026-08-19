@@ -15,7 +15,7 @@ class ExcursaoCadastroTest extends TestCase
         Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -40,7 +40,7 @@ class ExcursaoCadastroTest extends TestCase
             Excursao::create([
                 ...$dados,
                 'qtd_pessoas' => 20,
-                'valor' => 1000,
+                'valor_pessoa' => 1000,
                 'status' => 'AGENDADO',
                 'telefone_responsavel' => '(11) 99999-9999',
                 'descricao' => 'Descrição da excursão',
@@ -72,7 +72,7 @@ class ExcursaoCadastroTest extends TestCase
             Excursao::create([
                 'data' => '2026-09-15',
                 'qtd_pessoas' => 40,
-                'valor' => 2500.50,
+                'valor_pessoa' => 2500.50,
                 'status' => $status,
                 'responsavel' => 'Responsável '.$status,
                 'telefone_responsavel' => '(11) 99999-9999',
@@ -92,7 +92,7 @@ class ExcursaoCadastroTest extends TestCase
         Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -101,7 +101,7 @@ class ExcursaoCadastroTest extends TestCase
         Excursao::create([
             'data' => '2026-09-20',
             'qtd_pessoas' => 20,
-            'valor' => 1500,
+            'valor_pessoa' => 1500,
             'status' => 'AGENDADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
@@ -124,7 +124,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursaoEncontrada = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 20,
-            'valor' => 1000,
+            'valor_pessoa' => 1000,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -133,7 +133,7 @@ class ExcursaoCadastroTest extends TestCase
         Excursao::create([
             'data' => '2026-09-16',
             'qtd_pessoas' => 30,
-            'valor' => 1500,
+            'valor_pessoa' => 1500,
             'status' => 'AGENDADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
@@ -159,7 +159,7 @@ class ExcursaoCadastroTest extends TestCase
             Excursao::create([
                 ...$dados,
                 'qtd_pessoas' => 20,
-                'valor' => 1000,
+                'valor_pessoa' => 1000,
                 'status' => 'AGENDADO',
                 'telefone_responsavel' => '(11) 99999-9999',
                 'descricao' => 'Descrição da excursão',
@@ -187,7 +187,7 @@ class ExcursaoCadastroTest extends TestCase
             Excursao::create([
                 'data' => $dados['data'],
                 'qtd_pessoas' => $dados['pessoas'],
-                'valor' => $dados['valor'],
+                'valor_pessoa' => $dados['valor'],
                 'status' => $dados['status'],
                 'responsavel' => 'Maria Silva',
                 'telefone_responsavel' => '(11) 99999-9999',
@@ -215,7 +215,7 @@ class ExcursaoCadastroTest extends TestCase
         $response = $this->post(route('eventos.excursoes.store'), [
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -228,7 +228,7 @@ class ExcursaoCadastroTest extends TestCase
         $this->assertDatabaseHas('excursoes', [
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -242,7 +242,7 @@ class ExcursaoCadastroTest extends TestCase
             ->post(route('eventos.excursoes.store'), [
                 'data' => '',
                 'qtd_pessoas' => 0,
-                'valor' => -1,
+                'valor_pessoa' => -1,
                 'responsavel' => '',
                 'telefone_responsavel' => '',
                 'descricao' => '',
@@ -252,7 +252,7 @@ class ExcursaoCadastroTest extends TestCase
             ->assertSessionHasErrors([
                 'data',
                 'qtd_pessoas',
-                'valor',
+                'valor_pessoa',
                 'responsavel',
                 'telefone_responsavel',
                 'descricao',
@@ -265,7 +265,7 @@ class ExcursaoCadastroTest extends TestCase
             ->post(route('eventos.excursoes.store'), [
                 'data' => '2026-09-15',
                 'qtd_pessoas' => 40,
-                'valor' => 2500.50,
+                'valor_pessoa' => 2500.50,
                 'responsavel' => 'Maria Silva',
                 'telefone_responsavel' => '(11) 99999-9999',
                 'descricao' => str_repeat('a', 201),
@@ -280,7 +280,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -305,7 +305,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -315,7 +315,7 @@ class ExcursaoCadastroTest extends TestCase
         $response = $this->put(route('eventos.excursoes.update', $excursao), [
             'data' => '2026-09-20',
             'qtd_pessoas' => 45,
-            'valor' => 3000,
+            'valor_pessoa' => 3000,
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
             'descricao' => 'Excursão empresarial atualizada',
@@ -326,7 +326,7 @@ class ExcursaoCadastroTest extends TestCase
             'id' => $excursao->id,
             'data' => '2026-09-20',
             'qtd_pessoas' => 45,
-            'valor' => 3000,
+            'valor_pessoa' => 3000,
             'status' => 'AGENDADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
@@ -339,7 +339,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -360,7 +360,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -387,7 +387,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'REALIZADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -397,7 +397,7 @@ class ExcursaoCadastroTest extends TestCase
         $dadosAlterados = [
             'data' => '2026-10-01',
             'qtd_pessoas' => 50,
-            'valor' => 3000,
+            'valor_pessoa' => 3000,
             'responsavel' => 'Outro responsável',
             'telefone_responsavel' => '(11) 98888-8888',
             'descricao' => 'Tentativa de alteração',
@@ -420,7 +420,7 @@ class ExcursaoCadastroTest extends TestCase
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
-            'valor' => 2500.50,
+            'valor_pessoa' => 2500.50,
             'status' => 'CANCELADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
@@ -433,7 +433,7 @@ class ExcursaoCadastroTest extends TestCase
         $this->put(route('eventos.excursoes.update', $excursao), [
             'data' => '2026-10-01',
             'qtd_pessoas' => 50,
-            'valor' => 3000,
+            'valor_pessoa' => 3000,
             'responsavel' => 'Outro responsável',
             'telefone_responsavel' => '(11) 98888-8888',
             'descricao' => 'Tentativa de alteração',

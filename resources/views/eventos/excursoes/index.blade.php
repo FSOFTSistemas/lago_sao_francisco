@@ -245,7 +245,7 @@
                                     <span class="badge {{ $statusClass }} px-2 py-1">{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}</span>
                                 </td>
                                 <td class="align-middle text-right font-weight-bold pr-4">
-                                    R$ {{ number_format($excursao->valor, 2, ',', '.') }}
+                                    R$ {{ number_format($excursao->total, 2, ',', '.') }}
                                 </td>
                                 <td class="align-middle text-center text-nowrap">
                                     @if (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
