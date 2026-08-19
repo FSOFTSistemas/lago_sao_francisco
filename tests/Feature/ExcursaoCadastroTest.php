@@ -119,6 +119,36 @@ class ExcursaoCadastroTest extends TestCase
             ->assertDontSee('Maria Silva');
     }
 
+    public function test_a_listagem_pode_ser_pesquisada_pelo_codigo_da_excursao(): void
+    {
+        $excursaoEncontrada = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 20,
+            'valor' => 1000,
+            'status' => 'AGENDADO',
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Primeira excursão',
+        ]);
+        Excursao::create([
+            'data' => '2026-09-16',
+            'qtd_pessoas' => 30,
+            'valor' => 1500,
+            'status' => 'AGENDADO',
+            'responsavel' => 'João Souza',
+            'telefone_responsavel' => '(11) 98888-8888',
+            'descricao' => 'Segunda excursão',
+        ]);
+
+        $response = $this->get(route('eventos.excursoes.index', [
+            'busca' => '#'.$excursaoEncontrada->id,
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Maria Silva')
+            ->assertDontSee('João Souza');
+    }
+
     public function test_a_listagem_pode_ser_filtrada_por_periodo(): void
     {
         foreach ([

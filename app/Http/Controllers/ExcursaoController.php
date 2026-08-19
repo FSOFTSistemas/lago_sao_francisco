@@ -37,9 +37,15 @@ class ExcursaoController extends Controller
         $query = (clone $queryPeriodo)
             ->when($status, fn ($query) => $query->where('status', $status))
             ->when($busca !== '', function ($query) use ($busca) {
-                $query->where(function ($query) use ($busca) {
+                $codigo = ltrim($busca, '#');
+
+                $query->where(function ($query) use ($busca, $codigo) {
                     $query->where('descricao', 'like', '%'.$busca.'%')
                         ->orWhere('responsavel', 'like', '%'.$busca.'%');
+
+                    if (ctype_digit($codigo)) {
+                        $query->orWhere('id', (int) $codigo);
+                    }
                 });
             });
 

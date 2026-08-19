@@ -160,7 +160,7 @@
                                 id="filtro-busca"
                                 name="busca"
                                 value="{{ $busca }}"
-                                placeholder="Descrição ou responsável"
+                                placeholder="Código, descrição ou responsável"
                                 maxlength="255"
                             >
                         </div>
