@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreExcursaoRequest;
 use App\Models\Excursao;
+use App\Models\FormaPagamento;
 use App\Services\ExcursaoFinanceiroService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -91,7 +92,9 @@ class ExcursaoController extends Controller
 
     public function create(): View
     {
-        return view('eventos.excursoes.create');
+        $formasPagamento = FormaPagamento::query()->orderBy('descricao')->get();
+
+        return view('eventos.excursoes.create', compact('formasPagamento'));
     }
 
     public function store(
@@ -163,6 +166,7 @@ class ExcursaoController extends Controller
         return view('eventos.excursoes.create', [
             'excursao' => $excursao,
             'visualizacao' => true,
+            'formasPagamento' => collect(),
         ]);
     }
 
@@ -172,7 +176,10 @@ class ExcursaoController extends Controller
             return redirect()->route('eventos.excursoes.show', $excursao);
         }
 
-        return view('eventos.excursoes.create', compact('excursao'));
+        return view('eventos.excursoes.create', [
+            'excursao' => $excursao,
+            'formasPagamento' => collect(),
+        ]);
     }
 
     public function update(
@@ -184,6 +191,13 @@ class ExcursaoController extends Controller
             return $this->immutableExcursionRedirect();
         }
 
+        $request->merge([
+            'percentual_comissao' => $request->input('percentual_comissao', $excursao->percentual_comissao),
+            'valor_almoco' => $request->input('valor_almoco', $excursao->valor_almoco),
+            'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
+            'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
+            'desconto' => $request->input('desconto', $excursao->desconto),
+        ]);
         $validated = $this->validateRequest($request);
         $dadosCalculo = array_merge($excursao->only([
             'valor_almoco',
@@ -263,6 +277,11 @@ class ExcursaoController extends Controller
                 'data' => ['required', 'date'],
                 'qtd_pessoas' => ['required', 'integer', 'min:1'],
                 'valor_pessoa' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+                'percentual_comissao' => ['required', 'numeric', 'between:0,100'],
+                'valor_almoco' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+                'qtd_almoco' => ['required', 'integer', 'min:0'],
+                'acrescimo' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+                'desconto' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
                 'descricao' => ['required', 'string', 'max:200'],
@@ -277,6 +296,9 @@ class ExcursaoController extends Controller
                 'valor_pessoa.numeric' => 'Informe um valor por pessoa válido.',
                 'valor_pessoa.min' => 'O valor por pessoa não pode ser negativo.',
                 'valor_pessoa.max' => 'O valor por pessoa deve ser menor que R$ 100.000.000,00.',
+                'percentual_comissao.between' => 'O percentual de comissão deve estar entre 0 e 100.',
+                'qtd_almoco.integer' => 'A quantidade de almoços deve ser um número inteiro.',
+                'qtd_almoco.min' => 'A quantidade de almoços não pode ser negativa.',
                 'responsavel.required' => 'Informe o responsável pela excursão.',
                 'responsavel.max' => 'O nome do responsável deve ter no máximo 255 caracteres.',
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',

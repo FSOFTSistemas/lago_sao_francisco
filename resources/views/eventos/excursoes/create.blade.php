@@ -2,297 +2,352 @@
 
 @php
     $somenteLeitura = $visualizacao ?? false;
-    $valorAtual = old('valor_pessoa', $excursao->valor_pessoa ?? null);
-    $valorFormatado = $valorAtual !== null && $valorAtual !== ''
-        ? number_format((float) $valorAtual, 2, ',', '.')
-        : '';
+    $edicao = isset($excursao);
+    $valorCampo = fn (string $campo, mixed $padrao = 0) => old($campo, $excursao->{$campo} ?? $padrao);
+    $formatarMoeda = fn (mixed $valor) => number_format((float) ($valor ?: 0), 2, ',', '.');
+    $recebimentosIniciais = old('recebimentos', [['valor' => '', 'forma_pagamento_id' => '']]);
 @endphp
 
-@section('title', $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão'))
+@section('title', $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão'))
 
 @section('content_header')
     <div class="d-flex align-items-center justify-content-between">
         <div>
-            <h1 class="mb-1">{{ $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão') }}</h1>
-            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados da excursão realizada ou cancelada.' : (isset($excursao) ? 'Atualize os dados da excursão selecionada.' : 'Informe os dados da excursão para incluí-la nos eventos.') }}</p>
+            <h1 class="mb-1">{{ $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão') }}</h1>
+            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados financeiros e gerais da excursão.' : 'Preencha os dados e confira o resumo antes de salvar.' }}</p>
         </div>
         <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Voltar para excursões
+            <i class="fas fa-arrow-left mr-1"></i> Voltar
         </a>
     </div>
 @stop
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
+    <form id="form-excursao" enctype="multipart/form-data" action="{{ $edicao ? route('eventos.excursoes.update', $excursao) : route('eventos.excursoes.store') }}" method="POST">
+        @csrf
+        @if ($edicao) @method('PUT') @endif
 
-    <div class="row justify-content-center">
-        <div class="col-xl-8 col-lg-10">
-            <div class="card card-outline card-primary shadow-sm">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-bus mr-2"></i>{{ $somenteLeitura ? 'Dados da excursão' : (isset($excursao) ? 'Editar dados da excursão' : 'Dados da excursão') }}
-                    </h3>
-                </div>
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <strong>Revise os dados informados:</strong>
+                <ul class="mb-0 mt-2 pl-4">
+                    @foreach ($errors->all() as $error) <li>{{ $error }}</li> @endforeach
+                </ul>
+            </div>
+        @endif
 
-                <form action="{{ isset($excursao) ? route('eventos.excursoes.update', $excursao) : route('eventos.excursoes.store') }}" method="POST">
-                    @csrf
-                    @isset($excursao)
-                        @method('PUT')
-                    @endisset
-
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Dados gerais</h3></div>
                     <div class="card-body">
-                        @if ($errors->any())
-                            <div class="alert alert-danger" role="alert">
-                                <strong>Revise os dados informados:</strong>
-                                <ul class="mb-0 mt-2 pl-4">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        @endif
-
-                        <div class="form-group">
-                            <label for="data">Data da excursão <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="far fa-calendar-alt"></i></span>
-                                </div>
-                                <input
-                                    type="date"
-                                    class="form-control @error('data') is-invalid @enderror"
-                                    id="data"
-                                    name="data"
-                                    value="{{ old('data', isset($excursao) ? $excursao->data->format('Y-m-d') : '') }}"
-                                    required @disabled($somenteLeitura)
-                                    autofocus
-                                >
-                                @error('data')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
                         <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label for="qtd_pessoas">Quantidade de pessoas <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text"><i class="fas fa-users"></i></span>
-                                    </div>
-                                    <input
-                                        type="number"
-                                        class="form-control @error('qtd_pessoas') is-invalid @enderror"
-                                        id="qtd_pessoas"
-                                        name="qtd_pessoas"
-                                        value="{{ old('qtd_pessoas', $excursao->qtd_pessoas ?? '') }}"
-                                        min="1"
-                                        step="1"
-                                        placeholder="Ex.: 40"
-                                        required @disabled($somenteLeitura)
-                                    >
-                                    @error('qtd_pessoas')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                            <div class="form-group col-md-4">
+                                <label for="data">Data <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control @error('data') is-invalid @enderror" id="data" name="data"
+                                    value="{{ old('data', $edicao ? $excursao->data->format('Y-m-d') : '') }}"
+                                    @unless($edicao) min="{{ now()->format('Y-m-d') }}" @endunless required @disabled($somenteLeitura)>
                             </div>
-
-                            <div class="form-group col-md-6">
-                                <label for="valor_display">Valor por pessoa <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">R$</span>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        class="form-control @error('valor_pessoa') is-invalid @enderror"
-                                        id="valor_display"
-                                        value="{{ $valorFormatado }}"
-                                        inputmode="numeric"
-                                        placeholder="0,00"
-                                        autocomplete="off"
-                                        required @disabled($somenteLeitura)
-                                    >
-                                    <input type="hidden" id="valor_pessoa" name="valor_pessoa" value="{{ $valorAtual }}">
-                                    @error('valor_pessoa')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <small class="form-text text-muted">Informe o valor cobrado por pessoa.</small>
+                            <div class="form-group col-md-5">
+                                <label for="responsavel">Responsável <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('responsavel') is-invalid @enderror" id="responsavel" name="responsavel"
+                                    value="{{ old('responsavel', $excursao->responsavel ?? '') }}" maxlength="255" required @disabled($somenteLeitura)>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="telefone_responsavel">Telefone <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control @error('telefone_responsavel') is-invalid @enderror" id="telefone_responsavel"
+                                    name="telefone_responsavel" value="{{ old('telefone_responsavel', $excursao->telefone_responsavel ?? '') }}"
+                                    maxlength="15" placeholder="(00) 00000-0000" required @disabled($somenteLeitura)>
                             </div>
                         </div>
-
-                        @isset($excursao)
-                            <div class="form-group">
-                                <label>Status</label>
+                        <div class="form-group mb-0">
+                            <label for="descricao">Descrição <span class="text-danger">*</span></label>
+                            <textarea class="form-control @error('descricao') is-invalid @enderror" id="descricao" name="descricao" rows="3"
+                                maxlength="200" required @disabled($somenteLeitura)>{{ old('descricao', $excursao->descricao ?? '') }}</textarea>
+                            <small class="form-text text-muted"><span id="descricao-contador">0</span>/200 caracteres</small>
+                        </div>
+                        @if ($edicao)
+                            <div class="form-group mt-3 mb-0"><label>Status</label>
                                 <input class="form-control" value="{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}" disabled>
                             </div>
-                        @endisset
+                        @endif
+                    </div>
+                </div>
 
-                        <div class="form-row">
-                            <div class="form-group col-md-7">
-                                <label for="responsavel">Responsável <span class="text-danger">*</span></label>
-                                <input
-                                    type="text"
-                                    class="form-control @error('responsavel') is-invalid @enderror"
-                                    id="responsavel"
-                                    name="responsavel"
-                                    value="{{ old('responsavel', $excursao->responsavel ?? '') }}"
-                                    maxlength="255"
-                                    placeholder="Nome do responsável pela excursão"
-                                    required @disabled($somenteLeitura)
-                                >
-                                @error('responsavel')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="form-group col-md-5">
-                                <label for="telefone_responsavel">Telefone do responsável <span class="text-danger">*</span></label>
-                                <input
-                                    type="tel"
-                                    class="form-control @error('telefone_responsavel') is-invalid @enderror"
-                                    id="telefone_responsavel"
-                                    name="telefone_responsavel"
-                                    value="{{ old('telefone_responsavel', $excursao->telefone_responsavel ?? '') }}"
-                                    maxlength="20"
-                                    inputmode="tel"
-                                    autocomplete="tel"
-                                    placeholder="(00) 00000-0000"
-                                    required @disabled($somenteLeitura)
-                                >
-                                @error('telefone_responsavel')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-users mr-2"></i>Pessoas e valores</h3></div>
+                    <div class="card-body"><div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="qtd_pessoas">Quantidade de pessoas <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="qtd_pessoas" name="qtd_pessoas" min="1" step="1"
+                                value="{{ old('qtd_pessoas', $excursao->qtd_pessoas ?? 1) }}" required @disabled($somenteLeitura)>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="valor_pessoa_display">Valor por pessoa <span class="text-danger">*</span></label>
+                            <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                <input type="text" class="form-control money-display" id="valor_pessoa_display" data-money-target="valor_pessoa"
+                                    value="{{ $formatarMoeda($valorCampo('valor_pessoa')) }}" inputmode="numeric" required @disabled($somenteLeitura)>
+                                <input type="hidden" id="valor_pessoa" name="valor_pessoa" value="{{ $valorCampo('valor_pessoa') }}">
                             </div>
                         </div>
+                        <div class="form-group col-md-4">
+                            <label for="percentual_comissao">Comissão <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="percentual_comissao" name="percentual_comissao" min="0" max="100" step="0.01"
+                                    value="{{ $valorCampo('percentual_comissao', 10) }}" required @disabled($somenteLeitura)>
+                                <div class="input-group-append"><span class="input-group-text">%</span></div>
+                            </div>
+                        </div>
+                    </div></div>
+                </div>
 
-                        <div class="form-group">
-                            <label for="descricao">Descrição <span class="text-danger">*</span></label>
-                            <textarea
-                                class="form-control @error('descricao') is-invalid @enderror"
-                                id="descricao"
-                                name="descricao"
-                                rows="4"
-                                maxlength="200"
-                                placeholder="Descreva a excursão"
-                                required @disabled($somenteLeitura)
-                            >{{ old('descricao', $excursao->descricao ?? '') }}</textarea>
-                            @error('descricao')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="form-text text-muted">Máximo de 200 caracteres.</small>
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-utensils mr-2"></i>Almoço</h3></div>
+                    <div class="card-body"><div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label for="qtd_almoco">Quantidade</label>
+                            <input type="number" class="form-control" id="qtd_almoco" name="qtd_almoco" min="0" step="1"
+                                value="{{ $valorCampo('qtd_almoco') }}" required @disabled($somenteLeitura)>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="valor_almoco_display">Valor unitário</label>
+                            <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                <input type="text" class="form-control money-display" id="valor_almoco_display" data-money-target="valor_almoco"
+                                    value="{{ $formatarMoeda($valorCampo('valor_almoco')) }}" inputmode="numeric" required @disabled($somenteLeitura)>
+                                <input type="hidden" id="valor_almoco" name="valor_almoco" value="{{ $valorCampo('valor_almoco') }}">
+                            </div>
+                        </div>
+                        <div class="form-group col-md-4"><label>Total do almoço</label><input id="total_almoco_display" class="form-control bg-light" readonly></div>
+                    </div></div>
+                </div>
+
+                <div class="card card-outline card-primary shadow-sm">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h mr-2"></i>Ajustes</h3></div>
+                    <div class="card-body"><div class="form-row">
+                        @foreach (['acrescimo' => 'Acréscimo', 'desconto' => 'Desconto'] as $campo => $rotulo)
+                            <div class="form-group col-md-6 mb-0">
+                                <label for="{{ $campo }}_display">{{ $rotulo }}</label>
+                                <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                    <input type="text" class="form-control money-display" id="{{ $campo }}_display" data-money-target="{{ $campo }}"
+                                        value="{{ $formatarMoeda($valorCampo($campo)) }}" inputmode="numeric" required @disabled($somenteLeitura)>
+                                    <input type="hidden" id="{{ $campo }}" name="{{ $campo }}" value="{{ $valorCampo($campo) }}">
+                                </div>
+                            </div>
+                        @endforeach
+                    </div></div>
+                </div>
+
+                @unless ($edicao)
+                    <div class="card card-outline card-success shadow-sm">
+                        <div class="card-header d-flex align-items-center">
+                            <h3 class="card-title"><i class="fas fa-hand-holding-usd mr-2"></i>Pagamentos iniciais</h3>
+                            <button type="button" id="adicionar-recebimento" class="btn btn-sm btn-success ml-auto"><i class="fas fa-plus mr-1"></i>Adicionar forma</button>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted">Informe um ou mais pagamentos. O total recebido deve ser de pelo menos 50% do valor da excursão.</p>
+                            <div id="recebimentos-container">
+                                @foreach ($recebimentosIniciais as $indice => $recebimento)
+                                    <div class="recebimento-row border rounded p-3 mb-3" data-index="{{ $indice }}">
+                                        <div class="form-row align-items-end">
+                                            <div class="form-group col-md-4">
+                                                <label>Forma de pagamento <span class="text-danger">*</span></label>
+                                                <select class="form-control forma-pagamento" name="recebimentos[{{ $indice }}][forma_pagamento_id]" required>
+                                                    <option value="">Selecione</option>
+                                                    @foreach ($formasPagamento as $forma)
+                                                        <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}"
+                                                            @selected((string) ($recebimento['forma_pagamento_id'] ?? '') === (string) $forma->id)>{{ $forma->descricao }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label>Valor <span class="text-danger">*</span></label>
+                                                <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                                    <input type="text" class="form-control money-display pagamento-display" data-money-target="recebimento_valor_{{ $indice }}"
+                                                        value="{{ $formatarMoeda($recebimento['valor'] ?? 0) }}" inputmode="numeric" required>
+                                                    <input type="hidden" class="pagamento-valor" id="recebimento_valor_{{ $indice }}"
+                                                        name="recebimentos[{{ $indice }}][valor]" value="{{ $recebimento['valor'] ?? 0 }}">
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-4 comprovante-group">
+                                                <label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
+                                                <input type="file" class="form-control-file comprovante" name="recebimentos[{{ $indice }}][comprovante]" accept="image/*,.pdf">
+                                            </div>
+                                            <div class="form-group col-md-1"><button type="button" class="btn btn-outline-danger remover-recebimento" title="Remover"><i class="fas fa-trash"></i></button></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="alert alert-info mb-0">
+                                <div class="row"><div class="col-sm-4">Recebido: <strong id="total-recebido">R$ 0,00</strong></div>
+                                    <div class="col-sm-4">Mínimo (50%): <strong id="minimo-recebido">R$ 0,00</strong></div>
+                                    <div class="col-sm-4">Restante: <strong id="valor-restante">R$ 0,00</strong></div></div>
+                                <small id="situacao-pagamento" class="d-block mt-2"></small>
+                            </div>
                         </div>
                     </div>
+                @endunless
+            </div>
 
-                    <div class="card-footer d-flex justify-content-between">
-                        <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-light border">Cancelar</a>
-                        @unless($somenteLeitura)
-                            <button type="submit" class="btn btn-primary px-4">
-                                <i class="fas fa-save mr-1"></i> {{ isset($excursao) ? 'Salvar alterações' : 'Cadastrar excursão' }}
-                            </button>
-                        @endunless
+            <div class="col-lg-4">
+                <div class="card card-outline card-success shadow-sm sticky-top" style="top: 1rem">
+                    <div class="card-header"><h3 class="card-title"><i class="fas fa-calculator mr-2"></i>Resumo financeiro</h3></div>
+                    <div class="card-body">
+                        @foreach (['valor-pessoas' => 'Valor das pessoas', 'resumo-almoco' => 'Total do almoço', 'subtotal' => 'Subtotal', 'resumo-acrescimo' => 'Acréscimo', 'resumo-desconto' => 'Desconto'] as $id => $rotulo)
+                            <div class="d-flex justify-content-between mb-2"><span>{{ $rotulo }}</span><strong id="{{ $id }}">R$ 0,00</strong></div>
+                        @endforeach
+                        <hr>
+                        <div class="d-flex justify-content-between h5"><span>Total</span><strong id="total">R$ 0,00</strong></div>
+                        <div class="d-flex justify-content-between text-danger"><span>Comissão</span><strong id="valor-comissao">R$ 0,00</strong></div>
+                        <div class="d-flex justify-content-between text-success mt-2"><span>Receita líquida</span><strong id="receita-liquida">R$ 0,00</strong></div>
+                        @if ($edicao)
+                            <hr><div class="d-flex justify-content-between"><span>Valor pago</span><strong>{{ $formatarMoeda($excursao->valor_pago) }}</strong></div>
+                            <div class="d-flex justify-content-between"><span>Valor restante</span><strong>{{ $formatarMoeda($excursao->valor_restante) }}</strong></div>
+                        @endif
                     </div>
-                </form>
+                </div>
             </div>
         </div>
-    </div>
+
+        <div class="card"><div class="card-footer d-flex justify-content-between">
+            <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-light border">Cancelar</a>
+            @unless ($somenteLeitura)
+                <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save mr-1"></i>{{ $edicao ? 'Salvar alterações' : 'Cadastrar excursão' }}</button>
+            @endunless
+        </div></div>
+    </form>
+
+    @unless ($edicao)
+        <template id="recebimento-template">
+            <div class="recebimento-row border rounded p-3 mb-3" data-index="__INDEX__"><div class="form-row align-items-end">
+                <div class="form-group col-md-4"><label>Forma de pagamento <span class="text-danger">*</span></label>
+                    <select class="form-control forma-pagamento" name="recebimentos[__INDEX__][forma_pagamento_id]" required><option value="">Selecione</option>
+                        @foreach ($formasPagamento as $forma)<option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}">{{ $forma->descricao }}</option>@endforeach
+                    </select></div>
+                <div class="form-group col-md-3"><label>Valor <span class="text-danger">*</span></label><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                    <input type="text" class="form-control money-display pagamento-display" data-money-target="recebimento_valor___INDEX__" value="0,00" inputmode="numeric" required>
+                    <input type="hidden" class="pagamento-valor" id="recebimento_valor___INDEX__" name="recebimentos[__INDEX__][valor]" value="0.00"></div></div>
+                <div class="form-group col-md-4 comprovante-group"><label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
+                    <input type="file" class="form-control-file comprovante" name="recebimentos[__INDEX__][comprovante]" accept="image/*,.pdf"></div>
+                <div class="form-group col-md-1"><button type="button" class="btn btn-outline-danger remover-recebimento"><i class="fas fa-trash"></i></button></div>
+            </div></div>
+        </template>
+    @endunless
 @stop
 
 @section('js')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const telefone = document.getElementById('telefone_responsavel');
-            const valorDisplay = document.getElementById('valor_display');
-            const valorInput = document.getElementById('valor_pessoa');
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('form-excursao');
+    const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    const numero = id => Number(document.getElementById(id)?.value || 0);
+    const definir = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = moeda(valor); };
 
-            function formatarTelefone(valor) {
-                const digitos = valor.replace(/\D/g, '').slice(0, 11);
+    function recalcular() {
+        const valorPessoas = numero('valor_pessoa') * numero('qtd_pessoas');
+        const totalAlmoco = numero('valor_almoco') * numero('qtd_almoco');
+        const subtotal = valorPessoas + totalAlmoco;
+        const total = subtotal + numero('acrescimo') - numero('desconto');
+        const comissao = valorPessoas * (numero('percentual_comissao') / 100);
+        const recebido = [...document.querySelectorAll('.pagamento-valor')].reduce((soma, el) => soma + Number(el.value || 0), 0);
+        const minimo = Math.max(total, 0) / 2;
 
-                if (digitos.length === 0) return '';
-                if (digitos.length <= 2) return digitos.replace(/^(\d{0,2})/, '($1');
-                if (digitos.length <= 6) return digitos.replace(/^(\d{2})(\d+)/, '($1) $2');
-                if (digitos.length <= 10) return digitos.replace(/^(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
+        definir('valor-pessoas', valorPessoas); definir('resumo-almoco', totalAlmoco); definir('subtotal', subtotal);
+        definir('resumo-acrescimo', numero('acrescimo')); definir('resumo-desconto', numero('desconto'));
+        definir('total', total); definir('valor-comissao', comissao); definir('receita-liquida', total - comissao);
+        definir('total-recebido', recebido); definir('minimo-recebido', minimo); definir('valor-restante', Math.max(total - recebido, 0));
+        const totalAlmocoCampo = document.getElementById('total_almoco_display');
+        if (totalAlmocoCampo) totalAlmocoCampo.value = moeda(totalAlmoco);
+        const situacao = document.getElementById('situacao-pagamento');
+        if (situacao) {
+            const valido = total > 0 && recebido + 0.01 >= minimo && recebido <= total + 0.01;
+            situacao.className = `d-block mt-2 ${valido ? 'text-success' : 'text-danger'}`;
+            situacao.textContent = recebido > total + 0.01 ? 'O valor recebido não pode superar o total.' :
+                (recebido + 0.01 < minimo ? `Faltam ${moeda(minimo - recebido)} para atingir a entrada mínima.` : 'Entrada mínima atingida.');
+        }
+        return {total, recebido, minimo};
+    }
 
-                return digitos.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
-            }
-
-            if (telefone && !telefone.disabled) {
-                telefone.value = formatarTelefone(telefone.value);
-                telefone.addEventListener('input', function() {
-                    telefone.value = formatarTelefone(telefone.value);
-                });
-            }
-
-            if (!valorDisplay || !valorInput || valorDisplay.disabled) return;
-
-            let digitosValor = valorInput.value
-                ? Math.round(Number(valorInput.value) * 100).toString()
-                : '';
-
-            function renderizarValor() {
-                const centavos = Number(digitosValor || 0);
-                valorDisplay.value = (centavos / 100).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-                valorInput.value = (centavos / 100).toFixed(2);
-            }
-
-            valorDisplay.addEventListener('keydown', function(event) {
-                if (/^\d$/.test(event.key)) {
-                    event.preventDefault();
-                    digitosValor = (digitosValor + event.key).replace(/^0+/, '').slice(0, 10);
-                    renderizarValor();
-                } else if (event.key === 'Backspace') {
-                    event.preventDefault();
-                    digitosValor = digitosValor.slice(0, -1);
-                    renderizarValor();
-                } else if (event.key === 'Delete') {
-                    event.preventDefault();
-                    digitosValor = '';
-                    renderizarValor();
-                }
-            });
-
-            valorDisplay.addEventListener('beforeinput', function(event) {
-                if (event.inputType === 'deleteContentBackward') {
-                    event.preventDefault();
-                    digitosValor = digitosValor.slice(0, -1);
-                    renderizarValor();
-                } else if (event.inputType === 'deleteContentForward') {
-                    event.preventDefault();
-                    digitosValor = '';
-                    renderizarValor();
-                } else if (event.inputType === 'insertText' && /^\d$/.test(event.data || '')) {
-                    event.preventDefault();
-                    digitosValor = (digitosValor + event.data).replace(/^0+/, '').slice(0, 10);
-                    renderizarValor();
-                }
-            });
-
-            valorDisplay.addEventListener('paste', function(event) {
-                event.preventDefault();
-                digitosValor = (event.clipboardData.getData('text').match(/\d/g) || [])
-                    .join('')
-                    .replace(/^0+/, '')
-                    .slice(0, 10);
-                renderizarValor();
-            });
-
-            valorDisplay.addEventListener('input', function() {
-                digitosValor = valorDisplay.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10);
-                renderizarValor();
-            });
-
-            if (digitosValor !== '') renderizarValor();
+    function configurarMoeda(campo) {
+        if (campo.dataset.maskReady || campo.disabled) return;
+        campo.dataset.maskReady = '1';
+        const oculto = document.getElementById(campo.dataset.moneyTarget);
+        let digitos = oculto?.value ? String(Math.round(Number(oculto.value) * 100)) : '';
+        const renderizar = () => {
+            const centavos = Number(digitos || 0);
+            campo.value = (centavos / 100).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (oculto) oculto.value = (centavos / 100).toFixed(2);
+            recalcular();
+        };
+        campo.addEventListener('keydown', event => {
+            if (/^\d$/.test(event.key)) { event.preventDefault(); digitos = (digitos + event.key).replace(/^0+/, '').slice(0, 12); renderizar(); }
+            else if (event.key === 'Backspace') { event.preventDefault(); digitos = digitos.slice(0, -1); renderizar(); }
+            else if (event.key === 'Delete') { event.preventDefault(); digitos = ''; renderizar(); }
         });
-    </script>
+        campo.addEventListener('paste', event => { event.preventDefault(); digitos = (event.clipboardData.getData('text').match(/\d/g) || []).join('').replace(/^0+/, '').slice(0, 12); renderizar(); });
+        renderizar();
+    }
+
+    function atualizarComprovante(linha) {
+        const select = linha.querySelector('.forma-pagamento');
+        const arquivo = linha.querySelector('.comprovante');
+        const exige = select?.selectedOptions[0]?.dataset.exigeComprovante === '1';
+        if (arquivo) arquivo.required = exige;
+        linha.querySelector('.comprovante-obrigatorio')?.classList.toggle('d-none', !exige);
+    }
+
+    function configurarLinha(linha) {
+        linha.querySelectorAll('.money-display').forEach(configurarMoeda);
+        linha.querySelector('.forma-pagamento')?.addEventListener('change', () => atualizarComprovante(linha));
+        linha.querySelector('.remover-recebimento')?.addEventListener('click', () => { linha.remove(); recalcular(); });
+        atualizarComprovante(linha);
+    }
+
+    document.querySelectorAll('.money-display').forEach(configurarMoeda);
+    document.querySelectorAll('.recebimento-row').forEach(configurarLinha);
+    ['qtd_pessoas', 'qtd_almoco'].forEach(id => document.getElementById(id)?.addEventListener('input', recalcular));
+    const percentual = document.getElementById('percentual_comissao');
+    percentual?.addEventListener('input', () => {
+        if (Number(percentual.value) > 100) percentual.value = 100;
+        if (Number(percentual.value) < 0) percentual.value = 0;
+        const partes = percentual.value.split('.');
+        if (partes[1]?.length > 2) percentual.value = `${partes[0]}.${partes[1].slice(0, 2)}`;
+        recalcular();
+    });
+
+    const telefone = document.getElementById('telefone_responsavel');
+    const formatarTelefone = valor => {
+        const d = valor.replace(/\D/g, '').slice(0, 11);
+        if (!d.length) return '';
+        if (d.length <= 2) return `(${d}`;
+        if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+        if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+        return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    };
+    if (telefone && !telefone.disabled) { telefone.value = formatarTelefone(telefone.value); telefone.addEventListener('input', () => telefone.value = formatarTelefone(telefone.value)); }
+
+    const descricao = document.getElementById('descricao');
+    const contador = document.getElementById('descricao-contador');
+    const contar = () => contador.textContent = descricao.value.length;
+    descricao?.addEventListener('input', contar); if (descricao && contador) contar();
+
+    let proximoIndice = document.querySelectorAll('.recebimento-row').length;
+    document.getElementById('adicionar-recebimento')?.addEventListener('click', () => {
+        const html = document.getElementById('recebimento-template').innerHTML.replaceAll('__INDEX__', proximoIndice++);
+        document.getElementById('recebimentos-container').insertAdjacentHTML('beforeend', html);
+        configurarLinha(document.getElementById('recebimentos-container').lastElementChild);
+    });
+
+    form?.addEventListener('submit', event => {
+        if (!document.getElementById('recebimentos-container')) return;
+        const {total, recebido, minimo} = recalcular();
+        let mensagem = '';
+        if (!document.querySelector('.recebimento-row')) mensagem = 'Adicione pelo menos uma forma de pagamento.';
+        else if (total <= 0) mensagem = 'O total da excursão deve ser maior que zero.';
+        else if (recebido + 0.01 < minimo) mensagem = 'O pagamento inicial deve ser de pelo menos 50% do total.';
+        else if (recebido > total + 0.01) mensagem = 'O valor recebido não pode ser maior que o total da excursão.';
+        if (mensagem) { event.preventDefault(); Swal.fire({icon: 'warning', title: 'Revise os pagamentos', text: mensagem}); }
+    });
+    recalcular();
+});
+</script>
 @stop
