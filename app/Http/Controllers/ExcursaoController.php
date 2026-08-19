@@ -26,7 +26,7 @@ class ExcursaoController extends Controller
             });
 
         $excursoes = (clone $query)
-            ->orderByDesc('data')
+            ->orderBy('data')
             ->orderByDesc('id')
             ->paginate(15)
             ->withQueryString();

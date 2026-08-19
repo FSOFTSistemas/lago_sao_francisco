@@ -30,6 +30,33 @@ class ExcursaoCadastroTest extends TestCase
             ->assertSee('2.500,50');
     }
 
+    public function test_a_listagem_ordena_as_excursoes_da_data_mais_antiga_para_a_mais_futura(): void
+    {
+        foreach ([
+            ['data' => '2026-10-20', 'responsavel' => 'Excursão futura'],
+            ['data' => '2026-09-12', 'responsavel' => 'Excursão intermediária'],
+            ['data' => '2026-08-20', 'responsavel' => 'Excursão antiga'],
+        ] as $dados) {
+            Excursao::create([
+                ...$dados,
+                'qtd_pessoas' => 20,
+                'valor' => 1000,
+                'status' => 'AGENDADO',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Descrição da excursão',
+            ]);
+        }
+
+        $response = $this->get(route('eventos.excursoes.index'));
+
+        $response->assertOk()
+            ->assertSeeInOrder([
+                'Excursão antiga',
+                'Excursão intermediária',
+                'Excursão futura',
+            ]);
+    }
+
     public function test_a_pagina_de_cadastro_de_excursao_pode_ser_acessada(): void
     {
         $response = $this->get(route('eventos.excursoes.create'));
