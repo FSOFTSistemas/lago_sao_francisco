@@ -51,6 +51,9 @@
                     <p class="mb-1"><strong>Tipo:</strong> <span id="detalhe-tipo">-</span></p>
                     <p class="mb-1" id="detalhe-cliente-linha"><strong>Cliente:</strong> <span id="detalhe-cliente">-</span></p>
                     <p class="mb-1 d-none" id="detalhe-pessoas-linha"><strong>Quantidade de pessoas:</strong> <span id="detalhe-pessoas">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-responsavel-linha"><strong>Responsável:</strong> <span id="detalhe-responsavel">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-telefone-linha"><strong>Telefone:</strong> <span id="detalhe-telefone">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-descricao-linha"><strong>Descrição:</strong> <span id="detalhe-descricao">-</span></p>
                     <p class="mb-1"><strong>Período:</strong> <span id="detalhe-periodo">-</span></p>
                     <p class="mb-1" id="detalhe-status-linha"><strong>Status:</strong> <span id="detalhe-status">-</span></p>
                     <p class="mb-0"><strong>Total:</strong> <span id="detalhe-total">-</span></p>
@@ -135,13 +138,19 @@
                         ? (props.data_inicio || '-')
                         : `${props.data_inicio || '-'} a ${props.data_fim || '-'}`;
 
-                    ['detalhe-espaco-linha', 'detalhe-cliente-linha', 'detalhe-status-linha'].forEach(id => {
+                    ['detalhe-espaco-linha', 'detalhe-cliente-linha'].forEach(id => {
                         document.getElementById(id).classList.toggle('d-none', excursao);
                     });
 
                     const pessoasLinha = document.getElementById('detalhe-pessoas-linha');
                     pessoasLinha.classList.toggle('d-none', !excursao);
                     document.getElementById('detalhe-pessoas').innerText = props.qtd_pessoas || '-';
+                    ['detalhe-responsavel-linha', 'detalhe-telefone-linha', 'detalhe-descricao-linha'].forEach(id => {
+                        document.getElementById(id).classList.toggle('d-none', !excursao);
+                    });
+                    document.getElementById('detalhe-responsavel').innerText = props.responsavel || '-';
+                    document.getElementById('detalhe-telefone').innerText = props.telefone_responsavel || '-';
+                    document.getElementById('detalhe-descricao').innerText = props.descricao || '-';
 
                     const abrirAluguel = document.getElementById('detalhe-abrir-aluguel');
                     abrirAluguel.classList.toggle('d-none', excursao);

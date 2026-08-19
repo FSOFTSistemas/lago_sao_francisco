@@ -27,8 +27,8 @@
                 <div class="icon">
                     <i class="fas fa-bus"></i>
                 </div>
-                <a href="{{ route('eventos.excursoes.create') }}" class="small-box-footer" aria-label="Cadastrar excursão">
-                    Cadastrar <i class="fas fa-arrow-circle-right ml-1"></i>
+                <a href="{{ route('eventos.excursoes.index') }}" class="small-box-footer" aria-label="Consultar excursões">
+                    Consultar <i class="fas fa-arrow-circle-right ml-1"></i>
                 </a>
             </div>
         </div>
