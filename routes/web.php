@@ -53,6 +53,7 @@ use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
+use App\Http\Controllers\RecebimentoExcursaoController;
 use App\Http\Controllers\ReceitaAvulsaController;
 use App\Http\Controllers\RelatorioHospedesController;
 use App\Http\Controllers\RelatorioMovimentacaoController;
@@ -175,6 +176,9 @@ Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'
 Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
 Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
 Route::patch('/eventos/excursoes/{excursao}/finalizar', [ExcursaoController::class, 'finish'])->name('eventos.excursoes.finish');
+Route::get('/eventos/recebimentos/{recebimento}/comprovante', [RecebimentoExcursaoController::class, 'comprovante'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.recebimentos.comprovante');
 Route::get('/eventos/planner', [EventoController::class, 'planner'])->name('eventos.planner');
 Route::get('/eventos/planner/eventos', [EventoController::class, 'plannerEventos'])->name('eventos.planner.eventos');
 
