@@ -49,6 +49,9 @@ class ExcursaoController extends Controller
 
         $resumo = [
             'total' => (clone $query)->count(),
+            'agendadas' => (clone $query)->where('status', Excursao::STATUS_AGENDADO)->count(),
+            'realizadas' => (clone $query)->where('status', Excursao::STATUS_REALIZADO)->count(),
+            'canceladas' => (clone $query)->where('status', Excursao::STATUS_CANCELADO)->count(),
             'pessoas' => (clone $query)->sum('qtd_pessoas'),
             'valor' => (clone $query)->sum('valor'),
         ];
@@ -159,7 +162,7 @@ class ExcursaoController extends Controller
             [
                 'data' => ['required', 'date'],
                 'qtd_pessoas' => ['required', 'integer', 'min:1'],
-                'valor' => ['required', 'numeric', 'min:0'],
+                'valor' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
                 'descricao' => ['required', 'string', 'max:200'],
@@ -173,6 +176,7 @@ class ExcursaoController extends Controller
                 'valor.required' => 'Informe o valor da excursão.',
                 'valor.numeric' => 'Informe um valor válido.',
                 'valor.min' => 'O valor não pode ser negativo.',
+                'valor.max' => 'O valor deve ser menor que R$ 100.000.000,00.',
                 'responsavel.required' => 'Informe o responsável pela excursão.',
                 'responsavel.max' => 'O nome do responsável deve ter no máximo 255 caracteres.',
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',

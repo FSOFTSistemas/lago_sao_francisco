@@ -39,7 +39,7 @@
     @endif
 
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-primary"><i class="fas fa-bus"></i></span>
                 <div class="info-box-content">
@@ -48,7 +48,34 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-warning"><i class="far fa-calendar-check"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Excursões agendadas</span>
+                    <span class="info-box-number">{{ number_format($resumo['agendadas'], 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-success"><i class="fas fa-check-circle"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Excursões realizadas</span>
+                    <span class="info-box-number">{{ number_format($resumo['realizadas'], 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-danger"><i class="fas fa-ban"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Excursões canceladas</span>
+                    <span class="info-box-number">{{ number_format($resumo['canceladas'], 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
                 <div class="info-box-content">
@@ -57,7 +84,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
                 <div class="info-box-content">

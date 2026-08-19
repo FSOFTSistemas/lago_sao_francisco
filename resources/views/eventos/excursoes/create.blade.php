@@ -1,6 +1,12 @@
 @extends('adminlte::page')
 
-@php($somenteLeitura = $visualizacao ?? false)
+@php
+    $somenteLeitura = $visualizacao ?? false;
+    $valorAtual = old('valor', $excursao->valor ?? null);
+    $valorFormatado = $valorAtual !== null && $valorAtual !== ''
+        ? number_format((float) $valorAtual, 2, ',', '.')
+        : '';
+@endphp
 
 @section('title', $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão'))
 
@@ -105,17 +111,16 @@
                                         <span class="input-group-text">R$</span>
                                     </div>
                                     <input
-                                        type="number"
+                                        type="text"
                                         class="form-control @error('valor') is-invalid @enderror"
-                                        id="valor"
-                                        name="valor"
-                                        value="{{ old('valor', $excursao->valor ?? '') }}"
-                                        min="0"
-                                        step="0.01"
-                                        inputmode="decimal"
+                                        id="valor_display"
+                                        value="{{ $valorFormatado }}"
+                                        inputmode="numeric"
                                         placeholder="0,00"
+                                        autocomplete="off"
                                         required @disabled($somenteLeitura)
                                     >
+                                    <input type="hidden" id="valor" name="valor" value="{{ $valorAtual }}">
                                     @error('valor')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -158,6 +163,8 @@
                                     name="telefone_responsavel"
                                     value="{{ old('telefone_responsavel', $excursao->telefone_responsavel ?? '') }}"
                                     maxlength="20"
+                                    inputmode="tel"
+                                    autocomplete="tel"
                                     placeholder="(00) 00000-0000"
                                     required @disabled($somenteLeitura)
                                 >
@@ -197,4 +204,95 @@
             </div>
         </div>
     </div>
+@stop
+
+@section('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const telefone = document.getElementById('telefone_responsavel');
+            const valorDisplay = document.getElementById('valor_display');
+            const valorInput = document.getElementById('valor');
+
+            function formatarTelefone(valor) {
+                const digitos = valor.replace(/\D/g, '').slice(0, 11);
+
+                if (digitos.length === 0) return '';
+                if (digitos.length <= 2) return digitos.replace(/^(\d{0,2})/, '($1');
+                if (digitos.length <= 6) return digitos.replace(/^(\d{2})(\d+)/, '($1) $2');
+                if (digitos.length <= 10) return digitos.replace(/^(\d{2})(\d{4})(\d+)/, '($1) $2-$3');
+
+                return digitos.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+            }
+
+            if (telefone && !telefone.disabled) {
+                telefone.value = formatarTelefone(telefone.value);
+                telefone.addEventListener('input', function() {
+                    telefone.value = formatarTelefone(telefone.value);
+                });
+            }
+
+            if (!valorDisplay || !valorInput || valorDisplay.disabled) return;
+
+            let digitosValor = valorInput.value
+                ? Math.round(Number(valorInput.value) * 100).toString()
+                : '';
+
+            function renderizarValor() {
+                const centavos = Number(digitosValor || 0);
+                valorDisplay.value = (centavos / 100).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+                valorInput.value = (centavos / 100).toFixed(2);
+            }
+
+            valorDisplay.addEventListener('keydown', function(event) {
+                if (/^\d$/.test(event.key)) {
+                    event.preventDefault();
+                    digitosValor = (digitosValor + event.key).replace(/^0+/, '').slice(0, 10);
+                    renderizarValor();
+                } else if (event.key === 'Backspace') {
+                    event.preventDefault();
+                    digitosValor = digitosValor.slice(0, -1);
+                    renderizarValor();
+                } else if (event.key === 'Delete') {
+                    event.preventDefault();
+                    digitosValor = '';
+                    renderizarValor();
+                }
+            });
+
+            valorDisplay.addEventListener('beforeinput', function(event) {
+                if (event.inputType === 'deleteContentBackward') {
+                    event.preventDefault();
+                    digitosValor = digitosValor.slice(0, -1);
+                    renderizarValor();
+                } else if (event.inputType === 'deleteContentForward') {
+                    event.preventDefault();
+                    digitosValor = '';
+                    renderizarValor();
+                } else if (event.inputType === 'insertText' && /^\d$/.test(event.data || '')) {
+                    event.preventDefault();
+                    digitosValor = (digitosValor + event.data).replace(/^0+/, '').slice(0, 10);
+                    renderizarValor();
+                }
+            });
+
+            valorDisplay.addEventListener('paste', function(event) {
+                event.preventDefault();
+                digitosValor = (event.clipboardData.getData('text').match(/\d/g) || [])
+                    .join('')
+                    .replace(/^0+/, '')
+                    .slice(0, 10);
+                renderizarValor();
+            });
+
+            valorDisplay.addEventListener('input', function() {
+                digitosValor = valorDisplay.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 10);
+                renderizarValor();
+            });
+
+            if (digitosValor !== '') renderizarValor();
+        });
+    </script>
 @stop
