@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Excursao;
+use App\Models\FormaPagamento;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -212,6 +214,9 @@ class ExcursaoCadastroTest extends TestCase
 
     public function test_uma_excursao_pode_ser_cadastrada(): void
     {
+        $dinheiro = FormaPagamento::create(['descricao' => 'Dinheiro']);
+        $cartao = FormaPagamento::create(['descricao' => 'Cartão']);
+
         $response = $this->post(route('eventos.excursoes.store'), [
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
@@ -220,6 +225,10 @@ class ExcursaoCadastroTest extends TestCase
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
             'descricao' => 'Excursão escolar',
+            'recebimentos' => [
+                ['valor' => 30000, 'forma_pagamento_id' => $dinheiro->id],
+                ['valor' => 20010, 'forma_pagamento_id' => $cartao->id],
+            ],
         ]);
 
         $response->assertRedirect(route('eventos.excursoes.index'))
@@ -233,6 +242,12 @@ class ExcursaoCadastroTest extends TestCase
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
             'descricao' => 'Excursão escolar',
+        ]);
+        $this->assertDatabaseCount('recebimento_excursao', 2);
+        $this->assertDatabaseHas('recebimento_excursao', [
+            'data_recebimento' => Carbon::today()->toDateString(),
+            'valor' => 30000,
+            'forma_pagamento_id' => $dinheiro->id,
         ]);
     }
 
@@ -256,7 +271,79 @@ class ExcursaoCadastroTest extends TestCase
                 'responsavel',
                 'telefone_responsavel',
                 'descricao',
+                'recebimentos',
             ]);
+    }
+
+    public function test_exige_pagamento_inicial_entre_cinquenta_e_cem_por_cento_do_total(): void
+    {
+        $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
+        $dados = [
+            'data' => Carbon::today()->addDay()->toDateString(),
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão escolar',
+        ];
+
+        $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), $dados + [
+                'recebimentos' => [
+                    ['valor' => 499.98, 'forma_pagamento_id' => $forma->id],
+                ],
+            ])
+            ->assertSessionHasErrors('recebimentos');
+
+        $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), $dados + [
+                'recebimentos' => [
+                    ['valor' => 1000.02, 'forma_pagamento_id' => $forma->id],
+                ],
+            ])
+            ->assertSessionHasErrors('recebimentos');
+    }
+
+    public function test_exige_comprovante_quando_configurado_na_forma_de_pagamento(): void
+    {
+        $pix = FormaPagamento::create([
+            'descricao' => 'Pix',
+            'exige_comprovante' => true,
+        ]);
+
+        $response = $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), [
+                'data' => Carbon::today()->addDay()->toDateString(),
+                'qtd_pessoas' => 10,
+                'valor_pessoa' => 100,
+                'responsavel' => 'Maria Silva',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Excursão escolar',
+                'recebimentos' => [
+                    ['valor' => 500, 'forma_pagamento_id' => $pix->id],
+                ],
+            ]);
+
+        $response->assertSessionHasErrors('recebimentos.0.comprovante');
+    }
+
+    public function test_impede_cadastro_de_excursao_com_data_passada(): void
+    {
+        $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
+
+        $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), [
+                'data' => Carbon::today()->subDay()->toDateString(),
+                'qtd_pessoas' => 10,
+                'valor_pessoa' => 100,
+                'responsavel' => 'Maria Silva',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Excursão escolar',
+                'recebimentos' => [
+                    ['valor' => 500, 'forma_pagamento_id' => $forma->id],
+                ],
+            ])
+            ->assertSessionHasErrors('data');
     }
 
     public function test_a_descricao_da_excursao_tem_limite_de_200_caracteres(): void

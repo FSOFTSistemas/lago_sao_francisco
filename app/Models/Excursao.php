@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ExcursaoFinanceiroService;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -71,12 +72,18 @@ class Excursao extends Model
     {
         static::creating(function (Excursao $excursao) {
             $excursao->percentual_comissao ??= 10;
-            $excursao->total_almoco ??= (float) $excursao->valor_almoco * (int) $excursao->qtd_almoco;
-            $excursao->subtotal ??= ((float) $excursao->valor_pessoa * (int) $excursao->qtd_pessoas)
-                + (float) $excursao->total_almoco;
-            $excursao->total ??= (float) $excursao->subtotal
-                + (float) $excursao->acrescimo
-                - (float) $excursao->desconto;
+            $calculos = (new ExcursaoFinanceiroService)->calcular([
+                'qtd_pessoas' => $excursao->qtd_pessoas,
+                'valor_pessoa' => $excursao->valor_pessoa,
+                'percentual_comissao' => $excursao->percentual_comissao,
+                'valor_almoco' => $excursao->valor_almoco,
+                'qtd_almoco' => $excursao->qtd_almoco,
+                'acrescimo' => $excursao->acrescimo,
+                'desconto' => $excursao->desconto,
+            ]);
+            $excursao->total_almoco = $calculos['total_almoco'];
+            $excursao->subtotal = $calculos['subtotal'];
+            $excursao->total = $calculos['total'];
         });
     }
 
@@ -87,56 +94,36 @@ class Excursao extends Model
 
     protected function valorPessoas(): Attribute
     {
-        return Attribute::get(fn () => round(
-            (float) $this->valor_pessoa * (int) $this->qtd_pessoas,
-            2,
-        ));
+        return Attribute::get(fn () => $this->calculosFinanceiros()['valor_pessoas']);
     }
 
     protected function valorComissao(): Attribute
     {
-        return Attribute::get(fn () => round(
-            (float) $this->valor_pessoas * ((float) $this->percentual_comissao / 100),
-            2,
-        ));
+        return Attribute::get(fn () => $this->calculosFinanceiros()['valor_comissao']);
     }
 
     protected function valorPago(): Attribute
     {
-        return Attribute::get(function () {
-            $valor = $this->relationLoaded('recebimentos')
-                ? $this->recebimentos->sum('valor')
-                : $this->recebimentos()->sum('valor');
-
-            return round((float) $valor, 2);
-        });
+        return Attribute::get(fn () => $this->calculosFinanceiros()['valor_pago']);
     }
 
     protected function valorRestante(): Attribute
     {
-        return Attribute::get(fn () => round(max(
-            (float) $this->total - (float) $this->valor_pago,
-            0,
-        ), 2));
+        return Attribute::get(fn () => $this->calculosFinanceiros()['valor_restante']);
     }
 
     protected function receitaLiquida(): Attribute
     {
-        return Attribute::get(fn () => round(
-            (float) $this->total - (float) $this->valor_comissao,
-            2,
-        ));
+        return Attribute::get(fn () => $this->calculosFinanceiros()['receita_liquida']);
     }
 
     protected function percentualPago(): Attribute
     {
         return Attribute::get(function () {
-            if ((float) $this->total <= 0) {
-                return 0.0;
-            }
+            $calculos = $this->calculosFinanceiros();
 
             return round(min(
-                ((float) $this->valor_pago / (float) $this->total) * 100,
+                ($calculos['valor_pago'] / $calculos['total']) * 100,
                 100,
             ), 2);
         });
@@ -144,12 +131,21 @@ class Excursao extends Model
 
     protected function pagamentoMinimoAtingido(): Attribute
     {
-        return Attribute::get(fn () => (float) $this->valor_pago + 0.01
-            >= (float) $this->total * 0.5);
+        return Attribute::get(function () {
+            $calculos = $this->calculosFinanceiros();
+
+            return $calculos['valor_pago'] + 0.01 >= $calculos['total'] * 0.5;
+        });
     }
 
     protected function quitada(): Attribute
     {
-        return Attribute::get(fn () => (float) $this->valor_restante <= 0.01);
+        return Attribute::get(fn () => $this->calculosFinanceiros()['quitada']);
+    }
+
+    /** @return array<string, float|bool> */
+    private function calculosFinanceiros(): array
+    {
+        return (new ExcursaoFinanceiroService)->calcularParaExcursao($this);
     }
 }

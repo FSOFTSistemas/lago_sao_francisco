@@ -51,6 +51,7 @@ class ExcursaoFinanceiroTest extends TestCase
             'qtd_pessoas' => 10,
             'valor_pessoa' => 100,
             'percentual_comissao' => 10,
+            'acrescimo' => 100,
             'subtotal' => 1100,
             'total' => 1100,
         ]);

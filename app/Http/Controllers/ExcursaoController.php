@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreExcursaoRequest;
 use App\Models\Excursao;
+use App\Services\ExcursaoFinanceiroService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use RuntimeException;
+use Throwable;
 
 class ExcursaoController extends Controller
 {
@@ -88,14 +94,64 @@ class ExcursaoController extends Controller
         return view('eventos.excursoes.create');
     }
 
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $this->validateRequest($request);
-        $validated['status'] = Excursao::STATUS_AGENDADO;
-        $validated['subtotal'] = $validated['valor_pessoa'] * $validated['qtd_pessoas'];
-        $validated['total'] = $validated['subtotal'];
+    public function store(
+        StoreExcursaoRequest $request,
+        ExcursaoFinanceiroService $financeiro,
+    ): RedirectResponse {
+        $validated = $request->validated();
+        $recebimentos = $validated['recebimentos'];
+        unset($validated['recebimentos']);
 
-        Excursao::create($validated);
+        $validated['status'] = Excursao::STATUS_AGENDADO;
+        $calculos = $financeiro->calcular(
+            $validated,
+            collect($recebimentos)->pluck('valor'),
+        );
+        $validated['total_almoco'] = $calculos['total_almoco'];
+        $validated['subtotal'] = $calculos['subtotal'];
+        $validated['total'] = $calculos['total'];
+
+        $comprovantesSalvos = [];
+
+        try {
+            DB::transaction(function () use (
+                $request,
+                $validated,
+                $recebimentos,
+                &$comprovantesSalvos,
+            ) {
+                $excursao = Excursao::create($validated);
+
+                foreach ($recebimentos as $indice => $recebimento) {
+                    $comprovantePath = null;
+
+                    if ($request->hasFile("recebimentos.{$indice}.comprovante")) {
+                        $comprovantePath = $request
+                            ->file("recebimentos.{$indice}.comprovante")
+                            ->store("comprovantes/excursoes/{$excursao->id}", 'local');
+
+                        if (! $comprovantePath) {
+                            throw new RuntimeException('Não foi possível armazenar o comprovante.');
+                        }
+
+                        $comprovantesSalvos[] = $comprovantePath;
+                    }
+
+                    $excursao->recebimentos()->create([
+                        'data_recebimento' => today(),
+                        'valor' => $recebimento['valor'],
+                        'forma_pagamento_id' => $recebimento['forma_pagamento_id'],
+                        'comprovante_path' => $comprovantePath,
+                    ]);
+                }
+            });
+        } catch (Throwable $exception) {
+            foreach ($comprovantesSalvos as $comprovantePath) {
+                Storage::disk('local')->delete($comprovantePath);
+            }
+
+            throw $exception;
+        }
 
         return redirect()
             ->route('eventos.excursoes.index')
@@ -119,15 +175,27 @@ class ExcursaoController extends Controller
         return view('eventos.excursoes.create', compact('excursao'));
     }
 
-    public function update(Request $request, Excursao $excursao): RedirectResponse
-    {
+    public function update(
+        Request $request,
+        Excursao $excursao,
+        ExcursaoFinanceiroService $financeiro,
+    ): RedirectResponse {
         if ($this->isImmutable($excursao)) {
             return $this->immutableExcursionRedirect();
         }
 
         $validated = $this->validateRequest($request);
-        $validated['subtotal'] = $validated['valor_pessoa'] * $validated['qtd_pessoas'];
-        $validated['total'] = $validated['subtotal'];
+        $dadosCalculo = array_merge($excursao->only([
+            'valor_almoco',
+            'qtd_almoco',
+            'acrescimo',
+            'desconto',
+            'percentual_comissao',
+        ]), $validated);
+        $calculos = $financeiro->calcular($dadosCalculo, $excursao->recebimentos);
+        $validated['total_almoco'] = $calculos['total_almoco'];
+        $validated['subtotal'] = $calculos['subtotal'];
+        $validated['total'] = $calculos['total'];
 
         $excursao->update($validated);
 
