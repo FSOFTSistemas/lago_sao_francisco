@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Excursao;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,5 +48,26 @@ class ExcursaoCadastroTest extends TestCase
 
         $response->assertRedirect(route('eventos.excursoes.create'))
             ->assertSessionHasErrors(['data', 'qtd_pessoas', 'valor']);
+    }
+
+    public function test_a_excursao_e_exibida_no_periodo_do_planner(): void
+    {
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor' => 2500.50,
+        ]);
+
+        $response = $this->getJson(route('eventos.planner.eventos', [
+            'start' => '2026-09-01',
+            'end' => '2026-10-01',
+        ]));
+
+        $response->assertOk()
+            ->assertJsonFragment([
+                'id' => 'excursao-'.$excursao->id,
+                'title' => 'Excursão - 40 pessoas',
+                'start' => '2026-09-15',
+            ]);
     }
 }
