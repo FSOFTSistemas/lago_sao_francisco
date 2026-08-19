@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Excursao extends Model
 {
@@ -41,4 +42,9 @@ class Excursao extends Model
         'qtd_pessoas' => 'integer',
         'valor' => 'decimal:2',
     ];
+
+    public function recebimentos(): HasMany
+    {
+        return $this->hasMany(RecebimentoExcursao::class);
+    }
 }
