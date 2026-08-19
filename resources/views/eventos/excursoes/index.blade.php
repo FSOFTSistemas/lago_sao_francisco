@@ -88,10 +88,21 @@
         </div>
         <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-warning"><i class="fas fa-hand-holding-usd"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Receita prevista</span>
+                    <span class="info-box-number">R$ {{ number_format($resumo['receita_prevista'], 2, ',', '.') }}</span>
+                    <small class="text-muted">em excursões agendadas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-sm-6">
+            <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Valor total</span>
-                    <span class="info-box-number">R$ {{ number_format($resumo['valor'], 2, ',', '.') }}</span>
+                    <span class="info-box-text">Receita realizada</span>
+                    <span class="info-box-number">R$ {{ number_format($resumo['receita_realizada'], 2, ',', '.') }}</span>
+                    <small class="text-muted">em excursões realizadas</small>
                 </div>
             </div>
         </div>

@@ -30,10 +30,12 @@ class ExcursaoController extends Controller
         $dataInicio = $periodo['data_inicio'] ?? null;
         $dataFim = $periodo['data_fim'] ?? null;
 
-        $query = Excursao::query()
-            ->when($status, fn ($query) => $query->where('status', $status))
+        $queryPeriodo = Excursao::query()
             ->when($dataInicio, fn ($query) => $query->whereDate('data', '>=', $dataInicio))
-            ->when($dataFim, fn ($query) => $query->whereDate('data', '<=', $dataFim))
+            ->when($dataFim, fn ($query) => $query->whereDate('data', '<=', $dataFim));
+
+        $query = (clone $queryPeriodo)
+            ->when($status, fn ($query) => $query->where('status', $status))
             ->when($busca !== '', function ($query) use ($busca) {
                 $query->where(function ($query) use ($busca) {
                     $query->where('descricao', 'like', '%'.$busca.'%')
@@ -57,7 +59,12 @@ class ExcursaoController extends Controller
             'pessoas' => (clone $query)
                 ->where('status', Excursao::STATUS_REALIZADO)
                 ->sum('qtd_pessoas'),
-            'valor' => (clone $query)->sum('valor'),
+            'receita_prevista' => (clone $query)
+                ->where('status', Excursao::STATUS_AGENDADO)
+                ->sum('valor'),
+            'receita_realizada' => (clone $query)
+                ->where('status', Excursao::STATUS_REALIZADO)
+                ->sum('valor'),
         ];
 
         return view('eventos.excursoes.index', compact(

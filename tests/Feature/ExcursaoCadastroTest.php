@@ -147,6 +147,39 @@ class ExcursaoCadastroTest extends TestCase
             ->assertDontSee('Depois do período');
     }
 
+    public function test_os_indicadores_consideram_apenas_excursoes_do_periodo_filtrado(): void
+    {
+        foreach ([
+            ['data' => '2026-09-15', 'status' => 'AGENDADO', 'pessoas' => 20, 'valor' => 1000],
+            ['data' => '2026-09-16', 'status' => 'REALIZADO', 'pessoas' => 10, 'valor' => 500],
+            ['data' => '2026-10-20', 'status' => 'REALIZADO', 'pessoas' => 100, 'valor' => 9000],
+        ] as $dados) {
+            Excursao::create([
+                'data' => $dados['data'],
+                'qtd_pessoas' => $dados['pessoas'],
+                'valor' => $dados['valor'],
+                'status' => $dados['status'],
+                'responsavel' => 'Maria Silva',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Descrição da excursão',
+            ]);
+        }
+
+        $response = $this->get(route('eventos.excursoes.index', [
+            'data_inicio' => '2026-09-01',
+            'data_fim' => '2026-09-30',
+        ]));
+
+        $response->assertOk()
+            ->assertViewHas('resumo', function (array $resumo) {
+                return $resumo['agendadas'] === 1
+                    && $resumo['realizadas'] === 1
+                    && (int) $resumo['pessoas'] === 10
+                    && (float) $resumo['receita_prevista'] === 1000.0
+                    && (float) $resumo['receita_realizada'] === 500.0;
+            });
+    }
+
     public function test_uma_excursao_pode_ser_cadastrada(): void
     {
         $response = $this->post(route('eventos.excursoes.store'), [
