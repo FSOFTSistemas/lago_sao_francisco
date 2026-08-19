@@ -119,6 +119,34 @@ class ExcursaoCadastroTest extends TestCase
             ->assertDontSee('Maria Silva');
     }
 
+    public function test_a_listagem_pode_ser_filtrada_por_periodo(): void
+    {
+        foreach ([
+            ['data' => '2026-09-10', 'responsavel' => 'Antes do período'],
+            ['data' => '2026-09-15', 'responsavel' => 'Dentro do período'],
+            ['data' => '2026-09-20', 'responsavel' => 'Depois do período'],
+        ] as $dados) {
+            Excursao::create([
+                ...$dados,
+                'qtd_pessoas' => 20,
+                'valor' => 1000,
+                'status' => 'AGENDADO',
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Descrição da excursão',
+            ]);
+        }
+
+        $response = $this->get(route('eventos.excursoes.index', [
+            'data_inicio' => '2026-09-12',
+            'data_fim' => '2026-09-18',
+        ]));
+
+        $response->assertOk()
+            ->assertSee('Dentro do período')
+            ->assertDontSee('Antes do período')
+            ->assertDontSee('Depois do período');
+    }
+
     public function test_uma_excursao_pode_ser_cadastrada(): void
     {
         $response = $this->post(route('eventos.excursoes.store'), [
@@ -243,13 +271,13 @@ class ExcursaoCadastroTest extends TestCase
         ]);
     }
 
-    public function test_uma_excursao_pode_ser_excluida(): void
+    public function test_ao_excluir_uma_excursao_seu_status_e_alterado_para_cancelado(): void
     {
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
             'valor' => 2500.50,
-            'status' => 'CANCELADO',
+            'status' => 'AGENDADO',
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
             'descricao' => 'Excursão cancelada',
@@ -258,7 +286,10 @@ class ExcursaoCadastroTest extends TestCase
         $response = $this->delete(route('eventos.excursoes.destroy', $excursao));
 
         $response->assertRedirect(route('eventos.excursoes.index'));
-        $this->assertDatabaseMissing('excursoes', ['id' => $excursao->id]);
+        $this->assertDatabaseHas('excursoes', [
+            'id' => $excursao->id,
+            'status' => 'CANCELADO',
+        ]);
     }
 
     public function test_uma_excursao_pode_ser_iniciada_e_finalizada(): void
@@ -318,6 +349,40 @@ class ExcursaoCadastroTest extends TestCase
             'id' => $excursao->id,
             'data' => '2026-09-15',
             'status' => 'REALIZADO',
+        ]);
+    }
+
+    public function test_uma_excursao_cancelada_so_pode_ser_visualizada(): void
+    {
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor' => 2500.50,
+            'status' => 'CANCELADO',
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão cancelada',
+        ]);
+
+        $this->get(route('eventos.excursoes.edit', $excursao))
+            ->assertRedirect(route('eventos.excursoes.show', $excursao));
+
+        $this->put(route('eventos.excursoes.update', $excursao), [
+            'data' => '2026-10-01',
+            'qtd_pessoas' => 50,
+            'valor' => 3000,
+            'responsavel' => 'Outro responsável',
+            'telefone_responsavel' => '(11) 98888-8888',
+            'descricao' => 'Tentativa de alteração',
+        ])->assertSessionHas('error');
+
+        $this->delete(route('eventos.excursoes.destroy', $excursao))
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('excursoes', [
+            'id' => $excursao->id,
+            'data' => '2026-09-15',
+            'status' => 'CANCELADO',
         ]);
     }
 }

@@ -11,13 +11,29 @@ class ExcursaoController extends Controller
 {
     public function index(Request $request): View
     {
+        $periodo = $request->validate(
+            [
+                'data_inicio' => ['nullable', 'date'],
+                'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
+            ],
+            [
+                'data_inicio.date' => 'Informe uma data inicial válida.',
+                'data_fim.date' => 'Informe uma data final válida.',
+                'data_fim.after_or_equal' => 'A data final deve ser igual ou posterior à data inicial.',
+            ],
+        );
+
         $status = in_array($request->query('status'), Excursao::STATUS, true)
             ? $request->query('status')
             : null;
         $busca = trim((string) $request->query('busca', ''));
+        $dataInicio = $periodo['data_inicio'] ?? null;
+        $dataFim = $periodo['data_fim'] ?? null;
 
         $query = Excursao::query()
             ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($dataInicio, fn ($query) => $query->whereDate('data', '>=', $dataInicio))
+            ->when($dataFim, fn ($query) => $query->whereDate('data', '<=', $dataFim))
             ->when($busca !== '', function ($query) use ($busca) {
                 $query->where(function ($query) use ($busca) {
                     $query->where('descricao', 'like', '%'.$busca.'%')
@@ -37,7 +53,14 @@ class ExcursaoController extends Controller
             'valor' => (clone $query)->sum('valor'),
         ];
 
-        return view('eventos.excursoes.index', compact('excursoes', 'resumo', 'status', 'busca'));
+        return view('eventos.excursoes.index', compact(
+            'excursoes',
+            'resumo',
+            'status',
+            'busca',
+            'dataInicio',
+            'dataFim',
+        ));
     }
 
     public function create(): View
@@ -67,7 +90,7 @@ class ExcursaoController extends Controller
 
     public function edit(Excursao $excursao): View|RedirectResponse
     {
-        if ($excursao->status === Excursao::STATUS_REALIZADO) {
+        if ($this->isImmutable($excursao)) {
             return redirect()->route('eventos.excursoes.show', $excursao);
         }
 
@@ -76,8 +99,8 @@ class ExcursaoController extends Controller
 
     public function update(Request $request, Excursao $excursao): RedirectResponse
     {
-        if ($excursao->status === Excursao::STATUS_REALIZADO) {
-            return $this->finishedExcursionRedirect();
+        if ($this->isImmutable($excursao)) {
+            return $this->immutableExcursionRedirect();
         }
 
         $excursao->update($this->validateRequest($request));
@@ -89,15 +112,15 @@ class ExcursaoController extends Controller
 
     public function destroy(Excursao $excursao): RedirectResponse
     {
-        if ($excursao->status === Excursao::STATUS_REALIZADO) {
-            return $this->finishedExcursionRedirect();
+        if ($this->isImmutable($excursao)) {
+            return $this->immutableExcursionRedirect();
         }
 
-        $excursao->delete();
+        $excursao->update(['status' => Excursao::STATUS_CANCELADO]);
 
         return redirect()
             ->route('eventos.excursoes.index')
-            ->with('success', 'Excursão excluída com sucesso!');
+            ->with('success', 'Excursão cancelada com sucesso!');
     }
 
     public function start(Excursao $excursao): RedirectResponse
@@ -160,10 +183,18 @@ class ExcursaoController extends Controller
         );
     }
 
-    private function finishedExcursionRedirect(): RedirectResponse
+    private function isImmutable(Excursao $excursao): bool
+    {
+        return in_array($excursao->status, [
+            Excursao::STATUS_REALIZADO,
+            Excursao::STATUS_CANCELADO,
+        ], true);
+    }
+
+    private function immutableExcursionRedirect(): RedirectResponse
     {
         return redirect()
             ->route('eventos.excursoes.index')
-            ->with('error', 'Excursões finalizadas estão disponíveis apenas para visualização.');
+            ->with('error', 'Excursões realizadas ou canceladas estão disponíveis apenas para visualização.');
     }
 }

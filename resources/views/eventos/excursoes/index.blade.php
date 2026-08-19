@@ -38,52 +38,6 @@
         </div>
     @endif
 
-    <div class="card card-outline card-secondary shadow-sm">
-        <div class="card-body">
-            <form action="{{ route('eventos.excursoes.index') }}" method="GET">
-                <div class="form-row align-items-end">
-                    <div class="form-group col-md-3 mb-md-0">
-                        <label for="filtro-status">Status</label>
-                        <select class="form-control" id="filtro-status" name="status">
-                            <option value="">Todos os status</option>
-                            <option value="AGENDADO" @selected($status === 'AGENDADO')>Agendado</option>
-                            <option value="EM_ANDAMENTO" @selected($status === 'EM_ANDAMENTO')>Em andamento</option>
-                            <option value="REALIZADO" @selected($status === 'REALIZADO')>Realizado</option>
-                            <option value="CANCELADO" @selected($status === 'CANCELADO')>Cancelado</option>
-                        </select>
-                    </div>
-                    <div class="form-group col-md-5 mb-md-0">
-                        <label for="filtro-busca">Buscar</label>
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                            </div>
-                            <input
-                                type="search"
-                                class="form-control"
-                                id="filtro-busca"
-                                name="busca"
-                                value="{{ $busca }}"
-                                placeholder="Descrição ou responsável"
-                                maxlength="255"
-                            >
-                        </div>
-                    </div>
-                    <div class="form-group col-md-4 mb-0">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-filter mr-1"></i> Filtrar
-                        </button>
-                        @if ($status || $busca !== '')
-                            <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary ml-1">
-                                <i class="fas fa-times mr-1"></i> Limpar filtro
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div class="row">
         <div class="col-md-4">
             <div class="info-box shadow-sm">
@@ -114,6 +68,80 @@
         </div>
     </div>
 
+    <div class="card card-outline card-secondary shadow-sm">
+        <div class="card-body">
+            <form action="{{ route('eventos.excursoes.index') }}" method="GET">
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label for="filtro-data-inicio">Data inicial</label>
+                        <input
+                            type="date"
+                            class="form-control @error('data_inicio') is-invalid @enderror"
+                            id="filtro-data-inicio"
+                            name="data_inicio"
+                            value="{{ $dataInicio }}"
+                        >
+                        @error('data_inicio')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="filtro-data-fim">Data final</label>
+                        <input
+                            type="date"
+                            class="form-control @error('data_fim') is-invalid @enderror"
+                            id="filtro-data-fim"
+                            name="data_fim"
+                            value="{{ $dataFim }}"
+                        >
+                        @error('data_fim')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="filtro-status">Status</label>
+                        <select class="form-control" id="filtro-status" name="status">
+                            <option value="">Todos os status</option>
+                            <option value="AGENDADO" @selected($status === 'AGENDADO')>Agendado</option>
+                            <option value="EM_ANDAMENTO" @selected($status === 'EM_ANDAMENTO')>Em andamento</option>
+                            <option value="REALIZADO" @selected($status === 'REALIZADO')>Realizado</option>
+                            <option value="CANCELADO" @selected($status === 'CANCELADO')>Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label for="filtro-busca">Buscar</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input
+                                type="search"
+                                class="form-control"
+                                id="filtro-busca"
+                                name="busca"
+                                value="{{ $busca }}"
+                                placeholder="Descrição ou responsável"
+                                maxlength="255"
+                            >
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-12 mb-0 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter mr-1"></i> Filtrar
+                        </button>
+                        @if ($status || $busca !== '' || $dataInicio || $dataFim)
+                            <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary ml-1">
+                                <i class="fas fa-times mr-1"></i> Limpar filtro
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card card-outline card-primary shadow-sm">
         <div class="card-header">
             <h3 class="card-title">
@@ -123,6 +151,14 @@
                 @endif
                 @if ($busca !== '')
                     <span class="badge badge-light ml-1">Busca: {{ $busca }}</span>
+                @endif
+                @if ($dataInicio || $dataFim)
+                    <span class="badge badge-light ml-1">
+                        Período:
+                        {{ $dataInicio ? \Carbon\Carbon::parse($dataInicio)->format('d/m/Y') : 'mais antiga' }}
+                        a
+                        {{ $dataFim ? \Carbon\Carbon::parse($dataFim)->format('d/m/Y') : 'mais futura' }}
+                    </span>
                 @endif
             </h3>
         </div>
@@ -172,7 +208,7 @@
                                     R$ {{ number_format($excursao->valor, 2, ',', '.') }}
                                 </td>
                                 <td class="align-middle text-center text-nowrap">
-                                    @if ($excursao->status === 'REALIZADO')
+                                    @if (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
                                         <a href="{{ route('eventos.excursoes.show', $excursao) }}" class="btn btn-sm btn-outline-secondary" title="Visualizar excursão" aria-label="Visualizar excursão #{{ $excursao->id }}">
                                             <i class="fas fa-eye"></i>
                                         </a>
@@ -195,11 +231,18 @@
                                         </a>
 
 
-                                        <form action="{{ route('eventos.excursoes.destroy', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta excursão? Esta ação não poderá ser desfeita.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir excursão" aria-label="Excluir excursão #{{ $excursao->id }}"><i class="fas fa-trash"></i></button>
-                                        </form>
+                                        @if ($excursao->status !== 'CANCELADO')
+                                            <form
+                                                action="{{ route('eventos.excursoes.destroy', $excursao) }}"
+                                                method="POST"
+                                                class="d-inline form-cancelar-excursao"
+                                                data-excursao="{{ $excursao->descricao }}"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar excursão" aria-label="Cancelar excursão #{{ $excursao->id }}"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>
@@ -209,7 +252,7 @@
                                     <i class="fas fa-bus fa-3x text-muted mb-3 d-block"></i>
                                     <p class="text-muted mb-3">Nenhuma excursão cadastrada.</p>
                                     <a href="{{ route('eventos.excursoes.create') }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-plus mr-1"></i> Cadastrar primeira excursão
+                                        <i class="fas fa-plus mr-1"></i> Cadastrar excursão
                                     </a>
                                 </td>
                             </tr>
@@ -234,4 +277,36 @@
             white-space: normal;
         }
     </style>
+@stop
+
+@section('js')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.form-cancelar-excursao').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    const descricao = form.dataset.excursao;
+
+                    Swal.fire({
+                        title: 'Cancelar excursão?',
+                        text: descricao
+                            ? `A excursão "${descricao}" será marcada como cancelada.`
+                            : 'A excursão será marcada como cancelada.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Sim, cancelar',
+                        cancelButtonText: 'Voltar',
+                        reverseButtons: true
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 @stop

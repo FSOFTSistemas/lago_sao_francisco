@@ -8,7 +8,7 @@
     <div class="d-flex align-items-center justify-content-between">
         <div>
             <h1 class="mb-1">{{ $somenteLeitura ? 'Visualizar excursão' : (isset($excursao) ? 'Editar excursão' : 'Cadastrar excursão') }}</h1>
-            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados da excursão finalizada.' : (isset($excursao) ? 'Atualize os dados da excursão selecionada.' : 'Informe os dados da excursão para incluí-la nos eventos.') }}</p>
+            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados da excursão realizada ou cancelada.' : (isset($excursao) ? 'Atualize os dados da excursão selecionada.' : 'Informe os dados da excursão para incluí-la nos eventos.') }}</p>
         </div>
         <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left mr-1"></i> Voltar para excursões
