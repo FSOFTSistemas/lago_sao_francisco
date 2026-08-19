@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -82,5 +83,73 @@ class Excursao extends Model
     public function recebimentos(): HasMany
     {
         return $this->hasMany(RecebimentoExcursao::class);
+    }
+
+    protected function valorPessoas(): Attribute
+    {
+        return Attribute::get(fn () => round(
+            (float) $this->valor_pessoa * (int) $this->qtd_pessoas,
+            2,
+        ));
+    }
+
+    protected function valorComissao(): Attribute
+    {
+        return Attribute::get(fn () => round(
+            (float) $this->valor_pessoas * ((float) $this->percentual_comissao / 100),
+            2,
+        ));
+    }
+
+    protected function valorPago(): Attribute
+    {
+        return Attribute::get(function () {
+            $valor = $this->relationLoaded('recebimentos')
+                ? $this->recebimentos->sum('valor')
+                : $this->recebimentos()->sum('valor');
+
+            return round((float) $valor, 2);
+        });
+    }
+
+    protected function valorRestante(): Attribute
+    {
+        return Attribute::get(fn () => round(max(
+            (float) $this->total - (float) $this->valor_pago,
+            0,
+        ), 2));
+    }
+
+    protected function receitaLiquida(): Attribute
+    {
+        return Attribute::get(fn () => round(
+            (float) $this->total - (float) $this->valor_comissao,
+            2,
+        ));
+    }
+
+    protected function percentualPago(): Attribute
+    {
+        return Attribute::get(function () {
+            if ((float) $this->total <= 0) {
+                return 0.0;
+            }
+
+            return round(min(
+                ((float) $this->valor_pago / (float) $this->total) * 100,
+                100,
+            ), 2);
+        });
+    }
+
+    protected function pagamentoMinimoAtingido(): Attribute
+    {
+        return Attribute::get(fn () => (float) $this->valor_pago + 0.01
+            >= (float) $this->total * 0.5);
+    }
+
+    protected function quitada(): Attribute
+    {
+        return Attribute::get(fn () => (float) $this->valor_restante <= 0.01);
     }
 }

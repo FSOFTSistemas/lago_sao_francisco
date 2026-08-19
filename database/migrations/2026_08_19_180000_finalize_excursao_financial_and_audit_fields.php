@@ -9,6 +9,26 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $quantidadesInvalidas = DB::table('excursoes')
+            ->where('qtd_pessoas', '<', 1)
+            ->count();
+
+        if ($quantidadesInvalidas > 0) {
+            throw new RuntimeException(
+                "A migração foi interrompida: {$quantidadesInvalidas} excursão(ões) possuem quantidade de pessoas menor que 1."
+            );
+        }
+
+        $valoresInvalidos = DB::table('excursoes')
+            ->where('valor_pessoa', '<', 0)
+            ->count();
+
+        if ($valoresInvalidos > 0) {
+            throw new RuntimeException(
+                "A migração foi interrompida: {$valoresInvalidos} excursão(ões) possuem valor por pessoa negativo."
+            );
+        }
+
         if (in_array(DB::getDriverName(), ['mysql', 'mariadb'], true)) {
             DB::statement('ALTER TABLE excursoes CHANGE comissao percentual_comissao DECIMAL(5, 2) NOT NULL DEFAULT 10');
         } else {
