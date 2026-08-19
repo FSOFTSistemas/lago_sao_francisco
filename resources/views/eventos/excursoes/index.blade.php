@@ -41,10 +41,11 @@
     <div class="row">
         <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
-                <span class="info-box-icon bg-primary"><i class="fas fa-bus"></i></span>
+                <span class="info-box-icon bg-primary"><i class="fas fa-user-friends"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Excursões cadastradas</span>
-                    <span class="info-box-number">{{ number_format($resumo['total'], 0, ',', '.') }}</span>
+                    <span class="info-box-text">Média de pessoas</span>
+                    <span class="info-box-number">{{ number_format($resumo['media_pessoas_realizadas'], 0, ',', '.') }}</span>
+                    <small class="text-muted">por excursão realizada</small>
                 </div>
             </div>
         </div>
@@ -81,6 +82,7 @@
                 <div class="info-box-content">
                     <span class="info-box-text">Total de pessoas</span>
                     <span class="info-box-number">{{ number_format($resumo['pessoas'], 0, ',', '.') }}</span>
+                    <small class="text-muted">em excursões realizadas</small>
                 </div>
             </div>
         </div>

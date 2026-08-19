@@ -48,11 +48,15 @@ class ExcursaoController extends Controller
             ->withQueryString();
 
         $resumo = [
-            'total' => (clone $query)->count(),
+            'media_pessoas_realizadas' => (int) floor((float) ((clone $query)
+                ->where('status', Excursao::STATUS_REALIZADO)
+                ->avg('qtd_pessoas') ?? 0)),
             'agendadas' => (clone $query)->where('status', Excursao::STATUS_AGENDADO)->count(),
             'realizadas' => (clone $query)->where('status', Excursao::STATUS_REALIZADO)->count(),
             'canceladas' => (clone $query)->where('status', Excursao::STATUS_CANCELADO)->count(),
-            'pessoas' => (clone $query)->sum('qtd_pessoas'),
+            'pessoas' => (clone $query)
+                ->where('status', Excursao::STATUS_REALIZADO)
+                ->sum('qtd_pessoas'),
             'valor' => (clone $query)->sum('valor'),
         ];
 
