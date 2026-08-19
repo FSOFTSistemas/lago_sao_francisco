@@ -8,7 +8,7 @@
 
 @section('content')
     <div class="row">
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-success">
                 <div class="inner">
                     <h2>Cadastrar</h2>
@@ -19,7 +19,20 @@
                 <a href="{{ route('aluguel.create') }}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-sm-6">
+            <div class="small-box bg-primary">
+                <div class="inner">
+                    <h2>Excursão</h2>
+                </div>
+                <div class="icon">
+                    <i class="fas fa-bus"></i>
+                </div>
+                <a href="{{ route('eventos.excursoes.create') }}" class="small-box-footer" aria-label="Cadastrar excursão">
+                    Cadastrar <i class="fas fa-arrow-circle-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-info">
                 <div class="inner">
                     <h2>Planner</h2>
@@ -30,7 +43,7 @@
                 <a href="{{ route('eventos.planner') }}" class="small-box-footer"> <i class="fas fa-arrow-circle-right"></i></a>
             </div>
         </div>
-        <div class="col-lg-4 col-6">
+        <div class="col-lg-3 col-sm-6">
             <div class="small-box bg-warning">
                 <div class="inner">
                     <h2>Relatórios</h2>
