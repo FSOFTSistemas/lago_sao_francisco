@@ -33,7 +33,7 @@
         <div class="card-body">
             <form action="{{ route('eventos.excursoes.index') }}" method="GET">
                 <div class="form-row align-items-end">
-                    <div class="form-group col-md-5 mb-md-0">
+                    <div class="form-group col-md-3 mb-md-0">
                         <label for="filtro-status">Status</label>
                         <select class="form-control" id="filtro-status" name="status">
                             <option value="">Todos os status</option>
@@ -42,11 +42,28 @@
                             <option value="CANCELADO" @selected($status === 'CANCELADO')>Cancelado</option>
                         </select>
                     </div>
-                    <div class="form-group col-md-7 mb-0">
+                    <div class="form-group col-md-5 mb-md-0">
+                        <label for="filtro-busca">Buscar</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            </div>
+                            <input
+                                type="search"
+                                class="form-control"
+                                id="filtro-busca"
+                                name="busca"
+                                value="{{ $busca }}"
+                                placeholder="Descrição ou responsável"
+                                maxlength="255"
+                            >
+                        </div>
+                    </div>
+                    <div class="form-group col-md-4 mb-0">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-filter mr-1"></i> Filtrar
                         </button>
-                        @if ($status)
+                        @if ($status || $busca !== '')
                             <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary ml-1">
                                 <i class="fas fa-times mr-1"></i> Limpar filtro
                             </a>
@@ -93,6 +110,9 @@
                 <i class="fas fa-list mr-2"></i>Excursões cadastradas
                 @if ($status)
                     <span class="badge badge-light ml-2">{{ ucfirst(strtolower($status)) }}</span>
+                @endif
+                @if ($busca !== '')
+                    <span class="badge badge-light ml-1">Busca: {{ $busca }}</span>
                 @endif
             </h3>
         </div>

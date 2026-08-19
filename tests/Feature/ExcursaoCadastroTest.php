@@ -60,6 +60,38 @@ class ExcursaoCadastroTest extends TestCase
             ->assertDontSee('Responsável AGENDADO');
     }
 
+    public function test_a_listagem_pode_ser_pesquisada_por_descricao_ou_responsavel(): void
+    {
+        Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor' => 2500.50,
+            'status' => 'AGENDADO',
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Visita ao parque aquático',
+        ]);
+        Excursao::create([
+            'data' => '2026-09-20',
+            'qtd_pessoas' => 20,
+            'valor' => 1500,
+            'status' => 'AGENDADO',
+            'responsavel' => 'João Souza',
+            'telefone_responsavel' => '(11) 98888-8888',
+            'descricao' => 'Passeio escolar',
+        ]);
+
+        $this->get(route('eventos.excursoes.index', ['busca' => 'parque']))
+            ->assertOk()
+            ->assertSee('Maria Silva')
+            ->assertDontSee('João Souza');
+
+        $this->get(route('eventos.excursoes.index', ['busca' => 'João']))
+            ->assertOk()
+            ->assertSee('João Souza')
+            ->assertDontSee('Maria Silva');
+    }
+
     public function test_uma_excursao_pode_ser_cadastrada(): void
     {
         $response = $this->post(route('eventos.excursoes.store'), [

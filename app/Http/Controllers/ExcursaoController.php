@@ -15,9 +15,16 @@ class ExcursaoController extends Controller
         $status = in_array($request->query('status'), Excursao::STATUS, true)
             ? $request->query('status')
             : null;
+        $busca = trim((string) $request->query('busca', ''));
 
         $query = Excursao::query()
-            ->when($status, fn ($query) => $query->where('status', $status));
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->when($busca !== '', function ($query) use ($busca) {
+                $query->where(function ($query) use ($busca) {
+                    $query->where('descricao', 'like', '%'.$busca.'%')
+                        ->orWhere('responsavel', 'like', '%'.$busca.'%');
+                });
+            });
 
         $excursoes = (clone $query)
             ->orderByDesc('data')
@@ -31,7 +38,7 @@ class ExcursaoController extends Controller
             'valor' => (clone $query)->sum('valor'),
         ];
 
-        return view('eventos.excursoes.index', compact('excursoes', 'resumo', 'status'));
+        return view('eventos.excursoes.index', compact('excursoes', 'resumo', 'status', 'busca'));
     }
 
     public function create(): View
