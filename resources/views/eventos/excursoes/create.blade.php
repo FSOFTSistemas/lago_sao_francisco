@@ -88,6 +88,21 @@
                                 maxlength="200" required @disabled($somenteLeitura)>{{ old('descricao', $excursao->descricao ?? '') }}</textarea>
                             <small class="form-text text-muted"><span id="descricao-contador">0</span>/200 caracteres</small>
                         </div>
+                        <div class="form-group mt-3 mb-0">
+                            <div class="custom-control custom-switch">
+                                <input type="hidden" name="possui_almoco" value="0">
+                                <input type="checkbox" class="custom-control-input" id="possui_almoco"
+                                    name="possui_almoco" value="1"
+                                    @checked(old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0))
+                                    @disabled($somenteLeitura)>
+                                <label class="custom-control-label" for="possui_almoco">
+                                    Almoço?
+                                    <strong id="possui-almoco-label">
+                                        {{ old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0) ? 'Sim' : 'Não' }}
+                                    </strong>
+                                </label>
+                            </div>
+                        </div>
                         @if ($edicao)
                             <div class="form-group mt-3 mb-0"><label>Status</label>
                                 <input class="form-control" value="{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}" disabled>
@@ -101,43 +116,30 @@
                     <div class="card-body"><div class="form-row">
                         <div class="form-group col-md-4">
                             <label for="qtd_pessoas">Quantidade de pessoas <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="qtd_pessoas" name="qtd_pessoas" min="1" step="1"
+                            <input type="number" class="form-control @error('qtd_pessoas') is-invalid @enderror" id="qtd_pessoas" name="qtd_pessoas" min="1" step="1"
                                 value="{{ old('qtd_pessoas', $excursao->qtd_pessoas ?? 1) }}" required @disabled($somenteLeitura)>
+                            @error('qtd_pessoas') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group col-md-4">
                             <label for="valor_pessoa_display">Valor por pessoa <span class="text-danger">*</span></label>
                             <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-                                <input type="text" class="form-control money-display" id="valor_pessoa_display" data-money-target="valor_pessoa"
+                                <input type="text" class="form-control money-display @error('valor_pessoa') is-invalid @enderror" id="valor_pessoa_display" data-money-target="valor_pessoa"
                                     value="{{ $formatarMoeda($valorCampo('valor_pessoa')) }}" inputmode="numeric" required @disabled($somenteLeitura)>
                                 <input type="hidden" id="valor_pessoa" name="valor_pessoa" value="{{ $valorCampo('valor_pessoa') }}">
                             </div>
+                            @error('valor_pessoa') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group col-md-4">
                             <label for="percentual_comissao">Comissão <span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" class="form-control" id="percentual_comissao" name="percentual_comissao" min="0" max="100" step="0.01"
+                                <input type="number" class="form-control @error('percentual_comissao') is-invalid @enderror" id="percentual_comissao" name="percentual_comissao" min="0" max="100" step="0.01"
                                     value="{{ $valorCampo('percentual_comissao', 10) }}" required @disabled($somenteLeitura)>
                                 <div class="input-group-append"><span class="input-group-text">%</span></div>
                             </div>
+                            @error('percentual_comissao') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                     </div></div>
                 </div>
-
-                        <div class="form-group row">
-                            <label class="col-md-3 label-control form-lab d-block">* Almoço?</label>
-                            <div class="form-check form-switch">
-                                <input type="hidden" name="possui_almoco" value="0">
-                                <input type="checkbox" class="form-check-input" id="possui_almoco"
-                                    name="possui_almoco" value="1"
-                                    @checked(old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0))
-                                    @disabled($somenteLeitura)>
-                                <label class="form-check-label ms-2" for="possui_almoco">
-                                    <strong id="possui-almoco-label">
-                                        {{ old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0) ? 'Sim' : 'Não' }}
-                                    </strong>
-                                </label>
-                            </div>
-                        </div>
 
                     </div>
 
@@ -170,10 +172,11 @@
                                 <div class="form-group col-md-6 mb-0">
                                     <label for="{{ $campo }}_display">{{ $rotulo }}</label>
                                     <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-                                        <input type="text" class="form-control money-display" id="{{ $campo }}_display" data-money-target="{{ $campo }}"
+                                        <input type="text" class="form-control money-display @error($campo) is-invalid @enderror" id="{{ $campo }}_display" data-money-target="{{ $campo }}"
                                             value="{{ $formatarMoeda($valorCampo($campo)) }}" inputmode="numeric" required @disabled($somenteLeitura)>
                                         <input type="hidden" id="{{ $campo }}" name="{{ $campo }}" value="{{ $valorCampo($campo) }}">
                                     </div>
+                                    @error($campo) <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
                             @endforeach
                         </div></div>
@@ -193,26 +196,29 @@
                                         <div class="form-row align-items-end">
                                             <div class="form-group col-md-4">
                                                 <label>Forma de pagamento <span class="text-danger">*</span></label>
-                                                <select class="form-control forma-pagamento" name="recebimentos[{{ $indice }}][forma_pagamento_id]" required>
+                                                <select class="form-control forma-pagamento @error("recebimentos.$indice.forma_pagamento_id") is-invalid @enderror" name="recebimentos[{{ $indice }}][forma_pagamento_id]" required>
                                                     <option value="">Selecione</option>
                                                     @foreach ($formasPagamento as $forma)
                                                         <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}"
                                                             @selected((string) ($recebimento['forma_pagamento_id'] ?? '') === (string) $forma->id)>{{ $forma->descricao }}</option>
                                                     @endforeach
                                                 </select>
+                                                @error("recebimentos.$indice.forma_pagamento_id") <div class="invalid-feedback">{{ $message }}</div> @enderror
                                             </div>
                                             <div class="form-group col-md-3">
                                                 <label>Valor <span class="text-danger">*</span></label>
                                                 <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-                                                    <input type="text" class="form-control money-display pagamento-display" data-money-target="recebimento_valor_{{ $indice }}"
+                                                    <input type="text" class="form-control money-display pagamento-display @error("recebimentos.$indice.valor") is-invalid @enderror" data-money-target="recebimento_valor_{{ $indice }}"
                                                         value="{{ $formatarMoeda($recebimento['valor'] ?? 0) }}" inputmode="numeric" required>
                                                     <input type="hidden" class="pagamento-valor" id="recebimento_valor_{{ $indice }}"
                                                         name="recebimentos[{{ $indice }}][valor]" value="{{ $recebimento['valor'] ?? 0 }}">
                                                 </div>
+                                                @error("recebimentos.$indice.valor") <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                             </div>
                                             <div class="form-group col-md-4 comprovante-group">
                                                 <label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
                                                 <input type="file" class="form-control-file comprovante" name="recebimentos[{{ $indice }}][comprovante]" accept="image/*,.pdf">
+                                                @error("recebimentos.$indice.comprovante") <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                             </div>
                                             <div class="form-group col-md-1"><button type="button" class="btn btn-outline-danger remover-recebimento" title="Remover"><i class="fas fa-trash"></i></button></div>
                                         </div>
@@ -369,13 +375,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const possuiAlmocoLabel = document.getElementById('possui-almoco-label');
     const almocoTabItem = document.getElementById('almoco-tab-item');
 
+    function abrirAba(id) {
+        document.getElementById(id)?.click();
+    }
+
     function atualizarAbaAlmoco() {
         const incluirAlmoco = possuiAlmoco?.checked ?? false;
         if (possuiAlmocoLabel) possuiAlmocoLabel.textContent = possuiAlmoco.checked ? 'Sim' : 'Não';
         if (almocoTabItem) almocoTabItem.style.display = incluirAlmoco ? '' : 'none';
 
         if (!incluirAlmoco && document.getElementById('tab-almoco')?.classList.contains('active')) {
-            $('#informacoes-tab').tab('show');
+            abrirAba('informacoes-tab');
         }
     }
 
@@ -389,6 +399,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function mensagemCampo(campo) {
         const nome = nomeCampo(campo);
+        if (campo.dataset.moneyTarget === 'valor_pessoa' && numero('valor_pessoa') <= 0) {
+            return 'O valor por pessoa deve ser maior que zero.';
+        }
         if (campo.validity.valueMissing) return `Preencha: ${nome}.`;
         if (campo.validity.typeMismatch) return `Informe um valor válido em: ${nome}.`;
         if (campo.validity.rangeUnderflow) return `${nome} deve ser no mínimo ${campo.min}.`;
@@ -400,7 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function validarPainel(seletor, titulo = 'Revise esta etapa') {
         const campos = [...document.querySelectorAll(`${seletor} input, ${seletor} select, ${seletor} textarea`)]
             .filter(campo => !campo.disabled && campo.type !== 'hidden');
-        const invalidos = campos.filter(campo => !campo.checkValidity());
+        const invalidos = campos.filter(campo => !campo.checkValidity()
+            || (campo.dataset.moneyTarget === 'valor_pessoa' && numero('valor_pessoa') <= 0));
 
         campos.forEach(campo => campo.classList.toggle('is-invalid', invalidos.includes(campo)));
         if (!invalidos.length) return true;
@@ -417,28 +431,28 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('proximo-informacoes')?.addEventListener('click', () => {
         if (!validarPainel('#tab-informacoes', 'Preencha as informações obrigatórias')) return;
         if (possuiAlmoco?.checked) {
-            $('#almoco-tab').tab('show');
+            abrirAba('almoco-tab');
         } else if (document.getElementById('pagamento-tab')) {
-            $('#pagamento-tab').tab('show');
+            abrirAba('pagamento-tab');
         }
     });
 
     document.getElementById('anterior-almoco')?.addEventListener('click', () => {
-        $('#informacoes-tab').tab('show');
+        abrirAba('informacoes-tab');
     });
 
     document.getElementById('proximo-almoco')?.addEventListener('click', () => {
-        $('#pagamento-tab').tab('show');
+        abrirAba('pagamento-tab');
     });
 
     document.getElementById('anterior-pagamento')?.addEventListener('click', () => {
-        $(possuiAlmoco?.checked ? '#almoco-tab' : '#informacoes-tab').tab('show');
+        abrirAba(possuiAlmoco?.checked ? 'almoco-tab' : 'informacoes-tab');
     });
 
     form?.addEventListener('invalid', event => {
         const painel = event.target.closest('.tab-pane');
-        if (painel?.id === 'tab-informacoes') $('#informacoes-tab').tab('show');
-        if (painel?.id === 'tab-pagamento') $('#pagamento-tab').tab('show');
+        if (painel?.id === 'tab-informacoes') abrirAba('informacoes-tab');
+        if (painel?.id === 'tab-pagamento') abrirAba('pagamento-tab');
     }, true);
 
     document.querySelectorAll('#excursao-tabs a[data-toggle="pill"]').forEach(aba => {
@@ -484,13 +498,13 @@ document.addEventListener('DOMContentLoaded', () => {
     form?.addEventListener('submit', event => {
         if (!validarPainel('#tab-informacoes', 'Não foi possível cadastrar a excursão')) {
             event.preventDefault();
-            $('#informacoes-tab').tab('show');
+            abrirAba('informacoes-tab');
             return;
         }
 
         if (!validarPainel('#tab-pagamento', 'Revise os dados de pagamento')) {
             event.preventDefault();
-            $('#pagamento-tab').tab('show');
+            abrirAba('pagamento-tab');
             return;
         }
 

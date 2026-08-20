@@ -32,7 +32,7 @@ class StoreExcursaoRequest extends FormRequest
         return [
             'data' => ['required', 'date', 'after_or_equal:today'],
             'qtd_pessoas' => ['required', 'integer', 'min:1'],
-            'valor_pessoa' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            'valor_pessoa' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'percentual_comissao' => ['required', 'numeric', 'between:0,100'],
             'valor_almoco' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'qtd_almoco' => ['required', 'integer', 'min:0'],
@@ -60,7 +60,7 @@ class StoreExcursaoRequest extends FormRequest
             'qtd_pessoas.min' => 'A excursão deve ter pelo menos uma pessoa.',
             'valor_pessoa.required' => 'Informe o valor por pessoa.',
             'valor_pessoa.numeric' => 'Informe um valor por pessoa válido.',
-            'valor_pessoa.min' => 'O valor por pessoa não pode ser negativo.',
+            'valor_pessoa.min' => 'O valor por pessoa deve ser maior que zero.',
             'percentual_comissao.between' => 'O percentual de comissão deve estar entre 0 e 100.',
             'qtd_almoco.integer' => 'A quantidade de almoços deve ser um número inteiro.',
             'qtd_almoco.min' => 'A quantidade de almoços não pode ser negativa.',
