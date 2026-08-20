@@ -515,7 +515,7 @@ class ExcursaoCadastroTest extends TestCase
         ]);
 
         $this->get(route('eventos.excursoes.edit', $excursao))
-            ->assertRedirect(route('eventos.excursoes.show', $excursao));
+            ->assertRedirect(route('eventos.excursoes.index'));
 
         $this->put(route('eventos.excursoes.update', $excursao), [
             'data' => '2026-10-01',

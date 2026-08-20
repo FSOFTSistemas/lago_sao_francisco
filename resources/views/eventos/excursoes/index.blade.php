@@ -248,11 +248,15 @@
                                     R$ {{ number_format($excursao->total, 2, ',', '.') }}
                                 </td>
                                 <td class="align-middle text-center text-nowrap">
-                                    @if (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
-                                        <a href="{{ route('eventos.excursoes.show', $excursao) }}" class="btn btn-sm btn-outline-secondary" title="Visualizar excursão" aria-label="Visualizar excursão #{{ $excursao->id }}">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    @else
+                                    <button type="button"
+                                        class="btn btn-sm btn-outline-secondary btn-visualizar-excursao"
+                                        data-excursao-id="{{ $excursao->id }}"
+                                        title="Visualizar excursão"
+                                        aria-label="Visualizar excursão #{{ $excursao->id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+
+                                    @unless (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
                                     @if ($excursao->status === 'AGENDADO')
                                         <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja iniciar esta excursão?');">
                                             @csrf
@@ -283,7 +287,7 @@
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar excursão" aria-label="Cancelar excursão #{{ $excursao->id }}"><i class="fas fa-trash"></i></button>
                                             </form>
                                         @endif
-                                    @endif
+                                    @endunless
                                 </td>
                             </tr>
                         @empty

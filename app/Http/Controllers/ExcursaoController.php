@@ -163,20 +163,10 @@ class ExcursaoController extends Controller
             ->with('success', 'Excursão cadastrada com sucesso!');
     }
 
-    public function show(Excursao $excursao): View
-    {
-        return view('eventos.excursoes.create', [
-            'excursao' => $excursao,
-            'visualizacao' => true,
-            'formasPagamento' => collect(),
-            'cardapiosExcursao' => CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get(),
-        ]);
-    }
-
     public function edit(Excursao $excursao): View|RedirectResponse
     {
         if ($this->isImmutable($excursao)) {
-            return redirect()->route('eventos.excursoes.show', $excursao);
+            return $this->immutableExcursionRedirect();
         }
 
         return view('eventos.excursoes.create', [
