@@ -182,12 +182,14 @@
                                         <div class="form-group col-md-4">
                                             <label for="almoco_quantidade">Quantidade <span class="text-danger">*</span></label>
                                             <input type="number" id="almoco_quantidade" name="almoco_quantidade" class="form-control"
-                                                min="1" step="1" value="{{ old('almoco_quantidade', $excursao->qtd_pessoas ?? 1) }}"
+                                                min="1" step="1" value="{{ old('qtd_almoco', $excursao->qtd_pessoas ?? 1) }}"
                                                 required @disabled($somenteLeitura)>
+                                            <input type="hidden" id="qtd_almoco" name="qtd_almoco" value="{{ old('qtd_almoco', 0) }}">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Valor por pessoa</label>
                                             <input type="text" id="almoco_valor_preview" class="form-control bg-white" readonly>
+                                            <input type="hidden" id="valor_almoco" name="valor_almoco" value="{{ old('valor_almoco', 0) }}">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Total estimado</label>
@@ -420,6 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const almocoTabItem = document.getElementById('almoco-tab-item');
     const cardapioExcursao = document.getElementById('cardapio_excursao_id');
     const almocoQuantidade = document.getElementById('almoco_quantidade');
+    const almocoQuantidadeCalculo = document.getElementById('qtd_almoco');
+    const almocoValor = document.getElementById('valor_almoco');
     const detalhesCardapio = document.getElementById('detalhes-cardapio-excursao');
     const mensagemCardapio = document.getElementById('mensagem-cardapio-excursao');
     const formatarValor = valor => Number(valor || 0).toLocaleString('pt-BR', {
@@ -443,6 +447,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!incluirAlmoco && document.getElementById('tab-almoco')?.classList.contains('active')) {
             abrirAba('informacoes-tab');
         }
+
+        atualizarPreviewAlmoco();
     }
 
     function atualizarPreviewAlmoco() {
@@ -451,11 +457,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         detalhesCardapio?.classList.toggle('d-none', !selecionado);
         mensagemCardapio?.classList.toggle('d-none', !!selecionado);
-        if (!selecionado) return;
+        if (!selecionado) {
+            if (almocoValor) almocoValor.value = '0';
+            if (almocoQuantidadeCalculo) almocoQuantidadeCalculo.value = '0';
+            recalcular();
+            return;
+        }
 
         const valor = Number(opcao.dataset.valor) || 0;
         const quantidade = Math.max(0, Number(almocoQuantidade?.value) || 0);
+        const valorConsiderado = possuiAlmoco?.checked ? valor : 0;
+        const quantidadeConsiderada = possuiAlmoco?.checked ? quantidade : 0;
         const lista = document.getElementById('itens-cardapio-excursao');
+        if (almocoValor) almocoValor.value = valorConsiderado.toFixed(2);
+        if (almocoQuantidadeCalculo) almocoQuantidadeCalculo.value = String(quantidadeConsiderada);
         document.getElementById('nome-cardapio-excursao').textContent = opcao.dataset.nome || opcao.textContent.trim();
         document.getElementById('almoco_valor_preview').value = formatarValor(valor);
         document.getElementById('almoco_total_preview').value = formatarValor(valor * quantidade);
@@ -468,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 lista.appendChild(linha);
             });
         }
+        recalcular();
     }
 
     possuiAlmoco?.addEventListener('change', atualizarAbaAlmoco);
