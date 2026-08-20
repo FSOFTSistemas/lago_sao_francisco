@@ -9,7 +9,7 @@
 
 <div class="modal fade" id="modalReceberExcursao{{ $excursao->id }}" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog" role="document">
-        <div class="modal-content">
+        <div class="modal-content modal-recebimento-excursao">
             <form action="{{ route('eventos.excursoes.recebimentos.store', $excursao) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="_receber_excursao_id" value="{{ $excursao->id }}">
@@ -22,7 +22,7 @@
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-light border">
+                    <div class="alert saldo-recebimento-alerta">
                         <div class="d-flex justify-content-between">
                             <span>Saldo a receber</span>
                             <strong class="text-success">R$ {{ number_format($saldoReceber, 2, ',', '.') }}</strong>

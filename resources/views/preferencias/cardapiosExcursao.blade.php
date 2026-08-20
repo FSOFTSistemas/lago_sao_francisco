@@ -90,7 +90,7 @@
                 <form action="{{ route('cardapios-excursao.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="_origem" value="modalCriarCardapio">
-                    <div class="modal-header bg-success">
+                    <div class="modal-header bg-success text-white">
                         <h5 class="modal-title"><i class="fas fa-plus mr-1"></i> Novo cardápio de excursão</h5>
                         <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                     </div>
@@ -108,6 +108,54 @@
             </div>
         </div>
     </div>
+@stop
+
+@section('css')
+    <style>
+        .modal-header.bg-success {
+            background-color: #146c2e !important;
+            color: #fff !important;
+        }
+
+        .modal-header.bg-info {
+            background-color: #087990 !important;
+            color: #fff !important;
+        }
+
+        .modal-header .close {
+            color: inherit !important;
+            opacity: .9;
+            text-shadow: none;
+        }
+
+        .modal-header .modal-title,
+        .modal-header .modal-title i {
+            color: inherit !important;
+        }
+
+        .badge-success {
+            background-color: #18713a;
+            color: #fff;
+        }
+
+        .btn-info {
+            background-color: #087990;
+            border-color: #087990;
+            color: #fff;
+        }
+
+        .btn-success,
+        .btn-outline-success:hover {
+            background-color: #146c2e;
+            border-color: #146c2e;
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            color: #146c2e;
+            border-color: #146c2e;
+        }
+    </style>
 @stop
 
 @section('js')

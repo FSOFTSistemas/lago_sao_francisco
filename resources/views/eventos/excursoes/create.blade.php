@@ -346,6 +346,40 @@
     @endunless
 @stop
 
+@section('css')
+    <style>
+        #form-excursao .text-success {
+            color: #146c2e !important;
+        }
+
+        #form-excursao .text-danger {
+            color: #a71d2a !important;
+        }
+
+        #form-excursao .alert-info {
+            color: #0b4f5c;
+            background-color: #d7f0f5;
+            border-color: #9ed6e0;
+        }
+
+        #form-excursao .btn-success {
+            background-color: #146c2e;
+            border-color: #146c2e;
+            color: #fff;
+        }
+
+        #form-excursao .btn-outline-danger {
+            color: #a71d2a;
+            border-color: #a71d2a;
+        }
+
+        #form-excursao .btn-outline-danger:hover {
+            color: #fff;
+            background-color: #a71d2a;
+        }
+    </style>
+@stop
+
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', () => {

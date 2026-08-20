@@ -381,6 +381,151 @@
             max-width: 360px;
             white-space: normal;
         }
+
+        .info-box-icon.bg-primary,
+        .modal-header.bg-primary {
+            background-color: #0056b3 !important;
+            color: #fff !important;
+        }
+
+        .info-box-icon.bg-success,
+        .modal-header.bg-success {
+            background-color: #146c2e !important;
+            color: #fff !important;
+        }
+
+        .info-box-icon.bg-danger,
+        .modal-header.bg-danger {
+            background-color: #a71d2a !important;
+            color: #fff !important;
+        }
+
+        .info-box-icon.bg-info,
+        .modal-header.bg-info {
+            background-color: #087990 !important;
+            color: #fff !important;
+        }
+
+        .info-box-icon.bg-warning,
+        .modal-header.bg-warning {
+            background-color: #ffc107 !important;
+            color: #212529 !important;
+        }
+
+        .modal-header .close {
+            color: inherit !important;
+            opacity: .9;
+            text-shadow: none;
+        }
+
+        .modal-header .modal-title,
+        .modal-header .modal-title i,
+        .modal-header small {
+            color: inherit !important;
+        }
+
+        .badge-primary { background-color: #0056b3; }
+        .badge-success { background-color: #18713a; }
+        .badge-danger { background-color: #a71d2a; }
+        .badge-info { background-color: #087990; }
+
+        .badge-primary,
+        .badge-success,
+        .badge-danger,
+        .badge-info {
+            color: #fff;
+        }
+
+        .modal-body .text-success {
+            color: #146c2e !important;
+        }
+
+        .btn-success,
+        .btn-outline-success:hover {
+            background-color: #146c2e;
+            border-color: #146c2e;
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            color: #146c2e;
+            border-color: #146c2e;
+        }
+
+        .table thead th {
+            color: #343a40;
+        }
+
+        .modal-recebimento-excursao {
+            background-color: #fff;
+            color: #212529;
+        }
+
+        .modal-recebimento-excursao .modal-header {
+            background-color: #0b5d27 !important;
+            color: #fff !important;
+            border-bottom-color: #08491e;
+        }
+
+        .modal-recebimento-excursao .titulo-modal-recebimento,
+        .modal-recebimento-excursao .titulo-modal-recebimento i {
+            color: #fff !important;
+        }
+
+        .modal-recebimento-excursao .modal-body {
+            background-color: #fff;
+            color: #212529;
+        }
+
+        .modal-recebimento-excursao .saldo-recebimento-alerta {
+            color: #143d22;
+            background-color: #e6f4ea;
+            border: 1px solid #79b88d;
+        }
+
+        .modal-recebimento-excursao .saldo-recebimento-alerta .text-success {
+            color: #0b5d27 !important;
+        }
+
+        .modal-recebimento-excursao label {
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .modal-recebimento-excursao .form-control,
+        .modal-recebimento-excursao .input-group-text {
+            color: #212529;
+            background-color: #fff;
+            border-color: #6c757d;
+        }
+
+        .modal-recebimento-excursao .form-control::placeholder {
+            color: #626b73;
+            opacity: 1;
+        }
+
+        .modal-recebimento-excursao .invalid-feedback,
+        .modal-recebimento-excursao .text-danger {
+            color: #a71d2a !important;
+        }
+
+        .modal-recebimento-excursao .modal-footer {
+            background-color: #f1f3f5;
+            border-top-color: #c6cbd0;
+        }
+
+        .modal-recebimento-excursao .btn-success {
+            color: #fff;
+            background-color: #0b5d27;
+            border-color: #08491e;
+        }
+
+        .modal-recebimento-excursao .btn-success:hover,
+        .modal-recebimento-excursao .btn-success:focus {
+            color: #fff;
+            background-color: #08491e;
+            border-color: #063817;
+        }
     </style>
 @stop
 
