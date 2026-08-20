@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreExcursaoRequest;
+use App\Models\CardapioExcursao;
 use App\Models\Excursao;
 use App\Models\FormaPagamento;
 use App\Services\ExcursaoFinanceiroService;
@@ -93,8 +94,9 @@ class ExcursaoController extends Controller
     public function create(): View
     {
         $formasPagamento = FormaPagamento::query()->orderBy('descricao')->get();
+        $cardapiosExcursao = CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get();
 
-        return view('eventos.excursoes.create', compact('formasPagamento'));
+        return view('eventos.excursoes.create', compact('formasPagamento', 'cardapiosExcursao'));
     }
 
     public function store(
@@ -167,6 +169,7 @@ class ExcursaoController extends Controller
             'excursao' => $excursao,
             'visualizacao' => true,
             'formasPagamento' => collect(),
+            'cardapiosExcursao' => CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get(),
         ]);
     }
 
@@ -179,6 +182,7 @@ class ExcursaoController extends Controller
         return view('eventos.excursoes.create', [
             'excursao' => $excursao,
             'formasPagamento' => collect(),
+            'cardapiosExcursao' => CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get(),
         ]);
     }
 

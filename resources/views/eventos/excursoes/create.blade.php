@@ -151,10 +151,54 @@
                             <div class="card-header">
                                 <h3 class="card-title"><i class="fas fa-utensils mr-2"></i>Almoço</h3>
                             </div>
-                            <div class="card-body text-center py-5">
-                                <i class="fas fa-utensils fa-3x text-muted mb-3"></i>
-                                <h5>Configuração do almoço</h5>
-                                <p class="text-muted mb-0">Os dados do almoço serão adicionados na próxima etapa da implementação.</p>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <label for="cardapio_excursao_id" class="col-md-3 label-control">* Cardápio:</label>
+                                    <div class="col-md-7">
+                                        <select id="cardapio_excursao_id" name="cardapio_excursao_id" class="form-control"
+                                            required @disabled($somenteLeitura)>
+                                            <option value="">Selecione um cardápio</option>
+                                            @foreach ($cardapiosExcursao as $cardapio)
+                                                <option value="{{ $cardapio->id }}"
+                                                    data-nome="{{ $cardapio->nome }}"
+                                                    data-itens="{{ $cardapio->descricao_cardapio }}"
+                                                    data-valor="{{ $cardapio->valor_por_pessoa }}"
+                                                    @selected((string) old('cardapio_excursao_id') === (string) $cardapio->id)>
+                                                    {{ $cardapio->nome }} — R$ {{ $formatarMoeda($cardapio->valor_por_pessoa) }} por pessoa
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="detalhes-cardapio-excursao" class="d-none">
+                                    <div class="card bg-light border mb-3">
+                                        <div class="card-body py-3">
+                                            <h5 id="nome-cardapio-excursao" class="mb-2"></h5>
+                                            <ul id="itens-cardapio-excursao" class="mb-0 pl-3"></ul>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="almoco_quantidade">Quantidade <span class="text-danger">*</span></label>
+                                            <input type="number" id="almoco_quantidade" name="almoco_quantidade" class="form-control"
+                                                min="1" step="1" value="{{ old('almoco_quantidade', $excursao->qtd_pessoas ?? 1) }}"
+                                                required @disabled($somenteLeitura)>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Valor por pessoa</label>
+                                            <input type="text" id="almoco_valor_preview" class="form-control bg-white" readonly>
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label>Total estimado</label>
+                                            <input type="text" id="almoco_total_preview" class="form-control bg-white" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="mensagem-cardapio-excursao" class="alert alert-secondary mb-0">
+                                    Selecione um cardápio para visualizar os itens e valores.
+                                </div>
                             </div>
                         </div>
                         <div class="d-flex justify-content-between mb-3">
@@ -374,6 +418,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const possuiAlmoco = document.getElementById('possui_almoco');
     const possuiAlmocoLabel = document.getElementById('possui-almoco-label');
     const almocoTabItem = document.getElementById('almoco-tab-item');
+    const cardapioExcursao = document.getElementById('cardapio_excursao_id');
+    const almocoQuantidade = document.getElementById('almoco_quantidade');
+    const detalhesCardapio = document.getElementById('detalhes-cardapio-excursao');
+    const mensagemCardapio = document.getElementById('mensagem-cardapio-excursao');
+    const formatarValor = valor => Number(valor || 0).toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+    });
 
     function abrirAba(id) {
         document.getElementById(id)?.click();
@@ -384,13 +436,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (possuiAlmocoLabel) possuiAlmocoLabel.textContent = possuiAlmoco.checked ? 'Sim' : 'Não';
         if (almocoTabItem) almocoTabItem.style.display = incluirAlmoco ? '' : 'none';
 
+        if (incluirAlmoco && almocoQuantidade && Number(almocoQuantidade.value) < 1) {
+            almocoQuantidade.value = Math.max(1, Number(document.getElementById('qtd_pessoas')?.value) || 1);
+        }
+
         if (!incluirAlmoco && document.getElementById('tab-almoco')?.classList.contains('active')) {
             abrirAba('informacoes-tab');
         }
     }
 
+    function atualizarPreviewAlmoco() {
+        const opcao = cardapioExcursao?.selectedOptions[0];
+        const selecionado = opcao?.value;
+
+        detalhesCardapio?.classList.toggle('d-none', !selecionado);
+        mensagemCardapio?.classList.toggle('d-none', !!selecionado);
+        if (!selecionado) return;
+
+        const valor = Number(opcao.dataset.valor) || 0;
+        const quantidade = Math.max(0, Number(almocoQuantidade?.value) || 0);
+        const lista = document.getElementById('itens-cardapio-excursao');
+        document.getElementById('nome-cardapio-excursao').textContent = opcao.dataset.nome || opcao.textContent.trim();
+        document.getElementById('almoco_valor_preview').value = formatarValor(valor);
+        document.getElementById('almoco_total_preview').value = formatarValor(valor * quantidade);
+
+        if (lista) {
+            lista.replaceChildren();
+            (opcao.dataset.itens || '').split(/\r?\n/).map(item => item.trim()).filter(Boolean).forEach(item => {
+                const linha = document.createElement('li');
+                linha.textContent = item;
+                lista.appendChild(linha);
+            });
+        }
+    }
+
     possuiAlmoco?.addEventListener('change', atualizarAbaAlmoco);
+    cardapioExcursao?.addEventListener('change', atualizarPreviewAlmoco);
+    almocoQuantidade?.addEventListener('input', atualizarPreviewAlmoco);
     atualizarAbaAlmoco();
+    atualizarPreviewAlmoco();
 
     function nomeCampo(campo) {
         const label = campo.closest('.form-group')?.querySelector('label');
@@ -442,6 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('proximo-almoco')?.addEventListener('click', () => {
+        if (!validarPainel('#tab-almoco', 'Preencha os dados do almoço')) return;
         abrirAba('pagamento-tab');
     });
 
@@ -452,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form?.addEventListener('invalid', event => {
         const painel = event.target.closest('.tab-pane');
         if (painel?.id === 'tab-informacoes') abrirAba('informacoes-tab');
+        if (painel?.id === 'tab-almoco') abrirAba('almoco-tab');
         if (painel?.id === 'tab-pagamento') abrirAba('pagamento-tab');
     }, true);
 
@@ -460,6 +546,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const informacoesAtivas = document.getElementById('tab-informacoes')?.classList.contains('active');
             if (informacoesAtivas && aba.getAttribute('href') !== '#tab-informacoes'
                 && !validarPainel('#tab-informacoes', 'Preencha as informações obrigatórias')) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
+
+            const almocoAtivo = document.getElementById('tab-almoco')?.classList.contains('active');
+            if (almocoAtivo && aba.getAttribute('href') === '#tab-pagamento'
+                && !validarPainel('#tab-almoco', 'Preencha os dados do almoço')) {
                 event.preventDefault();
                 event.stopImmediatePropagation();
             }
@@ -499,6 +593,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!validarPainel('#tab-informacoes', 'Não foi possível cadastrar a excursão')) {
             event.preventDefault();
             abrirAba('informacoes-tab');
+            return;
+        }
+
+        if (possuiAlmoco?.checked && !validarPainel('#tab-almoco', 'Revise os dados do almoço')) {
+            event.preventDefault();
+            abrirAba('almoco-tab');
             return;
         }
 
