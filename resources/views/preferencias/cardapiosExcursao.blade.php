@@ -41,7 +41,7 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Descrição do cardápio</th>
+                        <th>Itens do cardápio</th>
                         <th class="text-right">Valor por pessoa</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Ações</th>
@@ -51,7 +51,13 @@
                     @forelse ($cardapios as $cardapio)
                         <tr>
                             <td class="font-weight-bold">{{ $cardapio->nome }}</td>
-                            <td style="max-width: 440px; white-space: pre-line;">{{ $cardapio->descricao_cardapio }}</td>
+                            <td style="max-width: 440px;">
+                                <ul class="mb-0 pl-3">
+                                    @foreach (preg_split('/\r\n|\r|\n/', $cardapio->descricao_cardapio, -1, PREG_SPLIT_NO_EMPTY) as $item)
+                                        <li>{{ $item }}</li>
+                                    @endforeach
+                                </ul>
+                            </td>
                             <td class="text-right text-nowrap">R$ {{ number_format((float) $cardapio->valor_por_pessoa, 2, ',', '.') }}</td>
                             <td class="text-center">
                                 <span class="badge badge-{{ $cardapio->ativo ? 'success' : 'secondary' }}">
@@ -93,7 +99,10 @@
                         <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                     </div>
                     <div class="modal-body">
-                        @include('preferencias.partials.cardapioExcursaoForm', ['prefixo' => 'novo'])
+                        @include('preferencias.partials.cardapioExcursaoForm', [
+                            'prefixo' => 'novo',
+                            'cardapio' => null,
+                        ])
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
@@ -108,6 +117,110 @@
 @section('js')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            function atualizarEditor(editor) {
+                const linhas = editor.querySelectorAll('.item-cardapio-linha');
+                linhas.forEach((linha, indice) => {
+                    linha.querySelector('.numero-item').textContent = indice + 1;
+                    linha.classList.toggle('border-bottom', indice < linhas.length - 1);
+                });
+                editor.querySelector('.lista-itens-vazia').classList.toggle('d-none', linhas.length > 0);
+            }
+
+            document.querySelectorAll('.itens-cardapio-editor').forEach(atualizarEditor);
+
+            function adicionarItem(editor) {
+                const campo = editor.querySelector('.novo-item-cardapio');
+                const nome = campo.value.trim();
+                if (!nome) {
+                    campo.focus();
+                    return;
+                }
+
+                const repetido = [...editor.querySelectorAll('input[name="itens[]"]')]
+                    .some(input => input.value.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'));
+                if (repetido) {
+                    campo.setCustomValidity('Este item já foi adicionado.');
+                    campo.reportValidity();
+                    return;
+                }
+
+                campo.setCustomValidity('');
+                const linha = document.createElement('div');
+                linha.className = 'd-flex align-items-center py-1 item-cardapio-linha';
+
+                const numero = document.createElement('span');
+                numero.className = 'badge badge-light border mr-2 numero-item';
+                const texto = document.createElement('span');
+                texto.className = 'flex-grow-1 texto-item-cardapio';
+                texto.textContent = nome;
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'itens[]';
+                input.value = nome;
+                const remover = document.createElement('button');
+                remover.type = 'button';
+                remover.className = 'btn btn-link text-danger btn-sm p-1 remover-item-cardapio';
+                remover.title = 'Remover item';
+                remover.innerHTML = '<i class="fas fa-times"></i>';
+
+                linha.append(numero, texto, input, remover);
+                editor.querySelector('.itens-cardapio-lista').insertBefore(
+                    linha,
+                    editor.querySelector('.lista-itens-vazia')
+                );
+                campo.value = '';
+                atualizarEditor(editor);
+                campo.focus();
+            }
+
+            document.addEventListener('click', function (event) {
+                const adicionar = event.target.closest('.adicionar-item-cardapio');
+                if (adicionar) {
+                    const editor = adicionar.closest('.itens-cardapio-editor');
+                    adicionarItem(editor);
+                    return;
+                }
+
+                const remover = event.target.closest('.remover-item-cardapio');
+                if (remover) {
+                    const editor = remover.closest('.itens-cardapio-editor');
+                    remover.closest('.item-cardapio-linha').remove();
+                    atualizarEditor(editor);
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' && event.target.classList.contains('novo-item-cardapio')) {
+                    event.preventDefault();
+                    adicionarItem(event.target.closest('.itens-cardapio-editor'));
+                }
+            });
+
+            document.querySelectorAll('.itens-cardapio-editor').forEach(editor => {
+                editor.querySelector('.novo-item-cardapio').addEventListener('input', event => {
+                    event.target.setCustomValidity('');
+                });
+
+                editor.closest('form').addEventListener('submit', event => {
+                    const campo = editor.querySelector('.novo-item-cardapio');
+                    if (campo.value.trim()) {
+                        adicionarItem(editor);
+                    }
+
+                    if (!campo.checkValidity()) {
+                        event.preventDefault();
+                        campo.reportValidity();
+                        return;
+                    }
+
+                    if (!editor.querySelector('.item-cardapio-linha')) {
+                        event.preventDefault();
+                        campo.setCustomValidity('Adicione pelo menos um item ao cardápio.');
+                        campo.reportValidity();
+                    }
+                });
+            });
+
             @if ($errors->any() && old('_origem'))
                 $('#{{ old('_origem') }}').modal('show');
             @endif
