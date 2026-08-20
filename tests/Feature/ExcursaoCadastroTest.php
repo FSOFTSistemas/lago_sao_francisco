@@ -410,6 +410,30 @@ class ExcursaoCadastroTest extends TestCase
                 'id' => 'excursao-'.$excursao->id,
                 'title' => 'Excursão - 40 pessoas',
                 'start' => '2026-09-15',
+                'color' => '#6f42c1',
+            ]);
+    }
+
+    public function test_excursao_cancelada_nao_e_exibida_no_planner(): void
+    {
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 40,
+            'valor_pessoa' => 2500.50,
+            'status' => Excursao::STATUS_CANCELADO,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão cancelada',
+        ]);
+
+        $response = $this->getJson(route('eventos.planner.eventos', [
+            'start' => '2026-09-01',
+            'end' => '2026-10-01',
+        ]));
+
+        $response->assertOk()
+            ->assertJsonMissing([
+                'id' => 'excursao-'.$excursao->id,
             ]);
     }
 

@@ -70,6 +70,7 @@ class EventoController extends Controller
 
         $excursoes = Excursao::query()
             ->whereBetween('data', [$inicio->toDateString(), $fim->toDateString()])
+            ->where('status', '!=', Excursao::STATUS_CANCELADO)
             ->orderBy('data')
             ->get()
             ->map(function (Excursao $excursao) {
@@ -77,12 +78,7 @@ class EventoController extends Controller
                     'id' => 'excursao-'.$excursao->id,
                     'title' => 'Excursão - '.$excursao->qtd_pessoas.' pessoas',
                     'start' => $excursao->data->format('Y-m-d'),
-                    'color' => match ($excursao->status) {
-                        Excursao::STATUS_REALIZADO => '#28a745',
-                        Excursao::STATUS_CANCELADO => '#dc3545',
-                        Excursao::STATUS_EM_ANDAMENTO => '#007bff',
-                        default => '#6f42c1',
-                    },
+                    'color' => '#6f42c1',
                     'extendedProps' => [
                         'categoria' => 'excursao',
                         'tipo' => 'Excursão',
