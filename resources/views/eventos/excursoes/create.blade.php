@@ -3,6 +3,7 @@
 @php
     $somenteLeitura = $visualizacao ?? false;
     $edicao = isset($excursao);
+    $almocoExcursao = $excursao->almoco ?? null;
     $valorCampo = fn (string $campo, mixed $padrao = 0) => old($campo, $excursao->{$campo} ?? $padrao);
     $formatarMoeda = fn (mixed $valor) => number_format((float) ($valor ?: 0), 2, ',', '.');
     $recebimentosIniciais = old('recebimentos', [['valor' => '', 'forma_pagamento_id' => '']]);
@@ -172,7 +173,7 @@
                                                     data-nome="{{ $cardapio->nome }}"
                                                     data-itens="{{ $cardapio->descricao_cardapio }}"
                                                     data-valor="{{ $cardapio->valor_por_pessoa }}"
-                                                    @selected((string) old('cardapio_excursao_id') === (string) $cardapio->id)>
+                                                    @selected((string) old('cardapio_excursao_id', $cardapioSelecionadoId ?? $almocoExcursao?->cardapio_excursao_id) === (string) $cardapio->id)>
                                                     {{ $cardapio->nome }} — R$ {{ $formatarMoeda($cardapio->valor_por_pessoa) }} por pessoa
                                                 </option>
                                             @endforeach
@@ -191,14 +192,14 @@
                                         <div class="form-group col-md-4">
                                             <label for="almoco_quantidade">Quantidade <span class="text-danger">*</span></label>
                                             <input type="number" id="almoco_quantidade" name="almoco_quantidade" class="form-control"
-                                                min="1" step="1" value="{{ old('qtd_almoco', $excursao->qtd_pessoas ?? 1) }}"
+                                                min="1" step="1" value="{{ old('almoco_quantidade', $almocoExcursao?->quantidade ?? $excursao->qtd_almoco ?? $excursao->qtd_pessoas ?? 1) }}"
                                                 required @disabled($somenteLeitura)>
-                                            <input type="hidden" id="qtd_almoco" name="qtd_almoco" value="{{ old('qtd_almoco', 0) }}">
+                                            <input type="hidden" id="qtd_almoco" name="qtd_almoco" value="{{ old('qtd_almoco', $almocoExcursao?->quantidade ?? $excursao->qtd_almoco ?? 0) }}">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Valor por pessoa</label>
                                             <input type="text" id="almoco_valor_preview" class="form-control bg-white" readonly>
-                                            <input type="hidden" id="valor_almoco" name="valor_almoco" value="{{ old('valor_almoco', 0) }}">
+                                            <input type="hidden" id="valor_almoco" name="valor_almoco" value="{{ old('valor_almoco', $almocoExcursao?->valor_unitario ?? $excursao->valor_almoco ?? 0) }}">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Total estimado</label>

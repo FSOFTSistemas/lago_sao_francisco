@@ -19,6 +19,7 @@ class StoreExcursaoRequest extends FormRequest
     {
         $this->merge([
             'percentual_comissao' => $this->filled('percentual_comissao') ? $this->input('percentual_comissao') : 0,
+            'possui_almoco' => $this->boolean('possui_almoco') ? 1 : 0,
             'valor_almoco' => $this->input('valor_almoco', 0),
             'qtd_almoco' => $this->input('qtd_almoco', 0),
             'acrescimo' => $this->input('acrescimo', 0),
@@ -41,6 +42,9 @@ class StoreExcursaoRequest extends FormRequest
             'responsavel' => ['required', 'string', 'max:255'],
             'telefone_responsavel' => ['required', 'string', 'max:20'],
             'descricao' => ['required', 'string', 'max:200'],
+            'possui_almoco' => ['required', 'boolean'],
+            'cardapio_excursao_id' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'exists:cardapios_excursao,id'],
+            'almoco_quantidade' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'min:1'],
             'recebimentos' => ['required', 'array', 'min:1'],
             'recebimentos.*.valor' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'recebimentos.*.forma_pagamento_id' => ['required', 'integer', 'exists:forma_pagamentos,id'],
@@ -68,6 +72,10 @@ class StoreExcursaoRequest extends FormRequest
             'telefone_responsavel.required' => 'Informe o telefone do responsável.',
             'descricao.required' => 'Informe a descrição da excursão.',
             'descricao.max' => 'A descrição deve ter no máximo 200 caracteres.',
+            'cardapio_excursao_id.required_if' => 'Selecione o cardápio do almoço.',
+            'cardapio_excursao_id.exists' => 'O cardápio selecionado é inválido.',
+            'almoco_quantidade.required_if' => 'Informe a quantidade de almoços.',
+            'almoco_quantidade.min' => 'A quantidade de almoços deve ser maior que zero.',
             'recebimentos.required' => 'Informe pelo menos um recebimento inicial.',
             'recebimentos.min' => 'Informe pelo menos um recebimento inicial.',
             'recebimentos.*.valor.required' => 'Informe o valor do recebimento.',

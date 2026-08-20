@@ -140,6 +140,13 @@ class ExcursaoController extends Controller
         $validated = $request->validated();
         $recebimentos = $validated['recebimentos'];
         unset($validated['recebimentos']);
+        $dadosAlmoco = [
+            'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
+            'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
+            'quantidade' => $validated['almoco_quantidade'] ?? 0,
+        ];
+        unset($validated['possui_almoco'], $validated['cardapio_excursao_id'], $validated['almoco_quantidade']);
+        $this->aplicarValoresAlmoco($validated, $dadosAlmoco);
 
         $validated['status'] = Excursao::STATUS_AGENDADO;
         $calculos = $financeiro->calcular(
@@ -159,11 +166,13 @@ class ExcursaoController extends Controller
                 $request,
                 $validated,
                 $recebimentos,
+                $dadosAlmoco,
                 $caixa,
                 $excursaoCaixa,
                 &$comprovantesSalvos,
             ) {
                 $excursao = Excursao::create($validated);
+                $this->sincronizarAlmoco($excursao, $dadosAlmoco);
 
                 foreach ($recebimentos as $indice => $recebimento) {
                     $comprovantePath = null;
@@ -215,10 +224,28 @@ class ExcursaoController extends Controller
             return $this->immutableExcursionRedirect();
         }
 
+        $excursao->loadMissing('almoco');
+        $cardapioSelecionadoId = $excursao->almoco?->cardapio_excursao_id;
+        if (! $cardapioSelecionadoId && $excursao->qtd_almoco > 0) {
+            $cardapiosCompativeis = CardapioExcursao::query()
+                ->where('valor_por_pessoa', $excursao->valor_almoco)
+                ->limit(2)
+                ->pluck('id');
+
+            if ($cardapiosCompativeis->count() === 1) {
+                $cardapioSelecionadoId = $cardapiosCompativeis->first();
+            }
+        }
+
         return view('eventos.excursoes.create', [
             'excursao' => $excursao,
             'formasPagamento' => collect(),
-            'cardapiosExcursao' => CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get(),
+            'cardapioSelecionadoId' => $cardapioSelecionadoId,
+            'cardapiosExcursao' => CardapioExcursao::query()
+                ->where(fn ($query) => $query->where('ativo', true)
+                    ->when($cardapioSelecionadoId, fn ($query) => $query->orWhere('id', $cardapioSelecionadoId)))
+                ->orderBy('nome')
+                ->get(),
         ]);
     }
 
@@ -233,12 +260,22 @@ class ExcursaoController extends Controller
 
         $request->merge([
             'percentual_comissao' => $request->filled('percentual_comissao') ? $request->input('percentual_comissao') : 0,
+            'possui_almoco' => $request->has('possui_almoco')
+                ? $request->boolean('possui_almoco')
+                : ($excursao->almoco()->exists() || $excursao->qtd_almoco > 0),
             'valor_almoco' => $request->input('valor_almoco', $excursao->valor_almoco),
             'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
             'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
             'desconto' => $request->input('desconto', $excursao->desconto),
         ]);
         $validated = $this->validateRequest($request);
+        $dadosAlmoco = [
+            'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
+            'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
+            'quantidade' => $validated['almoco_quantidade'] ?? 0,
+        ];
+        unset($validated['possui_almoco'], $validated['cardapio_excursao_id'], $validated['almoco_quantidade']);
+        $this->aplicarValoresAlmoco($validated, $dadosAlmoco);
         $dadosCalculo = array_merge($excursao->only([
             'valor_almoco',
             'qtd_almoco',
@@ -251,7 +288,10 @@ class ExcursaoController extends Controller
         $validated['subtotal'] = $calculos['subtotal'];
         $validated['total'] = $calculos['total'];
 
-        $excursao->update($validated);
+        DB::transaction(function () use ($excursao, $validated, $dadosAlmoco) {
+            $excursao->update($validated);
+            $this->sincronizarAlmoco($excursao, $dadosAlmoco);
+        });
 
         return redirect()
             ->route('eventos.excursoes.index')
@@ -359,6 +399,9 @@ class ExcursaoController extends Controller
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
                 'descricao' => ['required', 'string', 'max:200'],
+                'possui_almoco' => ['required', 'boolean'],
+                'cardapio_excursao_id' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'exists:cardapios_excursao,id'],
+                'almoco_quantidade' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'min:1'],
             ],
             [
                 'data.required' => 'Informe a data da excursão.',
@@ -379,6 +422,8 @@ class ExcursaoController extends Controller
                 'telefone_responsavel.max' => 'O telefone deve ter no máximo 20 caracteres.',
                 'descricao.required' => 'Informe a descrição da excursão.',
                 'descricao.max' => 'A descrição deve ter no máximo 200 caracteres.',
+                'cardapio_excursao_id.required_if' => 'Selecione o cardápio do almoço.',
+                'almoco_quantidade.required_if' => 'Informe a quantidade de almoços.',
             ],
         );
     }
@@ -389,6 +434,47 @@ class ExcursaoController extends Controller
             Excursao::STATUS_REALIZADO,
             Excursao::STATUS_CANCELADO,
         ], true);
+    }
+
+    /** @param array{possui_almoco: bool, cardapio_excursao_id: mixed, quantidade: mixed} $dados */
+    private function aplicarValoresAlmoco(array &$validated, array $dados): void
+    {
+        if (! $dados['possui_almoco']) {
+            $validated['valor_almoco'] = 0;
+            $validated['qtd_almoco'] = 0;
+
+            return;
+        }
+
+        $cardapio = CardapioExcursao::findOrFail($dados['cardapio_excursao_id']);
+        $validated['valor_almoco'] = $cardapio->valor_por_pessoa;
+        $validated['qtd_almoco'] = (int) $dados['quantidade'];
+    }
+
+    /** @param array{possui_almoco: bool, cardapio_excursao_id: mixed, quantidade: mixed} $dados */
+    private function sincronizarAlmoco(Excursao $excursao, array $dados): void
+    {
+        if (! $dados['possui_almoco']) {
+            $excursao->almoco()->delete();
+
+            return;
+        }
+
+        $cardapio = CardapioExcursao::findOrFail($dados['cardapio_excursao_id']);
+        $quantidade = (int) $dados['quantidade'];
+        $valorUnitario = (float) $cardapio->valor_por_pessoa;
+
+        $excursao->almoco()->updateOrCreate(
+            ['excursao_id' => $excursao->id],
+            [
+                'cardapio_excursao_id' => $cardapio->id,
+                'nome_cardapio' => $cardapio->nome,
+                'descricao_cardapio' => $cardapio->descricao_cardapio,
+                'quantidade' => $quantidade,
+                'valor_unitario' => $valorUnitario,
+                'total' => round($quantidade * $valorUnitario, 2),
+            ],
+        );
     }
 
     private function immutableExcursionRedirect(): RedirectResponse
