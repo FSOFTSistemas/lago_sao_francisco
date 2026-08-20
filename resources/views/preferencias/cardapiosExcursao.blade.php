@@ -41,7 +41,6 @@
                 <thead>
                     <tr>
                         <th>Nome</th>
-                        <th>Itens do cardápio</th>
                         <th class="text-right">Valor por pessoa</th>
                         <th class="text-center">Status</th>
                         <th class="text-center">Ações</th>
@@ -51,13 +50,6 @@
                     @forelse ($cardapios as $cardapio)
                         <tr>
                             <td class="font-weight-bold">{{ $cardapio->nome }}</td>
-                            <td style="max-width: 440px;">
-                                <ul class="mb-0 pl-3">
-                                    @foreach (preg_split('/\r\n|\r|\n/', $cardapio->descricao_cardapio, -1, PREG_SPLIT_NO_EMPTY) as $item)
-                                        <li>{{ $item }}</li>
-                                    @endforeach
-                                </ul>
-                            </td>
                             <td class="text-right text-nowrap">R$ {{ number_format((float) $cardapio->valor_por_pessoa, 2, ',', '.') }}</td>
                             <td class="text-center">
                                 <span class="badge badge-{{ $cardapio->ativo ? 'success' : 'secondary' }}">
@@ -65,6 +57,10 @@
                                 </span>
                             </td>
                             <td class="text-center text-nowrap">
+                                <button type="button" class="btn btn-info btn-sm" title="Visualizar"
+                                    data-toggle="modal" data-target="#modalVisualizarCardapio{{ $cardapio->id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                                 <button type="button" class="btn btn-warning btn-sm" title="Editar"
                                     data-toggle="modal" data-target="#modalEditarCardapio{{ $cardapio->id }}">
                                     <i class="fas fa-edit"></i>
@@ -75,12 +71,12 @@
                                 </button>
                             </td>
                         </tr>
-
+                        @include('preferencias.partials.cardapioExcursaoShow', ['cardapio' => $cardapio])
                         @include('preferencias.partials.cardapioExcursaoEdit', ['cardapio' => $cardapio])
                         @include('preferencias.partials.cardapioExcursaoDelete', ['cardapio' => $cardapio])
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">Nenhum cardápio de excursão cadastrado.</td>
+                            <td colspan="4" class="text-center text-muted py-4">Nenhum cardápio de excursão cadastrado.</td>
                         </tr>
                     @endforelse
                 </tbody>
