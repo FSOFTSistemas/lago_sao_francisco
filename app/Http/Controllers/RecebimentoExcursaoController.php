@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRecebimentoExcursaoRequest;
 use App\Models\Excursao;
+use App\Models\Log as LogSistema;
 use App\Models\RecebimentoExcursao;
 use App\Services\ExcursaoCaixaService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -120,5 +124,56 @@ class RecebimentoExcursaoController extends Controller
             $recebimento->comprovante_path,
             basename($recebimento->comprovante_path),
         );
+    }
+
+    public function recibo(RecebimentoExcursao $recebimento): Response|RedirectResponse
+    {
+        $recebimento->load([
+            'excursao',
+            'formaPagamento',
+            'fluxoCancelamento',
+        ]);
+
+        if (! $recebimento->fluxo_caixa_id) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'Este pagamento ainda não possui movimentação de caixa para emissão do recibo.');
+        }
+
+        if ($recebimento->fluxo_cancelamento_id) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'Não é possível emitir recibo de um pagamento estornado.');
+        }
+
+        $excursao = $recebimento->excursao;
+        $empresa = Auth::user()?->empresa;
+        $emitidoEm = now();
+
+        $pdf = Pdf::loadView('eventos.excursoes.recibo_pagamento', compact(
+            'recebimento',
+            'excursao',
+            'empresa',
+            'emitidoEm',
+        ))->setPaper('a5', 'landscape');
+        $conteudo = $pdf->output();
+
+        LogSistema::create([
+            'tipo_acao' => 'Vizualizou',
+            'descricao' => 'Emitiu recibo do pagamento #'.$recebimento->id
+                .' da excursão #'.$excursao->id
+                .' | Valor: R$ '.number_format((float) $recebimento->valor, 2, ',', '.')
+                .' | Forma: '.($recebimento->formaPagamento?->descricao ?? 'Não informada')
+                .' | Fluxo ID: '.$recebimento->fluxo_caixa_id,
+            'usuario_id' => Auth::id(),
+            'data_hora' => $emitidoEm,
+        ]);
+
+        $nomeArquivo = 'RECIBO_PAGAMENTO_'.str_pad((string) $recebimento->id, 6, '0', STR_PAD_LEFT).'.pdf';
+
+        return response($conteudo, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$nomeArquivo.'"',
+        ]);
     }
 }

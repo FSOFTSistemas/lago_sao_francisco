@@ -113,7 +113,8 @@
                                                     <th class="pl-3">Data</th>
                                                     <th>Forma</th>
                                                     <th class="text-right">Valor</th>
-                                                    <th class="text-center pr-3">Comprovante</th>
+                                                    <th class="text-center">Comprovante</th>
+                                                    <th class="text-center pr-3">Recibo</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -122,11 +123,22 @@
                                                         <td class="pl-3">{{ $recebimento->data_recebimento?->format('d/m/Y') ?? '—' }}</td>
                                                         <td>{{ $recebimento->formaPagamento?->descricao ?? 'Não informada' }}</td>
                                                         <td class="text-right">R$ {{ number_format((float) $recebimento->valor, 2, ',', '.') }}</td>
-                                                        <td class="text-center pr-3">
+                                                        <td class="text-center">
                                                             @if ($recebimento->comprovante_path)
                                                                 <a href="{{ route('eventos.recebimentos.comprovante', $recebimento) }}"
                                                                     class="btn btn-xs btn-outline-primary" target="_blank" title="Abrir comprovante">
                                                                     <i class="fas fa-paperclip"></i>
+                                                                </a>
+                                                            @else
+                                                                <span class="text-muted">—</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="text-center pr-3">
+                                                            @if ($recebimento->fluxo_caixa_id && ! $recebimento->fluxo_cancelamento_id)
+                                                                <a href="{{ route('eventos.recebimentos.recibo', $recebimento) }}"
+                                                                    class="btn btn-xs btn-outline-danger" target="_blank"
+                                                                    title="Emitir recibo deste pagamento">
+                                                                    <i class="fas fa-file-invoice-dollar"></i>
                                                                 </a>
                                                             @else
                                                                 <span class="text-muted">—</span>
@@ -219,6 +231,17 @@
             </div>
 
             <div class="modal-footer">
+                @if ($excursao->recebimentos->whereNotNull('fluxo_caixa_id')->isNotEmpty())
+                    <a href="{{ route('eventos.excursoes.demonstrativo', $excursao) }}" target="_blank"
+                        class="btn btn-outline-primary" title="Emitir demonstrativo de todos os pagamentos">
+                        <i class="fas fa-list-alt mr-1"></i>Demonstrativo de pagamentos
+                    </a>
+                @else
+                    <button type="button" class="btn btn-outline-secondary" disabled
+                        title="Nenhum pagamento registrado">
+                        <i class="fas fa-list-alt mr-1"></i>Demonstrativo de pagamentos
+                    </button>
+                @endif
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
             </div>
         </div>

@@ -6,11 +6,15 @@ use App\Http\Requests\StoreExcursaoRequest;
 use App\Models\CardapioExcursao;
 use App\Models\Excursao;
 use App\Models\FormaPagamento;
+use App\Models\Log as LogSistema;
 use App\Services\ExcursaoCaixaService;
 use App\Services\ExcursaoFinanceiroService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -246,6 +250,69 @@ class ExcursaoController extends Controller
                     ->when($cardapioSelecionadoId, fn ($query) => $query->orWhere('id', $cardapioSelecionadoId)))
                 ->orderBy('nome')
                 ->get(),
+        ]);
+    }
+
+    public function demonstrativoPagamentos(Excursao $excursao): Response|RedirectResponse
+    {
+        $excursao->load([
+            'almoco',
+            'recebimentos.formaPagamento',
+            'recebimentos.fluxoCaixa.usuario',
+            'recebimentos.fluxoCaixa.daEmpresa',
+            'recebimentos.fluxoCancelamento',
+        ]);
+
+        $recebimentos = $excursao->recebimentos
+            ->whereNotNull('fluxo_caixa_id')
+            ->sortBy(fn ($recebimento) => sprintf(
+                '%s-%010d',
+                $recebimento->data_recebimento?->format('Y-m-d') ?? '0000-00-00',
+                $recebimento->id,
+            ))
+            ->values();
+
+        if ($recebimentos->isEmpty()) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'A excursão ainda não possui pagamentos para emissão do demonstrativo.');
+        }
+
+        $recebimentosAtivos = $recebimentos->whereNull('fluxo_cancelamento_id');
+        $totalRecebido = round((float) $recebimentosAtivos->sum('valor'), 2);
+        $saldoRestante = round(max((float) $excursao->total - $totalRecebido, 0), 2);
+        $quitada = $saldoRestante <= 0.01;
+        $empresa = $recebimentos
+            ->first(fn ($recebimento) => $recebimento->fluxoCaixa?->daEmpresa)?->fluxoCaixa?->daEmpresa
+            ?? Auth::user()?->empresa;
+        $emitidoEm = now();
+
+        $pdf = Pdf::loadView('eventos.excursoes.demonstrativo_pagamentos', compact(
+            'excursao',
+            'recebimentos',
+            'empresa',
+            'totalRecebido',
+            'saldoRestante',
+            'quitada',
+            'emitidoEm',
+        ));
+        $conteudo = $pdf->output();
+
+        LogSistema::create([
+            'tipo_acao' => 'Vizualizou',
+            'descricao' => 'Emitiu demonstrativo de pagamentos da excursão #'.$excursao->id
+                .' | Pagamentos: '.$recebimentos->count()
+                .' | Total recebido: R$ '.number_format($totalRecebido, 2, ',', '.')
+                .' | Saldo restante: R$ '.number_format($saldoRestante, 2, ',', '.'),
+            'usuario_id' => Auth::id(),
+            'data_hora' => $emitidoEm,
+        ]);
+
+        $nomeArquivo = 'DEMONSTRATIVO_EXCURSAO_'.str_pad((string) $excursao->id, 6, '0', STR_PAD_LEFT).'.pdf';
+
+        return response($conteudo, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$nomeArquivo.'"',
         ]);
     }
 

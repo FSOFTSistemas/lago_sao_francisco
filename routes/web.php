@@ -176,6 +176,9 @@ Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('ev
 Route::get('/eventos/excursoes/cadastrar', [ExcursaoController::class, 'create'])->middleware('caixa.aberto')->name('eventos.excursoes.create');
 Route::post('/eventos/excursoes', [ExcursaoController::class, 'store'])->middleware('caixa.aberto')->name('eventos.excursoes.store');
 Route::get('/eventos/excursoes/{excursao}/editar', [ExcursaoController::class, 'edit'])->name('eventos.excursoes.edit');
+Route::get('/eventos/excursoes/{excursao}/demonstrativo', [ExcursaoController::class, 'demonstrativoPagamentos'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.excursoes.demonstrativo');
 Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'])->name('eventos.excursoes.update');
 Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
 Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
@@ -186,6 +189,9 @@ Route::post('/eventos/excursoes/{excursao}/recebimentos', [RecebimentoExcursaoCo
 Route::get('/eventos/recebimentos/{recebimento}/comprovante', [RecebimentoExcursaoController::class, 'comprovante'])
     ->middleware(['auth', 'permission:gerenciar aluguel'])
     ->name('eventos.recebimentos.comprovante');
+Route::get('/eventos/recebimentos/{recebimento}/recibo', [RecebimentoExcursaoController::class, 'recibo'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.recebimentos.recibo');
 Route::get('/eventos/planner', [EventoController::class, 'planner'])->name('eventos.planner');
 Route::get('/eventos/planner/eventos', [EventoController::class, 'plannerEventos'])->name('eventos.planner.eventos');
 
