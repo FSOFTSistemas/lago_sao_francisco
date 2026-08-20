@@ -90,9 +90,9 @@
             <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-warning"><i class="fas fa-hand-holding-usd"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Receita prevista</span>
-                    <span class="info-box-number">R$ {{ number_format($resumo['receita_prevista'], 2, ',', '.') }}</span>
-                    <small class="text-muted">em excursões agendadas</small>
+                    <span class="info-box-text">Saldo a receber</span>
+                    <span class="info-box-number">R$ {{ number_format($resumo['saldo_a_receber'], 2, ',', '.') }}</span>
+                    <small class="text-muted">das excursões não canceladas</small>
                 </div>
             </div>
         </div>
@@ -100,9 +100,9 @@
             <div class="info-box shadow-sm">
                 <span class="info-box-icon bg-success"><i class="fas fa-dollar-sign"></i></span>
                 <div class="info-box-content">
-                    <span class="info-box-text">Receita realizada</span>
-                    <span class="info-box-number">R$ {{ number_format($resumo['receita_realizada'], 2, ',', '.') }}</span>
-                    <small class="text-muted">em excursões realizadas</small>
+                    <span class="info-box-text">Total recebido</span>
+                    <span class="info-box-number">R$ {{ number_format($resumo['total_recebido'], 2, ',', '.') }}</span>
+                    <small class="text-muted">confirmado nas movimentações do caixa</small>
                 </div>
             </div>
         </div>

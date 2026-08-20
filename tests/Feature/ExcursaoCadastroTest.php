@@ -207,8 +207,8 @@ class ExcursaoCadastroTest extends TestCase
                 return $resumo['agendadas'] === 1
                     && $resumo['realizadas'] === 1
                     && (int) $resumo['pessoas'] === 10
-                    && (float) $resumo['receita_prevista'] === 20000.0
-                    && (float) $resumo['receita_realizada'] === 5000.0;
+                    && (float) $resumo['saldo_a_receber'] === 25000.0
+                    && (float) $resumo['total_recebido'] === 0.0;
             });
     }
 

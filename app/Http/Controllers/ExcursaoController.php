@@ -69,6 +69,25 @@ class ExcursaoController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        $posicaoFinanceira = (clone $query)
+            ->where('status', '!=', Excursao::STATUS_CANCELADO)
+            ->withSum([
+                'recebimentos as total_recebido_caixa' => fn ($query) => $query
+                    ->whereNotNull('fluxo_caixa_id')
+                    ->whereNull('fluxo_cancelamento_id'),
+            ], 'valor')
+            ->get(['id', 'total']);
+
+        $totalRecebido = round((float) $posicaoFinanceira->sum(
+            fn (Excursao $excursao) => (float) ($excursao->total_recebido_caixa ?? 0),
+        ), 2);
+        $saldoAReceber = round((float) $posicaoFinanceira->sum(
+            fn (Excursao $excursao) => max(
+                (float) $excursao->total - (float) ($excursao->total_recebido_caixa ?? 0),
+                0,
+            ),
+        ), 2);
+
         $resumo = [
             'media_pessoas_realizadas' => (int) floor((float) ((clone $query)
                 ->where('status', Excursao::STATUS_REALIZADO)
@@ -79,12 +98,8 @@ class ExcursaoController extends Controller
             'pessoas' => (clone $query)
                 ->where('status', Excursao::STATUS_REALIZADO)
                 ->sum('qtd_pessoas'),
-            'receita_prevista' => (clone $query)
-                ->where('status', Excursao::STATUS_AGENDADO)
-                ->sum('total'),
-            'receita_realizada' => (clone $query)
-                ->where('status', Excursao::STATUS_REALIZADO)
-                ->sum('total'),
+            'saldo_a_receber' => $saldoAReceber,
+            'total_recebido' => $totalRecebido,
         ];
 
         return view('eventos.excursoes.index', compact(
