@@ -442,7 +442,7 @@ class ExcursaoCadastroTest extends TestCase
         ]);
     }
 
-    public function test_uma_excursao_pode_ser_iniciada_e_finalizada(): void
+    public function test_uma_excursao_nao_pode_ser_iniciada_com_saldo_em_aberto(): void
     {
         $excursao = Excursao::create([
             'data' => '2026-09-15',
@@ -455,17 +455,11 @@ class ExcursaoCadastroTest extends TestCase
         ]);
 
         $this->patch(route('eventos.excursoes.start', $excursao))
-            ->assertRedirect(route('eventos.excursoes.index'));
+            ->assertRedirect(route('eventos.excursoes.index'))
+            ->assertSessionHas('error');
         $this->assertDatabaseHas('excursoes', [
             'id' => $excursao->id,
-            'status' => 'EM_ANDAMENTO',
-        ]);
-
-        $this->patch(route('eventos.excursoes.finish', $excursao))
-            ->assertRedirect(route('eventos.excursoes.index'));
-        $this->assertDatabaseHas('excursoes', [
-            'id' => $excursao->id,
-            'status' => 'REALIZADO',
+            'status' => 'AGENDADO',
         ]);
     }
 

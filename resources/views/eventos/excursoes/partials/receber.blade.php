@@ -4,6 +4,7 @@
         ->whereNull('fluxo_cancelamento_id')
         ->sum('valor'), 0);
     $origemRecebimento = (string) old('_receber_excursao_id') === (string) $excursao->id;
+    $iniciarAposRecebimento = $origemRecebimento && (bool) old('iniciar_apos_recebimento');
 @endphp
 
 <div class="modal fade" id="modalReceberExcursao{{ $excursao->id }}" tabindex="-1" role="dialog" aria-hidden="true">
@@ -12,8 +13,12 @@
             <form action="{{ route('eventos.excursoes.recebimentos.store', $excursao) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <input type="hidden" name="_receber_excursao_id" value="{{ $excursao->id }}">
+                <input type="hidden" class="iniciar-apos-recebimento" name="iniciar_apos_recebimento" value="{{ $iniciarAposRecebimento ? 1 : 0 }}">
                 <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-hand-holding-usd mr-2"></i>Receber excursão #{{ $excursao->id }}</h5>
+                    <h5 class="modal-title titulo-modal-recebimento">
+                        <i class="fas fa-{{ $iniciarAposRecebimento ? 'play' : 'hand-holding-usd' }} mr-2"></i>
+                        {{ $iniciarAposRecebimento ? 'Receber saldo e iniciar excursão' : 'Receber excursão #'.$excursao->id }}
+                    </h5>
                     <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body">
@@ -66,7 +71,10 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-save mr-1"></i>Registrar recebimento</button>
+                    <button type="submit" class="btn btn-success confirmar-recebimento">
+                        <i class="fas fa-{{ $iniciarAposRecebimento ? 'play' : 'save' }} mr-1"></i>
+                        {{ $iniciarAposRecebimento ? 'Receber e iniciar' : 'Registrar recebimento' }}
+                    </button>
                 </div>
             </form>
         </div>

@@ -260,7 +260,7 @@
                                 @endphp
                                 <td class="align-middle text-center text-nowrap">
                                     @if ($excursao->status !== 'CANCELADO' && $saldoExcursao > 0.009)
-                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                        <button type="button" class="btn btn-sm btn-outline-success btn-receber-excursao"
                                             data-toggle="modal" data-target="#modalReceberExcursao{{ $excursao->id }}"
                                             title="Receber pagamento" aria-label="Receber pagamento da excursão #{{ $excursao->id }}">
                                             <i class="fas fa-hand-holding-usd mr-1"></i>Receber
@@ -288,13 +288,25 @@
 
                                     @unless (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
                                     @if ($excursao->status === 'AGENDADO')
-                                        <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja iniciar esta excursão?');">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-success" title="Iniciar excursão" aria-label="Iniciar excursão #{{ $excursao->id }}"><i class="fas fa-play"></i></button>
-                                        </form>
+                                        @if ($saldoExcursao > 0.009)
+                                            <button type="button" class="btn btn-sm btn-warning btn-receber-para-iniciar"
+                                                data-toggle="modal" data-target="#modalReceberExcursao{{ $excursao->id }}"
+                                                data-saldo="{{ number_format($saldoExcursao, 2, '.', '') }}"
+                                                title="Receber saldo e iniciar excursão"
+                                                aria-label="Receber saldo e iniciar excursão #{{ $excursao->id }}">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        @else
+                                            <form action="{{ route('eventos.excursoes.start', $excursao) }}" method="POST"
+                                                class="d-inline form-iniciar-excursao" data-excursao="{{ $excursao->descricao }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-success" title="Iniciar excursão" aria-label="Iniciar excursão #{{ $excursao->id }}"><i class="fas fa-play"></i></button>
+                                            </form>
+                                        @endif
                                     @elseif ($excursao->status === 'EM_ANDAMENTO')
-                                        <form action="{{ route('eventos.excursoes.finish', $excursao) }}" method="POST" class="d-inline" onsubmit="return confirm('Deseja finalizar esta excursão? Após finalizar, ela não poderá ser alterada.');">
+                                        <form action="{{ route('eventos.excursoes.finish', $excursao) }}" method="POST"
+                                            class="d-inline form-finalizar-excursao" data-excursao="{{ $excursao->descricao }}">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit" class="btn btn-sm btn-success" title="Finalizar excursão" aria-label="Finalizar excursão #{{ $excursao->id }}"><i class="fas fa-flag-checkered"></i></button>
@@ -419,9 +431,70 @@
                 atualizarComprovanteRecebimento(select);
             });
 
+            document.querySelectorAll('.btn-receber-excursao').forEach(function(botao) {
+                botao.addEventListener('click', function() {
+                    const modal = document.querySelector(botao.dataset.target);
+                    modal.querySelector('.iniciar-apos-recebimento').value = '0';
+                    modal.querySelector('.titulo-modal-recebimento').innerHTML = '<i class="fas fa-hand-holding-usd mr-2"></i>Receber excursão';
+                    modal.querySelector('.confirmar-recebimento').innerHTML = '<i class="fas fa-save mr-1"></i>Registrar recebimento';
+                });
+            });
+
+            document.querySelectorAll('.btn-receber-para-iniciar').forEach(function(botao) {
+                botao.addEventListener('click', function() {
+                    const modal = document.querySelector(botao.dataset.target);
+                    const campo = modal.querySelector('.recebimento-excursao-valor-display');
+                    const centavos = String(Math.round(Number(botao.dataset.saldo) * 100));
+                    modal.querySelector('.iniciar-apos-recebimento').value = '1';
+                    modal.querySelector('.titulo-modal-recebimento').innerHTML = '<i class="fas fa-play mr-2"></i>Receber saldo e iniciar excursão';
+                    modal.querySelector('.confirmar-recebimento').innerHTML = '<i class="fas fa-play mr-1"></i>Receber e iniciar';
+                    exibirValorRecebimento(campo, centavos);
+                });
+            });
+
             @if ($errors->any() && old('_receber_excursao_id'))
                 $('#modalReceberExcursao{{ old('_receber_excursao_id') }}').modal('show');
             @endif
+
+            document.querySelectorAll('.form-iniciar-excursao').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    Swal.fire({
+                        title: 'Iniciar excursão?',
+                        text: form.dataset.excursao
+                            ? `A excursão "${form.dataset.excursao}" será iniciada agora.`
+                            : 'A excursão será iniciada agora.',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fas fa-play mr-1"></i> Sim, iniciar',
+                        cancelButtonText: 'Voltar',
+                        reverseButtons: true
+                    }).then(function(result) {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
+            });
+
+            document.querySelectorAll('.form-finalizar-excursao').forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    Swal.fire({
+                        title: 'Finalizar excursão?',
+                        text: 'Após finalizar, a excursão não poderá mais ser alterada.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fas fa-flag-checkered mr-1"></i> Sim, finalizar',
+                        cancelButtonText: 'Voltar',
+                        reverseButtons: true
+                    }).then(function(result) {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
+            });
 
             document.querySelectorAll('.form-cancelar-excursao').forEach(function(form) {
                 form.addEventListener('submit', function(event) {

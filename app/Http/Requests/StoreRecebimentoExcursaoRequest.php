@@ -20,6 +20,7 @@ class StoreRecebimentoExcursaoRequest extends FormRequest
             'valor' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'forma_pagamento_id' => ['required', 'integer', 'exists:forma_pagamentos,id'],
             'comprovante' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+            'iniciar_apos_recebimento' => ['nullable', 'boolean'],
             '_receber_excursao_id' => ['required', 'integer'],
         ];
     }

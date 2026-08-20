@@ -299,6 +299,16 @@ class ExcursaoController extends Controller
                 ->with('error', 'Somente excursões agendadas podem ser iniciadas.');
         }
 
+        $totalRecebido = (float) $excursao->recebimentos()
+            ->whereNotNull('fluxo_caixa_id')
+            ->whereNull('fluxo_cancelamento_id')
+            ->sum('valor');
+        if ($totalRecebido + 0.01 < (float) $excursao->total) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'Receba o saldo restante da excursão antes de iniciá-la.');
+        }
+
         $excursao->update([
             'status' => Excursao::STATUS_EM_ANDAMENTO,
             'iniciada_em' => now(),

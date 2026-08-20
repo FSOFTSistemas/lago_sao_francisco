@@ -56,6 +56,26 @@ class RecebimentoExcursaoController extends Controller
                     'comprovante_path' => $comprovantePath,
                 ]);
                 $excursaoCaixa->registrarRecebimento($recebimento, $caixa);
+
+                if ($request->boolean('iniciar_apos_recebimento')) {
+                    $totalRecebidoAtualizado = (float) $excursaoTravada->recebimentos()
+                        ->whereNotNull('fluxo_caixa_id')
+                        ->whereNull('fluxo_cancelamento_id')
+                        ->sum('valor');
+
+                    if ($totalRecebidoAtualizado + 0.01 < (float) $excursaoTravada->total) {
+                        throw new DomainException('É necessário quitar o saldo da excursão antes de iniciá-la.');
+                    }
+
+                    if ($excursaoTravada->status !== Excursao::STATUS_AGENDADO) {
+                        throw new DomainException('Somente excursões agendadas podem ser iniciadas.');
+                    }
+
+                    $excursaoTravada->update([
+                        'status' => Excursao::STATUS_EM_ANDAMENTO,
+                        'iniciada_em' => now(),
+                    ]);
+                }
             });
         } catch (Throwable $exception) {
             if ($comprovantePath) {
@@ -72,9 +92,13 @@ class RecebimentoExcursaoController extends Controller
             throw $exception;
         }
 
+        $mensagem = $request->boolean('iniciar_apos_recebimento')
+            ? 'Saldo recebido, lançado no caixa e excursão iniciada com sucesso!'
+            : 'Recebimento registrado e lançado no caixa com sucesso!';
+
         return redirect()
             ->route('eventos.excursoes.index')
-            ->with('success', 'Recebimento registrado e lançado no caixa com sucesso!');
+            ->with('success', $mensagem);
     }
 
     public function comprovante(RecebimentoExcursao $recebimento): StreamedResponse
