@@ -64,5 +64,12 @@ class PlanoDeContasSeeder extends Seeder
         $this->plano4 = PlanoDeConta::create($planos[3]);
         $this->plano5 = PlanoDeConta::create($planos[4]);
         $this->plano6 = PlanoDeConta::create($planos[5]);
+
+        PlanoDeConta::firstOrCreate([
+            'descricao' => 'Excursões',
+            'tipo' => 'receita',
+            'plano_de_conta_pai' => $this->plano1->id,
+            'empresa_id' => 1,
+        ]);
     }
 }

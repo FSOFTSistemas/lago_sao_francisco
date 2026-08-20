@@ -14,14 +14,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cfops', function (Blueprint $table) {
-            $table->id();
-            $table->string('natureza');
-            $table->string('cfop');
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('cfops')) {
+            Schema::create('cfops', function (Blueprint $table) {
+                $table->id();
+                $table->string('natureza');
+                $table->string('cfop');
+                $table->timestamps();
+            });
+        }
 
         $path = Storage::path('public/cfops/cfops.txt');
+        if (! file_exists($path) || DB::table('cfops')->exists()) {
+            return;
+        }
+
         $cfops = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         foreach ($cfops as $line) {
             if ($line) {

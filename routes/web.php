@@ -6,6 +6,7 @@ use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
+use App\Http\Controllers\CardapioExcursaoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CategoriaParceiroController;
 use App\Http\Controllers\CategoriaProdutoController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
 use App\Http\Controllers\EstoqueController;
 use App\Http\Controllers\EventoController;
+use App\Http\Controllers\ExcursaoController;
 use App\Http\Controllers\FinanceiroController;
 use App\Http\Controllers\FinanceiroProjecaoController;
 use App\Http\Controllers\FluxoCaixaController;
@@ -52,6 +54,7 @@ use App\Http\Controllers\PlanoDeContaController;
 use App\Http\Controllers\PreferenciasHotelController;
 use App\Http\Controllers\ProdutoController;
 use App\Http\Controllers\QuartoController;
+use App\Http\Controllers\RecebimentoExcursaoController;
 use App\Http\Controllers\ReceitaAvulsaController;
 use App\Http\Controllers\RelatorioHospedesController;
 use App\Http\Controllers\RelatorioMovimentacaoController;
@@ -134,6 +137,10 @@ Route::resource('formaPagamento', FormaPagamentoController::class);
 
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
 
+Route::resource('cardapios-excursao', CardapioExcursaoController::class)
+    ->only(['index', 'store', 'update', 'destroy'])
+    ->middleware('permission:gerenciar preferencias');
+
 Route::resource('espaco', EspacoController::class); // ->middleware('permission:gerenciar espaco')
 
 Route::resource('tarifa', TarifaController::class); // ->middleware('permission:gerenciar tarifa')
@@ -165,6 +172,26 @@ Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('
 Route::resource('aluguel', AluguelController::class)->except(['create']);
 
 Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
+Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('eventos.excursoes.index');
+Route::get('/eventos/excursoes/cadastrar', [ExcursaoController::class, 'create'])->middleware('caixa.aberto')->name('eventos.excursoes.create');
+Route::post('/eventos/excursoes', [ExcursaoController::class, 'store'])->middleware('caixa.aberto')->name('eventos.excursoes.store');
+Route::get('/eventos/excursoes/{excursao}/editar', [ExcursaoController::class, 'edit'])->name('eventos.excursoes.edit');
+Route::get('/eventos/excursoes/{excursao}/demonstrativo', [ExcursaoController::class, 'demonstrativoPagamentos'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.excursoes.demonstrativo');
+Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'])->name('eventos.excursoes.update');
+Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
+Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
+Route::patch('/eventos/excursoes/{excursao}/finalizar', [ExcursaoController::class, 'finish'])->name('eventos.excursoes.finish');
+Route::post('/eventos/excursoes/{excursao}/recebimentos', [RecebimentoExcursaoController::class, 'store'])
+    ->middleware('caixa.aberto')
+    ->name('eventos.excursoes.recebimentos.store');
+Route::get('/eventos/recebimentos/{recebimento}/comprovante', [RecebimentoExcursaoController::class, 'comprovante'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.recebimentos.comprovante');
+Route::get('/eventos/recebimentos/{recebimento}/recibo', [RecebimentoExcursaoController::class, 'recibo'])
+    ->middleware(['auth', 'permission:gerenciar aluguel'])
+    ->name('eventos.recebimentos.recibo');
 Route::get('/eventos/planner', [EventoController::class, 'planner'])->name('eventos.planner');
 Route::get('/eventos/planner/eventos', [EventoController::class, 'plannerEventos'])->name('eventos.planner.eventos');
 

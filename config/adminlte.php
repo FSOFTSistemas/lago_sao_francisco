@@ -355,6 +355,13 @@ return [
                     'shift' => 'ml-2'
                 ],
                 [
+                    'text' => 'Excursões',
+                    'icon' => 'fas fa-bus',
+                    'url'  => '/eventos/excursoes',
+                    'can'  => 'cadastrar aluguel',
+                    'shift' => 'ml-2'
+                ],
+                [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
                     'url'  => '/aluguel',

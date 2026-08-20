@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FormaPagamento extends Model
 {
@@ -11,7 +12,12 @@ class FormaPagamento extends Model
 
     protected $fillable = [
         'id',
-        'descricao'
+        'descricao',
+        'exige_comprovante',
+    ];
+
+    protected $casts = [
+        'exige_comprovante' => 'boolean',
     ];
 
     public static function slugMovimento(?string $descricao): string
@@ -21,7 +27,7 @@ class FormaPagamento extends Model
 
     public static function descricaoMovimento(string $prefixo, ?string $descricao): string
     {
-        return $prefixo . '-' . self::slugMovimento($descricao);
+        return $prefixo.'-'.self::slugMovimento($descricao);
     }
 
     public function movimentoSlug(): string
@@ -39,4 +45,8 @@ class FormaPagamento extends Model
         return $this->hasMany(Venda::class, 'forma_pagamento_id');
     }
 
+    public function recebimentosExcursao(): HasMany
+    {
+        return $this->hasMany(RecebimentoExcursao::class);
+    }
 }

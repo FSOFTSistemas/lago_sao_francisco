@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center">
         <div>
             <h5 class="mb-0">Planner de Eventos</h5>
-            <small class="text-muted">Visualize os eventos (aluguel de espaço) agendados no calendário.</small>
+            <small class="text-muted">Visualize os aluguéis de espaço e as excursões agendadas no calendário.</small>
         </div>
 
         <a href="{{ route('eventos.home') }}" class="btn btn-secondary btn-sm">
@@ -26,7 +26,8 @@
             <div class="d-flex align-items-center">
                 <span class="badge badge-warning mr-2">Pendente</span>
                 <span class="badge badge-success mr-2">Pago</span>
-                <span class="badge badge-danger">Cancelado</span>
+                <span class="badge badge-danger mr-2">Cancelado</span>
+                <span class="badge badge-excursao">Excursão</span>
             </div>
         </div>
 
@@ -46,11 +47,15 @@
                 </div>
 
                 <div class="modal-body">
-                    <p class="mb-1"><strong>Espaço:</strong> <span id="detalhe-espaco">-</span></p>
+                    <p class="mb-1" id="detalhe-espaco-linha"><strong>Espaço:</strong> <span id="detalhe-espaco">-</span></p>
                     <p class="mb-1"><strong>Tipo:</strong> <span id="detalhe-tipo">-</span></p>
-                    <p class="mb-1"><strong>Cliente:</strong> <span id="detalhe-cliente">-</span></p>
+                    <p class="mb-1" id="detalhe-cliente-linha"><strong>Cliente:</strong> <span id="detalhe-cliente">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-pessoas-linha"><strong>Quantidade de pessoas:</strong> <span id="detalhe-pessoas">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-responsavel-linha"><strong>Responsável:</strong> <span id="detalhe-responsavel">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-telefone-linha"><strong>Telefone:</strong> <span id="detalhe-telefone">-</span></p>
+                    <p class="mb-1 d-none" id="detalhe-descricao-linha"><strong>Descrição:</strong> <span id="detalhe-descricao">-</span></p>
                     <p class="mb-1"><strong>Período:</strong> <span id="detalhe-periodo">-</span></p>
-                    <p class="mb-1"><strong>Status:</strong> <span id="detalhe-status">-</span></p>
+                    <p class="mb-1" id="detalhe-status-linha"><strong>Status:</strong> <span id="detalhe-status">-</span></p>
                     <p class="mb-0"><strong>Total:</strong> <span id="detalhe-total">-</span></p>
                 </div>
 
@@ -76,6 +81,11 @@
         .fc-toolbar-title {
             font-size: 1.25rem !important;
             font-weight: 600;
+        }
+
+        .badge-excursao {
+            color: #fff;
+            background-color: #6f42c1;
         }
     </style>
 @stop
@@ -117,14 +127,34 @@
                     info.jsEvent.preventDefault();
 
                     const props = info.event.extendedProps;
+                    const excursao = props.categoria === 'excursao';
 
                     document.getElementById('detalhe-espaco').innerText = props.espaco || '-';
                     document.getElementById('detalhe-tipo').innerText = props.tipo || '-';
                     document.getElementById('detalhe-cliente').innerText = props.cliente || '-';
-                    document.getElementById('detalhe-periodo').innerText = `${props.data_inicio || '-'} a ${props.data_fim || '-'}`;
                     document.getElementById('detalhe-status').innerText = props.status || '-';
                     document.getElementById('detalhe-total').innerText = props.total_formatado || '-';
-                    document.getElementById('detalhe-abrir-aluguel').href = `/aluguel/${props.aluguel_id}/edit`;
+                    document.getElementById('detalhe-periodo').innerText = excursao
+                        ? (props.data_inicio || '-')
+                        : `${props.data_inicio || '-'} a ${props.data_fim || '-'}`;
+
+                    ['detalhe-espaco-linha', 'detalhe-cliente-linha'].forEach(id => {
+                        document.getElementById(id).classList.toggle('d-none', excursao);
+                    });
+
+                    const pessoasLinha = document.getElementById('detalhe-pessoas-linha');
+                    pessoasLinha.classList.toggle('d-none', !excursao);
+                    document.getElementById('detalhe-pessoas').innerText = props.qtd_pessoas || '-';
+                    ['detalhe-responsavel-linha', 'detalhe-telefone-linha', 'detalhe-descricao-linha'].forEach(id => {
+                        document.getElementById(id).classList.toggle('d-none', !excursao);
+                    });
+                    document.getElementById('detalhe-responsavel').innerText = props.responsavel || '-';
+                    document.getElementById('detalhe-telefone').innerText = props.telefone_responsavel || '-';
+                    document.getElementById('detalhe-descricao').innerText = props.descricao || '-';
+
+                    const abrirAluguel = document.getElementById('detalhe-abrir-aluguel');
+                    abrirAluguel.classList.toggle('d-none', excursao);
+                    abrirAluguel.href = excursao ? '#' : `/aluguel/${props.aluguel_id}/edit`;
 
                     if (window.$ && typeof $('#modalDetalheEvento').modal === 'function') {
                         $('#modalDetalheEvento').modal('show');
