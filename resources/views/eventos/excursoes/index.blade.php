@@ -251,6 +251,8 @@
                                     <button type="button"
                                         class="btn btn-sm btn-outline-secondary btn-visualizar-excursao"
                                         data-excursao-id="{{ $excursao->id }}"
+                                        data-toggle="modal"
+                                        data-target="#modalVisualizarExcursao{{ $excursao->id }}"
                                         title="Visualizar excursão"
                                         aria-label="Visualizar excursão #{{ $excursao->id }}">
                                         <i class="fas fa-eye"></i>
@@ -311,6 +313,10 @@
             </div>
         @endif
     </div>
+
+    @foreach ($excursoes as $excursao)
+        @include('eventos.excursoes.partials.visualizar', ['excursao' => $excursao])
+    @endforeach
 @stop
 
 @section('css')

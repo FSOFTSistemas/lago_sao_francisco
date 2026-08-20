@@ -58,6 +58,10 @@ class ExcursaoController extends Controller
             });
 
         $excursoes = (clone $query)
+            ->with([
+                'almoco',
+                'recebimentos.formaPagamento',
+            ])
             ->orderBy('data')
             ->orderByDesc('id')
             ->paginate(15)
