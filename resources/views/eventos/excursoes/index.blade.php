@@ -38,6 +38,17 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <strong>Não foi possível registrar o recebimento:</strong>
+            <ul class="mb-0 mt-2 pl-4">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-xl col-md-4 col-sm-6">
             <div class="info-box shadow-sm">
@@ -212,6 +223,7 @@
                             <th class="text-center">Pessoas</th>
                             <th>Responsável</th>
                             <th>Descrição</th>
+                            <th class="text-center">Receber</th>
                             <th class="text-center">Status</th>
                             <th class="text-right pr-4">Valor</th>
                             <th class="text-center">Ações</th>
@@ -233,15 +245,31 @@
                                     <small class="text-muted"><i class="fas fa-phone mr-1"></i>{{ $excursao->telefone_responsavel }}</small>
                                 </td>
                                 <td class="align-middle descricao-excursao">{{ $excursao->descricao }}</td>
+                                @php
+                                    $statusClass = match ($excursao->status) {
+                                        'REALIZADO' => 'badge-success',
+                                        'CANCELADO' => 'badge-danger',
+                                        'EM_ANDAMENTO' => 'badge-primary',
+                                        default => 'badge-warning',
+                                    };
+                                    $recebidoCaixa = (float) $excursao->recebimentos
+                                        ->whereNotNull('fluxo_caixa_id')
+                                        ->whereNull('fluxo_cancelamento_id')
+                                        ->sum('valor');
+                                    $saldoExcursao = max((float) $excursao->total - $recebidoCaixa, 0);
+                                @endphp
+                                <td class="align-middle text-center text-nowrap">
+                                    @if ($excursao->status !== 'CANCELADO' && $saldoExcursao > 0.009)
+                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                            data-toggle="modal" data-target="#modalReceberExcursao{{ $excursao->id }}"
+                                            title="Receber pagamento" aria-label="Receber pagamento da excursão #{{ $excursao->id }}">
+                                            <i class="fas fa-hand-holding-usd mr-1"></i>Receber
+                                        </button>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                                 <td class="align-middle text-center">
-                                    @php
-                                        $statusClass = match ($excursao->status) {
-                                            'REALIZADO' => 'badge-success',
-                                            'CANCELADO' => 'badge-danger',
-                                            'EM_ANDAMENTO' => 'badge-primary',
-                                            default => 'badge-warning',
-                                        };
-                                    @endphp
                                     <span class="badge {{ $statusClass }} px-2 py-1">{{ ucfirst(strtolower(str_replace('_', ' ', $excursao->status))) }}</span>
                                 </td>
                                 <td class="align-middle text-right font-weight-bold pr-4">
@@ -294,7 +322,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-5">
+                                <td colspan="9" class="text-center py-5">
                                     <i class="fas fa-bus fa-3x text-muted mb-3 d-block"></i>
                                     <p class="text-muted mb-3">Nenhuma excursão cadastrada.</p>
                                     <a href="{{ route('eventos.excursoes.create') }}" class="btn btn-primary btn-sm">
@@ -316,6 +344,15 @@
 
     @foreach ($excursoes as $excursao)
         @include('eventos.excursoes.partials.visualizar', ['excursao' => $excursao])
+        @php
+            $saldoModalReceber = max((float) $excursao->total - (float) $excursao->recebimentos
+                ->whereNotNull('fluxo_caixa_id')
+                ->whereNull('fluxo_cancelamento_id')
+                ->sum('valor'), 0);
+        @endphp
+        @if ($excursao->status !== 'CANCELADO' && $saldoModalReceber > 0.009)
+            @include('eventos.excursoes.partials.receber', ['excursao' => $excursao])
+        @endif
     @endforeach
 @stop
 
@@ -332,6 +369,60 @@
 @section('js')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            function exibirValorRecebimento(campo, digitos) {
+                const oculto = document.getElementById(campo.dataset.moneyTarget);
+                if (!oculto) return;
+                if (!digitos) {
+                    campo.value = '';
+                    oculto.value = '';
+                    return;
+                }
+
+                const valor = Number(digitos) / 100;
+                campo.value = valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                oculto.value = valor.toFixed(2);
+            }
+
+            document.addEventListener('input', function(event) {
+                const campo = event.target.closest('.recebimento-excursao-valor-display');
+                if (!campo) return;
+                const digitos = campo.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(-10);
+                exibirValorRecebimento(campo, digitos);
+            });
+
+            document.addEventListener('keydown', function(event) {
+                const campo = event.target.closest('.recebimento-excursao-valor-display');
+                if (!campo) return;
+                const oculto = document.getElementById(campo.dataset.moneyTarget);
+                let digitos = oculto?.value ? String(Math.round(Number(oculto.value) * 100)) : '';
+
+                if (/^\d$/.test(event.key)) {
+                    event.preventDefault();
+                    if (campo.selectionStart !== campo.selectionEnd) digitos = '';
+                    exibirValorRecebimento(campo, (digitos + event.key).replace(/^0+(?=\d)/, '').slice(-10));
+                } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                    event.preventDefault();
+                    exibirValorRecebimento(campo, campo.selectionStart !== campo.selectionEnd ? '' : digitos.slice(0, -1));
+                }
+            });
+
+            function atualizarComprovanteRecebimento(select) {
+                const form = select.closest('form');
+                const arquivo = form.querySelector('input[name="comprovante"]');
+                const obrigatorio = select.selectedOptions[0]?.dataset.exigeComprovante === '1';
+                arquivo.required = obrigatorio;
+                form.querySelector('.comprovante-recebimento-obrigatorio')?.classList.toggle('d-none', !obrigatorio);
+            }
+
+            document.querySelectorAll('.forma-pagamento-recebimento').forEach(function(select) {
+                select.addEventListener('change', function() { atualizarComprovanteRecebimento(select); });
+                atualizarComprovanteRecebimento(select);
+            });
+
+            @if ($errors->any() && old('_receber_excursao_id'))
+                $('#modalReceberExcursao{{ old('_receber_excursao_id') }}').modal('show');
+            @endif
+
             document.querySelectorAll('.form-cancelar-excursao').forEach(function(form) {
                 form.addEventListener('submit', function(event) {
                     event.preventDefault();

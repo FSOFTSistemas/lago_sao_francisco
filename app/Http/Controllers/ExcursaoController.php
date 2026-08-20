@@ -88,6 +88,12 @@ class ExcursaoController extends Controller
             ),
         ), 2);
 
+        $formasPagamento = FormaPagamento::query()
+            ->orderBy('descricao')
+            ->get()
+            ->reject(fn (FormaPagamento $forma) => str_contains(mb_strtolower($forma->descricao), 'crediário'))
+            ->values();
+
         $resumo = [
             'media_pessoas_realizadas' => (int) floor((float) ((clone $query)
                 ->where('status', Excursao::STATUS_REALIZADO)
@@ -109,6 +115,7 @@ class ExcursaoController extends Controller
             'busca',
             'dataInicio',
             'dataFim',
+            'formasPagamento',
         ));
     }
 

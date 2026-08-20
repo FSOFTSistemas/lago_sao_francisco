@@ -180,6 +180,9 @@ Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'
 Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
 Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
 Route::patch('/eventos/excursoes/{excursao}/finalizar', [ExcursaoController::class, 'finish'])->name('eventos.excursoes.finish');
+Route::post('/eventos/excursoes/{excursao}/recebimentos', [RecebimentoExcursaoController::class, 'store'])
+    ->middleware('caixa.aberto')
+    ->name('eventos.excursoes.recebimentos.store');
 Route::get('/eventos/recebimentos/{recebimento}/comprovante', [RecebimentoExcursaoController::class, 'comprovante'])
     ->middleware(['auth', 'permission:gerenciar aluguel'])
     ->name('eventos.recebimentos.comprovante');
