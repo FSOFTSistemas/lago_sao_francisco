@@ -298,24 +298,14 @@ class ExcursaoController extends Controller
             ->with('success', 'Excursão atualizada com sucesso!');
     }
 
-    public function destroy(
-        Excursao $excursao,
-        ExcursaoCaixaService $excursaoCaixa,
-    ): RedirectResponse {
+    public function destroy(Excursao $excursao): RedirectResponse
+    {
         if ($this->isImmutable($excursao)) {
             return $this->immutableExcursionRedirect();
         }
 
         try {
-            DB::transaction(function () use ($excursao, $excursaoCaixa) {
-                $excursao->loadMissing('recebimentos.formaPagamento');
-
-                if ($excursao->recebimentos->contains(fn ($recebimento) => $recebimento->fluxo_caixa_id
-                    && ! $recebimento->fluxo_cancelamento_id)) {
-                    $caixa = $excursaoCaixa->caixaAbertoDoUsuario();
-                    $excursaoCaixa->cancelarRecebimentos($excursao, $caixa);
-                }
-
+            DB::transaction(function () use ($excursao) {
                 $excursao->update([
                     'status' => Excursao::STATUS_CANCELADO,
                     'cancelada_em' => now(),

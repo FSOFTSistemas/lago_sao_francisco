@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use App\Models\Caixa;
-use App\Models\Excursao;
+use App\Models\FluxoCaixa;
+use App\Models\Log as LogSistema;
 use App\Models\Movimento;
 use App\Models\PlanoDeConta;
 use App\Models\RecebimentoExcursao;
@@ -58,36 +59,41 @@ class ExcursaoCaixaService
         ]);
 
         $recebimento->updateQuietly(['fluxo_caixa_id' => $fluxo->id]);
+
+        $this->registrarLogMovimentacao(
+            $recebimento,
+            $fluxo,
+            $caixa,
+            'Recebimento de excursão lançado no fluxo de caixa.',
+        );
     }
 
-    public function cancelarRecebimentos(Excursao $excursao, Caixa $caixa): void
-    {
-        $excursao->loadMissing('recebimentos.formaPagamento');
+    private function registrarLogMovimentacao(
+        RecebimentoExcursao $recebimento,
+        FluxoCaixa $fluxo,
+        Caixa $caixa,
+        string $mensagem,
+    ): void {
+        $formaPagamento = $recebimento->relationLoaded('formaPagamento')
+            ? $recebimento->formaPagamento
+            : $recebimento->formaPagamento()->first();
 
-        foreach ($excursao->recebimentos as $recebimento) {
-            if (! $recebimento->fluxo_caixa_id || $recebimento->fluxo_cancelamento_id) {
-                continue;
-            }
-
-            $movimentoDescricao = $recebimento->formaPagamento->movimentoDescricao('cancelamento');
-            $movimentoId = Movimento::where('descricao', $movimentoDescricao)->value('id')
-                ?? Movimento::where('descricao', 'cancelamento')->value('id');
-
-            if (! $movimentoId) {
-                throw new DomainException("O movimento de caixa '{$movimentoDescricao}' não está cadastrado.");
-            }
-
-            $fluxo = $this->caixaService->inserirMovimentacao($caixa, [
-                'descricao' => 'Cancelamento de pagamento da excursão #'.$excursao->id,
-                'valor' => $recebimento->valor,
-                'valor_total' => $recebimento->valor,
-                'tipo' => 'cancelamento',
-                'movimento_id' => $movimentoId,
-                'plano_de_conta_id' => $this->planoDeContaId($caixa),
-            ]);
-
-            $recebimento->updateQuietly(['fluxo_cancelamento_id' => $fluxo->id]);
-        }
+        LogSistema::create([
+            'tipo_acao' => 'Criou',
+            'descricao' => $mensagem
+                .' | Excursão ID: '.$recebimento->excursao_id
+                .' | Recebimento ID: '.$recebimento->id
+                .' | Fluxo ID: '.$fluxo->id
+                .' | Empresa: '.$caixa->empresa_id
+                .' | Caixa: '.$caixa->id
+                .' | Data: '.$fluxo->data
+                .' | Valor: R$ '.number_format((float) $fluxo->valor, 2, ',', '.')
+                .' | Forma de pagamento: '.($formaPagamento?->descricao ?? 'Não informada')
+                .' | Plano de conta ID: '.$fluxo->plano_de_conta_id
+                .' | Movimento ID: '.$fluxo->movimento_id,
+            'usuario_id' => Auth::id(),
+            'data_hora' => now(),
+        ]);
     }
 
     private function planoDeContaId(Caixa $caixa): int
