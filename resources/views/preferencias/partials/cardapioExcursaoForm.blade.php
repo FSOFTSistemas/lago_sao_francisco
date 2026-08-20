@@ -3,6 +3,7 @@
         ? 'modalCriarCardapio'
         : 'modalEditarCardapio'.str_replace('editar_', '', $prefixo);
     $usarDadosAnteriores = old('_origem') === $origemFormulario;
+    $valorCardapio = $usarDadosAnteriores ? old('valor_por_pessoa') : ($cardapio->valor_por_pessoa ?? '');
 @endphp
 
 <div class="form-group">
@@ -52,12 +53,15 @@
 
 <div class="form-row align-items-end">
     <div class="form-group col-md-6">
-        <label for="valor_{{ $prefixo }}">Valor por pessoa <span class="text-danger">*</span></label>
+        <label for="valor_{{ $prefixo }}_display">Valor por pessoa <span class="text-danger">*</span></label>
         <div class="input-group">
             <div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-            <input type="number" id="valor_{{ $prefixo }}" name="valor_por_pessoa" min="0.01" max="99999999.99" step="0.01"
-                class="form-control @error('valor_por_pessoa') is-invalid @enderror"
-                value="{{ $usarDadosAnteriores ? old('valor_por_pessoa') : ($cardapio->valor_por_pessoa ?? '') }}" required>
+            <input type="text" id="valor_{{ $prefixo }}_display" inputmode="numeric"
+                class="form-control valor-cardapio-display @error('valor_por_pessoa') is-invalid @enderror"
+                data-money-target="valor_{{ $prefixo }}"
+                value="{{ $valorCardapio !== '' && $valorCardapio !== null ? number_format((float) $valorCardapio, 2, ',', '.') : '' }}"
+                placeholder="0,00" required>
+            <input type="hidden" id="valor_{{ $prefixo }}" name="valor_por_pessoa" value="{{ $valorCardapio }}">
             @error('valor_por_pessoa') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
     </div>

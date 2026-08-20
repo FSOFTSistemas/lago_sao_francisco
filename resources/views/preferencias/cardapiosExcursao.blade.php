@@ -117,6 +117,73 @@
 @section('js')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            function exibirValorCardapio(campo, digitos) {
+                const valorOculto = document.getElementById(campo.dataset.moneyTarget);
+                if (!valorOculto) return;
+
+                if (!digitos) {
+                    campo.value = '';
+                    valorOculto.value = '';
+                    return;
+                }
+
+                const valor = Number(digitos) / 100;
+                campo.value = valor.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+                valorOculto.value = valor.toFixed(2);
+                campo.setCustomValidity('');
+            }
+
+            function digitosAtuais(campo) {
+                const valor = document.getElementById(campo.dataset.moneyTarget)?.value;
+                return valor ? String(Math.round(Number(valor) * 100)) : '';
+            }
+
+            document.addEventListener('keydown', event => {
+                const campo = event.target.closest('.valor-cardapio-display');
+                if (!campo) return;
+
+                let digitos = digitosAtuais(campo);
+                if (/^\d$/.test(event.key)) {
+                    event.preventDefault();
+                    if (campo.selectionStart !== campo.selectionEnd) digitos = '';
+                    digitos = (digitos + event.key).replace(/^0+(?=\d)/, '').slice(-10);
+                    exibirValorCardapio(campo, digitos);
+                } else if (event.key === 'Backspace' || event.key === 'Delete') {
+                    event.preventDefault();
+                    digitos = campo.selectionStart !== campo.selectionEnd ? '' : digitos.slice(0, -1);
+                    exibirValorCardapio(campo, digitos);
+                }
+            });
+
+            document.addEventListener('input', event => {
+                const campo = event.target.closest('.valor-cardapio-display');
+                if (!campo) return;
+                const digitos = campo.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(-10);
+                exibirValorCardapio(campo, digitos);
+            });
+
+            document.addEventListener('paste', event => {
+                const campo = event.target.closest('.valor-cardapio-display');
+                if (!campo) return;
+                event.preventDefault();
+                const digitos = event.clipboardData.getData('text').replace(/\D/g, '').slice(-10);
+                exibirValorCardapio(campo, digitos);
+            });
+
+            document.querySelectorAll('.valor-cardapio-display').forEach(campo => {
+                campo.closest('form').addEventListener('submit', event => {
+                    const valorOculto = document.getElementById(campo.dataset.moneyTarget);
+                    if (Number(valorOculto.value) <= 0) {
+                        event.preventDefault();
+                        campo.setCustomValidity('Informe um valor por pessoa maior que zero.');
+                        campo.reportValidity();
+                    }
+                });
+            });
+
             function atualizarEditor(editor) {
                 const linhas = editor.querySelectorAll('.item-cardapio-linha');
                 linhas.forEach((linha, indice) => {
