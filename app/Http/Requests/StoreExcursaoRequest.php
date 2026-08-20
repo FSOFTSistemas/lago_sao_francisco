@@ -137,11 +137,19 @@ class StoreExcursaoRequest extends FormRequest
                 );
             }
 
-            if ($forma?->exige_comprovante
-                && ! $this->hasFile("recebimentos.{$indice}.comprovante")) {
+            $pagamentoPix = $forma?->movimentoSlug() === 'pix';
+
+            if ($pagamentoPix && ! $this->hasFile("recebimentos.{$indice}.comprovante")) {
                 $validator->errors()->add(
                     "recebimentos.{$indice}.comprovante",
                     "O comprovante é obrigatório para pagamentos via {$forma->descricao}.",
+                );
+            }
+
+            if (! $pagamentoPix && $this->hasFile("recebimentos.{$indice}.comprovante")) {
+                $validator->errors()->add(
+                    "recebimentos.{$indice}.comprovante",
+                    'O comprovante só pode ser enviado para pagamentos via Pix.',
                 );
             }
         }

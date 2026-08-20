@@ -50,7 +50,7 @@
                             class="form-control forma-pagamento-recebimento @if($origemRecebimento) @error('forma_pagamento_id') is-invalid @enderror @endif" required>
                             <option value="">Selecione</option>
                             @foreach ($formasPagamento as $forma)
-                                <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}"
+                                <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->movimentoSlug() === 'pix' ? '1' : '0' }}"
                                     @selected($origemRecebimento && (string) old('forma_pagamento_id') === (string) $forma->id)>
                                     {{ $forma->descricao }}
                                 </option>
@@ -59,7 +59,7 @@
                         @if ($origemRecebimento) @error('forma_pagamento_id') <div class="invalid-feedback">{{ $message }}</div> @enderror @endif
                     </div>
 
-                    <div class="form-group mb-0">
+                    <div class="form-group mb-0 comprovante-recebimento-group d-none">
                         <label for="receber_comprovante_{{ $excursao->id }}">
                             Comprovante <span class="text-danger comprovante-recebimento-obrigatorio d-none">*</span>
                         </label>

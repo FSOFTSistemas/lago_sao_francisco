@@ -429,6 +429,9 @@
                 const arquivo = form.querySelector('input[name="comprovante"]');
                 const obrigatorio = select.selectedOptions[0]?.dataset.exigeComprovante === '1';
                 arquivo.required = obrigatorio;
+                arquivo.disabled = !obrigatorio;
+                if (!obrigatorio) arquivo.value = '';
+                form.querySelector('.comprovante-recebimento-group')?.classList.toggle('d-none', !obrigatorio);
                 form.querySelector('.comprovante-recebimento-obrigatorio')?.classList.toggle('d-none', !obrigatorio);
             }
 

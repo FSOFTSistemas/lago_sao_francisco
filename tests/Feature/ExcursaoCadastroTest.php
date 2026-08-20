@@ -331,11 +331,10 @@ class ExcursaoCadastroTest extends TestCase
             ->assertSessionHasErrors('recebimentos');
     }
 
-    public function test_exige_comprovante_quando_configurado_na_forma_de_pagamento(): void
+    public function test_exige_comprovante_para_pagamento_pix(): void
     {
         $pix = FormaPagamento::create([
             'descricao' => 'Pix',
-            'exige_comprovante' => true,
         ]);
 
         $response = $this->from(route('eventos.excursoes.create'))

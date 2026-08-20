@@ -70,8 +70,13 @@ class StoreRecebimentoExcursaoRequest extends FormRequest
                 $validator->errors()->add('forma_pagamento_id', 'Crediário não pode ser usado para receber a excursão.');
             }
 
-            if ($forma?->exige_comprovante && ! $this->hasFile('comprovante')) {
+            $pagamentoPix = $forma?->movimentoSlug() === 'pix';
+            if ($pagamentoPix && ! $this->hasFile('comprovante')) {
                 $validator->errors()->add('comprovante', "O comprovante é obrigatório para pagamentos via {$forma->descricao}.");
+            }
+
+            if (! $pagamentoPix && $this->hasFile('comprovante')) {
+                $validator->errors()->add('comprovante', 'O comprovante só pode ser enviado para pagamentos via Pix.');
             }
         });
     }

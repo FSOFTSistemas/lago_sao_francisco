@@ -254,7 +254,7 @@
                                                 <select class="form-control forma-pagamento @error("recebimentos.$indice.forma_pagamento_id") is-invalid @enderror" name="recebimentos[{{ $indice }}][forma_pagamento_id]" required>
                                                     <option value="">Selecione</option>
                                                     @foreach ($formasPagamento as $forma)
-                                                        <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}"
+                                                        <option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->movimentoSlug() === 'pix' ? '1' : '0' }}"
                                                             @selected((string) ($recebimento['forma_pagamento_id'] ?? '') === (string) $forma->id)>{{ $forma->descricao }}</option>
                                                     @endforeach
                                                 </select>
@@ -270,7 +270,7 @@
                                                 </div>
                                                 @error("recebimentos.$indice.valor") <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                             </div>
-                                            <div class="form-group col-md-4 comprovante-group">
+                                            <div class="form-group col-md-4 comprovante-group d-none">
                                                 <label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
                                                 <input type="file" class="form-control-file comprovante" name="recebimentos[{{ $indice }}][comprovante]" accept="image/*,.pdf">
                                                 @error("recebimentos.$indice.comprovante") <div class="text-danger small mt-1">{{ $message }}</div> @enderror
@@ -333,12 +333,12 @@
             <div class="recebimento-row border rounded p-3 mb-3" data-index="__INDEX__"><div class="form-row align-items-end">
                 <div class="form-group col-md-4"><label>Forma de pagamento <span class="text-danger">*</span></label>
                     <select class="form-control forma-pagamento" name="recebimentos[__INDEX__][forma_pagamento_id]" required><option value="">Selecione</option>
-                        @foreach ($formasPagamento as $forma)<option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->exige_comprovante ? '1' : '0' }}">{{ $forma->descricao }}</option>@endforeach
+                        @foreach ($formasPagamento as $forma)<option value="{{ $forma->id }}" data-exige-comprovante="{{ $forma->movimentoSlug() === 'pix' ? '1' : '0' }}">{{ $forma->descricao }}</option>@endforeach
                     </select></div>
                 <div class="form-group col-md-3"><label>Valor <span class="text-danger">*</span></label><div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
                     <input type="text" class="form-control money-display pagamento-display" data-money-target="recebimento_valor___INDEX__" value="0,00" inputmode="numeric" required>
                     <input type="hidden" class="pagamento-valor" id="recebimento_valor___INDEX__" name="recebimentos[__INDEX__][valor]" value="0.00"></div></div>
-                <div class="form-group col-md-4 comprovante-group"><label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
+                <div class="form-group col-md-4 comprovante-group d-none"><label>Comprovante <span class="text-danger comprovante-obrigatorio d-none">*</span></label>
                     <input type="file" class="form-control-file comprovante" name="recebimentos[__INDEX__][comprovante]" accept="image/*,.pdf"></div>
                 <div class="form-group col-md-1"><button type="button" class="btn btn-outline-danger remover-recebimento"><i class="fas fa-trash"></i></button></div>
             </div></div>
@@ -403,7 +403,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const select = linha.querySelector('.forma-pagamento');
         const arquivo = linha.querySelector('.comprovante');
         const exige = select?.selectedOptions[0]?.dataset.exigeComprovante === '1';
-        if (arquivo) arquivo.required = exige;
+        if (arquivo) {
+            arquivo.required = exige;
+            arquivo.disabled = !exige;
+            if (!exige) arquivo.value = '';
+        }
+        linha.querySelector('.comprovante-group')?.classList.toggle('d-none', !exige);
         linha.querySelector('.comprovante-obrigatorio')?.classList.toggle('d-none', !exige);
     }
 
