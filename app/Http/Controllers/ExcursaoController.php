@@ -299,6 +299,12 @@ class ExcursaoController extends Controller
                 ->with('error', 'Somente excursões agendadas podem ser iniciadas.');
         }
 
+        if (! $excursao->data->isToday()) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', 'A excursão só pode ser iniciada na data agendada: '.$excursao->data->format('d/m/Y').'.');
+        }
+
         $totalRecebido = (float) $excursao->recebimentos()
             ->whereNotNull('fluxo_caixa_id')
             ->whereNull('fluxo_cancelamento_id')

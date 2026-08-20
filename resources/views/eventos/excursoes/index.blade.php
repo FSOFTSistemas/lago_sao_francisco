@@ -288,7 +288,13 @@
 
                                     @unless (in_array($excursao->status, ['REALIZADO', 'CANCELADO'], true))
                                     @if ($excursao->status === 'AGENDADO')
-                                        @if ($saldoExcursao > 0.009)
+                                        @if (! $excursao->data->isToday())
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                                                title="A excursão só pode ser iniciada em {{ $excursao->data->format('d/m/Y') }}"
+                                                aria-label="Início disponível somente em {{ $excursao->data->format('d/m/Y') }}">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                        @elseif ($saldoExcursao > 0.009)
                                             <button type="button" class="btn btn-sm btn-warning btn-receber-para-iniciar"
                                                 data-toggle="modal" data-target="#modalReceberExcursao{{ $excursao->id }}"
                                                 data-saldo="{{ number_format($saldoExcursao, 2, '.', '') }}"

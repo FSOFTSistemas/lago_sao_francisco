@@ -71,6 +71,12 @@ class RecebimentoExcursaoController extends Controller
                         throw new DomainException('Somente excursões agendadas podem ser iniciadas.');
                     }
 
+                    if (! $excursaoTravada->data->isToday()) {
+                        throw new DomainException(
+                            'A excursão só pode ser iniciada na data agendada: '.$excursaoTravada->data->format('d/m/Y').'.',
+                        );
+                    }
+
                     $excursaoTravada->update([
                         'status' => Excursao::STATUS_EM_ANDAMENTO,
                         'iniciada_em' => now(),
