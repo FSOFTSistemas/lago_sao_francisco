@@ -103,22 +103,23 @@
 
                 <div class="card card-outline card-primary shadow-sm">
                     <div class="card-header"><h3 class="card-title"><i class="fas fa-utensils mr-2"></i>Almoço</h3></div>
-                    <div class="card-body"><div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label for="qtd_almoco">Quantidade</label>
-                            <input type="number" class="form-control" id="qtd_almoco" name="qtd_almoco" min="0" step="1"
-                                value="{{ $valorCampo('qtd_almoco') }}" required @disabled($somenteLeitura)>
-                        </div>
-                        <div class="form-group col-md-4">
-                            <label for="valor_almoco_display">Valor unitário</label>
-                            <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-                                <input type="text" class="form-control money-display" id="valor_almoco_display" data-money-target="valor_almoco"
-                                    value="{{ $formatarMoeda($valorCampo('valor_almoco')) }}" inputmode="numeric" required @disabled($somenteLeitura)>
-                                <input type="hidden" id="valor_almoco" name="valor_almoco" value="{{ $valorCampo('valor_almoco') }}">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="hidden" name="possui_almoco" value="0">
+                                <input type="checkbox" class="custom-control-input" id="possui_almoco"
+                                    name="possui_almoco" value="1"
+                                    @checked(old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0))
+                                    @disabled($somenteLeitura)>
+                                <label class="custom-control-label" for="possui_almoco">
+                                    Deseja incluir almoço?
+                                    <strong id="possui-almoco-label">
+                                        {{ old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0) ? 'Sim' : 'Não' }}
+                                    </strong>
+                                </label>
                             </div>
                         </div>
-                        <div class="form-group col-md-4"><label>Total do almoço</label><input id="total_almoco_display" class="form-control bg-light" readonly></div>
-                    </div></div>
+                    </div>
                 </div>
 
                 <div class="card card-outline card-primary shadow-sm">
@@ -312,6 +313,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const partes = percentual.value.split('.');
         if (partes[1]?.length > 2) percentual.value = `${partes[0]}.${partes[1].slice(0, 2)}`;
         recalcular();
+    });
+
+    const possuiAlmoco = document.getElementById('possui_almoco');
+    const possuiAlmocoLabel = document.getElementById('possui-almoco-label');
+    possuiAlmoco?.addEventListener('change', () => {
+        if (possuiAlmocoLabel) possuiAlmocoLabel.textContent = possuiAlmoco.checked ? 'Sim' : 'Não';
     });
 
     const telefone = document.getElementById('telefone_responsavel');
