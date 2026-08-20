@@ -59,6 +59,33 @@ class ExcursaoCadastroTest extends TestCase
             ]);
     }
 
+    public function test_a_listagem_envia_excursoes_realizadas_e_canceladas_para_o_final(): void
+    {
+        foreach ([
+            ['data' => '2026-08-01', 'status' => 'REALIZADO', 'responsavel' => 'Realizada antiga'],
+            ['data' => '2026-08-02', 'status' => 'CANCELADO', 'responsavel' => 'Cancelada antiga'],
+            ['data' => '2026-09-01', 'status' => 'AGENDADO', 'responsavel' => 'Agendada ativa'],
+            ['data' => '2026-09-02', 'status' => 'EM_ANDAMENTO', 'responsavel' => 'Em andamento ativa'],
+        ] as $dados) {
+            Excursao::create([
+                ...$dados,
+                'qtd_pessoas' => 20,
+                'valor_pessoa' => 100,
+                'telefone_responsavel' => '(11) 99999-9999',
+                'descricao' => 'Descrição da excursão',
+            ]);
+        }
+
+        $this->get(route('eventos.excursoes.index'))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Agendada ativa',
+                'Em andamento ativa',
+                'Realizada antiga',
+                'Cancelada antiga',
+            ]);
+    }
+
     public function test_a_pagina_de_cadastro_de_excursao_pode_ser_acessada(): void
     {
         $response = $this->get(route('eventos.excursoes.create'));

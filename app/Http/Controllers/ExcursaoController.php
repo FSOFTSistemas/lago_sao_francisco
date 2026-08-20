@@ -64,6 +64,7 @@ class ExcursaoController extends Controller
                 'almoco',
                 'recebimentos.formaPagamento',
             ])
+            ->orderByRaw("CASE WHEN status IN ('REALIZADO', 'CANCELADO') THEN 1 ELSE 0 END")
             ->orderBy('data')
             ->orderByDesc('id')
             ->paginate(15)
