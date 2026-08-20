@@ -98,20 +98,26 @@ class ExcursaoCaixaService
 
     private function planoDeContaId(Caixa $caixa): int
     {
-        $plano = PlanoDeConta::firstOrCreate(
+        $receitasOperacionais = PlanoDeConta::firstOrCreate(
             [
-                'descricao' => 'Excursões',
+                'descricao' => 'Receitas Operacionais',
                 'tipo' => 'receita',
                 'empresa_id' => $caixa->empresa_id,
             ],
             [
-                'plano_de_conta_pai' => PlanoDeConta::idPorDescricao(
-                    'Receitas Operacionais',
-                    $caixa->empresa_id,
-                    'receita',
-                ),
+                'plano_de_conta_pai' => null,
             ],
         );
+
+        $plano = PlanoDeConta::firstOrCreate([
+            'descricao' => 'Excursões',
+            'tipo' => 'receita',
+            'empresa_id' => $caixa->empresa_id,
+        ]);
+
+        if ($plano->plano_de_conta_pai !== $receitasOperacionais->id) {
+            $plano->update(['plano_de_conta_pai' => $receitasOperacionais->id]);
+        }
 
         return $plano->id;
     }
