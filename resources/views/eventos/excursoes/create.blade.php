@@ -11,19 +11,12 @@
 @section('title', $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão'))
 
 @section('content_header')
-    <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <h1 class="mb-1">{{ $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão') }}</h1>
-            <p class="text-muted mb-0">{{ $somenteLeitura ? 'Consulte os dados financeiros e gerais da excursão.' : 'Preencha os dados e confira o resumo antes de salvar.' }}</p>
-        </div>
-        <a href="{{ route('eventos.excursoes.index') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left mr-1"></i> Voltar
-        </a>
-    </div>
-@stop
+    <h5>{{ $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão') }}</h5>
+    <hr>
+@endsection
 
 @section('content')
-    <form id="form-excursao" enctype="multipart/form-data" action="{{ $edicao ? route('eventos.excursoes.update', $excursao) : route('eventos.excursoes.store') }}" method="POST">
+    <form id="form-excursao" enctype="multipart/form-data" action="{{ $edicao ? route('eventos.excursoes.update', $excursao) : route('eventos.excursoes.store') }}" method="POST" novalidate>
         @csrf
         @if ($edicao) @method('PUT') @endif
 
@@ -38,6 +31,35 @@
 
         <div class="row">
             <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body mt-3">
+                        <ul class="nav nav-tabs" id="excursao-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="informacoes-tab" data-toggle="pill"
+                                    href="#tab-informacoes" role="tab">
+                                    <i class="fas fa-info-circle mr-1"></i> Informações
+                                </a>
+                            </li>
+                            <li class="nav-item" id="almoco-tab-item"
+                                @unless(old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0)) style="display: none" @endunless>
+                                <a class="nav-link" id="almoco-tab" data-toggle="pill" href="#tab-almoco" role="tab">
+                                    <i class="fas fa-utensils mr-1"></i> Almoço
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="pagamento-tab" data-toggle="pill" href="#tab-pagamento" role="tab">
+                                    <i class="fas fa-hand-holding-usd mr-1"></i> Pagamento
+                                </a>
+                            </li>
+                        </ul>
+
+                <div class="tab-content mt-3" id="excursao-tabs-content">
+                    <div class="tab-pane fade show active" id="tab-informacoes" role="tabpanel">
+                        <div class="d-flex align-items-center justify-content-end mb-3">
+                            <button type="button" class="btn btn-primary w-25" id="proximo-informacoes">
+                                Próximo
+                            </button>
+                        </div>
                 <div class="card card-outline card-primary shadow-sm">
                     <div class="card-header"><h3 class="card-title"><i class="fas fa-info-circle mr-2"></i>Dados gerais</h3></div>
                     <div class="card-body">
@@ -101,44 +123,63 @@
                     </div></div>
                 </div>
 
-                <div class="card card-outline card-primary shadow-sm">
-                    <div class="card-header"><h3 class="card-title"><i class="fas fa-utensils mr-2"></i>Almoço</h3></div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <div class="custom-control custom-switch">
+                        <div class="form-group row">
+                            <label class="col-md-3 label-control form-lab d-block">* Almoço?</label>
+                            <div class="form-check form-switch">
                                 <input type="hidden" name="possui_almoco" value="0">
-                                <input type="checkbox" class="custom-control-input" id="possui_almoco"
+                                <input type="checkbox" class="form-check-input" id="possui_almoco"
                                     name="possui_almoco" value="1"
                                     @checked(old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0))
                                     @disabled($somenteLeitura)>
-                                <label class="custom-control-label" for="possui_almoco">
-                                    Deseja incluir almoço?
+                                <label class="form-check-label ms-2" for="possui_almoco">
                                     <strong id="possui-almoco-label">
                                         {{ old('possui_almoco', ($excursao->qtd_almoco ?? 0) > 0) ? 'Sim' : 'Não' }}
                                     </strong>
                                 </label>
                             </div>
                         </div>
+
                     </div>
-                </div>
 
-                <div class="card card-outline card-primary shadow-sm">
-                    <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h mr-2"></i>Ajustes</h3></div>
-                    <div class="card-body"><div class="form-row">
-                        @foreach (['acrescimo' => 'Acréscimo', 'desconto' => 'Desconto'] as $campo => $rotulo)
-                            <div class="form-group col-md-6 mb-0">
-                                <label for="{{ $campo }}_display">{{ $rotulo }}</label>
-                                <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
-                                    <input type="text" class="form-control money-display" id="{{ $campo }}_display" data-money-target="{{ $campo }}"
-                                        value="{{ $formatarMoeda($valorCampo($campo)) }}" inputmode="numeric" required @disabled($somenteLeitura)>
-                                    <input type="hidden" id="{{ $campo }}" name="{{ $campo }}" value="{{ $valorCampo($campo) }}">
-                                </div>
+                    <div class="tab-pane fade" id="tab-almoco" role="tabpanel">
+                        <div class="d-flex align-items-center justify-content-end mb-3">
+                            <button type="button" class="btn btn-primary w-25" id="proximo-almoco">Próximo</button>
+                        </div>
+                        <div class="card card-outline card-primary shadow-sm">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-utensils mr-2"></i>Almoço</h3>
                             </div>
-                        @endforeach
-                    </div></div>
-                </div>
+                            <div class="card-body text-center py-5">
+                                <i class="fas fa-utensils fa-3x text-muted mb-3"></i>
+                                <h5>Configuração do almoço</h5>
+                                <p class="text-muted mb-0">Os dados do almoço serão adicionados na próxima etapa da implementação.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <button type="button" class="btn btn-outline-secondary" id="anterior-almoco">
+                                <i class="fas fa-arrow-left mr-1"></i> Anterior
+                            </button>
+                        </div>
+                    </div>
 
-                @unless ($edicao)
+                    <div class="tab-pane fade" id="tab-pagamento" role="tabpanel">
+                    <div class="card card-outline card-primary shadow-sm">
+                        <div class="card-header"><h3 class="card-title"><i class="fas fa-sliders-h mr-2"></i>Ajustes</h3></div>
+                        <div class="card-body"><div class="form-row">
+                            @foreach (['acrescimo' => 'Acréscimo', 'desconto' => 'Desconto'] as $campo => $rotulo)
+                                <div class="form-group col-md-6 mb-0">
+                                    <label for="{{ $campo }}_display">{{ $rotulo }}</label>
+                                    <div class="input-group"><div class="input-group-prepend"><span class="input-group-text">R$</span></div>
+                                        <input type="text" class="form-control money-display" id="{{ $campo }}_display" data-money-target="{{ $campo }}"
+                                            value="{{ $formatarMoeda($valorCampo($campo)) }}" inputmode="numeric" required @disabled($somenteLeitura)>
+                                        <input type="hidden" id="{{ $campo }}" name="{{ $campo }}" value="{{ $valorCampo($campo) }}">
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div></div>
+                    </div>
+
+                    @unless ($edicao)
                     <div class="card card-outline card-success shadow-sm">
                         <div class="card-header d-flex align-items-center">
                             <h3 class="card-title"><i class="fas fa-hand-holding-usd mr-2"></i>Pagamentos iniciais</h3>
@@ -186,7 +227,16 @@
                             </div>
                         </div>
                     </div>
-                @endunless
+                    @endunless
+                        <div class="d-flex justify-content-start mb-3">
+                            <button type="button" class="btn btn-outline-secondary" id="anterior-pagamento">
+                                <i class="fas fa-arrow-left mr-1"></i> Anterior
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-lg-4">
@@ -317,8 +367,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const possuiAlmoco = document.getElementById('possui_almoco');
     const possuiAlmocoLabel = document.getElementById('possui-almoco-label');
-    possuiAlmoco?.addEventListener('change', () => {
+    const almocoTabItem = document.getElementById('almoco-tab-item');
+
+    function atualizarAbaAlmoco() {
+        const incluirAlmoco = possuiAlmoco?.checked ?? false;
         if (possuiAlmocoLabel) possuiAlmocoLabel.textContent = possuiAlmoco.checked ? 'Sim' : 'Não';
+        if (almocoTabItem) almocoTabItem.style.display = incluirAlmoco ? '' : 'none';
+
+        if (!incluirAlmoco && document.getElementById('tab-almoco')?.classList.contains('active')) {
+            $('#informacoes-tab').tab('show');
+        }
+    }
+
+    possuiAlmoco?.addEventListener('change', atualizarAbaAlmoco);
+    atualizarAbaAlmoco();
+
+    function nomeCampo(campo) {
+        const label = campo.closest('.form-group')?.querySelector('label');
+        return label?.textContent.replace('*', '').trim() || 'Campo obrigatório';
+    }
+
+    function mensagemCampo(campo) {
+        const nome = nomeCampo(campo);
+        if (campo.validity.valueMissing) return `Preencha: ${nome}.`;
+        if (campo.validity.typeMismatch) return `Informe um valor válido em: ${nome}.`;
+        if (campo.validity.rangeUnderflow) return `${nome} deve ser no mínimo ${campo.min}.`;
+        if (campo.validity.rangeOverflow) return `${nome} deve ser no máximo ${campo.max}.`;
+        if (campo.validity.tooLong) return `${nome} excedeu o limite permitido.`;
+        return `Revise o campo: ${nome}.`;
+    }
+
+    function validarPainel(seletor, titulo = 'Revise esta etapa') {
+        const campos = [...document.querySelectorAll(`${seletor} input, ${seletor} select, ${seletor} textarea`)]
+            .filter(campo => !campo.disabled && campo.type !== 'hidden');
+        const invalidos = campos.filter(campo => !campo.checkValidity());
+
+        campos.forEach(campo => campo.classList.toggle('is-invalid', invalidos.includes(campo)));
+        if (!invalidos.length) return true;
+
+        const mensagens = [...new Set(invalidos.map(mensagemCampo))];
+        Swal.fire({
+            icon: 'warning',
+            title: titulo,
+            html: `<ul class="text-left mb-0">${mensagens.map(mensagem => `<li>${mensagem}</li>`).join('')}</ul>`,
+        }).then(() => invalidos[0].focus());
+        return false;
+    }
+
+    document.getElementById('proximo-informacoes')?.addEventListener('click', () => {
+        if (!validarPainel('#tab-informacoes', 'Preencha as informações obrigatórias')) return;
+        if (possuiAlmoco?.checked) {
+            $('#almoco-tab').tab('show');
+        } else if (document.getElementById('pagamento-tab')) {
+            $('#pagamento-tab').tab('show');
+        }
+    });
+
+    document.getElementById('anterior-almoco')?.addEventListener('click', () => {
+        $('#informacoes-tab').tab('show');
+    });
+
+    document.getElementById('proximo-almoco')?.addEventListener('click', () => {
+        $('#pagamento-tab').tab('show');
+    });
+
+    document.getElementById('anterior-pagamento')?.addEventListener('click', () => {
+        $(possuiAlmoco?.checked ? '#almoco-tab' : '#informacoes-tab').tab('show');
+    });
+
+    form?.addEventListener('invalid', event => {
+        const painel = event.target.closest('.tab-pane');
+        if (painel?.id === 'tab-informacoes') $('#informacoes-tab').tab('show');
+        if (painel?.id === 'tab-pagamento') $('#pagamento-tab').tab('show');
+    }, true);
+
+    document.querySelectorAll('#excursao-tabs a[data-toggle="pill"]').forEach(aba => {
+        aba.addEventListener('click', event => {
+            const informacoesAtivas = document.getElementById('tab-informacoes')?.classList.contains('active');
+            if (informacoesAtivas && aba.getAttribute('href') !== '#tab-informacoes'
+                && !validarPainel('#tab-informacoes', 'Preencha as informações obrigatórias')) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+            }
+        });
+    });
+
+    form?.querySelectorAll('input, select, textarea').forEach(campo => {
+        ['input', 'change'].forEach(evento => campo.addEventListener(evento, () => {
+            if (campo.checkValidity()) campo.classList.remove('is-invalid');
+        }));
     });
 
     const telefone = document.getElementById('telefone_responsavel');
@@ -345,6 +482,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     form?.addEventListener('submit', event => {
+        if (!validarPainel('#tab-informacoes', 'Não foi possível cadastrar a excursão')) {
+            event.preventDefault();
+            $('#informacoes-tab').tab('show');
+            return;
+        }
+
+        if (!validarPainel('#tab-pagamento', 'Revise os dados de pagamento')) {
+            event.preventDefault();
+            $('#pagamento-tab').tab('show');
+            return;
+        }
+
         if (!document.getElementById('recebimentos-container')) return;
         const {total, recebido, minimo} = recalcular();
         let mensagem = '';
