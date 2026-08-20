@@ -18,6 +18,8 @@ class RecebimentoExcursao extends Model
         'data_recebimento',
         'valor',
         'forma_pagamento_id',
+        'fluxo_caixa_id',
+        'fluxo_cancelamento_id',
         'comprovante_path',
     ];
 
@@ -49,6 +51,16 @@ class RecebimentoExcursao extends Model
     public function formaPagamento(): BelongsTo
     {
         return $this->belongsTo(FormaPagamento::class);
+    }
+
+    public function fluxoCaixa(): BelongsTo
+    {
+        return $this->belongsTo(FluxoCaixa::class, 'fluxo_caixa_id');
+    }
+
+    public function fluxoCancelamento(): BelongsTo
+    {
+        return $this->belongsTo(FluxoCaixa::class, 'fluxo_cancelamento_id');
     }
 
     public function podeSerExcluido(): bool

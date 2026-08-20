@@ -6,7 +6,9 @@ use App\Http\Requests\StoreExcursaoRequest;
 use App\Models\CardapioExcursao;
 use App\Models\Excursao;
 use App\Models\FormaPagamento;
+use App\Services\ExcursaoCaixaService;
 use App\Services\ExcursaoFinanceiroService;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -97,7 +99,11 @@ class ExcursaoController extends Controller
 
     public function create(): View
     {
-        $formasPagamento = FormaPagamento::query()->orderBy('descricao')->get();
+        $formasPagamento = FormaPagamento::query()
+            ->orderBy('descricao')
+            ->get()
+            ->reject(fn (FormaPagamento $forma) => str_contains(mb_strtolower($forma->descricao), 'crediário'))
+            ->values();
         $cardapiosExcursao = CardapioExcursao::query()->where('ativo', true)->orderBy('nome')->get();
 
         return view('eventos.excursoes.create', compact('formasPagamento', 'cardapiosExcursao'));
@@ -106,6 +112,7 @@ class ExcursaoController extends Controller
     public function store(
         StoreExcursaoRequest $request,
         ExcursaoFinanceiroService $financeiro,
+        ExcursaoCaixaService $excursaoCaixa,
     ): RedirectResponse {
         $validated = $request->validated();
         $recebimentos = $validated['recebimentos'];
@@ -123,10 +130,14 @@ class ExcursaoController extends Controller
         $comprovantesSalvos = [];
 
         try {
+            $caixa = $excursaoCaixa->caixaAbertoDoUsuario();
+
             DB::transaction(function () use (
                 $request,
                 $validated,
                 $recebimentos,
+                $caixa,
+                $excursaoCaixa,
                 &$comprovantesSalvos,
             ) {
                 $excursao = Excursao::create($validated);
@@ -146,17 +157,25 @@ class ExcursaoController extends Controller
                         $comprovantesSalvos[] = $comprovantePath;
                     }
 
-                    $excursao->recebimentos()->create([
+                    $recebimentoCriado = $excursao->recebimentos()->create([
                         'data_recebimento' => today(),
                         'valor' => $recebimento['valor'],
                         'forma_pagamento_id' => $recebimento['forma_pagamento_id'],
                         'comprovante_path' => $comprovantePath,
                     ]);
+
+                    $excursaoCaixa->registrarRecebimento($recebimentoCriado, $caixa);
                 }
             });
         } catch (Throwable $exception) {
             foreach ($comprovantesSalvos as $comprovantePath) {
                 Storage::disk('local')->delete($comprovantePath);
+            }
+
+            if ($exception instanceof DomainException) {
+                return back()
+                    ->withInput()
+                    ->with('error', $exception->getMessage());
             }
 
             throw $exception;
@@ -216,16 +235,34 @@ class ExcursaoController extends Controller
             ->with('success', 'Excursão atualizada com sucesso!');
     }
 
-    public function destroy(Excursao $excursao): RedirectResponse
-    {
+    public function destroy(
+        Excursao $excursao,
+        ExcursaoCaixaService $excursaoCaixa,
+    ): RedirectResponse {
         if ($this->isImmutable($excursao)) {
             return $this->immutableExcursionRedirect();
         }
 
-        $excursao->update([
-            'status' => Excursao::STATUS_CANCELADO,
-            'cancelada_em' => now(),
-        ]);
+        try {
+            DB::transaction(function () use ($excursao, $excursaoCaixa) {
+                $excursao->loadMissing('recebimentos.formaPagamento');
+
+                if ($excursao->recebimentos->contains(fn ($recebimento) => $recebimento->fluxo_caixa_id
+                    && ! $recebimento->fluxo_cancelamento_id)) {
+                    $caixa = $excursaoCaixa->caixaAbertoDoUsuario();
+                    $excursaoCaixa->cancelarRecebimentos($excursao, $caixa);
+                }
+
+                $excursao->update([
+                    'status' => Excursao::STATUS_CANCELADO,
+                    'cancelada_em' => now(),
+                ]);
+            });
+        } catch (DomainException $exception) {
+            return redirect()
+                ->route('eventos.excursoes.index')
+                ->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('eventos.excursoes.index')

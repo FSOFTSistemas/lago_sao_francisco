@@ -130,6 +130,13 @@ class StoreExcursaoRequest extends FormRequest
         foreach ($recebimentos as $indice => $recebimento) {
             $forma = $formas->get($recebimento['forma_pagamento_id'] ?? null);
 
+            if ($forma && str_contains(mb_strtolower($forma->descricao), 'crediário')) {
+                $validator->errors()->add(
+                    "recebimentos.{$indice}.forma_pagamento_id",
+                    'Crediário não pode ser usado como pagamento inicial da excursão.',
+                );
+            }
+
             if ($forma?->exige_comprovante
                 && ! $this->hasFile("recebimentos.{$indice}.comprovante")) {
                 $validator->errors()->add(
