@@ -6,6 +6,7 @@ use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
 use App\Http\Controllers\CardapioController;
+use App\Http\Controllers\CardapioExcursaoController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\CategoriaParceiroController;
 use App\Http\Controllers\CategoriaProdutoController;
@@ -135,6 +136,10 @@ Route::resource('vendaItem', VendaItemController::class);
 Route::resource('formaPagamento', FormaPagamentoController::class);
 
 Route::get('/preferencias', [EmpresaController::class, 'preferencias'])->name('preferencias');
+
+Route::resource('cardapios-excursao', CardapioExcursaoController::class)
+    ->only(['index', 'store', 'update', 'destroy'])
+    ->middleware('permission:gerenciar preferencias');
 
 Route::resource('espaco', EspacoController::class); // ->middleware('permission:gerenciar espaco')
 
