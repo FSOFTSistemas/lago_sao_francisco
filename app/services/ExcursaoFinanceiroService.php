@@ -22,7 +22,7 @@ class ExcursaoFinanceiroService
         $valorAlmoco = $this->centavos($dados['valor_almoco'] ?? 0, 'valor do almoço');
         $acrescimo = $this->centavos($dados['acrescimo'] ?? 0, 'acréscimo');
         $desconto = $this->centavos($dados['desconto'] ?? 0, 'desconto');
-        $percentualComissao = $this->percentual($dados['percentual_comissao'] ?? 10);
+        $percentualComissao = $this->percentual($dados['percentual_comissao'] ?? 0);
 
         $valorPessoas = $valorPessoa * $qtdPessoas;
         $totalAlmoco = $valorAlmoco * $qtdAlmoco;

@@ -51,6 +51,16 @@ class ExcursaoFinanceiroServiceTest extends TestCase
         $this->assertTrue($resultado['quitada']);
     }
 
+    public function test_considera_comissao_zero_quando_percentual_nao_for_informado(): void
+    {
+        $resultado = $this->service->calcular([
+            'qtd_pessoas' => 2,
+            'valor_pessoa' => 100,
+        ]);
+
+        $this->assertSame(0.0, $resultado['valor_comissao']);
+    }
+
     public function test_impede_total_negativo_ou_igual_a_zero(): void
     {
         $this->expectException(InvalidArgumentException::class);

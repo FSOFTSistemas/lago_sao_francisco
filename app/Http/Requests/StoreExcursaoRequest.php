@@ -18,7 +18,7 @@ class StoreExcursaoRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'percentual_comissao' => $this->input('percentual_comissao', 10),
+            'percentual_comissao' => $this->filled('percentual_comissao') ? $this->input('percentual_comissao') : 0,
             'valor_almoco' => $this->input('valor_almoco', 0),
             'qtd_almoco' => $this->input('qtd_almoco', 0),
             'acrescimo' => $this->input('acrescimo', 0),
@@ -33,7 +33,7 @@ class StoreExcursaoRequest extends FormRequest
             'data' => ['required', 'date', 'after_or_equal:today'],
             'qtd_pessoas' => ['required', 'integer', 'min:1'],
             'valor_pessoa' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
-            'percentual_comissao' => ['required', 'numeric', 'between:0,100'],
+            'percentual_comissao' => ['nullable', 'numeric', 'between:0,100'],
             'valor_almoco' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'qtd_almoco' => ['required', 'integer', 'min:0'],
             'acrescimo' => ['required', 'numeric', 'min:0', 'max:99999999.99'],

@@ -139,10 +139,10 @@
                             @error('valor_pessoa') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
                         <div class="form-group col-md-4">
-                            <label for="percentual_comissao">Comissão <span class="text-danger">*</span></label>
+                            <label for="percentual_comissao">Comissão</label>
                             <div class="input-group">
                                 <input type="number" class="form-control @error('percentual_comissao') is-invalid @enderror" id="percentual_comissao" name="percentual_comissao" min="0" max="100" step="0.01"
-                                    value="{{ $valorCampo('percentual_comissao', 10) }}" required @disabled($somenteLeitura)>
+                                    value="{{ $valorCampo('percentual_comissao', 10) }}" placeholder="0" @disabled($somenteLeitura)>
                                 <div class="input-group-append"><span class="input-group-text">%</span></div>
                             </div>
                             @error('percentual_comissao') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror

@@ -231,7 +231,7 @@ class ExcursaoController extends Controller
         }
 
         $request->merge([
-            'percentual_comissao' => $request->input('percentual_comissao', $excursao->percentual_comissao),
+            'percentual_comissao' => $request->filled('percentual_comissao') ? $request->input('percentual_comissao') : 0,
             'valor_almoco' => $request->input('valor_almoco', $excursao->valor_almoco),
             'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
             'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
@@ -350,7 +350,7 @@ class ExcursaoController extends Controller
                 'data' => ['required', 'date'],
                 'qtd_pessoas' => ['required', 'integer', 'min:1'],
                 'valor_pessoa' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
-                'percentual_comissao' => ['required', 'numeric', 'between:0,100'],
+                'percentual_comissao' => ['nullable', 'numeric', 'between:0,100'],
                 'valor_almoco' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
                 'qtd_almoco' => ['required', 'integer', 'min:0'],
                 'acrescimo' => ['required', 'numeric', 'min:0', 'max:99999999.99'],

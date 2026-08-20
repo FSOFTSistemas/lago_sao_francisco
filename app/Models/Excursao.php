@@ -72,7 +72,7 @@ class Excursao extends Model
     protected static function booted(): void
     {
         static::creating(function (Excursao $excursao) {
-            $excursao->percentual_comissao ??= 10;
+            $excursao->percentual_comissao ??= 0;
             $calculos = (new ExcursaoFinanceiroService)->calcular([
                 'qtd_pessoas' => $excursao->qtd_pessoas,
                 'valor_pessoa' => $excursao->valor_pessoa,
