@@ -24,6 +24,10 @@ class StoreExcursaoRequest extends FormRequest
             'qtd_almoco' => $this->input('qtd_almoco', 0),
             'acrescimo' => $this->input('acrescimo', 0),
             'desconto' => $this->input('desconto', 0),
+            'email_responsavel' => $this->filled('email_responsavel')
+                ? trim((string) $this->input('email_responsavel'))
+                : null,
+            'enviar_email_agendamento' => $this->boolean('enviar_email_agendamento') ? 1 : 0,
         ]);
     }
 
@@ -41,6 +45,8 @@ class StoreExcursaoRequest extends FormRequest
             'desconto' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'responsavel' => ['required', 'string', 'max:255'],
             'telefone_responsavel' => ['required', 'string', 'max:20'],
+            'email_responsavel' => ['nullable', 'required_if:enviar_email_agendamento,1', 'email', 'max:255'],
+            'enviar_email_agendamento' => ['required', 'boolean'],
             'descricao' => ['required', 'string', 'max:200'],
             'possui_almoco' => ['required', 'boolean'],
             'cardapio_excursao_id' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'exists:cardapios_excursao,id'],
@@ -70,6 +76,9 @@ class StoreExcursaoRequest extends FormRequest
             'qtd_almoco.min' => 'A quantidade de almoços não pode ser negativa.',
             'responsavel.required' => 'Informe o responsável pela excursão.',
             'telefone_responsavel.required' => 'Informe o telefone do responsável.',
+            'email_responsavel.required_if' => 'Informe o e-mail do responsável para realizar o envio.',
+            'email_responsavel.email' => 'Informe um endereço de e-mail válido.',
+            'email_responsavel.max' => 'O e-mail deve ter no máximo 255 caracteres.',
             'descricao.required' => 'Informe a descrição da excursão.',
             'descricao.max' => 'A descrição deve ter no máximo 200 caracteres.',
             'cardapio_excursao_id.required_if' => 'Selecione o cardápio do almoço.',

@@ -155,7 +155,7 @@ class RecebimentoExcursaoController extends Controller
             'excursao',
             'empresa',
             'emitidoEm',
-        ))->setPaper('a5', 'landscape');
+        ))->setPaper('a4', 'portrait');
         $conteudo = $pdf->output();
 
         LogSistema::create([

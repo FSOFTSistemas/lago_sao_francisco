@@ -49,6 +49,11 @@ class Excursao extends Model
         'motivo_cancelamento',
         'responsavel',
         'telefone_responsavel',
+        'email_responsavel',
+        'email_agendamento_enviado_em',
+        'email_agendamento_tentado_em',
+        'email_agendamento_tentativas',
+        'email_agendamento_erro',
         'descricao',
     ];
 
@@ -67,6 +72,9 @@ class Excursao extends Model
         'iniciada_em' => 'datetime',
         'finalizada_em' => 'datetime',
         'cancelada_em' => 'datetime',
+        'email_agendamento_enviado_em' => 'datetime',
+        'email_agendamento_tentado_em' => 'datetime',
+        'email_agendamento_tentativas' => 'integer',
     ];
 
     protected static function booted(): void

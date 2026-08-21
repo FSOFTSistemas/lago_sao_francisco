@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Mail\AgendamentoExcursaoEmail;
 use App\Models\Excursao;
 use App\Models\FormaPagamento;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class ExcursaoCadastroTest extends TestCase
@@ -278,6 +280,88 @@ class ExcursaoCadastroTest extends TestCase
         ]);
     }
 
+    public function test_pode_cadastrar_email_sem_enviar_informacoes_do_agendamento(): void
+    {
+        Mail::fake();
+        $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
+
+        $this->post(route('eventos.excursoes.store'), [
+            'data' => Carbon::today()->addDay()->toDateString(),
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'email_responsavel' => 'maria@example.com',
+            'enviar_email_agendamento' => 0,
+            'descricao' => 'Excursão escolar',
+            'recebimentos' => [
+                ['valor' => 500, 'forma_pagamento_id' => $forma->id],
+            ],
+        ])->assertRedirect(route('eventos.excursoes.index'));
+
+        $this->assertDatabaseHas('excursoes', ['email_responsavel' => 'maria@example.com']);
+        Mail::assertNothingSent();
+    }
+
+    public function test_envia_informacoes_do_agendamento_ao_cadastrar_quando_solicitado(): void
+    {
+        Mail::fake();
+        $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
+
+        $this->post(route('eventos.excursoes.store'), [
+            'data' => Carbon::today()->addDay()->toDateString(),
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'email_responsavel' => 'maria@example.com',
+            'enviar_email_agendamento' => 1,
+            'descricao' => 'Excursão escolar',
+            'recebimentos' => [
+                ['valor' => 500, 'forma_pagamento_id' => $forma->id],
+            ],
+        ])->assertRedirect(route('eventos.excursoes.index'));
+
+        Mail::assertSent(AgendamentoExcursaoEmail::class, fn ($mail) => $mail->hasTo('maria@example.com'));
+        $excursao = Excursao::latest('id')->firstOrFail();
+        $this->assertNotNull($excursao->email_agendamento_enviado_em);
+        $this->assertSame(1, $excursao->email_agendamento_tentativas);
+        $this->assertNull($excursao->email_agendamento_erro);
+    }
+
+    public function test_exige_email_valido_quando_o_envio_for_solicitado(): void
+    {
+        $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), [
+                'enviar_email_agendamento' => 1,
+                'email_responsavel' => '',
+            ])
+            ->assertRedirect(route('eventos.excursoes.create'))
+            ->assertSessionHasErrors('email_responsavel');
+    }
+
+    public function test_reenvia_email_do_agendamento_pela_edicao(): void
+    {
+        Mail::fake();
+        $excursao = Excursao::create([
+            'data' => Carbon::today()->addDay(),
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'status' => Excursao::STATUS_AGENDADO,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'email_responsavel' => 'maria@example.com',
+            'descricao' => 'Excursão escolar',
+        ]);
+
+        $this->post(route('eventos.excursoes.reenviar-email', $excursao))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        Mail::assertSent(AgendamentoExcursaoEmail::class, fn ($mail) => $mail->hasTo('maria@example.com'));
+        $this->assertSame(1, $excursao->fresh()->email_agendamento_tentativas);
+    }
+
     public function test_os_campos_obrigatorios_da_excursao_sao_validados(): void
     {
         $response = $this->from(route('eventos.excursoes.create'))
@@ -439,6 +523,7 @@ class ExcursaoCadastroTest extends TestCase
 
     public function test_uma_excursao_pode_ser_editada(): void
     {
+        Mail::fake();
         $excursao = Excursao::create([
             'data' => '2026-09-15',
             'qtd_pessoas' => 40,
@@ -455,6 +540,8 @@ class ExcursaoCadastroTest extends TestCase
             'valor_pessoa' => 3000,
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
+            'email_responsavel' => 'joao@example.com',
+            'enviar_email_agendamento' => 1,
             'descricao' => 'Excursão empresarial atualizada',
         ]);
 
@@ -467,8 +554,10 @@ class ExcursaoCadastroTest extends TestCase
             'status' => 'AGENDADO',
             'responsavel' => 'João Souza',
             'telefone_responsavel' => '(11) 98888-8888',
+            'email_responsavel' => 'joao@example.com',
             'descricao' => 'Excursão empresarial atualizada',
         ]);
+        Mail::assertSent(AgendamentoExcursaoEmail::class, fn ($mail) => $mail->hasTo('joao@example.com'));
     }
 
     public function test_ao_excluir_uma_excursao_seu_status_e_alterado_para_cancelado(): void

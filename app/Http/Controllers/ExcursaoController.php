@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreExcursaoRequest;
+use App\Mail\AgendamentoExcursaoEmail;
 use App\Models\CardapioExcursao;
 use App\Models\Excursao;
 use App\Models\FormaPagamento;
@@ -16,7 +17,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use RuntimeException;
 use Throwable;
@@ -142,8 +146,9 @@ class ExcursaoController extends Controller
         ExcursaoCaixaService $excursaoCaixa,
     ): RedirectResponse {
         $validated = $request->validated();
+        $enviarEmailAgendamento = (bool) $validated['enviar_email_agendamento'];
         $recebimentos = $validated['recebimentos'];
-        unset($validated['recebimentos']);
+        unset($validated['recebimentos'], $validated['enviar_email_agendamento']);
         $dadosAlmoco = [
             'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
             'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
@@ -162,6 +167,7 @@ class ExcursaoController extends Controller
         $validated['total'] = $calculos['total'];
 
         $comprovantesSalvos = [];
+        $excursaoCriada = null;
 
         try {
             $caixa = $excursaoCaixa->caixaAbertoDoUsuario();
@@ -174,8 +180,10 @@ class ExcursaoController extends Controller
                 $caixa,
                 $excursaoCaixa,
                 &$comprovantesSalvos,
+                &$excursaoCriada,
             ) {
                 $excursao = Excursao::create($validated);
+                $excursaoCriada = $excursao;
                 $this->sincronizarAlmoco($excursao, $dadosAlmoco);
 
                 foreach ($recebimentos as $indice => $recebimento) {
@@ -217,9 +225,16 @@ class ExcursaoController extends Controller
             throw $exception;
         }
 
-        return redirect()
+        $emailEnviado = ! $enviarEmailAgendamento
+            || $this->enviarEmailAgendamento($excursaoCriada);
+
+        $redirect = redirect()
             ->route('eventos.excursoes.index')
             ->with('success', 'Excursão cadastrada com sucesso!');
+
+        return $emailEnviado
+            ? $redirect
+            : $redirect->with('warning', 'A excursão foi cadastrada, mas não foi possível enviar o e-mail. Tente novamente na edição.');
     }
 
     public function edit(Excursao $excursao): View|RedirectResponse
@@ -334,14 +349,25 @@ class ExcursaoController extends Controller
             'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
             'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
             'desconto' => $request->input('desconto', $excursao->desconto),
+            'email_responsavel' => $request->filled('email_responsavel')
+                ? trim((string) $request->input('email_responsavel'))
+                : null,
+            'enviar_email_agendamento' => $request->boolean('enviar_email_agendamento') ? 1 : 0,
         ]);
         $validated = $this->validateRequest($request);
+        $enviarEmailAgendamento = (bool) $validated['enviar_email_agendamento'];
+        $emailAlterado = $validated['email_responsavel'] !== $excursao->email_responsavel;
         $dadosAlmoco = [
             'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
             'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
             'quantidade' => $validated['almoco_quantidade'] ?? 0,
         ];
-        unset($validated['possui_almoco'], $validated['cardapio_excursao_id'], $validated['almoco_quantidade']);
+        unset(
+            $validated['possui_almoco'],
+            $validated['cardapio_excursao_id'],
+            $validated['almoco_quantidade'],
+            $validated['enviar_email_agendamento'],
+        );
         $this->aplicarValoresAlmoco($validated, $dadosAlmoco);
         $dadosCalculo = array_merge($excursao->only([
             'valor_almoco',
@@ -354,15 +380,43 @@ class ExcursaoController extends Controller
         $validated['total_almoco'] = $calculos['total_almoco'];
         $validated['subtotal'] = $calculos['subtotal'];
         $validated['total'] = $calculos['total'];
+        if ($emailAlterado) {
+            $validated['email_agendamento_enviado_em'] = null;
+            $validated['email_agendamento_tentado_em'] = null;
+            $validated['email_agendamento_tentativas'] = 0;
+            $validated['email_agendamento_erro'] = null;
+        }
 
         DB::transaction(function () use ($excursao, $validated, $dadosAlmoco) {
             $excursao->update($validated);
             $this->sincronizarAlmoco($excursao, $dadosAlmoco);
         });
 
-        return redirect()
+        $emailEnviado = ! $enviarEmailAgendamento
+            || $this->enviarEmailAgendamento($excursao->fresh());
+
+        $redirect = redirect()
             ->route('eventos.excursoes.index')
             ->with('success', 'Excursão atualizada com sucesso!');
+
+        return $emailEnviado
+            ? $redirect
+            : $redirect->with('warning', 'A excursão foi atualizada, mas não foi possível enviar o e-mail. Tente novamente na edição.');
+    }
+
+    public function reenviarEmail(Excursao $excursao): RedirectResponse
+    {
+        if ($this->isImmutable($excursao)) {
+            return $this->immutableExcursionRedirect();
+        }
+
+        if (! $excursao->email_responsavel) {
+            return back()->with('error', 'Cadastre o e-mail do responsável antes de realizar o envio.');
+        }
+
+        return $this->enviarEmailAgendamento($excursao)
+            ? back()->with('success', 'E-mail do agendamento enviado com sucesso!')
+            : back()->with('error', 'Não foi possível enviar o e-mail. Verifique as configurações e tente novamente.');
     }
 
     public function destroy(Excursao $excursao): RedirectResponse
@@ -455,6 +509,8 @@ class ExcursaoController extends Controller
                 'desconto' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
                 'responsavel' => ['required', 'string', 'max:255'],
                 'telefone_responsavel' => ['required', 'string', 'max:20'],
+                'email_responsavel' => ['nullable', 'required_if:enviar_email_agendamento,1', 'email', 'max:255'],
+                'enviar_email_agendamento' => ['required', 'boolean'],
                 'descricao' => ['required', 'string', 'max:200'],
                 'possui_almoco' => ['required', 'boolean'],
                 'cardapio_excursao_id' => ['nullable', 'required_if:possui_almoco,1', 'integer', 'exists:cardapios_excursao,id'],
@@ -477,6 +533,9 @@ class ExcursaoController extends Controller
                 'responsavel.max' => 'O nome do responsável deve ter no máximo 255 caracteres.',
                 'telefone_responsavel.required' => 'Informe o telefone do responsável.',
                 'telefone_responsavel.max' => 'O telefone deve ter no máximo 20 caracteres.',
+                'email_responsavel.required_if' => 'Informe o e-mail do responsável para realizar o envio.',
+                'email_responsavel.email' => 'Informe um endereço de e-mail válido.',
+                'email_responsavel.max' => 'O e-mail deve ter no máximo 255 caracteres.',
                 'descricao.required' => 'Informe a descrição da excursão.',
                 'descricao.max' => 'A descrição deve ter no máximo 200 caracteres.',
                 'cardapio_excursao_id.required_if' => 'Selecione o cardápio do almoço.',
@@ -491,6 +550,43 @@ class ExcursaoController extends Controller
             Excursao::STATUS_REALIZADO,
             Excursao::STATUS_CANCELADO,
         ], true);
+    }
+
+    private function enviarEmailAgendamento(Excursao $excursao): bool
+    {
+        $tentativaEm = now();
+
+        try {
+            $excursao->loadMissing([
+                'almoco',
+                'recebimentos.fluxoCancelamento',
+            ]);
+
+            Mail::to($excursao->email_responsavel)
+                ->send(new AgendamentoExcursaoEmail($excursao));
+
+            $excursao->update([
+                'email_agendamento_enviado_em' => $tentativaEm,
+                'email_agendamento_tentado_em' => $tentativaEm,
+                'email_agendamento_tentativas' => $excursao->email_agendamento_tentativas + 1,
+                'email_agendamento_erro' => null,
+            ]);
+
+            return true;
+        } catch (Throwable $exception) {
+            Log::error('Erro ao enviar informações do agendamento da excursão.', [
+                'excursao_id' => $excursao->id,
+                'exception' => $exception,
+            ]);
+
+            $excursao->update([
+                'email_agendamento_tentado_em' => $tentativaEm,
+                'email_agendamento_tentativas' => $excursao->email_agendamento_tentativas + 1,
+                'email_agendamento_erro' => Str::limit($exception->getMessage(), 1000),
+            ]);
+
+            return false;
+        }
     }
 
     /** @param array{possui_almoco: bool, cardapio_excursao_id: mixed, quantidade: mixed} $dados */

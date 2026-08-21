@@ -4,25 +4,29 @@
     <meta charset="UTF-8">
     <title>Recibo de pagamento</title>
     <style>
-        @page { margin: 18px; }
+        @page { margin: 9px; }
         body {
             font-family: DejaVu Sans, sans-serif;
             color: #26332a;
-            font-size: 9px;
-            line-height: 1.45;
+            font-size: 10px;
+            line-height: 1.4;
             background: #fff;
+            margin: 0;
         }
         .recibo {
             border: 1px solid #dce6d7;
             background: #fff;
-            padding: 0 18px 16px;
+            padding: 0 20px 16px;
             box-shadow: none;
+            height: 135mm;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .cabecalho {
-            margin: 0 -18px 16px;
+            margin: 0 -20px 15px;
             background: #679A4C;
             color: #fff;
-            padding: 14px 18px;
+            padding: 13px 20px;
         }
         .cabecalho table {
             width: 100%;
@@ -31,33 +35,40 @@
         .cabecalho td {
             vertical-align: middle;
         }
+        .cabecalho .empresa-coluna {
+            width: 44%;
+        }
+        .cabecalho .numero-coluna {
+            width: 56%;
+        }
         .cabecalho h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 21px;
             letter-spacing: 1px;
         }
         .empresa {
             margin-top: 2px;
-            font-size: 8px;
+            font-size: 9px;
             color: #fff;
         }
         .numero {
             text-align: right;
-            font-size: 8px;
+            font-size: 9px;
             color: #fff;
+            white-space: nowrap;
         }
         .confirmado {
             display: inline-block;
             margin-top: 5px;
-            padding: 2px 6px;
+            padding: 3px 8px;
             background: #fff;
             color: #3e7222;
-            font-size: 7px;
+            font-size: 8px;
             font-weight: bold;
             letter-spacing: .4px;
         }
         .valor {
-            margin: 14px 0;
+            margin: 13px 0;
             padding: 10px;
             border: 1px solid #cbdcc3;
             background: #f1f7ee;
@@ -68,23 +79,23 @@
         }
         .texto {
             text-align: justify;
-            margin: 8px 0;
+            margin: 9px 0;
         }
         .detalhes {
             width: 100%;
-            margin-top: 14px;
+            margin-top: 12px;
             border-collapse: collapse;
             background: #f8faf7;
         }
         .detalhes td {
             width: 50%;
-            padding: 8px 10px;
+            padding: 9px 12px;
             border: 1px solid #e1e9dd;
         }
         .rotulo {
             display: block;
             color: #71806f;
-            font-size: 7px;
+            font-size: 8px;
             text-transform: uppercase;
             letter-spacing: .3px;
         }
@@ -92,28 +103,28 @@
             display: block;
             margin-top: 2px;
             color: #26332a;
-            font-size: 9px;
+            font-size: 10px;
             font-weight: bold;
         }
         .data {
-            margin-top: 14px;
+            margin-top: 12px;
             text-align: right;
             color: #71806f;
         }
         .assinatura {
             width: 65%;
-            margin: 42px auto 0;
+            margin: 34px auto 0;
             border-top: 1px solid #526250;
-            padding-top: 5px;
+            padding-top: 7px;
             text-align: center;
         }
         .observacao {
-            margin-top: 20px;
+            margin-top: 14px;
             padding-top: 8px;
             border-top: 1px solid #edf1eb;
             text-align: center;
             color: #7b8878;
-            font-size: 7px;
+            font-size: 8px;
         }
     </style>
 </head>
@@ -122,14 +133,14 @@
         <div class="cabecalho">
             <table>
                 <tr>
-                    <td>
+                    <td class="empresa-coluna">
                         <h1>RECIBO</h1>
                         <div class="empresa">
                             <strong>{{ $empresa?->nome_fantasia ?? $empresa?->razao_social ?? 'Empresa não informada' }}</strong>
                             @if ($empresa?->cnpj)<br>CNPJ: {{ $empresa->cnpj }}@endif
                         </div>
                     </td>
-                    <td class="numero">
+                    <td class="numero numero-coluna">
                         Nº REC-EXC-{{ str_pad((string) $excursao->id, 6, '0', STR_PAD_LEFT) }}-{{ str_pad((string) $recebimento->id, 6, '0', STR_PAD_LEFT) }}<br>
                         <span class="confirmado">PAGAMENTO CONFIRMADO</span>
                     </td>
