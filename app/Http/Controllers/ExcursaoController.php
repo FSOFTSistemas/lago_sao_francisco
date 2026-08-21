@@ -79,7 +79,6 @@ class ExcursaoController extends Controller
             ->withQueryString();
 
         $posicaoFinanceira = (clone $query)
-            ->where('status', '!=', Excursao::STATUS_CANCELADO)
             ->withSum([
                 'recebimentos as total_recebido_caixa' => fn ($query) => $query
                     ->whereNotNull('fluxo_caixa_id')
@@ -91,10 +90,12 @@ class ExcursaoController extends Controller
             fn (Excursao $excursao) => (float) ($excursao->total_recebido_caixa ?? 0),
         ), 2);
         $saldoAReceber = round((float) $posicaoFinanceira->sum(
-            fn (Excursao $excursao) => max(
-                (float) $excursao->total - (float) ($excursao->total_recebido_caixa ?? 0),
-                0,
-            ),
+            fn (Excursao $excursao) => $excursao->status === Excursao::STATUS_CANCELADO
+                ? 0
+                : max(
+                    (float) $excursao->total - (float) ($excursao->total_recebido_caixa ?? 0),
+                    0,
+                ),
         ), 2);
 
         $formasPagamento = FormaPagamento::query()
