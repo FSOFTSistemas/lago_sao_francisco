@@ -60,6 +60,10 @@
                                         <small class="text-muted d-block">Telefone</small>
                                         <strong>{{ $excursao->telefone_responsavel }}</strong>
                                     </div>
+                                    <div class="col-md-6 mb-3">
+                                        <small class="text-muted d-block">E-mail</small>
+                                        <strong>{{ $excursao->email_responsavel ?: 'Não informado' }}</strong>
+                                    </div>
                                 </div>
                                 <small class="text-muted d-block">Descrição</small>
                                 <p class="mb-0 text-break">{{ $excursao->descricao }}</p>

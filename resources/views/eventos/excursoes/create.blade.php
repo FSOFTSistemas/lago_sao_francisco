@@ -17,6 +17,24 @@
 @endsection
 
 @section('content')
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle mr-2"></i>{{ session('warning') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
     @if (session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-circle mr-2"></i>{{ session('error') }}
@@ -90,6 +108,28 @@
                                 <input type="tel" class="form-control @error('telefone_responsavel') is-invalid @enderror" id="telefone_responsavel"
                                     name="telefone_responsavel" value="{{ old('telefone_responsavel', $excursao->telefone_responsavel ?? '') }}"
                                     maxlength="15" placeholder="(00) 00000-0000" required @disabled($somenteLeitura)>
+                            </div>
+                        </div>
+                        <div class="form-row align-items-end">
+                            <div class="form-group col-md-6">
+                                <label for="email_responsavel">E-mail do responsável</label>
+                                <input type="email" class="form-control @error('email_responsavel') is-invalid @enderror"
+                                    id="email_responsavel" name="email_responsavel"
+                                    value="{{ old('email_responsavel', $excursao->email_responsavel ?? '') }}"
+                                    maxlength="255" placeholder="responsavel@exemplo.com" @disabled($somenteLeitura)>
+                                @error('email_responsavel') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="form-group col-md-6">
+                                <div class="custom-control custom-switch mb-2">
+                                    <input type="hidden" name="enviar_email_agendamento" value="0">
+                                    <input type="checkbox" class="custom-control-input" id="enviar_email_agendamento"
+                                        name="enviar_email_agendamento" value="1"
+                                        @checked(old('enviar_email_agendamento', false))
+                                        @disabled($somenteLeitura)>
+                                    <label class="custom-control-label" for="enviar_email_agendamento">
+                                        Enviar informações do agendamento por e-mail
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group mb-0">
@@ -315,6 +355,39 @@
                         @if ($edicao)
                             <hr><div class="d-flex justify-content-between"><span>Valor pago</span><strong>{{ $formatarMoeda($excursao->valor_pago) }}</strong></div>
                             <div class="d-flex justify-content-between"><span>Valor restante</span><strong>{{ $formatarMoeda($excursao->valor_restante) }}</strong></div>
+                            <hr>
+                            <div class="small">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Status do e-mail</span>
+                                    @if ($excursao->email_agendamento_erro)
+                                        <strong class="text-danger">Falha no último envio</strong>
+                                    @elseif ($excursao->email_agendamento_enviado_em)
+                                        <strong class="text-success">Enviado</strong>
+                                    @else
+                                        <strong class="text-muted">Não enviado</strong>
+                                    @endif
+                                </div>
+                                @if ($excursao->email_agendamento_enviado_em)
+                                    <div class="text-muted mb-1">
+                                        Último envio: {{ $excursao->email_agendamento_enviado_em->format('d/m/Y H:i') }}
+                                    </div>
+                                @endif
+                                @if ($excursao->email_agendamento_tentado_em)
+                                    <div class="text-muted mb-2">
+                                        Última tentativa: {{ $excursao->email_agendamento_tentado_em->format('d/m/Y H:i') }}
+                                    </div>
+                                @endif
+                                @unless($somenteLeitura)
+                                    <button type="submit" class="btn btn-outline-primary btn-sm btn-block"
+                                        form="form-reenviar-email" @disabled(! $excursao->email_responsavel)>
+                                        <i class="fas fa-envelope mr-1"></i>
+                                        {{ $excursao->email_agendamento_tentativas > 0 ? 'Reenviar e-mail' : 'Enviar e-mail' }}
+                                    </button>
+                                    @unless($excursao->email_responsavel)
+                                        <small class="text-muted d-block mt-1">Salve um e-mail para habilitar o envio.</small>
+                                    @endunless
+                                @endunless
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -328,6 +401,13 @@
             @endunless
         </div></div>
     </form>
+
+    @if ($edicao && ! $somenteLeitura)
+        <form id="form-reenviar-email" action="{{ route('eventos.excursoes.reenviar-email', $excursao) }}"
+            method="POST" class="d-none">
+            @csrf
+        </form>
+    @endif
 
     @unless ($edicao)
         <template id="recebimento-template">
@@ -385,9 +465,27 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('form-excursao');
+    const formReenviarEmail = document.getElementById('form-reenviar-email');
     const moeda = valor => Number(valor || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
     const numero = id => Number(document.getElementById(id)?.value || 0);
     const definir = (id, valor) => { const el = document.getElementById(id); if (el) el.textContent = moeda(valor); };
+
+    formReenviarEmail?.addEventListener('submit', event => {
+        event.preventDefault();
+
+        Swal.fire({
+            icon: 'question',
+            title: 'Reenviar e-mail?',
+            text: 'As informações atuais do agendamento serão enviadas novamente ao responsável.',
+            showCancelButton: true,
+            confirmButtonText: 'Sim, reenviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#007bff',
+            reverseButtons: true,
+        }).then(result => {
+            if (result.isConfirmed) formReenviarEmail.submit();
+        });
+    });
 
     function recalcular() {
         const valorPessoas = numero('valor_pessoa') * numero('qtd_pessoas');
@@ -465,6 +563,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (partes[1]?.length > 2) percentual.value = `${partes[0]}.${partes[1].slice(0, 2)}`;
         recalcular();
     });
+
+    const emailResponsavel = document.getElementById('email_responsavel');
+    const enviarEmailAgendamento = document.getElementById('enviar_email_agendamento');
+    const atualizarObrigatoriedadeEmail = () => {
+        if (emailResponsavel) emailResponsavel.required = enviarEmailAgendamento?.checked ?? false;
+    };
+    enviarEmailAgendamento?.addEventListener('change', atualizarObrigatoriedadeEmail);
+    atualizarObrigatoriedadeEmail();
 
     const possuiAlmoco = document.getElementById('possui_almoco');
     const possuiAlmocoLabel = document.getElementById('possui-almoco-label');

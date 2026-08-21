@@ -180,6 +180,8 @@ Route::get('/eventos/excursoes/{excursao}/demonstrativo', [ExcursaoController::c
     ->middleware(['auth', 'permission:gerenciar aluguel'])
     ->name('eventos.excursoes.demonstrativo');
 Route::put('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'update'])->name('eventos.excursoes.update');
+Route::post('/eventos/excursoes/{excursao}/reenviar-email', [ExcursaoController::class, 'reenviarEmail'])
+    ->name('eventos.excursoes.reenviar-email');
 Route::delete('/eventos/excursoes/{excursao}', [ExcursaoController::class, 'destroy'])->name('eventos.excursoes.destroy');
 Route::patch('/eventos/excursoes/{excursao}/iniciar', [ExcursaoController::class, 'start'])->name('eventos.excursoes.start');
 Route::patch('/eventos/excursoes/{excursao}/finalizar', [ExcursaoController::class, 'finish'])->name('eventos.excursoes.finish');
