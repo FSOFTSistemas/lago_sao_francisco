@@ -225,8 +225,7 @@ class ExcursaoController extends Controller
             throw $exception;
         }
 
-        $emailEnviado = ! $enviarEmailAgendamento
-            || $this->enviarEmailAgendamento($excursaoCriada);
+        $emailEnviado = !$enviarEmailAgendamento || $this->enviarEmailAgendamento($excursaoCriada);
 
         $redirect = redirect()
             ->route('eventos.excursoes.index')

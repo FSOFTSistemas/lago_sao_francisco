@@ -26,3 +26,13 @@ Recent commits use short Portuguese messages with prefixes such as `feat:` and `
 
 ## Security & Configuration Tips
 Never commit `.env`, credentials, certificates, generated fiscal files, or private customer data. Keep writable runtime files in Laravel-managed storage paths and verify permission-sensitive changes against `config/permission.php`.
+
+## Pending Lago System Adjustments
+Continue the reservation improvement work from the current implementation state. Items already adjusted in code include guest visibility, UH release, seller display, breakfast movement report, duplicate payment protection, seller in quick map flow, map block creation, online sales channels, payment method movement mapping, and checkout visibility.
+
+Remaining work:
+- Build the quotation/simulation screen without creating a reservation. It should calculate totals from room base value, additional person value, paid child value, non-paying child quantity, and simulation date range.
+- Add the guest's complete address to reservation receipts and extracts. Use the existing `Hospede` to `Endereco` relationship and keep document formatting printable.
+- Decide whether to backfill old reservation payments that were saved in `transacoes` but did not create matching `fluxo_caixas` entries. New payments are handled by the current movement mapping.
+- Apply and verify pending migrations in the target database before production testing, especially UH status, online channel sellers, and card-machine payment movements.
+- Perform practical validation after migrations: create and drag a map block, create reservations with Booking/Expedia/B2B, launch Pix/card-machine/payment-link receipts, check financial reports, checkout, and release UH.
