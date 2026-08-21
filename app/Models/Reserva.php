@@ -26,6 +26,11 @@ class Reserva extends Model
         'vendedor_id',
         'n_criancas_nao_pagantes',
         'nomes_hospedes_secundarios',
+        'uh_liberada_em',
+    ];
+
+    protected $casts = [
+        'uh_liberada_em' => 'datetime',
     ];
 
     //     protected $casts = [

@@ -12,7 +12,7 @@
     "src": "node_modules/bootstrap-icons/font/fonts/bootstrap-icons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-CwTIGDRX.css",
+    "file": "assets/app-Dr0kjG5W.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -33,7 +33,7 @@
     ]
   },
   "resources/js/mapa-reservas.jsx": {
-    "file": "assets/mapa-reservas-EVw5uoW4.js",
+    "file": "assets/mapa-reservas-BrP7aVM2.js",
     "name": "mapa-reservas",
     "src": "resources/js/mapa-reservas.jsx",
     "isEntry": true,

@@ -22,7 +22,7 @@
                                 <a class="nav-link active" id="dados-tab" data-toggle="tab" href="#dados" role="tab"
                                     aria-controls="dados" aria-selected="true">Dados da Reserva</a>
                             </li>
-                            <?php if (isset($reserva) && !in_array($reserva->situacao, ['cancelado', 'noshow'])): ?>
+                            <?php if (isset($reserva) && !in_array($reserva->situacao, ['cancelado', 'noshow', 'uh_liberada'])): ?>
                             <li class="nav-item">
                                 <a class="nav-link" id="produtos-tab" data-toggle="tab" href="#produtos" role="tab"
                                     aria-controls="produtos" aria-selected="false">Produtos</a>
@@ -60,6 +60,7 @@
                                                             'finalizada',
                                                             'cancelado',
                                                             'noshow',
+                                                            'uh_liberada',
                                                         ])
                                                     ) {
                                                         $podeAlterarSituacao = false;
@@ -117,6 +118,14 @@
                                                         <input type='radio' name='situacao' value='finalizada' checked
                                                             disabled>
                                                         <span class='badge badge-success'>finalizada</span>
+                                                    </label>
+                                                @endif
+
+                                                @if ($situacaoAtual === 'uh_liberada')
+                                                    <label class='radio-option'>
+                                                        <input type='radio' name='situacao' value='uh_liberada' checked
+                                                            disabled>
+                                                        <span class='badge badge-uh-liberada'>UH liberada</span>
                                                     </label>
                                                 @endif
 
@@ -493,10 +502,17 @@
                                                 </button>
                                             @endif
 
-                                            @if (isset($reserva) && $reserva->situacao === 'hospedado')
+                                            @if (isset($reserva) && $reserva->situacao === 'hospedado' && \Illuminate\Support\Carbon::parse($reserva->data_checkout)->isToday())
                                                 <button type="button" class="btn btn-success" id="btn-finalizar"
                                                     data-reserva-id="{{ $reserva->id }}">
                                                     <i class="fas fa-check-circle"></i> Check-out
+                                                </button>
+                                            @endif
+
+                                            @if (isset($reserva) && $reserva->situacao === 'finalizada')
+                                                <button type="button" class="btn btn-info" id="btn-liberar-uh"
+                                                    data-reserva-id="{{ $reserva->id }}">
+                                                    <i class="fas fa-broom"></i> LIBERAR UH
                                                 </button>
                                             @endif
 
@@ -664,7 +680,7 @@
                     </div>
                 </div>
 
-                @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow']))
+                @if (isset($reserva) && !in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow', 'uh_liberada']))
                     <div class='card shadow-sm'>
                         <div class='card-header bg-light d-flex justify-content-between align-items-center'>
                             <h5 class='mb-0 text-uppercase text-muted' style='letter-spacing: 1px;'>ATIVIDADES NA
@@ -1085,6 +1101,11 @@
             color: #fff;
         }
 
+        .badge-uh-liberada {
+            background-color: #20C997;
+            color: #052D22;
+        }
+
         .badge-lg {
             font-size: 1rem;
             padding: 0.5rem 1rem;
@@ -1492,7 +1513,7 @@
                     });
 
                     $('#hospede_id').val(hospedeBloqueadoId).prop('readonly', true);
-                } else if (situacao === 'finalizada' || situacao === 'cancelado' || situacao === 'noshow') {
+                } else if (situacao === 'finalizada' || situacao === 'cancelado' || situacao === 'noshow' || situacao === 'uh_liberada') {
                     // Desabilitar campos para reservas finalizadas ou canceladas
                     $('#periodo, #hospede_id, #n_adultos, #n_criancas, #observacoes, #btn-addhospede, #dropdownMenuButton')
                         .attr('disabled', true);
@@ -1765,6 +1786,11 @@ function carregarResumo() {
 
             // Salvar transação (pagamento)
             $('#btn-salvar-transacao').click(function() {
+                const $botao = $(this);
+                if ($botao.prop('disabled')) {
+                    return;
+                }
+
                 const descricao = $('#descricao_transacao').val();
                 const valorStr = $('#valor_transacao').val();
                 const formaPagamentoId = $('#forma_pagamento_transacao').val();
@@ -1774,8 +1800,9 @@ function carregarResumo() {
                 const tipo = $('#tipo_transacao').val();
                 const restante = parseFloat($('#valor-falta-lancar').val());
                 const comprovanteFile = $('#comprovante_transacao')[0].files[0];
+                const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
-                if (valorStr > restante) {
+                if (valor > restante) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Valor inválido',
@@ -1789,8 +1816,6 @@ function carregarResumo() {
                     alert('Preencha todos os campos obrigatórios');
                     return;
                 }
-
-                const valor = parseFloat(valorStr.replace(/\./g, '').replace(',', '.'));
 
                 const formData = new FormData();
                 formData.append('descricao', descricao);
@@ -1806,6 +1831,8 @@ function carregarResumo() {
                     formData.append('comprovante', comprovanteFile);
                 }
 
+                $botao.prop('disabled', true).text('Salvando...');
+
                 $.ajax({
                     url: '/transacoes',
                     method: 'POST',
@@ -1817,7 +1844,9 @@ function carregarResumo() {
                     },
                     success: function(response) {
                         if (response.success) {
-                            transacoes.push(response.transacao);
+                            if (!response.duplicate) {
+                                transacoes.push(response.transacao);
+                            }
                             atualizarListaAtividades();
                             atualizarResumo();
                             $('#form-transacao-pagamento').slideUp();
@@ -1838,6 +1867,9 @@ function carregarResumo() {
                     },
                     error: function(xhr) {
                         alert('Erro ao salvar transação: ' + xhr.responseJSON.message);
+                    },
+                    complete: function() {
+                        $botao.prop('disabled', false).text('Salvar');
                     }
                 });
             });
@@ -1912,7 +1944,7 @@ function carregarResumo() {
                                 <span class="badge ${badgeClass}">${transacao.categoria}</span>
                                 ${formaPagamento} • ${dataFormatada}
 
-                                @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
+                                @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow', 'uh_liberada']))
                                     ${linkComprovante} 
                                     <button class="btn btn-sm btn-outline-danger float-right btn-remover-transacao" data-id="${transacao.id}">
                                         <i class="fas fa-trash"></i>
@@ -1935,7 +1967,7 @@ function carregarResumo() {
                                     <br>
                                 <span> OBS: ${transacao.observacoes ?? '-'}</span>
 
-                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
+                                    @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow', 'uh_liberada']))
                                         
                                         ${linkComprovante} 
                                         
@@ -2005,7 +2037,7 @@ function carregarResumo() {
                                         </p>
                                     </div>
                                     <div class="mt-3 text-right">
-                                        @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow']))
+                                        @if (!isset($reserva) || !in_array($reserva->situacao ?? '', ['finalizada', 'cancelado', 'noshow', 'uh_liberada']))
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-remover-item" 
                                                     data-id="${item.id}">
                                                 <i class="fas fa-trash"></i>
@@ -2386,6 +2418,61 @@ function carregarResumo() {
                         }
                     });
                 }
+            });
+
+            $('#btn-liberar-uh').click(function(e) {
+                e.preventDefault();
+                const reservaId = $(this).data('reserva-id');
+
+                Swal.fire({
+                    title: 'Liberar UH?',
+                    text: 'A unidade será marcada como liberada para limpeza ou nova utilização.',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#20c997',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sim, liberar!',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    $.ajax({
+                        url: `/reserva/${reservaId}/liberar-uh`,
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        contentType: 'application/json',
+                        data: JSON.stringify({}),
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'Sucesso!',
+                                    text: response.message,
+                                    icon: 'success',
+                                    timer: 2000
+                                }).then(() => {
+                                    window.location.href = '/reserva';
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'Erro!',
+                                    text: response.message,
+                                    icon: 'error'
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            Swal.fire({
+                                title: 'Erro!',
+                                text: 'Erro ao liberar UH: ' + (xhr.responseJSON?.message || xhr.responseText),
+                                icon: 'error'
+                            });
+                        }
+                    });
+                });
             });
 
             $('#btn-cancelar-reserva').click(function(e) {

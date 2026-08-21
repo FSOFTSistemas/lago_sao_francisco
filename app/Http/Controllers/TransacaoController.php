@@ -50,13 +50,35 @@ class TransacaoController extends Controller
                 'comprovante' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // 2MB Max
             ]);
 
-            $comprovantePath = null;
-            if ($request->hasFile('comprovante')) {
+            DB::beginTransaction();
 
-                $comprovantePath = $request->file('comprovante')->store('comprovantes', 'public');
+            $transacaoDuplicada = Transacao::where('reserva_id', $request->reserva_id)
+                ->where('status', true)
+                ->where('tipo', $request->tipo)
+                ->where('categoria', $request->categoria)
+                ->where('forma_pagamento_id', $request->forma_pagamento_id)
+                ->whereDate('data_pagamento', $request->data_pagamento)
+                ->where('descricao', $request->descricao)
+                ->where('valor', round((float) $request->valor, 2))
+                ->where('created_at', '>=', now()->subSeconds(10))
+                ->latest()
+                ->first();
+
+            if ($transacaoDuplicada) {
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Transação já registrada. O lançamento duplicado foi ignorado.',
+                    'duplicate' => true,
+                    'transacao' => $transacaoDuplicada->load('formaPagamento'),
+                ]);
             }
 
-            DB::beginTransaction();
+            $comprovantePath = null;
+            if ($request->hasFile('comprovante')) {
+                $comprovantePath = $request->file('comprovante')->store('comprovantes', 'public');
+            }
 
             // Criar a transação
             $transacao = Transacao::create([

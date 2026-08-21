@@ -70,8 +70,11 @@ class RelatorioMovimentacaoController extends Controller
             $dataStr = $dataAtual->format('Y-m-d');
 
             $doDia = $reservas->filter(fn ($r) => $r->data_checkin <= $dataStr && $r->data_checkout > $dataStr);
-            $normais = $doDia->whereIn('situacao', ['reserva', 'hospedado', 'finalizada']);
+            $normais = $doDia->whereIn('situacao', ['reserva', 'hospedado', 'finalizada', 'uh_liberada']);
             $bloqueios = $doDia->where('situacao', 'bloqueado');
+            $reservasComCafe = $reservas
+                ->filter(fn ($r) => $r->data_checkin < $dataStr && $r->data_checkout >= $dataStr)
+                ->whereIn('situacao', ['reserva', 'hospedado', 'finalizada', 'uh_liberada']);
 
             $linha = $this->linhaZerada();
             $linha['data'] = $dataAtual->copy();
@@ -89,8 +92,9 @@ class RelatorioMovimentacaoController extends Controller
             $linha['criancas_free'] = $normais->sum('n_criancas_nao_pagantes');
             $linha['criancas_total'] = $linha['criancas_pag'] + $linha['criancas_free'];
 
-            $linha['cafe_adl'] = $normais->sum('n_adultos');
-            $linha['cafe_chd'] = $linha['criancas_total'];
+            $linha['cafe_adl'] = $reservasComCafe->sum('n_adultos');
+            $linha['cafe_chd'] = $reservasComCafe->sum('n_criancas')
+                + $reservasComCafe->sum('n_criancas_nao_pagantes');
 
             $linha['bloqueio_apto'] = $bloqueios->count();
             $linha['bloqueio_pax'] = $bloqueios->sum($pax);

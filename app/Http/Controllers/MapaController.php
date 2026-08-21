@@ -28,8 +28,12 @@ class MapaController extends Controller
         $dataFim = $request->get('data_fim', Carbon::now()->addDays(15)->format('Y-m-d'));
         $hospedes = Hospede::orderBy('nome')->get();
         $motorhomes = Motorhome::orderBy('placa')->get();
+        $vendedores = Funcionario::where('status', 'ativo')
+            ->where('vendedor', true)
+            ->orderBy('nome')
+            ->get();
 
-        return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes', 'motorhomes'));
+        return view('mapa.index_react', compact('dataInicio', 'dataFim', 'hospedes', 'motorhomes', 'vendedores'));
     }
 
     public function getDadosMapa(Request $request)
@@ -64,10 +68,18 @@ class MapaController extends Controller
             $quartos = Quarto::where('status', 1)
                 ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
-                    $query->with(['hospede', 'motorhome'])
+                    $query->with(['hospede', 'motorhome', 'pets'])
                         ->where(function ($q) use ($dataInicio, $dataFim) {
-                            $q->where('data_checkin', '<=', $dataFim)
-                                ->where('data_checkout', '>', $dataInicio);
+                            $q->where(function ($query) use ($dataInicio, $dataFim) {
+                                $query->where('data_checkin', '<=', $dataFim)
+                                    ->where('data_checkout', '>', $dataInicio);
+                            })->orWhere(function ($query) use ($dataInicio, $dataFim) {
+                                $query->where('situacao', 'uh_liberada')
+                                    ->whereBetween('data_checkout', [
+                                        $dataInicio->toDateString(),
+                                        $dataFim->toDateString(),
+                                    ]);
+                            });
                         })
                         ->whereNotIn('situacao', ['cancelado']);
                 }])
@@ -85,6 +97,12 @@ class MapaController extends Controller
                             $nomeVendedor = $usersMap[$reserva->vendedor_id];
                         }
                     }
+                    $dataMapaCheckin = $reserva->situacao === 'uh_liberada'
+                        ? Carbon::parse($reserva->data_checkout)->toDateString()
+                        : $reserva->data_checkin;
+                    $dataMapaCheckout = $reserva->situacao === 'uh_liberada'
+                        ? Carbon::parse($reserva->data_checkout)->addDay()->toDateString()
+                        : $reserva->data_checkout;
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
                         'hospede_id' => $reserva->hospede_id,
@@ -93,6 +111,8 @@ class MapaController extends Controller
                         'vendedor_nome' => $nomeVendedor,
                         'data_checkin' => $reserva->data_checkin,
                         'data_checkout' => $reserva->data_checkout,
+                        'data_mapa_checkin' => $dataMapaCheckin,
+                        'data_mapa_checkout' => $dataMapaCheckout,
                         'situacao' => $reserva->situacao,
                         'valor_diaria' => $reserva->valor_diaria,
                         'valor_total' => $reserva->valor_total, // <--- ADICIONADO AQUI
@@ -100,8 +120,15 @@ class MapaController extends Controller
                         'motorhome_placa' => $reserva->motorhome->placa ?? $reserva->placa_veiculo,
                         'n_adultos' => $reserva->n_adultos,
                         'n_criancas' => $reserva->n_criancas,
+                        'n_criancas_nao_pagantes' => $reserva->n_criancas_nao_pagantes ?? 0,
                         'observacoes' => $reserva->observacoes,
                         'nomes_hospedes_secundarios' => $reserva->nomes_hospedes_secundarios,
+                        'uh_liberada_em' => $reserva->uh_liberada_em,
+                        'pets' => $reserva->pets->map(fn ($pet) => [
+                            'tamanho' => $pet->tamanho,
+                            'quantidade' => $pet->quantidade,
+                            'valor_unitario' => $pet->valor_unitario,
+                        ])->values(),
                     ];
                 }
                 $dadosQuartos[] = [
@@ -162,6 +189,8 @@ class MapaController extends Controller
                 'qtd_pet_medio' => 'nullable|integer|min:0',
                 'qtd_pet_grande' => 'nullable|integer|min:0',
                 'nomes_hospedes_secundarios' => 'nullable|string',
+                'observacoes' => 'nullable|string',
+                'vendedor_id' => 'nullable|exists:funcionarios,id',
                 'valor_diaria' => 'nullable',
                 'supervisor_id_autorizacao' => 'nullable',
             ]);
@@ -305,6 +334,7 @@ class MapaController extends Controller
                 'n_criancas_nao_pagantes' => $request->input('n_criancas_nao_pagantes', 0),
                 'nomes_hospedes_secundarios' => $request->nomes_hospedes_secundarios,
                 'observacoes' => $request->observacoes,
+                'vendedor_id' => $request->vendedor_id,
             ];
 
             if ($request->tipo === 'bloqueio') {

@@ -74,13 +74,57 @@ class FuncionariosSeeder extends Seeder
                 'setor' => 'Vendas',
                 'cargo' => 'Executiva de Contas',
                 'empresa_id' => 3
-            ]
+            ],
+            [
+                'nome' => 'Booking',
+                'cpf' => null,
+                'endereco_id' => null,
+                'salario' => null,
+                'data_contratacao' => Carbon::now(),
+                'status' => 'ativo',
+                'setor' => 'Canais Online',
+                'cargo' => 'Canal de venda',
+                'vendedor' => true,
+                'empresa_id' => 1
+            ],
+            [
+                'nome' => 'Expedia',
+                'cpf' => null,
+                'endereco_id' => null,
+                'salario' => null,
+                'data_contratacao' => Carbon::now(),
+                'status' => 'ativo',
+                'setor' => 'Canais Online',
+                'cargo' => 'Canal de venda',
+                'vendedor' => true,
+                'empresa_id' => 1
+            ],
+            [
+                'nome' => 'B2B Reservas',
+                'cpf' => null,
+                'endereco_id' => null,
+                'salario' => null,
+                'data_contratacao' => Carbon::now(),
+                'status' => 'ativo',
+                'setor' => 'Canais Online',
+                'cargo' => 'Canal de venda',
+                'vendedor' => true,
+                'empresa_id' => 1
+            ],
             ];
 
-            $this->funcionario1 = Funcionario::create($funcionarios[0]);
-            $this->funcionario2 = Funcionario::create($funcionarios[1]);
-            $this->funcionario3 = Funcionario::create($funcionarios[2]);
-            $this->funcionario4 = Funcionario::create($funcionarios[3]);
-            $this->funcionario5 = Funcionario::create($funcionarios[4]);
+            foreach ($funcionarios as $indice => $funcionario) {
+                $criado = Funcionario::firstOrCreate(
+                    [
+                        'nome' => $funcionario['nome'],
+                        'empresa_id' => $funcionario['empresa_id'],
+                    ],
+                    $funcionario,
+                );
+
+                if ($indice < 5) {
+                    $this->{'funcionario'.($indice + 1)} = $criado;
+                }
+            }
         }
 }

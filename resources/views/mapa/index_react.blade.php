@@ -12,6 +12,7 @@
         data-data-inicio="{{ $dataInicio }}"
         data-data-fim="{{ $dataFim }}"
         data-motorhomes="{{ json_encode($motorhomes ?? []) }}"
+        data-vendedores="{{ json_encode($vendedores ?? []) }}"
     >
         <div class="text-center p-5">
             <i class="fas fa-spinner fa-spin fa-3x"></i>
@@ -53,6 +54,7 @@
         .situacao-hospedado { background-color: #FF0000; }
         .situacao-bloqueado { background-color: #343A40; }
         .situacao-finalizada { background-color: #26A69A; }
+        .situacao-uh_liberada { background-color: #20C997; color: #052D22; }
         .situacao-cancelado { background-color: #6A1B9A; }
         .situacao-noshow { background-color: #F48FB1; }
         

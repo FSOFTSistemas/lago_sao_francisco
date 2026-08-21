@@ -50,9 +50,31 @@ const SITUACAO_LABELS = {
     reserva: "Reserva",
     hospedado: "Hospedado",
     finalizada: "Finalizada",
+    uh_liberada: "UH Liberada",
     bloqueado: "Bloqueado",
     noshow: "No Show",
 };
+const getTodayString = () => {
+    const today = new Date();
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+    return today.toISOString().slice(0, 10);
+};
+const getMapaCheckin = (reserva) =>
+    reserva.data_mapa_checkin || reserva.data_checkin;
+const getMapaCheckout = (reserva) =>
+    reserva.data_mapa_checkout || reserva.data_checkout;
+const getInitials = (name) =>
+    (name || "")
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join("");
+const getPetsResumo = (pets = []) =>
+    pets
+        .filter((pet) => parseInt(pet.quantidade || 0, 10) > 0)
+        .map((pet) => `${pet.quantidade} ${pet.tamanho}`)
+        .join(", ");
 const getTotalGeralReserva = (reserva, financeiro) => {
     if (!reserva || !financeiro) return 0;
     return (
@@ -75,10 +97,12 @@ export default function MapaReservas({
     dataInicioInicial,
     dataFimInicial,
     motorhomesIniciais,
+    vendedoresIniciais,
 }) {
     // --- ESTADOS ---
     const [hospedes, setHospedes] = useState(hospedesIniciais || []);
     const [motorhomes, setMotorhomes] = useState(motorhomesIniciais || []);
+    const [vendedores] = useState(vendedoresIniciais || []);
     const [dadosMapa, setDadosMapa] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -126,6 +150,8 @@ export default function MapaReservas({
         qtd_pet_medio: 0,
         qtd_pet_grande: 0,
         nomes_hospedes_secundarios: "",
+        vendedor_id: "",
+        observacoes: "",
         valor_diaria: "",
         supervisor_id_autorizacao: "",
     });
@@ -256,6 +282,13 @@ export default function MapaReservas({
         }));
     };
 
+    const getOptionsVendedores = () => {
+        return vendedores.map((v) => ({
+            value: v.id,
+            label: v.nome,
+        }));
+    };
+
     const getOptionsQuartos = () => {
         if (!dadosMapa || !dadosMapa.quartos) return [];
         return dadosMapa.quartos.map((q) => ({
@@ -266,9 +299,17 @@ export default function MapaReservas({
 
     const podeFazerCheckin = (reserva) => {
         if (!reserva || reserva.situacao !== "reserva") return false;
-        const hoje = new Date().toISOString().split("T")[0];
+        const hoje = getTodayString();
         return reserva.data_checkin <= hoje;
     };
+
+    const podeFazerCheckout = (reserva) => {
+        if (!reserva || reserva.situacao !== "hospedado") return false;
+        return reserva.data_checkout === getTodayString();
+    };
+
+    const podeLiberarUh = (reserva) =>
+        reserva && reserva.situacao === "finalizada";
 
     const handleSalvarNovoHospede = async (e) => {
         e.preventDefault();
@@ -421,40 +462,40 @@ export default function MapaReservas({
             const isFeriadoCel = dadosMapa.feriados?.includes(mesDiaAtual);
 
             let reservaInicio = quarto.reservas.find((r) =>
-                checkData(r.data_checkin, dataAtual),
+                checkData(getMapaCheckin(r), dataAtual),
             );
 
             // Lógica para pegar reserva contínua que começou antes da visualização atual
             if (i === 0 && !reservaInicio) {
                 reservaInicio = quarto.reservas.find(
                     (r) =>
-                        r.data_checkin < dataAtual &&
-                        r.data_checkout > dataAtual,
+                        getMapaCheckin(r) < dataAtual &&
+                        getMapaCheckout(r) > dataAtual,
                 );
             }
 
             // Verifica se tem alguém saindo hoje neste quarto (para definir a margem)
             const reservaFim = quarto.reservas.find((r) =>
-                checkData(r.data_checkout, dataAtual),
+                checkData(getMapaCheckout(r), dataAtual),
             );
 
             if (reservaInicio) {
                 let slotsOcupados = 0;
                 for (let j = i; j < totalDias; j++) {
                     const dFutura = datas[j];
-                    if (checkData(dFutura, reservaInicio.data_checkout)) break;
+                    if (checkData(dFutura, getMapaCheckout(reservaInicio))) break;
                     slotsOcupados++;
                 }
 
                 // Tratamentos de borda
                 if (
                     slotsOcupados === 0 &&
-                    checkData(reservaInicio.data_checkout, dataAtual)
+                    checkData(getMapaCheckout(reservaInicio), dataAtual)
                 )
                     slotsOcupados = 1;
                 if (
                     slotsOcupados === 0 &&
-                    reservaInicio.data_checkout > datas[totalDias - 1]
+                    getMapaCheckout(reservaInicio) > datas[totalDias - 1]
                 )
                     slotsOcupados = totalDias - i;
                 if (slotsOcupados === 0) slotsOcupados = 1;
@@ -617,6 +658,78 @@ export default function MapaReservas({
         }
     };
 
+    const handleRealizarCheckout = async () => {
+        if (!reservaDetalhes) return;
+
+        const result = await Swal.fire({
+            title: "Confirmar Check-out",
+            text: `Deseja realizar o checkout de ${reservaDetalhes.hospede_nome}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#28a745",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Sim, finalizar!",
+            cancelButtonText: "Cancelar",
+        });
+
+        if (!result.isConfirmed) return;
+
+        setLoadingAction(true);
+        try {
+            const response = await axios.put(
+                `/reserva/${reservaDetalhes.id}/finalizar`,
+            );
+            if (response.data.success) {
+                Swal.fire("Sucesso!", response.data.message, "success");
+                setShowModalDetalhes(false);
+                fetchMapa();
+            } else {
+                Swal.fire("Atenção", response.data.message, "warning");
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message;
+            Swal.fire("Erro", `Não foi possível processar: ${msg}`, "error");
+        } finally {
+            setLoadingAction(false);
+        }
+    };
+
+    const handleLiberarUh = async () => {
+        if (!reservaDetalhes) return;
+
+        const result = await Swal.fire({
+            title: "Liberar UH",
+            text: `Deseja marcar a UH de ${reservaDetalhes.hospede_nome} como liberada?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#20c997",
+            cancelButtonColor: "#6c757d",
+            confirmButtonText: "Sim, liberar!",
+            cancelButtonText: "Cancelar",
+        });
+
+        if (!result.isConfirmed) return;
+
+        setLoadingAction(true);
+        try {
+            const response = await axios.put(
+                `/reserva/${reservaDetalhes.id}/liberar-uh`,
+            );
+            if (response.data.success) {
+                Swal.fire("Sucesso!", response.data.message, "success");
+                setShowModalDetalhes(false);
+                fetchMapa();
+            } else {
+                Swal.fire("Atenção", response.data.message, "warning");
+            }
+        } catch (error) {
+            const msg = error.response?.data?.message || error.message;
+            Swal.fire("Erro", `Não foi possível liberar UH: ${msg}`, "error");
+        } finally {
+            setLoadingAction(false);
+        }
+    };
+
     const handleSalvarReserva = async (e) => {
         e.preventDefault();
 
@@ -758,6 +871,8 @@ export default function MapaReservas({
             qtd_pet_medio: 0,
             qtd_pet_grande: 0,
             nomes_hospedes_secundarios: "",
+            vendedor_id: "",
+            observacoes: "",
             valor_diaria: "",
             supervisor_id_autorizacao: "",
         });
@@ -792,6 +907,7 @@ export default function MapaReservas({
                 .situacao-reserva { background-color: #007bff; }
                 .situacao-hospedado { background-color: #dc3545; }
                 .situacao-finalizada { background-color: #17a2b8; }
+                .situacao-uh_liberada { background-color: #20c997; color: #052d22; }
                 .situacao-bloqueado { background-color: #343a40; }
                 .situacao-noshow { background-color: #e83e8c; }
                 .mapa-container { height: 90vh; overflow: auto; position: relative; }
@@ -838,6 +954,15 @@ export default function MapaReservas({
                         </span>
                         <span className="badge badge-info mr-1">
                             Finalizada
+                        </span>
+                        <span
+                            className="badge mr-1"
+                            style={{
+                                backgroundColor: "#20c997",
+                                color: "#052d22",
+                            }}
+                        >
+                            UH Liberada
                         </span>
                         <span className="badge badge-dark mr-1">Bloqueado</span>
                         <span
@@ -934,19 +1059,19 @@ export default function MapaReservas({
                                 const mesDia = dataAtual.substring(5);
                                 const isFeriado = dadosMapa.feriados?.includes(mesDia);
 
-                                let reservaInicio = q.reservas.find((r) => checkData(r.data_checkin, dataAtual));
+                                let reservaInicio = q.reservas.find((r) => checkData(getMapaCheckin(r), dataAtual));
 
                                 // Lógica para reserva contínua que começou antes
                                 if (i === 0 && !reservaInicio) {
-                                    reservaInicio = q.reservas.find((r) => r.data_checkin < dataAtual && r.data_checkout > dataAtual);
+                                    reservaInicio = q.reservas.find((r) => getMapaCheckin(r) < dataAtual && getMapaCheckout(r) > dataAtual);
                                 }
 
-                                const reservaFim = q.reservas.find((r) => checkData(r.data_checkout, dataAtual));
+                                const reservaFim = q.reservas.find((r) => checkData(getMapaCheckout(r), dataAtual));
 
                                 if (reservaInicio) {
                                     let slotsOcupados = 0;
                                     for (let j = i; j < totalDias; j++) {
-                                        if (checkData(datas[j], reservaInicio.data_checkout)) break;
+                                        if (checkData(datas[j], getMapaCheckout(reservaInicio))) break;
                                         slotsOcupados++;
                                     }
                                     if (slotsOcupados === 0) slotsOcupados = 1;
@@ -1050,6 +1175,10 @@ export default function MapaReservas({
                                         <i className="fas fa-user-tag mr-1"></i>{" "}
                                         Vendedor:{" "}
                                         <strong>
+                                            {getInitials(
+                                                reservaDetalhes.vendedor_nome,
+                                            )}{" "}
+                                            -{" "}
                                             {reservaDetalhes.vendedor_nome}
                                         </strong>
                                     </div>
@@ -1099,12 +1228,33 @@ export default function MapaReservas({
                                     </div>
                                     <div className="col-6 mb-3">
                                         <small className="text-muted d-block">
-                                            Nº crianças
+                                            Crianças pagantes
                                         </small>
                                         <strong>
                                             {reservaDetalhes.n_criancas}
                                         </strong>
                                     </div>
+                                    <div className="col-6 mb-3">
+                                        <small className="text-muted d-block">
+                                            Crianças não pagantes
+                                        </small>
+                                        <strong>
+                                            {reservaDetalhes.n_criancas_nao_pagantes ||
+                                                0}
+                                        </strong>
+                                    </div>
+                                    {getPetsResumo(reservaDetalhes.pets) && (
+                                        <div className="col-6 mb-3">
+                                            <small className="text-muted d-block">
+                                                Pets
+                                            </small>
+                                            <strong>
+                                                {getPetsResumo(
+                                                    reservaDetalhes.pets,
+                                                )}
+                                            </strong>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {reservaDetalhes.nomes_hospedes_secundarios && (
@@ -1165,37 +1315,21 @@ export default function MapaReservas({
                                     </div>
                                 )}
 
-                                {reservaDetalhes.observacoes && (
-                                    <div className="mt-3">
-                                        <button
-                                            type="button"
-                                            className="btn btn-link btn-sm p-0 text-muted"
-                                            style={{ textDecoration: "none" }}
-                                            onClick={() =>
-                                                setShowObservacaoDetalhes(
-                                                    !showObservacaoDetalhes,
-                                                )
-                                            }
-                                        >
-                                            Observação{" "}
-                                            <i
-                                                className={`fas fa-chevron-${showObservacaoDetalhes ? "up" : "down"}`}
-                                            ></i>
-                                        </button>
-                                        {showObservacaoDetalhes && (
-                                            <div
-                                                className="p-2 mt-1 rounded border bg-white"
-                                                style={{
-                                                    fontSize: "0.85rem",
-                                                    fontStyle: "italic",
-                                                    whiteSpace: "pre-wrap",
-                                                }}
-                                            >
-                                                {reservaDetalhes.observacoes}
-                                            </div>
-                                        )}
+                                <div className="mt-3">
+                                    <small className="text-muted d-block">
+                                        Observações
+                                    </small>
+                                    <div
+                                        className="p-2 mt-1 rounded border bg-white"
+                                        style={{
+                                            fontSize: "0.85rem",
+                                            whiteSpace: "pre-wrap",
+                                            minHeight: "38px",
+                                        }}
+                                    >
+                                        {reservaDetalhes.observacoes || "-"}
                                     </div>
-                                )}
+                                </div>
                             </div>
 
                             <div className="col-md-5 border-left">
@@ -1224,6 +1358,41 @@ export default function MapaReservas({
                                                 className={`fas ${loadingAction ? "fa-spinner fa-spin" : "fa-arrow-right"} mr-1`}
                                             ></i>{" "}
                                             fazer check-in
+                                        </button>
+                                    )}
+                                    {podeFazerCheckout(reservaDetalhes) && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-link btn-sm text-left p-0 mb-2 text-success font-weight-bold"
+                                            style={{
+                                                textDecoration: "none",
+                                                fontSize: "0.85rem",
+                                            }}
+                                            onClick={handleRealizarCheckout}
+                                            disabled={loadingAction}
+                                        >
+                                            <i
+                                                className={`fas ${loadingAction ? "fa-spinner fa-spin" : "fa-check-circle"} mr-1`}
+                                            ></i>{" "}
+                                            checkout
+                                        </button>
+                                    )}
+                                    {podeLiberarUh(reservaDetalhes) && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-link btn-sm text-left p-0 mb-2 font-weight-bold"
+                                            style={{
+                                                textDecoration: "none",
+                                                fontSize: "0.85rem",
+                                                color: "#0f766e",
+                                            }}
+                                            onClick={handleLiberarUh}
+                                            disabled={loadingAction}
+                                        >
+                                            <i
+                                                className={`fas ${loadingAction ? "fa-spinner fa-spin" : "fa-broom"} mr-1`}
+                                            ></i>{" "}
+                                            liberar UH
                                         </button>
                                     )}
                                     <a
@@ -1541,6 +1710,30 @@ export default function MapaReservas({
                         </select>
                     </div>
 
+                    <div className="form-group mb-2">
+                        <label className="small mb-1 font-weight-bold">
+                            Vendedor
+                        </label>
+                        <Select
+                            options={getOptionsVendedores()}
+                            placeholder="Selecione o vendedor..."
+                            value={getOptionsVendedores().find(
+                                (op) => op.value === formReserva.vendedor_id,
+                            )}
+                            onChange={(op) =>
+                                setFormReserva({
+                                    ...formReserva,
+                                    vendedor_id: op ? op.value : "",
+                                })
+                            }
+                            isClearable
+                            isSearchable
+                            noOptionsMessage={() =>
+                                "Nenhum vendedor encontrado"
+                            }
+                        />
+                    </div>
+
                     <div className="row mb-2">
                         <div className="col-4">
                             <label className="small mb-1">Adultos</label>
@@ -1705,6 +1898,22 @@ export default function MapaReservas({
                         ></textarea>
                     </div>
 
+                    <div className="form-group">
+                        <label className="small mb-1">Observações</label>
+                        <textarea
+                            className="form-control"
+                            rows="2"
+                            placeholder="Observações da reserva..."
+                            value={formReserva.observacoes}
+                            onChange={(e) =>
+                                setFormReserva({
+                                    ...formReserva,
+                                    observacoes: e.target.value,
+                                })
+                            }
+                        ></textarea>
+                    </div>
+
                     <div className="text-right mt-3">
                         <button type="submit" className="btn btn-primary">
                             Salvar
@@ -1826,6 +2035,10 @@ if (rootElement) {
         try {
             motorhomes = JSON.parse(rootElement.dataset.motorhomes || "[]");
         } catch (e) {}
+        let vendedores = [];
+        try {
+            vendedores = JSON.parse(rootElement.dataset.vendedores || "[]");
+        } catch (e) {}
         const dataInicio = rootElement.dataset.dataInicio;
         const dataFim = rootElement.dataset.dataFim;
         root.render(
@@ -1835,6 +2048,7 @@ if (rootElement) {
                     dataInicioInicial={dataInicio}
                     dataFimInicial={dataFim}
                     motorhomesIniciais={motorhomes}
+                    vendedoresIniciais={vendedores}
                 />
             </React.StrictMode>,
         );

@@ -247,7 +247,7 @@ class ReservaController extends Controller
                 'data_checkout' => 'required|date|after_or_equal:data_checkin',
                 'valor_diaria' => 'nullable',
                 'valor_total' => 'nullable',
-                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado',
+                'situacao' => 'required|in:pre-reserva,reserva,hospedado,bloqueado,finalizada,cancelado,noshow,uh_liberada',
                 'n_adultos' => 'required|integer',
                 'n_criancas' => 'required|integer',
                 'n_criancas_nao_pagantes' => 'nullable|integer',
@@ -267,8 +267,8 @@ class ReservaController extends Controller
             if ($situacaoAtual === 'hospedado' && $novaSituacao !== 'hospedado') {
                 return redirect()->back()->withInput()->with('error', 'Não é possível alterar reserva hospedada.');
             }
-            if (in_array($situacaoAtual, ['finalizada', 'cancelado']) && $novaSituacao !== $situacaoAtual) {
-                return redirect()->back()->withInput()->with('error', 'Reserva finalizada/cancelada não pode ser alterada.');
+            if (in_array($situacaoAtual, ['finalizada', 'cancelado', 'noshow', 'uh_liberada']) && $novaSituacao !== $situacaoAtual) {
+                return redirect()->back()->withInput()->with('error', 'Reserva finalizada, cancelada ou liberada não pode ser alterada.');
             }
 
             $quarto = Quarto::with('categoria')->findOrFail($validatedData['quarto_id']);
@@ -497,10 +497,25 @@ class ReservaController extends Controller
         try {
             $reserva = Reserva::findOrFail($id);
 
-            if (in_array($reserva->situacao, ['finalizada', 'cancelado'])) {
+            if (in_array($reserva->situacao, ['finalizada', 'cancelado', 'noshow', 'uh_liberada'])) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Esta reserva já foi finalizada ou cancelada.',
+                    'message' => 'Esta reserva já foi finalizada, cancelada, no show ou liberada.',
+                ], 400);
+            }
+
+            if ($reserva->situacao !== 'hospedado') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'O checkout só pode ser realizado em reservas hospedadas.',
+                ], 400);
+            }
+
+            $dataCheckout = Carbon::parse($reserva->data_checkout)->startOfDay();
+            if (! $dataCheckout->isToday()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'O checkout só pode ser realizado na data prevista de saída: '.$dataCheckout->format('d/m/Y').'.',
                 ], 400);
             }
 
@@ -511,12 +526,8 @@ class ReservaController extends Controller
             $totalRecebido = $transacoes->where('tipo', 'pagamento')->sum('valor');
             $totalDescontos = $transacoes->where('tipo', 'desconto')->sum('valor');
 
-            $checkin = Carbon::parse($reserva->data_checkin);
-            $checkout = Carbon::parse($reserva->data_checkout);
-            $numDiarias = $checkout->diffInDays($checkin);
-            $totalDiarias = $reserva->valor_diaria * $numDiarias;
             $totalProdutos = $transacoes->where('categoria', 'produtos')->sum('valor');
-            $totalGeral = $totalDiarias + $totalProdutos;
+            $totalGeral = (float) $reserva->valor_total + $totalProdutos;
 
             $faltaLancar = $totalGeral - $totalRecebido - $totalDescontos;
 
@@ -530,6 +541,7 @@ class ReservaController extends Controller
             $statusAntigo = $reserva->situacao;
 
             $reserva->situacao = 'finalizada';
+            $reserva->hora_checkout = Carbon::now()->format('H:i:s');
             $reserva->save();
 
             LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
@@ -542,6 +554,44 @@ class ReservaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao finalizar reserva: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function liberarUh($id)
+    {
+        try {
+            $reserva = Reserva::findOrFail($id);
+
+            if ($reserva->situacao === 'uh_liberada') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta unidade de hospedagem já foi liberada.',
+                ], 400);
+            }
+
+            if ($reserva->situacao !== 'finalizada') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A UH só pode ser liberada após a conclusão do checkout.',
+                ], 400);
+            }
+
+            $statusAntigo = $reserva->situacao;
+            $reserva->situacao = 'uh_liberada';
+            $reserva->uh_liberada_em = now();
+            $reserva->save();
+
+            LogReserva::registrarAlteracaoStatus($reserva, Auth::id(), $statusAntigo);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Unidade de hospedagem liberada com sucesso!',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao liberar UH: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -1046,7 +1096,7 @@ class ReservaController extends Controller
         $reservas = Reserva::with(['quarto', 'hospede'])
             ->join('quartos', 'reservas.quarto_id', '=', 'quartos.id')
             ->select('reservas.*')
-            ->whereIn('situacao', ['reserva', 'hospedado'])
+            ->whereIn('situacao', ['reserva', 'hospedado', 'finalizada', 'uh_liberada'])
             ->where(function ($query) use ($inicio, $fim) {
                 $query->where('data_checkin', '<', $fim)
                     ->where('data_checkout', '>=', $inicio);
