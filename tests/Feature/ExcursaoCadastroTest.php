@@ -7,7 +7,9 @@ use App\Models\Excursao;
 use App\Models\FormaPagamento;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class ExcursaoCadastroTest extends TestCase
@@ -239,6 +241,39 @@ class ExcursaoCadastroTest extends TestCase
                     && (float) $resumo['saldo_a_receber'] === 25000.0
                     && (float) $resumo['total_recebido'] === 0.0;
             });
+    }
+
+    public function test_total_recebido_mantem_pagamento_de_excursao_cancelada_sem_estorno(): void
+    {
+        $formaPagamento = FormaPagamento::create(['descricao' => 'Dinheiro']);
+        $excursao = Excursao::create([
+            'data' => '2026-09-15',
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'status' => Excursao::STATUS_CANCELADO,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursao cancelada com pagamento',
+        ]);
+        $recebimento = $excursao->recebimentos()->create([
+            'data_recebimento' => '2026-09-01',
+            'valor' => 500,
+            'forma_pagamento_id' => $formaPagamento->id,
+        ]);
+
+        Schema::disableForeignKeyConstraints();
+        try {
+            DB::table('recebimento_excursao')
+                ->where('id', $recebimento->id)
+                ->update(['fluxo_caixa_id' => 999]);
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        $this->get(route('eventos.excursoes.index'))
+            ->assertOk()
+            ->assertViewHas('resumo', fn (array $resumo) => (float) $resumo['total_recebido'] === 500.0
+                && (float) $resumo['saldo_a_receber'] === 0.0);
     }
 
     public function test_uma_excursao_pode_ser_cadastrada(): void
