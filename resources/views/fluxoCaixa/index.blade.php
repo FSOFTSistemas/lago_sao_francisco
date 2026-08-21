@@ -145,6 +145,9 @@
                                     'nome' => 'Cartão Débito',
                                 ],
                                 'venda-pix' => ['cor' => 'success', 'icone' => 'fas fa-qrcode', 'nome' => 'Pix'],
+                                'venda-pix-maquineta' => ['cor' => 'info', 'icone' => 'fas fa-credit-card', 'nome' => 'Pix Maquineta'],
+                                'venda-maquineta-de-cartao' => ['cor' => 'primary', 'icone' => 'fas fa-credit-card', 'nome' => 'Maquineta de Cartão'],
+                                'venda-link-de-pagamento' => ['cor' => 'warning', 'icone' => 'fas fa-link', 'nome' => 'Link de Pagamento'],
                                 'venda-transferência-bancária' => [
                                     'cor' => 'warning',
                                     'icone' => 'fas fa-university',
@@ -400,7 +403,7 @@
                             '<li class="list-group-item">Nenhuma movimentação encontrada.</li>');
                     } else {
                         for (const [forma, valor] of Object.entries(formas)) {
-                            const nome = forma.charAt(0).toUpperCase() + forma.slice(1);
+                            const nome = forma.replace(/-/g, ' ').replace(/\b\w/g, letra => letra.toUpperCase());
                             lista.append(
                                 `<li class="list-group-item">${nome}: R$ ${valor.toFixed(2).replace('.', ',')}</li>`
                             );

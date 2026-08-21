@@ -208,6 +208,7 @@ export default function MapaReservas({
     const handleDragStart = (e, reserva) => {
         e.dataTransfer.setData("reservaId", reserva.id);
         e.dataTransfer.setData("hospedeNome", reserva.hospede_nome);
+        e.dataTransfer.setData("situacao", reserva.situacao);
         e.dataTransfer.effectAllowed = "move";
     };
 
@@ -220,12 +221,14 @@ export default function MapaReservas({
         e.preventDefault();
         const reservaId = e.dataTransfer.getData("reservaId");
         const hospedeNome = e.dataTransfer.getData("hospedeNome");
+        const situacao = e.dataTransfer.getData("situacao");
+        const tipoItem = situacao === "bloqueado" ? "bloqueio" : "reserva";
 
         if (!reservaId) return;
 
         const result = await Swal.fire({
-            title: "Mover Reserva?",
-            html: `Deseja mover a reserva de <b>${hospedeNome}</b> para o quarto <b>${quartoDestino.nome}</b> iniciando em <b>${formatDate(dataCheckinDestino)}</b>?`,
+            title: `Mover ${tipoItem}?`,
+            html: `Deseja mover o ${tipoItem} de <b>${hospedeNome}</b> para o quarto <b>${quartoDestino.nome}</b> iniciando em <b>${formatDate(dataCheckinDestino)}</b>?`,
             icon: "question",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",

@@ -338,16 +338,19 @@ class MapaController extends Controller
             ];
 
             if ($request->tipo === 'bloqueio') {
-                $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
-                if (! $hospedeBloqueado) {
-                    return response()->json(['success' => false, 'message' => 'Hóspede "Bloqueado" não encontrado.'], 400);
-                }
+                $hospedeBloqueado = Hospede::firstOrCreate(
+                    ['nome' => 'Bloqueado'],
+                    [
+                        'status' => true,
+                        'observacao' => 'Registro técnico usado para bloqueios criados pelo mapa.',
+                    ]
+                );
 
                 $dadosReserva['hospede_id'] = $hospedeBloqueado->id;
                 $dadosReserva['situacao'] = 'bloqueado';
                 $dadosReserva['valor_diaria'] = 0;
                 $dadosReserva['valor_total'] = 0;
-                $dadosReserva['vendedor_id'] = Auth::id();
+                $dadosReserva['vendedor_id'] = null;
             } else {
                 $request->validate(['hospede_id' => 'required|exists:hospedes,id']);
                 $dadosReserva['situacao'] = $request->situacao;

@@ -69,7 +69,10 @@ class ReservaController extends Controller
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
         $canaisVenda = $this->canaisVenda;
-        $vendedores = Funcionario::all();
+        $vendedores = Funcionario::where('status', 'ativo')
+            ->where('vendedor', true)
+            ->orderBy('nome')
+            ->get();
         $motorhomes = Motorhome::orderBy('placa')->get();
 
         $preferencias = PreferenciasHotel::first();
@@ -200,7 +203,10 @@ class ReservaController extends Controller
         $produtos = Produto::where('ativo', true)->orderBy('descricao')->get();
         $hospedes = Hospede::all();
         $hospedeBloqueado = Hospede::where('nome', 'Bloqueado')->first();
-        $vendedores = Funcionario::all();
+        $vendedores = Funcionario::where('status', 'ativo')
+            ->where('vendedor', true)
+            ->orderBy('nome')
+            ->get();
         $motorhomes = Motorhome::orderBy('placa')->get();
         $logs = LogReserva::where('reserva_id', $reserva->id)->with('usuario')->orderBy('created_at', 'desc')->get();
 

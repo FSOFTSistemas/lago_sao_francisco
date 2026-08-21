@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class FormaPagamento extends Model
 {
@@ -33,6 +34,35 @@ class FormaPagamento extends Model
     public function movimentoSlug(): string
     {
         return self::slugMovimento($this->slug ?? $this->descricao ?? '');
+    }
+
+    public function movimentoSlugs(): array
+    {
+        $descricao = (string) ($this->slug ?? $this->descricao ?? '');
+        $slug = $this->movimentoSlug();
+        $slugNormalizado = Str::of($descricao)
+            ->ascii()
+            ->lower()
+            ->replaceMatches('/[^a-z0-9]+/', '-')
+            ->trim('-')
+            ->toString();
+
+        $aliases = [$slug, $slugNormalizado];
+
+        if (str_contains($slugNormalizado, 'link') && str_contains($slugNormalizado, 'pagamento')) {
+            $aliases[] = 'link-de-pagamento';
+        }
+
+        if (str_contains($slugNormalizado, 'maquineta')) {
+            $aliases[] = 'maquineta-de-cartao';
+            $aliases[] = 'pix-maquineta';
+        }
+
+        if ($slugNormalizado === 'pix') {
+            $aliases[] = 'pix';
+        }
+
+        return array_values(array_unique(array_filter($aliases)));
     }
 
     public function movimentoDescricao(string $prefixo): string

@@ -196,8 +196,7 @@ class CaixaController extends Controller
                 return 'cancelamento';
             }
 
-            $partes = explode('-', $descricao);
-            return $partes[1] ?? 'outro';
+            return preg_replace('/^(venda|recebimento)-/', '', $descricao) ?: 'outro';
         })->map(function ($items) {
             return $items->sum('valor');
         });

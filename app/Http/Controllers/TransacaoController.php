@@ -304,28 +304,14 @@ class TransacaoController extends Controller
                 return;
             }
 
-            // Criar slug da forma de pagamento (seguindo o padrão do AluguelController)
-            $slug = $formaPagamento->movimentoSlug();
-
-            // Determinar o tipo de movimento baseado na categoria da transação
-            $tipoMov = match ($transacao->categoria) {
-                'hospedagem' => 'venda-'.$slug,
-                'produtos' => 'venda-'.$slug,
-                default => 'venda-'.$slug
-            };
-
-            // Buscar o movimento_id baseado na descrição (seguindo o padrão do AluguelController)
-            $movimentoId = Movimento::where('descricao', $tipoMov)->value('id');
+            $prefixoMovimento = 'venda';
+            $movimentoId = $this->buscarMovimentoPorForma($prefixoMovimento, $formaPagamento);
+            $tipoMov = $prefixoMovimento.'-'.$formaPagamento->movimentoSlug();
 
             if (! $movimentoId) {
-                // Se não encontrar o movimento específico, tenta um movimento genérico
-                $movimentoId = Movimento::where('descricao', 'venda-'.$slug)->value('id');
+                Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (transação #{$transacao->id}, forma de pagamento '{$formaPagamento->descricao}').");
 
-                if (! $movimentoId) {
-                    Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (transação #{$transacao->id}, forma de pagamento '{$formaPagamento->descricao}').");
-
-                    return; // pula se não encontrar o movimento
-                }
+                return;
             }
 
             // Motorhome tem plano de contas próprio (separado de Hospedagem para relatórios financeiros);
@@ -379,12 +365,9 @@ class TransacaoController extends Controller
                 return;
             }
 
-            // Criar slug da forma de pagamento
-            $slug = $formaPagamento->movimentoSlug();
-
             // Buscar movimento de cancelamento específico ou genérico
-            $tipoMovimentoCancelamento = 'cancelamento-'.$slug;
-            $movimentoId = Movimento::where('descricao', $tipoMovimentoCancelamento)->value('id');
+            $tipoMovimentoCancelamento = 'cancelamento-'.$formaPagamento->movimentoSlug();
+            $movimentoId = $this->buscarMovimentoPorForma('cancelamento', $formaPagamento);
             if (! $movimentoId) {
                 $movimentoId = Movimento::where('descricao', 'cancelamento')->value('id');
             }
@@ -432,5 +415,18 @@ class TransacaoController extends Controller
             Log::error('Erro ao criar ContasAPagar: '.$e->getMessage());
             throw new \Exception('Erro ao criar conta a pagar para estorno: '.$e->getMessage());
         }
+    }
+
+    private function buscarMovimentoPorForma(string $prefixo, $formaPagamento): ?int
+    {
+        foreach ($formaPagamento->movimentoSlugs() as $slug) {
+            $movimentoId = Movimento::where('descricao', $prefixo.'-'.$slug)->value('id');
+
+            if ($movimentoId) {
+                return (int) $movimentoId;
+            }
+        }
+
+        return null;
     }
 }
