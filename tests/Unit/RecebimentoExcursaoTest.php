@@ -21,6 +21,8 @@ class RecebimentoExcursaoTest extends TestCase
             'data_recebimento',
             'valor',
             'forma_pagamento_id',
+            'fluxo_caixa_id',
+            'fluxo_cancelamento_id',
             'comprovante_path',
         ], $recebimento->getFillable());
         $this->assertSame('date', $recebimento->getCasts()['data_recebimento']);

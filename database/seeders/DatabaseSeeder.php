@@ -41,6 +41,8 @@ class DatabaseSeeder extends Seeder
         $permissionUsuarios->empresa_id = $empresa->empresaLago->id;
         $permissionUsuarios->run();
 
+        $this->call(ApiPermissionsSeeder::class);
+
         $movimentos = new MovimentosSeeder;
         $movimentos->run();
 

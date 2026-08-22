@@ -1,9 +1,8 @@
 <?php
 
 namespace Database\Seeders;
-use App\Models\Empresa;
+
 use App\Models\Hospede;
-use App\Models\Movimento;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
@@ -14,8 +13,8 @@ class PermisssoesUsuariosSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-
     public $empresa_id;
+
     public $usuario_id;
 
     public function run()
@@ -44,12 +43,12 @@ class PermisssoesUsuariosSeeder extends Seeder
             'cadastrar aluguel',
             'gerenciar aluguel',
             'hotel',
-            'gerenciar NFe'
+            'gerenciar NFe',
         ];
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
-        
+
         Role::firstOrCreate(['name' => 'Master']);
         Role::firstOrCreate(['name' => 'financeiro']);
         Role::firstOrCreate(['name' => 'funcionario']);
@@ -62,7 +61,9 @@ class PermisssoesUsuariosSeeder extends Seeder
 
         ]);
         $masterUser->assignRole('Master');
-        $masterUser->givePermissionTo(Permission::all()->pluck('name')->toArray());
+        // Não use Permission::all(): permissões do aplicativo têm uma matriz
+        // própria e o perfil Master é somente leitura no app.
+        $masterUser->givePermissionTo($permissions);
         $this->usuario_id = $masterUser->id;
 
         $funcionarioUser = User::firstOrCreate([
