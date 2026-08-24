@@ -1862,11 +1862,21 @@ function carregarResumo() {
                                 timer: 2000
                             });
                         } else {
-                            alert('Erro: ' + response.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Caixa fechado',
+                                text: response.message,
+                                confirmButtonText: 'Entendi'
+                            });
                         }
                     },
                     error: function(xhr) {
-                        alert('Erro ao salvar transação: ' + xhr.responseJSON.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Não foi possível registrar o pagamento',
+                            text: xhr.responseJSON?.message || 'Ocorreu um erro ao registrar o pagamento.',
+                            confirmButtonText: 'Entendi'
+                        });
                     },
                     complete: function() {
                         $botao.prop('disabled', false).text('Salvar');

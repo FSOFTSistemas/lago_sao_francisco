@@ -13,7 +13,7 @@
                 {{ isset($funcionario) ? 'Preencha os dados atualizados' : 'Preencha os dados do novo Funcionário' }}</h3>
         </div>
         <div class="card-body">
-            <form
+            <form id="funcionarioForm"
                 action="{{ isset($funcionario) ? route('funcionario.update', $funcionario->id) : route('funcionario.store') }}"
                 method="POST">
                 @csrf
@@ -255,7 +255,7 @@
                 <!-- Botão de Salvar -->
                 <div class="card-footer">
                     <a href="{{ route('funcionario.index') }}" class="btn btn-secondary">Voltar</a>
-                    <button type="submit"
+                    <button type="submit" id="submitFuncionario"
                         class="btn green">{{ isset($funcionario) ? 'Atualizar Funcionário' : 'Adicionar Funcionário ' }}</button>
                 </div>
             </form>
@@ -297,16 +297,22 @@
                 width: '100%'
             });
 
-            $('form').on('submit', function(e) {
+            $('#funcionarioForm').on('submit', function(e) {
                 const senha = $('#senha_supervisor').val();
                 const confirmar = $('#senha_supervisor_confirm').val();
 
                 if (senha !== confirmar) {
                     e.preventDefault(); // impede envio do form
                     $('#erro-senha').removeClass('d-none');
-                } else {
-                    $('#erro-senha').addClass('d-none');
+                    return;
                 }
+
+                $('#erro-senha').addClass('d-none');
+
+                const $submitButton = $('#submitFuncionario');
+                $submitButton
+                    .prop('disabled', true)
+                    .html('<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...');
             });
 
 

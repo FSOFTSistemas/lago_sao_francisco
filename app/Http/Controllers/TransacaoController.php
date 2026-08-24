@@ -50,6 +50,22 @@ class TransacaoController extends Controller
                 'comprovante' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // 2MB Max
             ]);
 
+            if ($request->tipo === 'pagamento') {
+                $caixaAberto = Caixa::query()
+                    ->whereDate('data_abertura', now()->toDateString())
+                    ->where('status', 'aberto')
+                    ->where('empresa_id', Auth::user()->empresa_id)
+                    ->where('usuario_id', Auth::id())
+                    ->exists();
+
+                if (! $caixaAberto) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'O caixa deve estar aberto para registrar um pagamento de reserva.',
+                    ], 422);
+                }
+            }
+
             DB::beginTransaction();
 
             $transacaoDuplicada = Transacao::where('reserva_id', $request->reserva_id)
@@ -291,9 +307,7 @@ class TransacaoController extends Controller
                 ->first();
 
             if (! $caixa) {
-                session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
-
-                return;
+                throw new \RuntimeException('O caixa deve estar aberto para registrar um pagamento de reserva.');
             }
 
             $formaPagamento = $transacao->formaPagamento;
@@ -306,12 +320,11 @@ class TransacaoController extends Controller
 
             $prefixoMovimento = 'venda';
             $movimentoId = $this->buscarMovimentoPorForma($prefixoMovimento, $formaPagamento);
-            $tipoMov = $prefixoMovimento.'-'.$formaPagamento->movimentoSlug();
 
             if (! $movimentoId) {
-                Log::warning("Movimentação de caixa não registrada: nenhum Movimento encontrado para '{$tipoMov}' (transação #{$transacao->id}, forma de pagamento '{$formaPagamento->descricao}').");
-
-                return;
+                throw new \RuntimeException(
+                    "Nenhum movimento financeiro foi configurado para a forma de pagamento '{$formaPagamento->descricao}'."
+                );
             }
 
             // Motorhome tem plano de contas próprio (separado de Hospedagem para relatórios financeiros);
@@ -321,7 +334,7 @@ class TransacaoController extends Controller
                 : PlanoDeConta::idPorDescricao('Hospedagem', Auth::user()->empresa_id, 'receita');
 
             // Usar o CaixaService para inserir a movimentação (seguindo o padrão do AluguelController)
-            app(CaixaService::class)->inserirMovimentacao($caixa, [
+            $this->caixaService->inserirMovimentacao($caixa, [
                 'descricao' => 'Reserva #'.$transacao->reserva_id.' - '.$transacao->descricao,
                 'valor' => $transacao->valor,
                 'valor_total' => $transacao->valor,
@@ -330,9 +343,10 @@ class TransacaoController extends Controller
                 'plano_de_conta_id' => $planoContaId,
             ]);
 
-        } catch (\Exception $e) {
-            // Log do erro mas não interrompe o fluxo (seguindo o padrão do AluguelController)
+        } catch (\Throwable $e) {
             Log::error('Erro ao criar movimentação no caixa: '.$e->getMessage());
+
+            throw $e;
         }
     }
 
