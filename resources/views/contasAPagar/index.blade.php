@@ -133,10 +133,10 @@
                     </td>
 
                     <td>
-                        {{ $contasAPagar->fornecedor->forma_pagamento }}
+                        {{ $contasAPagar->fornecedor?->forma_pagamento ?? '' }}
                     </td>
 
-                    <td>{{ $contasAPagar->fornecedor->nome_fantasia ?? '' }}</td>
+                    <td>{{ $contasAPagar->fornecedor?->nome_fantasia ?? '' }}</td>
                     <td>{{ $contasAPagar->empresa->nome_fantasia ?? '' }}</td>
                     <td>
                         @if ($contasAPagar->valor - $contasAPagar->valor_pago > 0)
