@@ -76,6 +76,19 @@ class CaixaService
     public function inserirMovimentacao(Caixa $caixa, array $dados)
     {
         try {
+            $caixaAberto = Caixa::query()
+                ->whereKey($caixa->getKey())
+                ->where('status', 'aberto')
+                ->first();
+
+            if (! $caixaAberto) {
+                throw new InvalidArgumentException(
+                    'O caixa deve estar aberto para registrar movimentações.'
+                );
+            }
+
+            $caixa = $caixaAberto;
+
             // Ajusta dados obrigatórios
             $dados['caixa_id'] = $caixa->id;
             $dados['usuario_id'] = Auth::id();
