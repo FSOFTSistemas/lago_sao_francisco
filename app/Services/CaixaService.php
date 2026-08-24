@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 
+
 class CaixaService
 {
     public function abrirCaixa(Caixa $caixa, float $valorInicial, string $descricao = 'Abertura de Caixa')
