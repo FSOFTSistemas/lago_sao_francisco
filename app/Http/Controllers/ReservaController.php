@@ -19,7 +19,6 @@ use App\Models\Tarifa;
 use App\Models\Temporada;
 use App\Models\Transacao;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -283,7 +282,18 @@ class ReservaController extends Controller
                 return redirect()->back()->withInput()->with('error', 'Capacidade excedida.');
             }
 
-            if (empty($validatedData['valor_diaria'])) {
+            $valorDiariaInformado = $this->normalizarValorMonetario($validatedData['valor_diaria'] ?? null);
+            $dadosQueAlteramTarifaMudaram =
+                (int) $reserva->quarto_id !== (int) $validatedData['quarto_id'] ||
+                Carbon::parse($reserva->data_checkin)->toDateString() !== Carbon::parse($validatedData['data_checkin'])->toDateString() ||
+                Carbon::parse($reserva->data_checkout)->toDateString() !== Carbon::parse($validatedData['data_checkout'])->toDateString() ||
+                (int) $reserva->n_adultos !== (int) $validatedData['n_adultos'] ||
+                (int) $reserva->n_criancas !== (int) $validatedData['n_criancas'];
+            $valorManualFoiAlterado = $request->filled('supervisor_id_autorizacao') &&
+                $valorDiariaInformado !== null &&
+                abs($valorDiariaInformado - (float) $reserva->valor_diaria) > 0.01;
+
+            if ($valorDiariaInformado === null || ($dadosQueAlteramTarifaMudaram && ! $valorManualFoiAlterado)) {
                 $calculo = $this->calcularTarifaAutomatica(
                     $validatedData['quarto_id'],
                     $validatedData['data_checkin'],
@@ -296,7 +306,7 @@ class ReservaController extends Controller
                 }
                 $validatedData['valor_diaria'] = $calculo['valor_diaria'];
             } else {
-                $validatedData['valor_diaria'] = str_replace(['.', ','], ['', '.'], $validatedData['valor_diaria']);
+                $validatedData['valor_diaria'] = $valorDiariaInformado;
             }
 
             $dtCheckin = \Carbon\Carbon::parse($validatedData['data_checkin']);
@@ -404,25 +414,34 @@ class ReservaController extends Controller
         $temporada = Temporada::where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin)->first();
         $isAlta = $temporada ? true : false;
 
-        $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', $isAlta);
+        $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)
+            ->where('ativo', true)
+            ->where('alta_temporada', $isAlta);
         if ($isAlta) {
             $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
         }
 
-        $tarifa = $queryTarifa->first();
+        $tarifa = $queryTarifa
+            ->orderByDesc('data_inicio')
+            ->orderByDesc('id')
+            ->first();
         if (! $tarifa) {
-            $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
+            $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)
+                ->where('ativo', true)
+                ->where('alta_temporada', false)
+                ->orderByDesc('id')
+                ->first();
             if (! $tarifa) {
                 return ['sucesso' => false, 'mensagem' => 'Nenhuma tarifa encontrada.'];
             }
         }
 
         $checkout = \Carbon\Carbon::parse($checkoutData);
-        $periodo = CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+        $quantidadeDiarias = max(1, $checkin->diffInDays($checkout));
         $totalBase = 0;
-        $diasCount = 0;
 
-        foreach ($periodo as $dia) {
+        for ($indice = 0; $indice < $quantidadeDiarias; $indice++) {
+            $dia = $checkin->copy()->addDays($indice);
             $campo = match ($dia->dayOfWeek) {
                 0 => 'dom',
                 1 => 'seg',
@@ -433,15 +452,23 @@ class ReservaController extends Controller
                 6 => 'sab'
             };
             $totalBase += (float) $tarifa->$campo;
-            $diasCount++;
         }
 
-        $mediaDiaria = $diasCount > 0 ? $totalBase / $diasCount : 0;
+        $mediaDiaria = $totalBase / $quantidadeDiarias;
         $extrasAdultos = max(0, $nAdultos - ($tarifa->padrao_adultos ?? 0));
         $extrasCriancas = max(0, $nCriancas - ($tarifa->padrao_criancas ?? 0));
         $valorAdicional = ($extrasAdultos * ($tarifa->adicional_adulto ?? 0)) + ($extrasCriancas * ($tarifa->adicional_crianca ?? 0));
 
         return ['sucesso' => true, 'valor_diaria' => number_format($mediaDiaria + $valorAdicional, 2, '.', '')];
+    }
+
+    private function normalizarValorMonetario($valor): ?float
+    {
+        if ($valor === null || $valor === '') {
+            return null;
+        }
+
+        return (float) str_replace(['.', ','], ['', '.'], (string) $valor);
     }
 
     // ... (restante do código: destroy, quartosDisponiveis, etc... mantido) ...
