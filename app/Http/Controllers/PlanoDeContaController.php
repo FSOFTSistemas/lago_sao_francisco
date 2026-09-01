@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Empresa;
 use App\Models\PlanoDeConta;
 use App\services\PlanoDeContasService;
 use Carbon\Carbon;
@@ -23,21 +22,11 @@ class PlanoDeContaController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $empresas = Empresa::all();
-        $empresaSelecionada = session('empresa_id');
-        $empresaId = $user->hasRole('Master') ? $empresaSelecionada : $user->empresa_id;
         $planoDeContas = PlanoDeConta::query()
-            ->when($empresaId, function ($query) use ($empresaId) {
-                $query->where(function ($q) use ($empresaId) {
-                    $q->where('empresa_id', $empresaId)
-                        ->orWhereNull('empresa_id');
-                });
-            })
             ->orderBy('descricao')
             ->get();
 
-        return view('planoDeConta.index', compact('planoDeContas', 'empresas', 'user'));
+        return view('planoDeConta.index', compact('planoDeContas'));
     }
 
     /**
