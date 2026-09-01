@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\ContaCorrente;
 use App\Models\ContasAPagar;
+use App\Models\Empresa;
 use App\Models\Fornecedor;
 use App\Models\ParcelaContasAPagar;
 use App\Models\PlanoDeConta;
@@ -33,7 +34,7 @@ class ContasAPagarController extends Controller
         $empresaSelecionada = session('empresa_id');
 
         $filtrosSessaoKey = 'contas_a_pagar_filtros';
-        $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id'];
+        $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id', 'empresa_id'];
 
         if ($request->boolean('limpar_filtros')) {
             session()->forget($filtrosSessaoKey);
@@ -41,12 +42,12 @@ class ContasAPagarController extends Controller
             $filtros = [];
 
             foreach ($camposFiltro as $campo) {
-                if ($request->filled($campo)) {
+                if ($request->has($campo)) {
                     $filtros[$campo] = $request->input($campo);
                 }
             }
 
-            if (empty($filtros)) {
+            if (collect($filtros)->filter(fn ($valor) => filled($valor))->isEmpty()) {
                 session()->forget($filtrosSessaoKey);
             } else {
                 session([$filtrosSessaoKey => $filtros]);
@@ -58,7 +59,11 @@ class ContasAPagarController extends Controller
 
         // Master sem empresa selecionada enxerga tudo; demais usuários ficam sempre
         // restritos à própria empresa, mesmo que a sessão não tenha empresa_id definido.
-        $empresa_id = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+        $empresa_id = $usuario->hasRole('Master')
+            ? ($request->has('empresa_id')
+                ? ($request->filled('empresa_id') ? (int) $request->input('empresa_id') : null)
+                : $empresaSelecionada)
+            : $usuario->empresa_id;
         $query = $empresa_id ? ContasAPagar::where('empresa_id', $empresa_id) : ContasAPagar::query();
 
         $query->with(['parcelas', 'fornecedor', 'empresa']);
@@ -177,8 +182,11 @@ class ContasAPagarController extends Controller
         }
 
         $fornecedores = Fornecedor::all();
+        $empresas = $usuario->hasRole('Master')
+            ? Empresa::orderBy('nome_fantasia')->get()
+            : collect();
 
-        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
+        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas', 'empresas', 'usuario'));
     }
 
     public function gerarRelatorioPDF(Request $request)
