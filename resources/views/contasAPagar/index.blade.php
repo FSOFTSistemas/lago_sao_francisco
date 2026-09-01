@@ -43,21 +43,7 @@
         </div>
 
         <div class="form-row">
-            @if ($usuario->hasRole('Master'))
-                <div class="form-group col-md-3">
-                    <label for="empresa_id">Empresa</label>
-                    <select name="empresa_id" id="empresa_id" class="form-control">
-                        <option value="">Todas</option>
-                        @foreach ($empresas as $empresa)
-                            <option value="{{ $empresa->id }}" {{ (string) request('empresa_id') === (string) $empresa->id ? 'selected' : '' }}>
-                                {{ $empresa->nome_fantasia ?: $empresa->razao_social }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
-
-            <div class="form-group {{ $usuario->hasRole('Master') ? 'col-md-9' : 'col-md-12' }} d-flex justify-content-end align-items-end">
+            <div class="form-group col-md-12 d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary mr-2">
                     <i class="fas fa-filter"></i> Filtrar
                 </button>
