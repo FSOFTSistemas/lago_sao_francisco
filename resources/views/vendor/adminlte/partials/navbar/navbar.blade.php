@@ -48,7 +48,7 @@
                         <label for="selectEmpresa" class="mb-0">Selecione uma Empresa:</label>
                     </span>
                 </div>
-                <select class="form-control form-control-navbar" id="selectEmpresa" name="empresa_id" onchange="this.form.submit()">
+                <select class="form-control form-control-navbar" id="selectEmpresa" name="empresa_id" oninput="this.form.requestSubmit()">
                     <option value="">Todas</option>
                     <option value="1" {{ session('empresa_id') == 1 ? 'selected' : '' }}>Lago</option>
                     <option value="2" {{ session('empresa_id') == 2 ? 'selected' : '' }}>Restaurante</option>

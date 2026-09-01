@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\ContaCorrente;
 use App\Models\ContasAPagar;
-use App\Models\Empresa;
 use App\Models\Fornecedor;
 use App\Models\ParcelaContasAPagar;
 use App\Models\PlanoDeConta;
@@ -34,7 +33,7 @@ class ContasAPagarController extends Controller
         $empresaSelecionada = session('empresa_id');
 
         $filtrosSessaoKey = 'contas_a_pagar_filtros';
-        $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id', 'empresa_id'];
+        $camposFiltro = ['data_inicio', 'data_fim', 'status', 'fornecedor_id'];
 
         if ($request->boolean('limpar_filtros')) {
             session()->forget($filtrosSessaoKey);
@@ -42,12 +41,12 @@ class ContasAPagarController extends Controller
             $filtros = [];
 
             foreach ($camposFiltro as $campo) {
-                if ($request->has($campo)) {
+                if ($request->filled($campo)) {
                     $filtros[$campo] = $request->input($campo);
                 }
             }
 
-            if (collect($filtros)->filter(fn ($valor) => filled($valor))->isEmpty()) {
+            if (empty($filtros)) {
                 session()->forget($filtrosSessaoKey);
             } else {
                 session([$filtrosSessaoKey => $filtros]);
@@ -57,13 +56,11 @@ class ContasAPagarController extends Controller
             $request->merge(session($filtrosSessaoKey, []));
         }
 
-        // Master sem empresa selecionada enxerga tudo; demais usuários ficam sempre
-        // restritos à própria empresa, mesmo que a sessão não tenha empresa_id definido.
-        $empresa_id = $usuario->hasRole('Master')
-            ? ($request->has('empresa_id')
-                ? ($request->filled('empresa_id') ? (int) $request->input('empresa_id') : null)
-                : $empresaSelecionada)
-            : $usuario->empresa_id;
+        // A seleção global do topo tem prioridade. Sem seleção, Master enxerga todas
+        // e os demais usuários permanecem restritos à empresa do próprio cadastro.
+        $empresa_id = $empresaSelecionada
+            ? (int) $empresaSelecionada
+            : ($usuario->hasRole('Master') ? null : $usuario->empresa_id);
         $query = $empresa_id ? ContasAPagar::where('empresa_id', $empresa_id) : ContasAPagar::query();
 
         $query->with(['parcelas', 'fornecedor', 'empresa']);
@@ -166,7 +163,9 @@ class ContasAPagarController extends Controller
         $usuario = Auth::user();
         $empresaSelecionada = session('empresa_id');
 
-        $empresa_id = $usuario->hasRole('Master') ? $empresaSelecionada : $usuario->empresa_id;
+        $empresa_id = $empresaSelecionada
+            ? (int) $empresaSelecionada
+            : ($usuario->hasRole('Master') ? null : $usuario->empresa_id);
 
         if ($empresa_id == null) {
             $planoDeContas = PlanoDeConta::all();
@@ -182,11 +181,8 @@ class ContasAPagarController extends Controller
         }
 
         $fornecedores = Fornecedor::all();
-        $empresas = $usuario->hasRole('Master')
-            ? Empresa::orderBy('nome_fantasia')->get()
-            : collect();
 
-        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas', 'empresas', 'usuario'));
+        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
     }
 
     public function gerarRelatorioPDF(Request $request)
@@ -223,9 +219,7 @@ class ContasAPagarController extends Controller
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
                         $usuario = Auth::user();
-                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
-                            ? session('empresa_id')
-                            : $usuario->empresa_id;
+                        $empresaId = session('empresa_id') ?: $usuario->empresa_id;
 
                         if ($value && ! PlanoDeConta::where('id', $value)
                             ->where(function ($query) use ($empresaId) {
@@ -244,7 +238,7 @@ class ContasAPagarController extends Controller
                 'periodo' => 'nullable|integer|min:1',
             ]);
 
-            $validatedData['empresa_id'] = Auth::user()->empresa_id;
+            $validatedData['empresa_id'] = session('empresa_id') ?: Auth::user()->empresa_id;
 
             if (($validatedData['valor_pago'] ?? 0) > $validatedData['valor']) {
                 return redirect()
@@ -348,9 +342,7 @@ class ContasAPagarController extends Controller
                     'exists:plano_de_contas,id',
                     function ($attribute, $value, $fail) {
                         $usuario = Auth::user();
-                        $empresaId = $usuario->hasRole('Master') && session('empresa_id')
-                            ? session('empresa_id')
-                            : $usuario->empresa_id;
+                        $empresaId = session('empresa_id') ?: $usuario->empresa_id;
 
                         if ($value && ! PlanoDeConta::where('id', $value)
                             ->where(function ($query) use ($empresaId) {
