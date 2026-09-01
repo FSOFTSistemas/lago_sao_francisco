@@ -14,7 +14,6 @@ use App\Models\Tarifa;
 use App\Models\Temporada;
 use App\Models\User;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -244,25 +243,34 @@ class MapaController extends Controller
                         ->first();
                     $isAlta = $temporada ? true : false;
 
-                    $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', $isAlta);
+                    $queryTarifa = Tarifa::where('categoria_id', $quarto->categoria_id)
+                        ->where('ativo', true)
+                        ->where('alta_temporada', $isAlta);
                     if ($isAlta) {
                         $queryTarifa->where('data_inicio', '<=', $checkin)->where('data_fim', '>=', $checkin);
                     } else {
                         $queryTarifa->where('alta_temporada', false);
                     }
 
-                    $tarifa = $queryTarifa->first();
+                    $tarifa = $queryTarifa
+                        ->orderByDesc('data_inicio')
+                        ->orderByDesc('id')
+                        ->first();
 
                     if (! $tarifa) {
-                        $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)->where('alta_temporada', false)->first();
+                        $tarifa = Tarifa::where('categoria_id', $quarto->categoria_id)
+                            ->where('ativo', true)
+                            ->where('alta_temporada', false)
+                            ->orderByDesc('id')
+                            ->first();
                     }
 
                     if ($tarifa) {
-                        $periodo = CarbonPeriod::create($checkin, $checkout->copy()->subDay());
+                        $quantidadeDias = max(1, $checkin->diffInDays($checkout));
                         $totalTarifa = 0;
-                        $quantidadeDias = 0;
 
-                        foreach ($periodo as $dia) {
+                        for ($indice = 0; $indice < $quantidadeDias; $indice++) {
+                            $dia = $checkin->copy()->addDays($indice);
                             $campo = match ($dia->dayOfWeek) {
                                 0 => 'dom',
                                 1 => 'seg',
@@ -274,10 +282,9 @@ class MapaController extends Controller
                             };
                             $valorDia = (float) ($tarifa->$campo ?? 0);
                             $totalTarifa += $valorDia;
-                            $quantidadeDias++;
                         }
 
-                        $mediaTarifa = $quantidadeDias > 0 ? $totalTarifa / $quantidadeDias : 0;
+                        $mediaTarifa = $totalTarifa / $quantidadeDias;
                         $padraoAdultos = $tarifa->padrao_adultos ?? 0;
                         $padraoCriancas = $tarifa->padrao_criancas ?? 0;
                         $adicionalAdulto = (float) ($tarifa->adicional_adulto ?? 0);
