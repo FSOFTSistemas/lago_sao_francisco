@@ -56,12 +56,26 @@
                     </div>
 
                     <div class="mb-3">
+                        <label for="empresa{{ $modalKey }}">Empresa</label>
+                        <select class="form-control empresa-conta-pagar" id="empresa{{ $modalKey }}" name="empresa_id" required>
+                            <option value="">Selecione</option>
+                            @foreach ($empresas as $empresa)
+                                <option value="{{ $empresa->id }}"
+                                    {{ (int) old('empresa_id', $contasAPagar->empresa_id) === (int) $empresa->id ? 'selected' : '' }}>
+                                    {{ $empresa->nome_fantasia }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="planoDeConta">Plano de Contas</label>
                         {{-- CORREÇÃO: name="plano_de_contas_id" e a variável de comparação --}}
                         <select class="form-control" name="plano_de_contas_id" required>
                             <option value="">Selecione</option>
-                            @foreach ($planoDeContas as $plano)
+                            @foreach ($planosDeContasEdicao as $plano)
                                 <option value="{{ $plano->id }}"
+                                    data-empresa-id="{{ $plano->empresa_id }}"
                                     {{ (old('plano_de_contas_id', $contasAPagar->plano_de_contas_id) == $plano->id) ? 'selected' : '' }}>
                                     {{ $plano->descricao }}
                                 </option>
