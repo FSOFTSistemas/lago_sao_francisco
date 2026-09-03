@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Caixa;
 use App\Models\ContaCorrente;
 use App\Models\ContasAPagar;
+use App\Models\Empresa;
 use App\Models\Fornecedor;
 use App\Models\ParcelaContasAPagar;
 use App\Models\PlanoDeConta;
@@ -181,8 +182,29 @@ class ContasAPagarController extends Controller
         }
 
         $fornecedores = Fornecedor::all();
+        $empresas = $usuario->hasRole('Master')
+            ? Empresa::orderBy('nome_fantasia')->get()
+            : Empresa::whereKey($usuario->empresa_id)->get();
+        $planosDeContasEdicao = PlanoDeConta::query()
+            ->with('empresa')
+            ->when(! $usuario->hasRole('Master'), function ($query) use ($usuario) {
+                $query->where(function ($q) use ($usuario) {
+                    $q->where('empresa_id', $usuario->empresa_id)
+                        ->orWhereNull('empresa_id');
+                });
+            })
+            ->orderBy('descricao')
+            ->get();
 
-        return view('contasAPagar.index', compact('contasComParcelas', 'planoDeContas', 'fornecedores', 'contas_corrente', 'caixas'));
+        return view('contasAPagar.index', compact(
+            'contasComParcelas',
+            'planoDeContas',
+            'planosDeContasEdicao',
+            'fornecedores',
+            'empresas',
+            'contas_corrente',
+            'caixas'
+        ));
     }
 
     public function gerarRelatorioPDF(Request $request)
@@ -337,21 +359,20 @@ class ContasAPagarController extends Controller
                     'required',
                     'in:pendente,pago',
                 ],
+                'empresa_id' => [
+                    'required',
+                    'exists:empresas,id',
+                    function ($attribute, $value, $fail) {
+                        $usuario = Auth::user();
+
+                        if (! $usuario->hasRole('Master') && (int) $value !== (int) $usuario->empresa_id) {
+                            $fail('Você não tem permissão para transferir a conta para outra empresa.');
+                        }
+                    },
+                ],
                 'plano_de_contas_id' => [
                     'nullable',
                     'exists:plano_de_contas,id',
-                    function ($attribute, $value, $fail) {
-                        $usuario = Auth::user();
-                        $empresaId = session('empresa_id') ?: $usuario->empresa_id;
-
-                        if ($value && ! PlanoDeConta::where('id', $value)
-                            ->where(function ($query) use ($empresaId) {
-                                $query->where('empresa_id', $empresaId)
-                                    ->orWhereNull('empresa_id');
-                            })->exists()) {
-                            $fail('O plano de contas selecionado não pertence à sua empresa.');
-                        }
-                    },
                 ],
                 'fornecedor_id' => [
                     'nullable',
@@ -369,6 +390,7 @@ class ContasAPagarController extends Controller
 
                     $contasAPagar->update([
                         'descricao' => $validatedData['descricao'],
+                        'empresa_id' => $validatedData['empresa_id'],
                         'plano_de_contas_id' => $validatedData['plano_de_contas_id'] ?? null,
                         'fornecedor_id' => $validatedData['fornecedor_id'] ?? null,
                         'valor' => $contasAPagar->parcelas()->sum('valor'),
