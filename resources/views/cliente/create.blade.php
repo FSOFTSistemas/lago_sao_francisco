@@ -245,87 +245,89 @@
 @stop
 
 @section('js')
+    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        $(document).ready(function() {
-            // Select2
-            $('.select2').select2({
-                placeholder: "Selecione...",
-                width: '100%'
-            });
+        document.addEventListener('DOMContentLoaded', function() {
+            var tipoCampo = document.getElementById('tipo');
+            var cpfCampo = document.getElementById('cpf');
 
-
-            $('#cpf').blur(function() {
-                var cpf = $(this).val();
+            cpfCampo.addEventListener('blur', function() {
+                var cpf = this.value;
                 if (cpf !== "" && !validarCPF(cpf)) {
                     alert('CPF Inválido!');
-                    $(this).val(''); // Limpa o campo
-                    $(this).focus(); // Devolve o foco para correção
+                    this.value = '';
+                    this.focus();
                 }
             });
+
             // Atualiza os rótulos conforme o tipo selecionado
             function atualizarRotulos(tipo) {
                 if (tipo === 'PF') {
-                    $('#labelNomeRazao').text('* Nome:');
-                    $('#labelApelidoFantasia').text('* Apelido:');
-                    $('#rg').parent().parent().find('label').text('RG:');
+                    document.getElementById('labelNomeRazao').textContent = '* Nome:';
+                    document.getElementById('labelApelidoFantasia').textContent = '* Apelido:';
                 } else if (tipo === 'PJ') {
-                    $('#labelNomeRazao').text('* Razão Social:');
-                    $('#labelApelidoFantasia').text('* Nome Fantasia:');
-                    $('#inscricaoEstadual').parent().parent().find('label').text('Inscrição Estadual:');
+                    document.getElementById('labelNomeRazao').textContent = '* Razão Social:';
+                    document.getElementById('labelApelidoFantasia').textContent = '* Nome Fantasia:';
                 }
             }
-
 
             // Controle dos campos condicionais
             function toggleCampos() {
-                var tipo = $('#tipo').val();
+                var tipo = tipoCampo.value;
+                var outrosCampos = document.getElementById('outrosCampos');
+                var camposPF = document.getElementById('camposPF');
+                var camposPJ = document.getElementById('camposPJ');
 
                 // Mostra todos os campos gerais se um tipo foi selecionado
                 if (tipo) {
-                    $('#outrosCampos').addClass('show');
+                    outrosCampos.classList.add('show');
 
                     // Oculta todos os campos condicionais primeiro
-                    $('#camposPF, #camposPJ').removeClass('show');
-                    $('#dataNascimento, #cpf, #cnpj, #inscricaoEstadual, #rg').removeAttr('required');
+                    camposPF.classList.remove('show');
+                    camposPJ.classList.remove('show');
+                    document.querySelectorAll('#dataNascimento, #cpf, #cnpj, #inscricaoEstadual, #rg')
+                        .forEach(function(campo) {
+                            campo.required = false;
+                        });
 
                     // Mostra os campos específicos conforme o tipo selecionado
-                    $('#camposPF input, #camposPJ input').prop('disabled', true);
-                    if (tipo === 'PF') {
-                        $('#camposPF').addClass('show');
-                        $('#dataNascimento, #cpf').attr('required', );
-                        $('#camposPF input').prop('disabled', false);
-                    } else if (tipo === 'PJ') {
-                        $('#camposPJ').addClass('show');
-                        $('#cnpj').attr('required', 'required');
-                        $('#camposPJ input').prop('disabled', false);
+                    document.querySelectorAll('#camposPF input, #camposPJ input').forEach(function(campo) {
+                        campo.disabled = true;
+                    });
 
+                    if (tipo === 'PF') {
+                        camposPF.classList.add('show');
+                        document.getElementById('dataNascimento').required = true;
+                        cpfCampo.required = true;
+                        camposPF.querySelectorAll('input').forEach(function(campo) {
+                            campo.disabled = false;
+                        });
+                    } else if (tipo === 'PJ') {
+                        camposPJ.classList.add('show');
+                        document.getElementById('cnpj').required = true;
+                        camposPJ.querySelectorAll('input').forEach(function(campo) {
+                            campo.disabled = false;
+                        });
                     }
 
-                    // Atualiza os rótulos
                     atualizarRotulos(tipo);
                 } else {
-                    $('#outrosCampos').removeClass('show');
+                    outrosCampos.classList.remove('show');
                 }
             }
 
-            // Executa ao carregar a página
             toggleCampos();
+            tipoCampo.addEventListener('change', toggleCampos);
 
-            // Executa quando o tipo é alterado
-            $('#tipo').change(function() {
-                toggleCampos();
-            });
-
-            // Se estiver editando, mostra tudo imediatamente
-            @if (isset($cliente))
-                $(window).on('load', function() {
-                    $('#outrosCampos').addClass('show');
-                    $('#campos{{ $cliente->tipo }}').addClass('show');
-                    atualizarRotulos('{{ $cliente->tipo }}');
+            // A exibição dos campos não deve depender do carregamento do Select2.
+            if (window.jQuery && typeof window.jQuery.fn.select2 === 'function') {
+                window.jQuery('.select2').select2({
+                    placeholder: "Selecione...",
+                    width: '100%'
                 });
-            @endif
+            }
         });
 
         function validarCPF(cpf) {
