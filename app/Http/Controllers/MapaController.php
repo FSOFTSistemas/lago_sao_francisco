@@ -68,18 +68,8 @@ class MapaController extends Controller
                 ->orderBy('posicao', 'asc')
                 ->with(['categoria', 'reservas' => function ($query) use ($dataInicio, $dataFim) {
                     $query->with(['hospede', 'motorhome', 'pets'])
-                        ->where(function ($q) use ($dataInicio, $dataFim) {
-                            $q->where(function ($query) use ($dataInicio, $dataFim) {
-                                $query->where('data_checkin', '<=', $dataFim)
-                                    ->where('data_checkout', '>', $dataInicio);
-                            })->orWhere(function ($query) use ($dataInicio, $dataFim) {
-                                $query->where('situacao', 'uh_liberada')
-                                    ->whereBetween('data_checkout', [
-                                        $dataInicio->toDateString(),
-                                        $dataFim->toDateString(),
-                                    ]);
-                            });
-                        })
+                        ->where('data_checkin', '<=', $dataFim)
+                        ->where('data_checkout', '>', $dataInicio)
                         ->whereNotIn('situacao', ['cancelado']);
                 }])
                 ->get();
@@ -96,12 +86,6 @@ class MapaController extends Controller
                             $nomeVendedor = $usersMap[$reserva->vendedor_id];
                         }
                     }
-                    $dataMapaCheckin = $reserva->situacao === 'uh_liberada'
-                        ? Carbon::parse($reserva->data_checkout)->toDateString()
-                        : $reserva->data_checkin;
-                    $dataMapaCheckout = $reserva->situacao === 'uh_liberada'
-                        ? Carbon::parse($reserva->data_checkout)->addDay()->toDateString()
-                        : $reserva->data_checkout;
                     $reservasFormatadas[] = [
                         'id' => $reserva->id,
                         'hospede_id' => $reserva->hospede_id,
@@ -110,8 +94,8 @@ class MapaController extends Controller
                         'vendedor_nome' => $nomeVendedor,
                         'data_checkin' => $reserva->data_checkin,
                         'data_checkout' => $reserva->data_checkout,
-                        'data_mapa_checkin' => $dataMapaCheckin,
-                        'data_mapa_checkout' => $dataMapaCheckout,
+                        'data_mapa_checkin' => $reserva->data_checkin,
+                        'data_mapa_checkout' => $reserva->data_checkout,
                         'situacao' => $reserva->situacao,
                         'valor_diaria' => $reserva->valor_diaria,
                         'valor_total' => $reserva->valor_total, // <--- ADICIONADO AQUI
