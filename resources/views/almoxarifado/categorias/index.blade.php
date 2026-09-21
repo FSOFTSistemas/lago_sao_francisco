@@ -131,3 +131,38 @@
     {{-- Modal de Criação --}}
     @include('almoxarifado.categorias.modals._create')
 @stop
+
+@push('js')
+<script>
+    $(document).ready(function () {
+        // Desativa o botão de cadastro após o primeiro clique para evitar duplicidade
+        $('#formCriarCategoria').on('submit', function () {
+            if (!this.checkValidity()) {
+                return;
+            }
+
+            var $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true);
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Salvando...');
+        });
+
+        // Restaura o botão caso o modal seja reaberto
+        $('#modalCriarCategoria').on('show.bs.modal', function () {
+            var $btn = $('#formCriarCategoria').find('button[type="submit"]');
+            $btn.prop('disabled', false);
+            $btn.html('<i class="fas fa-save mr-1"></i> Salvar Categoria');
+        });
+
+        // Aplica a mesma proteção para os formulários de edição
+        $('form[id^="formEditarCategoria"]').on('submit', function () {
+            if (!this.checkValidity()) {
+                return;
+            }
+
+            var $btn = $(this).find('button[type="submit"]');
+            $btn.prop('disabled', true);
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Salvando...');
+        });
+    });
+</script>
+@endpush

@@ -10,7 +10,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('almoxarifado.categorias.store') }}" method="POST">
+            <form action="{{ route('almoxarifado.categorias.store') }}" method="POST" id="formCriarCategoria">
                 @csrf
 
                 <div class="modal-body text-dark">
@@ -53,7 +53,7 @@
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                         <i class="fas fa-times mr-1"></i> Cancelar
                     </button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="submit" class="btn btn-success" id="btnSalvarNovaCategoria">
                         <i class="fas fa-save mr-1"></i> Salvar Categoria
                     </button>
                 </div>

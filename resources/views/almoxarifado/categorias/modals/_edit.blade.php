@@ -10,7 +10,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('almoxarifado.categorias.update', $categoria->id) }}" method="POST">
+            <form action="{{ route('almoxarifado.categorias.update', $categoria->id) }}" method="POST" id="formEditarCategoria{{ $categoria->id }}">
                 @csrf
                 @method('PUT')
 
