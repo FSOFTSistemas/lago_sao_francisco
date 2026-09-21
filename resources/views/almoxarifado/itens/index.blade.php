@@ -57,10 +57,13 @@
     {{-- Barra de Filtros fora da tabela --}}
     <div class="row mb-3 align-items-center">
         <div class="col-12 col-xl-9 col-lg-8">
-            <form action="{{ route('almoxarifado.itens.index') }}" method="GET">
+            <form action="{{ route('almoxarifado.itens.index') }}" method="GET" id="formFiltrosItens">
+                @if ($estoqueBaixo)
+                    <input type="hidden" name="estoque_baixo" value="1">
+                @endif
                 <div class="form-row align-items-center">
                     {{-- Busca por texto --}}
-                    <div class="col-12 col-md-5 mb-2 mb-md-0">
+                    <div class="col-12 col-md-4 mb-2 mb-md-0">
                         <div class="input-group">
                             <input type="text"
                                    name="busca"
@@ -77,7 +80,7 @@
                     </div>
 
                     {{-- Filtro por Categoria --}}
-                    <div class="col-12 col-sm-6 col-md-4 mb-2 mb-md-0">
+                    <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
                         <select name="categoria_id" class="form-control text-dark" onchange="this.form.submit()">
                             <option value="">Todas as categorias</option>
                             @foreach ($categorias as $cat)
@@ -89,20 +92,44 @@
                     </div>
 
                     {{-- Filtro por Status --}}
-                    <div class="col-12 col-sm-6 col-md-3 mb-2 mb-md-0">
+                    <div class="col-12 col-sm-6 col-md-2 mb-2 mb-md-0">
                         <select name="status" class="form-control text-dark" onchange="this.form.submit()">
                             <option value="">Todos os status</option>
-                            <option value="1" {{ $status === '1' ? 'selected' : '' }}>Somente ativos</option>
-                            <option value="0" {{ $status === '0' ? 'selected' : '' }}>Somente inativos</option>
+                            <option value="1" {{ $status === '1' ? 'selected' : '' }}>Ativos</option>
+                            <option value="0" {{ $status === '0' ? 'selected' : '' }}>Inativos</option>
                         </select>
+                    </div>
+
+                    {{-- Botão / Filtro de Estoque Mínimo (Reposição) --}}
+                    <div class="col-12 col-md-3 mb-2 mb-md-0">
+                        @php
+                            $toggleParams = array_merge(
+                                request()->except(['page', 'estoque_baixo']),
+                                $estoqueBaixo ? [] : ['estoque_baixo' => 1]
+                            );
+                        @endphp
+                        <a href="{{ route('almoxarifado.itens.index', $toggleParams) }}"
+                           class="btn btn-block {{ $estoqueBaixo ? 'btn-danger text-white' : ($totalEstoqueBaixo > 0 ? 'btn-outline-danger' : 'btn-outline-secondary') }}"
+                           title="{{ $estoqueBaixo ? 'Clique para ver todos os itens' : 'Filtrar itens no limite ou abaixo do estoque mínimo' }}">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Estoque Mínimo
+                            <span class="badge {{ $estoqueBaixo ? 'badge-light text-danger' : ($totalEstoqueBaixo > 0 ? 'badge-danger' : 'badge-secondary') }} ml-1">
+                                {{ $totalEstoqueBaixo }}
+                            </span>
+                        </a>
                     </div>
                 </div>
 
-                @if (!empty($busca) || !empty($categoriaId) || ($status !== null && $status !== ''))
-                    <div class="mt-2">
-                        <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-danger btn-sm">
+                @if (!empty($busca) || !empty($categoriaId) || ($status !== null && $status !== '') || $estoqueBaixo)
+                    <div class="mt-2 d-flex align-items-center flex-wrap">
+                        <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-danger btn-sm mr-2 mb-1">
                             <i class="fas fa-times mr-1"></i> Limpar filtros
                         </a>
+                        @if ($estoqueBaixo)
+                            <span class="badge badge-danger px-2 py-1 mb-1">
+                                <i class="fas fa-filter mr-1"></i> Exibindo apenas itens no limite ou abaixo do mínimo ({{ $itens->count() }})
+                            </span>
+                        @endif
                     </div>
                 @endif
             </form>
@@ -118,10 +145,17 @@
 
     {{-- Card com a Tabela de Itens --}}
     <div class="card card-outline card-success shadow-sm">
-        <div class="card-header">
+        <div class="card-header d-flex align-items-center justify-content-between flex-wrap">
             <h3 class="card-title text-bold mb-0">
                 <i class="fas fa-boxes mr-2 text-success"></i>Itens Cadastrados ({{ $itens->count() }})
             </h3>
+            @if ($estoqueBaixo)
+                <div>
+                    <span class="badge badge-danger px-2 py-1">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Apenas Estoque Mínimo / Reposição
+                    </span>
+                </div>
+            @endif
         </div>
 
         <div class="card-body table-responsive p-0">
@@ -198,9 +232,13 @@
                             <td colspan="8" class="text-center py-5">
                                 <div class="text-dark">
                                     <i class="fas fa-box-open fa-3x mb-3 text-secondary"></i>
-                                    @if (!empty($busca) || !empty($categoriaId) || ($status !== null && $status !== ''))
+                                    @if (!empty($busca) || !empty($categoriaId) || ($status !== null && $status !== '') || $estoqueBaixo)
                                         <h5 class="text-dark">Nenhum item encontrado com os filtros selecionados</h5>
-                                        <p class="text-secondary mb-3">Tente ajustar a busca ou limpe os filtros para ver todos os itens.</p>
+                                        @if ($estoqueBaixo)
+                                            <p class="text-secondary mb-3">Nenhum item está no limite ou abaixo do estoque mínimo cadastrado.</p>
+                                        @else
+                                            <p class="text-secondary mb-3">Tente ajustar a busca ou limpe os filtros para ver todos os itens.</p>
+                                        @endif
                                         <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-secondary">
                                             <i class="fas fa-times mr-1"></i> Limpar filtros
                                         </a>

@@ -45,8 +45,11 @@ class AlmoxarifadoItemController extends Controller
             ->when($status !== null && $status !== '', function ($query) use ($status) {
                 $query->where('ativo', (bool) $status);
             })
-            ->when($estoqueBaixo, function ($query) {
+            ->when($estoqueBaixo, function ($query) use ($status) {
                 $query->estoqueBaixo();
+                if ($status === null || $status === '') {
+                    $query->ativos();
+                }
             })
             ->orderByDesc('ativo')
             ->orderBy('nome')
@@ -58,13 +61,19 @@ class AlmoxarifadoItemController extends Controller
 
         $categorias = AlmoxarifadoCategoria::ativos()->orderBy('nome')->get();
 
+        $totalEstoqueBaixo = AlmoxarifadoItem::where('empresa_id', $empresaId)
+            ->ativos()
+            ->estoqueBaixo()
+            ->count();
+
         return view('almoxarifado.itens.index', compact(
             'itens',
             'categorias',
             'busca',
             'categoriaId',
             'status',
-            'estoqueBaixo'
+            'estoqueBaixo',
+            'totalEstoqueBaixo'
         ));
     }
 

@@ -386,4 +386,79 @@ class AlmoxarifadoItemTest extends TestCase
         $response->assertJsonCount(1);
         $response->assertJsonFragment(['nome' => 'Saco de Lixo 100L']);
     }
+
+    public function test_filtro_de_estoque_baixo_retorna_itens_no_minimo_ou_abaixo(): void
+    {
+        // Item 1: Estoque atual igual ao estoque mínimo (deve retornar)
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Detergente Neutro',
+            'unidade_medida' => 'UN',
+            'estoque_atual' => 5,
+            'estoque_minimo' => 5,
+            'ativo' => true,
+        ]);
+
+        // Item 2: Estoque atual abaixo do estoque mínimo (deve retornar)
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Esponja Multiuso',
+            'unidade_medida' => 'UN',
+            'estoque_atual' => 2,
+            'estoque_minimo' => 10,
+            'ativo' => true,
+        ]);
+
+        // Item 3: Estoque atual acima do estoque mínimo (NÃO deve retornar)
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Papel Higiênico',
+            'unidade_medida' => 'FD',
+            'estoque_atual' => 50,
+            'estoque_minimo' => 10,
+            'ativo' => true,
+        ]);
+
+        // Item 4: Item sem estoque mínimo cadastrado (estoque_minimo = 0) (NÃO deve retornar)
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Grampeador',
+            'unidade_medida' => 'UN',
+            'estoque_atual' => 0,
+            'estoque_minimo' => 0,
+            'ativo' => true,
+        ]);
+
+        $response = $this->getJson(route('almoxarifado.itens.index', ['estoque_baixo' => 1]));
+
+        $response->assertOk();
+        $response->assertJsonCount(2);
+        $response->assertJsonFragment(['nome' => 'Detergente Neutro']);
+        $response->assertJsonFragment(['nome' => 'Esponja Multiuso']);
+        $response->assertJsonMissing(['nome' => 'Papel Higiênico']);
+        $response->assertJsonMissing(['nome' => 'Grampeador']);
+    }
+
+    public function test_tela_de_listagem_exibe_contador_de_itens_em_estoque_minimo(): void
+    {
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Sabonete Líquido',
+            'unidade_medida' => 'UN',
+            'estoque_atual' => 3,
+            'estoque_minimo' => 5,
+            'ativo' => true,
+        ]);
+
+        $response = $this->get(route('almoxarifado.itens.index'));
+
+        $response->assertOk();
+        $response->assertSee('Estoque Mínimo');
+        $response->assertSee('Sabonete Líquido');
+    }
 }
