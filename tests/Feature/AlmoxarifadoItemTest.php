@@ -111,12 +111,16 @@ class AlmoxarifadoItemTest extends TestCase
             $table->unsignedBigInteger('item_id');
             $table->string('tipo');
             $table->decimal('quantidade', 12, 2);
+            $table->decimal('saldo_anterior', 12, 2)->default(0);
+            $table->decimal('saldo_posterior', 12, 2)->default(0);
             $table->dateTime('data_movimentacao');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('fornecedor')->nullable();
             $table->string('recebido_por')->nullable();
+            $table->string('numero_documento')->nullable();
             $table->string('retirado_por')->nullable();
             $table->string('setor')->nullable();
+            $table->string('motivo_ajuste')->nullable();
             $table->text('observacao')->nullable();
             $table->timestamps();
         });

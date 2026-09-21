@@ -4,6 +4,7 @@ use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\AdicionalController;
 use App\Http\Controllers\AlmoxarifadoCategoriaController;
 use App\Http\Controllers\AlmoxarifadoItemController;
+use App\Http\Controllers\AlmoxarifadoMovimentacaoController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
@@ -243,6 +244,13 @@ Route::get('almoxarifado/itens/search', [AlmoxarifadoItemController::class, 'sea
 Route::resource('almoxarifado/itens', AlmoxarifadoItemController::class)
     ->parameters(['itens' => 'item'])
     ->names('almoxarifado.itens');
+
+// Almoxarifado - Movimentações (Entrada, Saída, Ajuste)
+Route::get('almoxarifado/movimentacoes/saldo/{item}', [AlmoxarifadoMovimentacaoController::class, 'saldo'])->name('almoxarifado.movimentacoes.saldo');
+Route::get('almoxarifado/movimentacoes/item/{item}', [AlmoxarifadoMovimentacaoController::class, 'historicoItem'])->name('almoxarifado.movimentacoes.historico-item');
+Route::resource('almoxarifado/movimentacoes', AlmoxarifadoMovimentacaoController::class)
+    ->parameters(['movimentacoes' => 'movimentacao'])
+    ->names('almoxarifado.movimentacoes');
 
 Route::resource('adicionais', AdicionalController::class);
 
