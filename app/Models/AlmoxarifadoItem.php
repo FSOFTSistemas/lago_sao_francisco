@@ -44,8 +44,30 @@ class AlmoxarifadoItem extends Model
         return $this->hasMany(AlmoxarifadoMovimentacao::class, 'item_id');
     }
 
+    public function scopeDaEmpresa($query, $empresaId)
+    {
+        return $query->where('empresa_id', $empresaId);
+    }
+
     public function scopeAtivos($query)
     {
         return $query->where('ativo', true);
+    }
+
+    public function scopeEstoqueBaixo($query)
+    {
+        return $query->whereColumn('estoque_atual', '<=', 'estoque_minimo')
+                     ->where('estoque_minimo', '>', 0);
+    }
+
+    public function getIsEstoqueBaixoAttribute(): bool
+    {
+        return (float) $this->estoque_minimo > 0 && (float) $this->estoque_atual <= (float) $this->estoque_minimo;
+    }
+
+    public function getEstoqueFormatadoAttribute(): string
+    {
+        $valor = (float) $this->estoque_atual;
+        return floor($valor) == $valor ? number_format($valor, 0, ',', '.') : number_format($valor, 2, ',', '.');
     }
 }

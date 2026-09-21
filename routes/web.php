@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\AdicionalController;
 use App\Http\Controllers\AlmoxarifadoCategoriaController;
+use App\Http\Controllers\AlmoxarifadoItemController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
@@ -236,6 +237,12 @@ Route::resource('categoriaProduto', CategoriaProdutoController::class);
 Route::resource('almoxarifado/categorias', AlmoxarifadoCategoriaController::class)
     ->parameters(['categorias' => 'categoria'])
     ->names('almoxarifado.categorias');
+
+// Almoxarifado - Itens
+Route::get('almoxarifado/itens/search', [AlmoxarifadoItemController::class, 'search'])->name('almoxarifado.itens.search');
+Route::resource('almoxarifado/itens', AlmoxarifadoItemController::class)
+    ->parameters(['itens' => 'item'])
+    ->names('almoxarifado.itens');
 
 Route::resource('adicionais', AdicionalController::class);
 
