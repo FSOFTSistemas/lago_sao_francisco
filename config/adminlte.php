@@ -442,6 +442,12 @@ return [
             'icon'    => 'fas fa-warehouse',
             'submenu' => [
                 [
+                    'text'  => 'Itens do Estoque',
+                    'icon'  => 'fas fa-boxes',
+                    'url'   => '/almoxarifado/itens',
+                    'shift' => 'ml-2',
+                ],
+                [
                     'text'  => 'Categorias',
                     'icon'  => 'fas fa-tags',
                     'url'   => '/almoxarifado/categorias',

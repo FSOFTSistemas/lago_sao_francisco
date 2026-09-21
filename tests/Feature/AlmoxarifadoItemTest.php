@@ -162,6 +162,26 @@ class AlmoxarifadoItemTest extends TestCase
         $response->assertJsonFragment(['nome' => 'Detergente Neutro 5L']);
     }
 
+    public function test_tela_de_listagem_de_itens_renderiza_view_html_com_sucesso(): void
+    {
+        AlmoxarifadoItem::create([
+            'empresa_id' => $this->empresa->id,
+            'categoria_id' => $this->categoria->id,
+            'nome' => 'Sabonete 90g',
+            'unidade_medida' => 'UN',
+            'estoque_atual' => 50,
+            'estoque_minimo' => 10,
+            'ativo' => true,
+        ]);
+
+        $response = $this->get(route('almoxarifado.itens.index'));
+
+        $response->assertOk();
+        $response->assertSee('Sabonete 90g');
+        $response->assertSee('Limpeza e Higiene');
+        $response->assertSee('Novo Item');
+    }
+
     public function test_cadastra_novo_item_com_sucesso(): void
     {
         $payload = [
