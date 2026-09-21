@@ -131,6 +131,15 @@
                 </div>
             </a>
         </div>
+        <!-- Categorias Almoxarifado -->
+        <div class="col-md-3">
+            <a href="{{ route('almoxarifado.categorias.index')}}" class="card card-opcao text-center">
+                <div class="card-body">
+                    <i class="fas fa-tags fa-3x" style="color: #679A4C;"></i>
+                    <h5 class="mt-3">Categorias Almoxarifado</h5>
+                </div>
+            </a>
+        </div>
     </div>
      <br>
     <h5>Configurações Day Use / Cadastro</h5>

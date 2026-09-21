@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\AdicionalController;
+use App\Http\Controllers\AlmoxarifadoCategoriaController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
@@ -230,6 +231,11 @@ Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('
 Route::resource('cfop', CfopController::class);
 
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
+
+// Almoxarifado - Categorias
+Route::resource('almoxarifado/categorias', AlmoxarifadoCategoriaController::class)
+    ->parameters(['categorias' => 'categoria'])
+    ->names('almoxarifado.categorias');
 
 Route::resource('adicionais', AdicionalController::class);
 
