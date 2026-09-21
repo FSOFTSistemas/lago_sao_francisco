@@ -255,6 +255,29 @@
             $btn.prop('disabled', true);
             $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Salvando...');
         });
+
+        // Desativa o botão de exclusão após o primeiro clique
+        $(document).on('submit', '.form-excluir-item', function (e) {
+            var $form = $(this);
+            if ($form.data('submitting')) {
+                e.preventDefault();
+                return false;
+            }
+            $form.data('submitting', true);
+
+            var $btn = $form.find('.btn-confirmar-exclusao');
+            $btn.addClass('disabled').css('pointer-events', 'none').prop('disabled', true);
+            $btn.html('<i class="fas fa-spinner fa-spin mr-1"></i> Excluindo...');
+            $form.closest('.modal').find('button').addClass('disabled').css('pointer-events', 'none').prop('disabled', true);
+        });
+
+        $(document).on('click', '.btn-confirmar-exclusao', function (e) {
+            var $form = $(this).closest('form');
+            if ($form.data('submitting')) {
+                e.preventDefault();
+                return false;
+            }
+        });
     });
 </script>
 @endpush

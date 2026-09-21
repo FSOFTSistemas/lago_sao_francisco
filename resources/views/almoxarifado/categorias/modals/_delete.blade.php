@@ -29,10 +29,10 @@
                 </button>
 
                 @if (($categoria->itens_count ?? 0) === 0)
-                    <form action="{{ route('almoxarifado.categorias.destroy', $categoria->id) }}" method="POST" class="d-inline">
+                    <form action="{{ route('almoxarifado.categorias.destroy', $categoria->id) }}" method="POST" class="d-inline form-excluir-categoria">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-danger">
+                        <button type="submit" class="btn btn-danger btn-confirmar-exclusao">
                             <i class="fas fa-trash-alt mr-1"></i> Confirmar Exclusão
                         </button>
                     </form>
