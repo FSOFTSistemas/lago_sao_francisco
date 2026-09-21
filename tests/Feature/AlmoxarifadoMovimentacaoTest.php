@@ -487,4 +487,28 @@ class AlmoxarifadoMovimentacaoTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['item_id']);
     }
+
+    public function test_tela_de_listagem_de_movimentacoes_renderiza_view_html_com_sucesso(): void
+    {
+        AlmoxarifadoMovimentacao::create([
+            'empresa_id'        => $this->empresa->id,
+            'item_id'           => $this->item->id,
+            'tipo'              => 'entrada',
+            'quantidade'        => 20,
+            'saldo_anterior'    => 10,
+            'saldo_posterior'   => 30,
+            'data_movimentacao' => now(),
+            'user_id'           => $this->user->id,
+            'fornecedor'        => 'Super Fornecedor',
+        ]);
+
+        $response = $this->get(route('almoxarifado.movimentacoes.index'));
+
+        $response->assertOk();
+        $response->assertSee('Histórico de Movimentações');
+        $response->assertSee('Super Fornecedor');
+        $response->assertSee('Nova Entrada');
+        $response->assertSee('Nova Saída');
+        $response->assertSee('Ajustar Estoque');
+    }
 }

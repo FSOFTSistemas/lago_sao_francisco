@@ -448,6 +448,12 @@ return [
                     'shift' => 'ml-2',
                 ],
                 [
+                    'text'  => 'Movimentações',
+                    'icon'  => 'fas fa-exchange-alt',
+                    'url'   => '/almoxarifado/movimentacoes',
+                    'shift' => 'ml-2',
+                ],
+                [
                     'text'  => 'Categorias',
                     'icon'  => 'fas fa-tags',
                     'url'   => '/almoxarifado/categorias',

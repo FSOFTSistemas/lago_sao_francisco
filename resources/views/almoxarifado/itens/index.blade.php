@@ -9,6 +9,9 @@
             <p class="text-muted mb-0">Controle físico de produtos e materiais de consumo interno.</p>
         </div>
         <div class="mt-2 mt-sm-0">
+            <a href="{{ route('almoxarifado.movimentacoes.index') }}" class="btn btn-outline-primary mr-1">
+                <i class="fas fa-exchange-alt mr-1"></i> Movimentações
+            </a>
             <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-success mr-1">
                 <i class="fas fa-tags mr-1"></i> Categorias
             </a>
