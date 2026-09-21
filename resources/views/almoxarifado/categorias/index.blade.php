@@ -50,42 +50,43 @@
         </div>
     @endif
 
+    {{-- Barra de busca e ações fora da tabela --}}
+    <div class="row mb-3 align-items-center">
+        <div class="col-12 col-md-6 col-lg-5 mb-2 mb-md-0">
+            <form action="{{ route('almoxarifado.categorias.index') }}" method="GET">
+                <div class="input-group">
+                    <input type="text"
+                           name="busca"
+                           class="form-control text-dark"
+                           placeholder="Buscar por nome da categoria..."
+                           value="{{ $busca ?? '' }}"
+                           aria-label="Buscar categoria">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit" title="Buscar">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        @if (!empty($busca))
+                            <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-danger" title="Limpar filtro de busca">
+                                <i class="fas fa-times"></i> Limpar
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-12 col-md-6 col-lg-7 text-md-right">
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCriarCategoria">
+                <i class="fas fa-plus mr-1"></i> Nova Categoria
+            </button>
+        </div>
+    </div>
+
     <div class="card card-outline card-success shadow-sm">
         <div class="card-header">
-            <div class="row align-items-center">
-                <div class="col-12 col-md-4 mb-2 mb-md-0">
-                    <h3 class="card-title text-bold mb-0">
-                        <i class="fas fa-tags mr-2 text-success"></i>Categorias Cadastradas ({{ $categorias->count() }})
-                    </h3>
-                </div>
-                <div class="col-12 col-md-5 col-lg-6 mb-2 mb-md-0">
-                    <form action="{{ route('almoxarifado.categorias.index') }}" method="GET" class="w-100">
-                        <div class="input-group">
-                            <input type="text"
-                                   name="busca"
-                                   class="form-control text-dark"
-                                   placeholder="Buscar por nome da categoria..."
-                                   value="{{ $busca ?? '' }}"
-                                   aria-label="Buscar categoria">
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="submit" title="Buscar">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                                @if (!empty($busca))
-                                    <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-danger" title="Limpar filtro de busca">
-                                        <i class="fas fa-times"></i> Limpar
-                                    </a>
-                                @endif
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="col-12 col-md-3 col-lg-2 text-md-right">
-                    <button type="button" class="btn btn-success btn-sm btn-block" data-toggle="modal" data-target="#modalCriarCategoria">
-                        <i class="fas fa-plus mr-1"></i> Nova Categoria
-                    </button>
-                </div>
-            </div>
+            <h3 class="card-title text-bold mb-0">
+                <i class="fas fa-tags mr-2 text-success"></i>Categorias Cadastradas ({{ $categorias->count() }})
+            </h3>
         </div>
 
         <div class="card-body table-responsive p-0">
