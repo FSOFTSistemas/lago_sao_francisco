@@ -60,26 +60,43 @@
                                 <label for="unidade_medida_item_{{ $item->id }}" class="font-weight-bold text-dark">
                                     Unidade de Medida: <span class="text-danger">*</span>
                                 </label>
-                                <input type="text"
-                                       class="form-control text-dark"
-                                       id="unidade_medida_item_{{ $item->id }}"
-                                       name="unidade_medida"
-                                       list="listaUnidadesMedidaEdit"
-                                       value="{{ old('unidade_medida', $item->unidade_medida) }}"
-                                       required
-                                       maxlength="20">
-                                <datalist id="listaUnidadesMedidaEdit">
-                                    <option value="UN">Unidade (UN)</option>
-                                    <option value="CX">Caixa (CX)</option>
-                                    <option value="PCT">Pacote (PCT)</option>
-                                    <option value="L">Litro (L)</option>
-                                    <option value="KG">Quilo (KG)</option>
-                                    <option value="GL">Galão (GL)</option>
-                                    <option value="FD">Fardo (FD)</option>
-                                    <option value="ROLO">Rolo (ROLO)</option>
-                                    <option value="PAR">Par (PAR)</option>
-                                    <option value="M">Metro (M)</option>
-                                </datalist>
+                                @php
+                                    $unidadesMedidaDisponiveis = [
+                                        'UN'  => 'UN - Unidade',
+                                        'PCT' => 'PCT - Pacote',
+                                        'CX'  => 'CX - Caixa',
+                                        'L'   => 'L - Litro',
+                                        'KG'  => 'KG - Quilo',
+                                        'M'   => 'M - Metro',
+                                        'PAR' => 'PAR - Par',
+                                    ];
+                                    $unidadeItemAtual = strtoupper(trim((string) old('unidade_medida', $item->unidade_medida ?? 'UN')));
+                                    $ehUnidadePersonalizada = !empty($unidadeItemAtual) && !array_key_exists($unidadeItemAtual, $unidadesMedidaDisponiveis);
+                                @endphp
+                                <select class="form-control text-dark"
+                                        id="unidade_medida_item_{{ $item->id }}"
+                                        name="unidade_medida"
+                                        onchange="tratarTrocaUnidade(this, 'wrapper_unidade_custom_{{ $item->id }}', 'input_unidade_custom_{{ $item->id }}')"
+                                        required>
+                                    @foreach ($unidadesMedidaDisponiveis as $sigla => $descricao)
+                                        <option value="{{ $sigla }}" {{ $unidadeItemAtual === $sigla ? 'selected' : '' }}>
+                                            {{ $descricao }}
+                                        </option>
+                                    @endforeach
+                                    @if ($ehUnidadePersonalizada)
+                                        <option value="{{ $unidadeItemAtual }}" selected>{{ $unidadeItemAtual }} (Personalizado)</option>
+                                    @endif
+                                    <option value="__OUTRO__">Outro (digitar manualmente...)</option>
+                                </select>
+                                <div id="wrapper_unidade_custom_{{ $item->id }}" class="mt-2" style="display: none;">
+                                    <input type="text"
+                                           class="form-control text-dark text-uppercase"
+                                           id="input_unidade_custom_{{ $item->id }}"
+                                           placeholder="Digite a sigla (ex: TON, RESMA)..."
+                                           maxlength="20"
+                                           oninput="this.value = this.value.toUpperCase()">
+                                    <small class="form-text text-secondary">Digite a sigla ou descrição curta da unidade.</small>
+                                </div>
                             </div>
                         </div>
 

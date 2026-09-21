@@ -264,6 +264,29 @@
 
 @push('js')
 <script>
+    /**
+     * Alterna entre unidade selecionada no dropdown e campo de texto personalizado caso "Outro" seja selecionado.
+     */
+    function tratarTrocaUnidade(selectEl, wrapperId, inputId) {
+        var wrapper = document.getElementById(wrapperId);
+        var input = document.getElementById(inputId);
+        if (!wrapper || !input) return;
+
+        if (selectEl.value === '__OUTRO__') {
+            wrapper.style.display = 'block';
+            selectEl.removeAttribute('name');
+            input.setAttribute('name', 'unidade_medida');
+            input.setAttribute('required', 'required');
+            input.focus();
+        } else {
+            wrapper.style.display = 'none';
+            selectEl.setAttribute('name', 'unidade_medida');
+            input.removeAttribute('name');
+            input.removeAttribute('required');
+            input.value = '';
+        }
+    }
+
     $(document).ready(function () {
         // Desativa o botão de cadastro após o primeiro clique (prevenção de double submit)
         $('#formCriarItem').on('submit', function () {

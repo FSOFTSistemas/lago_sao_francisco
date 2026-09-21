@@ -461,4 +461,25 @@ class AlmoxarifadoItemTest extends TestCase
         $response->assertSee('Estoque Mínimo');
         $response->assertSee('Sabonete Líquido');
     }
+
+    public function test_cadastra_item_com_diferentes_unidades_de_medida(): void
+    {
+        $payload = [
+            'nome'           => 'Cloro Líquido 50L',
+            'categoria_id'   => $this->categoria->id,
+            'unidade_medida' => 'l',
+            'estoque_atual'  => 50,
+            'estoque_minimo' => 10,
+        ];
+
+        $response = $this->postJson(route('almoxarifado.itens.store'), $payload);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('almoxarifado_itens', [
+            'empresa_id'     => $this->empresa->id,
+            'nome'           => 'Cloro Líquido 50L',
+            'unidade_medida' => 'L', // Convertido em maiúsculo automaticamente
+        ]);
+    }
 }
