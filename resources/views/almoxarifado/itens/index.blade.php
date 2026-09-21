@@ -12,11 +12,8 @@
             <a href="{{ route('almoxarifado.movimentacoes.index') }}" class="btn btn-outline-primary mr-1">
                 <i class="fas fa-exchange-alt mr-1"></i> Movimentações
             </a>
-            <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-success mr-1">
+            <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-success">
                 <i class="fas fa-tags mr-1"></i> Categorias
-            </a>
-            <a href="{{ route('preferencias') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left mr-1"></i> Voltar
             </a>
         </div>
     </div>

@@ -9,14 +9,11 @@
             <p class="text-muted mb-0">Registro e rastreabilidade de entradas, saídas para setores e ajustes físicos de estoque.</p>
         </div>
         <div class="mt-2 mt-sm-0">
-            <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-success mr-1">
-                <i class="fas fa-boxes mr-1"></i> Itens do Estoque
-            </a>
             <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-secondary mr-1">
                 <i class="fas fa-tags mr-1"></i> Categorias
             </a>
-            <a href="{{ route('preferencias') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left mr-1"></i> Voltar
+            <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Voltar para Itens
             </a>
         </div>
     </div>

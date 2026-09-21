@@ -9,8 +9,8 @@
             <p class="text-muted mb-0">Gerencie as categorias para organizar os produtos e materiais de consumo interno.</p>
         </div>
         <div class="mt-2 mt-sm-0">
-            <a href="{{ route('preferencias') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left mr-1"></i> Voltar
+            <a href="{{ route('almoxarifado.itens.index') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Voltar para Itens
             </a>
         </div>
     </div>
