@@ -51,13 +51,41 @@
     @endif
 
     <div class="card card-outline card-success shadow-sm">
-        <div class="card-header d-flex align-items-center">
-            <h3 class="card-title text-bold mb-0">
-                <i class="fas fa-tags mr-2 text-success"></i>Categorias Cadastradas ({{ $categorias->count() }})
-            </h3>
-            <button type="button" class="btn btn-success btn-sm ml-auto" data-toggle="modal" data-target="#modalCriarCategoria">
-                <i class="fas fa-plus mr-1"></i> Nova Categoria
-            </button>
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col-12 col-md-4 mb-2 mb-md-0">
+                    <h3 class="card-title text-bold mb-0">
+                        <i class="fas fa-tags mr-2 text-success"></i>Categorias Cadastradas ({{ $categorias->count() }})
+                    </h3>
+                </div>
+                <div class="col-12 col-md-5 col-lg-6 mb-2 mb-md-0">
+                    <form action="{{ route('almoxarifado.categorias.index') }}" method="GET" class="w-100">
+                        <div class="input-group">
+                            <input type="text"
+                                   name="busca"
+                                   class="form-control text-dark"
+                                   placeholder="Buscar por nome da categoria..."
+                                   value="{{ $busca ?? '' }}"
+                                   aria-label="Buscar categoria">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="submit" title="Buscar">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                @if (!empty($busca))
+                                    <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-danger" title="Limpar filtro de busca">
+                                        <i class="fas fa-times"></i> Limpar
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-12 col-md-3 col-lg-2 text-md-right">
+                    <button type="button" class="btn btn-success btn-sm btn-block" data-toggle="modal" data-target="#modalCriarCategoria">
+                        <i class="fas fa-plus mr-1"></i> Nova Categoria
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div class="card-body table-responsive p-0">
@@ -112,13 +140,21 @@
                     @empty
                         <tr>
                             <td colspan="5" class="text-center py-5">
-                                <div class="text-muted">
+                                <div class="text-dark">
                                     <i class="fas fa-tags fa-3x mb-3 text-secondary"></i>
-                                    <h5>Nenhuma categoria de almoxarifado cadastrada</h5>
-                                    <p class="mb-3">Cadastre categorias como Limpeza, Manutenção, Escritório ou Rouparia para organizar os produtos.</p>
-                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCriarCategoria">
-                                        <i class="fas fa-plus mr-1"></i> Cadastrar Primeira Categoria
-                                    </button>
+                                    @if (!empty($busca))
+                                        <h5 class="text-dark">Nenhuma categoria encontrada para "<strong>{{ $busca }}</strong>"</h5>
+                                        <p class="text-secondary mb-3">Tente buscar por outro termo ou limpe a busca para ver todas as categorias.</p>
+                                        <a href="{{ route('almoxarifado.categorias.index') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-times mr-1"></i> Limpar busca
+                                        </a>
+                                    @else
+                                        <h5 class="text-dark">Nenhuma categoria de almoxarifado cadastrada</h5>
+                                        <p class="text-secondary mb-3">Cadastre categorias como Limpeza, Manutenção, Escritório ou Rouparia para organizar os produtos.</p>
+                                        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCriarCategoria">
+                                            <i class="fas fa-plus mr-1"></i> Cadastrar Primeira Categoria
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

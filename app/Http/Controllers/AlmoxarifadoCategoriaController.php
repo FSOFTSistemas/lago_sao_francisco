@@ -13,15 +13,20 @@ class AlmoxarifadoCategoriaController extends Controller
     /**
      * Exibe a listagem de categorias do almoxarifado.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $busca = trim((string) $request->input('busca', ''));
+
         $categorias = AlmoxarifadoCategoria::query()
             ->withCount('itens')
+            ->when($busca !== '', function ($query) use ($busca) {
+                $query->where('nome', 'like', "%{$busca}%");
+            })
             ->orderByDesc('ativo')
             ->orderBy('nome')
             ->get();
 
-        return view('almoxarifado.categorias.index', compact('categorias'));
+        return view('almoxarifado.categorias.index', compact('categorias', 'busca'));
     }
 
     /**

@@ -148,6 +148,24 @@ class AlmoxarifadoCategoriaTest extends TestCase
         $response->assertSee('Inativo');
     }
 
+    public function test_busca_de_categorias_filtra_por_nome(): void
+    {
+        AlmoxarifadoCategoria::create(['nome' => 'Limpeza Pesada', 'ativo' => true]);
+        AlmoxarifadoCategoria::create(['nome' => 'Manutenção Predial', 'ativo' => true]);
+
+        // Busca que encontra
+        $response = $this->get(route('almoxarifado.categorias.index', ['busca' => 'Limpeza']));
+        $response->assertOk();
+        $response->assertSee('Limpeza Pesada');
+        $response->assertDontSee('Manutenção Predial');
+
+        // Busca que não encontra
+        $responseVazia = $this->get(route('almoxarifado.categorias.index', ['busca' => 'Inexistente']));
+        $responseVazia->assertOk();
+        $responseVazia->assertSee('Nenhuma categoria encontrada para');
+        $responseVazia->assertDontSee('Limpeza Pesada');
+    }
+
     public function test_cadastra_nova_categoria_com_sucesso(): void
     {
         $response = $this->post(route('almoxarifado.categorias.store'), [
