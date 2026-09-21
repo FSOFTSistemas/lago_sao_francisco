@@ -440,6 +440,7 @@ return [
         [
             'text'    => 'Almoxarifado',
             'icon'    => 'fas fa-warehouse',
+            'can'     => 'gerenciar almoxarifado',
             'submenu' => [
                 [
                     'text'  => 'Itens do Estoque',

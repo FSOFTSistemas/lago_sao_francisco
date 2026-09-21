@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class AlmoxarifadoCategoriaTest extends TestCase
@@ -130,6 +131,9 @@ class AlmoxarifadoCategoriaTest extends TestCase
             'empresa_id' => $empresa->id,
             'ativo' => true,
         ]);
+
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar almoxarifado', 'guard_name' => 'web']);
+        $user->givePermissionTo($permission);
 
         $this->actingAs($user);
     }
@@ -258,5 +262,20 @@ class AlmoxarifadoCategoriaTest extends TestCase
         $this->assertDatabaseHas('almoxarifado_categorias', [
             'id' => $categoria->id,
         ]);
+    }
+
+    public function test_usuario_sem_permissao_nao_acessa_almoxarifado(): void
+    {
+        $userSemPermissao = User::create([
+            'name' => 'Sem Permissao',
+            'email' => 'sem@permissao.com',
+            'password' => bcrypt('12345678'),
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($userSemPermissao);
+
+        $response = $this->get(route('almoxarifado.categorias.index'));
+        $response->assertForbidden();
     }
 }

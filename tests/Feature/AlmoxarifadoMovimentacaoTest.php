@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class AlmoxarifadoMovimentacaoTest extends TestCase
@@ -153,6 +154,9 @@ class AlmoxarifadoMovimentacaoTest extends TestCase
             'estoque_minimo' => 2,
             'ativo'          => true,
         ]);
+
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar almoxarifado', 'guard_name' => 'web']);
+        $this->user->givePermissionTo($permission);
 
         $this->actingAs($this->user);
         session(['empresa_id' => $this->empresa->id]);
@@ -511,4 +515,20 @@ class AlmoxarifadoMovimentacaoTest extends TestCase
         $response->assertSee('Nova Saída');
         $response->assertSee('Ajustar Estoque');
     }
+
+    public function test_usuario_sem_permissao_nao_acessa_almoxarifado_movimentacoes(): void
+    {
+        $userSemPermissao = User::create([
+            'name' => 'Sem Permissao',
+            'email' => 'sem.mov@permissao.com',
+            'password' => bcrypt('12345678'),
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($userSemPermissao);
+
+        $response = $this->get(route('almoxarifado.movimentacoes.index'));
+        $response->assertForbidden();
+    }
 }
+

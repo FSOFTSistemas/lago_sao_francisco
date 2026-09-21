@@ -44,7 +44,8 @@ class PermisssoesUsuariosSeeder extends Seeder
             'cadastrar aluguel',
             'gerenciar aluguel',
             'hotel',
-            'gerenciar NFe'
+            'gerenciar NFe',
+            'gerenciar almoxarifado'
         ];
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);

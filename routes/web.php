@@ -234,23 +234,26 @@ Route::resource('cfop', CfopController::class);
 
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
 
-// Almoxarifado - Categorias
-Route::resource('almoxarifado/categorias', AlmoxarifadoCategoriaController::class)
-    ->parameters(['categorias' => 'categoria'])
-    ->names('almoxarifado.categorias');
+// Almoxarifado - Protegido por permissão
+Route::middleware(['auth', 'permission:gerenciar almoxarifado'])->group(function () {
+    // Categorias
+    Route::resource('almoxarifado/categorias', AlmoxarifadoCategoriaController::class)
+        ->parameters(['categorias' => 'categoria'])
+        ->names('almoxarifado.categorias');
 
-// Almoxarifado - Itens
-Route::get('almoxarifado/itens/search', [AlmoxarifadoItemController::class, 'search'])->name('almoxarifado.itens.search');
-Route::resource('almoxarifado/itens', AlmoxarifadoItemController::class)
-    ->parameters(['itens' => 'item'])
-    ->names('almoxarifado.itens');
+    // Itens
+    Route::get('almoxarifado/itens/search', [AlmoxarifadoItemController::class, 'search'])->name('almoxarifado.itens.search');
+    Route::resource('almoxarifado/itens', AlmoxarifadoItemController::class)
+        ->parameters(['itens' => 'item'])
+        ->names('almoxarifado.itens');
 
-// Almoxarifado - Movimentações (Entrada, Saída, Ajuste)
-Route::get('almoxarifado/movimentacoes/saldo/{item}', [AlmoxarifadoMovimentacaoController::class, 'saldo'])->name('almoxarifado.movimentacoes.saldo');
-Route::get('almoxarifado/movimentacoes/item/{item}', [AlmoxarifadoMovimentacaoController::class, 'historicoItem'])->name('almoxarifado.movimentacoes.historico-item');
-Route::resource('almoxarifado/movimentacoes', AlmoxarifadoMovimentacaoController::class)
-    ->parameters(['movimentacoes' => 'movimentacao'])
-    ->names('almoxarifado.movimentacoes');
+    // Movimentações (Entrada, Saída, Ajuste)
+    Route::get('almoxarifado/movimentacoes/saldo/{item}', [AlmoxarifadoMovimentacaoController::class, 'saldo'])->name('almoxarifado.movimentacoes.saldo');
+    Route::get('almoxarifado/movimentacoes/item/{item}', [AlmoxarifadoMovimentacaoController::class, 'historicoItem'])->name('almoxarifado.movimentacoes.historico-item');
+    Route::resource('almoxarifado/movimentacoes', AlmoxarifadoMovimentacaoController::class)
+        ->parameters(['movimentacoes' => 'movimentacao'])
+        ->names('almoxarifado.movimentacoes');
+});
 
 Route::resource('adicionais', AdicionalController::class);
 
