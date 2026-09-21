@@ -18,12 +18,8 @@ class NotaFiscalController extends Controller
      */
     public function index()
     {
-        $notasFiscais = NotaFiscal::all();
-        
-        $clientes= Cliente::all();
-        $produtos = Produto::all();
 
-        return view('NFe.index', compact('notasFiscais', 'produtos', 'clientes'));
+        return view('notasFiscais');
     }
 
     /**

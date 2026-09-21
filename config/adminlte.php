@@ -634,6 +634,11 @@ return [
             ],
         ],
         [
+            'text' => 'Nota Fiscal',
+            'url'  => '/nota-fiscal',
+            'icon' => 'fas fa-file-invoice',
+        ],
+        [
             'text' => 'Usuários',
             'url'  => '/usuarios',
             'icon' => 'fas fa-users',

@@ -208,7 +208,8 @@ Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
 Route::resource('logs', LogController::class)->middleware('permission:gerenciar financeiro');
 
-Route::resource('nota_fiscal', NotaFiscalController::class);
+Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware('auth');
+Route::resource('nota_fiscal', NotaFiscalController::class)->middleware('auth');
 
 Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');
 
