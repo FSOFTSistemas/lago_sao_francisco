@@ -438,6 +438,18 @@ return [
             'can'  => 'gerenciar produto'
         ],
         [
+            'text'    => 'Almoxarifado',
+            'icon'    => 'fas fa-warehouse',
+            'submenu' => [
+                [
+                    'text'  => 'Categorias',
+                    'icon'  => 'fas fa-tags',
+                    'url'   => '/almoxarifado/categorias',
+                    'shift' => 'ml-2',
+                ],
+            ],
+        ],
+        [
             'text' => 'Clientes',
             'url'  => '/cliente',
             'icon' => 'fa fa-handshake',
