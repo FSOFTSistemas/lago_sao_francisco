@@ -12,11 +12,23 @@ class EmpresaPreferencia extends Model
     
     protected $fillable = [
         'certificado_digital',
+        'senha_certificado',
+        'ambiente_dfe',
+        'ult_nsu',
+        'max_nsu',
+        'data_ultima_consulta_dfe',
+        'cstat_ultima_consulta_dfe',
+        'motivo_ultima_consulta_dfe',
         'numero_ultima_nota',
         'serie',
         'cfop_padrao',
         'regime_tributario',
         'empresa_id',
+    ];
+
+    protected $casts = [
+        'data_ultima_consulta_dfe' => 'datetime',
+        'ambiente_dfe' => 'integer',
     ];
 
     public function empresa(): BelongsTo
