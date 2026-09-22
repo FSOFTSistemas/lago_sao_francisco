@@ -51,7 +51,7 @@ class StoreExcursaoRequest extends FormRequest
             'possui_almoco' => ['required', 'boolean'],
             'cardapio_excursao_id' => ['exclude_unless:possui_almoco,1', 'required', 'integer', 'exists:cardapios_excursao,id'],
             'almoco_quantidade' => ['exclude_unless:possui_almoco,1', 'required', 'integer', 'min:1'],
-            'recebimentos' => ['required', 'array', 'min:1'],
+            'recebimentos' => ['nullable', 'array'],
             'recebimentos.*.valor' => ['required', 'numeric', 'min:0.01', 'max:99999999.99'],
             'recebimentos.*.forma_pagamento_id' => ['required', 'integer', 'exists:forma_pagamentos,id'],
             'recebimentos.*.comprovante' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
@@ -85,8 +85,6 @@ class StoreExcursaoRequest extends FormRequest
             'cardapio_excursao_id.exists' => 'O cardápio selecionado é inválido.',
             'almoco_quantidade.required' => 'Informe a quantidade de almoços.',
             'almoco_quantidade.min' => 'A quantidade de almoços deve ser maior que zero.',
-            'recebimentos.required' => 'Informe pelo menos um recebimento inicial.',
-            'recebimentos.min' => 'Informe pelo menos um recebimento inicial.',
             'recebimentos.*.valor.required' => 'Informe o valor do recebimento.',
             'recebimentos.*.valor.min' => 'O recebimento deve ser maior que zero.',
             'recebimentos.*.forma_pagamento_id.required' => 'Informe a forma de pagamento.',
@@ -113,13 +111,6 @@ class StoreExcursaoRequest extends FormRequest
                 $valorPago = (float) $calculos['valor_pago'];
                 $total = (float) $calculos['total'];
 
-                if ($valorPago + 0.01 < $total * 0.5) {
-                    $validator->errors()->add(
-                        'recebimentos',
-                        'O pagamento inicial deve ser de pelo menos 50% do total da excursão.',
-                    );
-                }
-
                 if ($valorPago > $total + 0.01) {
                     $validator->errors()->add(
                         'recebimentos',
@@ -135,6 +126,9 @@ class StoreExcursaoRequest extends FormRequest
     private function validarComprovantesObrigatorios(Validator $validator): void
     {
         $recebimentos = $this->input('recebimentos', []);
+        if (empty($recebimentos)) {
+            return;
+        }
         $formasIds = collect($recebimentos)
             ->pluck('forma_pagamento_id')
             ->filter()

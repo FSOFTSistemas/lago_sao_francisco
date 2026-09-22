@@ -171,8 +171,9 @@ Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponivei
 Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
 
 Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('caixa.aberto')->name('aluguel.create');
+Route::post('aluguel', [AluguelController::class, 'store'])->middleware('caixa.aberto')->name('aluguel.store');
 
-Route::resource('aluguel', AluguelController::class)->except(['create']);
+Route::resource('aluguel', AluguelController::class)->except(['create', 'store']);
 
 Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
 Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('eventos.excursoes.index');

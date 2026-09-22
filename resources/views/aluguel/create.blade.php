@@ -1150,38 +1150,6 @@
                     return false;
                 }
 
-                if (valorRestanteValue > 0.01) { // Usando 0.01 para evitar problemas de precisão decimal
-                    e.preventDefault();
-
-                    // Usar SweetAlert2 se disponível, senão usar alert padrão
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Pagamento Incompleto',
-                            text: 'Para prosseguir, o pagamento deve ser realizado completamente. Valor restante: ' +
-                                formatarMoeda(valorRestanteValue),
-                            confirmButtonText: 'Entendi',
-                            confirmButtonColor: '#dc3545'
-                        });
-                    } else {
-                        alert('Para prosseguir, o pagamento deve ser realizado completamente. Valor restante: ' +
-                            formatarMoeda(valorRestanteValue));
-                    }
-
-                    mostrarAlerta(
-                        'Para prosseguir, o pagamento deve ser realizado completamente. Valor restante: ' +
-                        formatarMoeda(valorRestanteValue), 'danger');
-
-                    // Focar na aba de pagamento se não estiver ativa
-                    const pagamentoTab = document.querySelector('a[href="#tab-pagamento"]');
-                    if (pagamentoTab) {
-                        pagamentoTab.click();
-                    }
-
-                    return false;
-                }
-
-                // Se chegou até aqui, o pagamento está completo
                 // Opcional: mostrar loading no botão
                 const submitBtn = document.getElementById('btn-submit-aluguel');
                 if (submitBtn) {

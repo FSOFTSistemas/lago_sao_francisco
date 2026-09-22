@@ -18,15 +18,16 @@ class ExcursaoCaixaService
     public function caixaAbertoDoUsuario(): Caixa
     {
         $usuario = Auth::user();
+        $empresaId = session('empresa_id') ?: $usuario?->empresa_id;
 
-        if (! $usuario?->empresa_id) {
-            throw new DomainException('Não foi possível identificar a empresa do usuário para registrar o pagamento.');
+        if (! $usuario || ! $empresaId) {
+            throw new DomainException('Não foi possível identificar a empresa do usuário para realizar o agendamento.');
         }
 
-        $caixa = Caixa::abertoHojePara($usuario->empresa_id, $usuario->id)->first();
+        $caixa = Caixa::abertoHojePara($empresaId, $usuario->id)->first();
 
         if (! $caixa) {
-            throw new DomainException('Abra o seu caixa do dia antes de cadastrar pagamentos de excursão.');
+            throw new DomainException('Abra o seu caixa do dia antes de agendar uma excursão.');
         }
 
         return $caixa;

@@ -42,6 +42,17 @@ class AluguelController extends Controller
 
     public function create()
     {
+        $empresaId = session('empresa_id') ?: Auth::user()?->empresa_id;
+        $usuarioId = Auth::id();
+        $caixa = ($empresaId && $usuarioId)
+            ? Caixa::abertoHojePara($empresaId, $usuarioId)->first()
+            : null;
+
+        if (! $caixa) {
+            return redirect()->route('fluxoCaixa.index')
+                ->with('sweet_error', 'Você precisa estar com o caixa do dia aberto para agendar um evento.');
+        }
+
         $clientes = Cliente::all();
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
@@ -66,6 +77,18 @@ class AluguelController extends Controller
     public function store(Request $request)
     {
         try {
+            $empresaId = session('empresa_id') ?: Auth::user()?->empresa_id;
+            $usuarioId = Auth::id();
+            $caixa = ($empresaId && $usuarioId)
+                ? Caixa::abertoHojePara($empresaId, $usuarioId)->first()
+                : null;
+
+            if (! $caixa) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', 'Você precisa estar com o caixa do dia aberto para agendar um evento.');
+            }
+
             $validated = $request->validate([
                 'data_inicio' => 'required|date',
                 'data_fim' => 'required|date|after_or_equal:data_inicio',
@@ -92,7 +115,16 @@ class AluguelController extends Controller
                 'pagamentos_json' => 'nullable|string',
             ]);
 
-            $validated['empresa_id'] = Auth::user()->empresa_id;
+            $validated['empresa_id'] = $empresaId;
+
+            $pagamentosJson = $request->filled('pagamentos_json')
+                ? json_decode($request->pagamentos_json, true) ?? []
+                : [];
+            $totalPago = (float) collect($pagamentosJson)->sum('valor');
+            $totalAluguel = (float) ($validated['total'] ?? 0);
+            $validated['status'] = ($totalAluguel > 0 && $totalPago + 0.01 >= $totalAluguel)
+                ? 'pago'
+                : 'pendente';
 
             // Usar transação para garantir consistência
             DB::beginTransaction();
@@ -120,18 +152,18 @@ class AluguelController extends Controller
                 foreach ($aluguel->pagamentos as $pagamento) {
                     $forma = strtolower($pagamento->formaPagamento->descricao ?? '');
 
-                    if (str_contains($forma, 'crediário') && $request->filled('parcelas')) {
+                    if (str_contains($forma, 'crediário')) {
                         $this->criarContasAReceber(
                             $aluguel,
                             $pagamento->valor,
                             $pagamento->forma_pagamento_id,
-                            $request->parcelas
+                            $request->parcelas ?? 1
                         );
                     }
                 }
 
                 // ✅ Criar fluxo de caixa com os pagamentos
-                $this->salvarFluxosDePagamento($aluguel);
+                $this->salvarFluxosDePagamento($aluguel, $caixa);
 
                 DB::commit();
 
@@ -238,6 +270,17 @@ class AluguelController extends Controller
             ]);
 
             $validated['empresa_id'] = Auth::user()->empresa_id;
+
+            $pagamentosJson = $request->filled('pagamentos_json')
+                ? json_decode($request->pagamentos_json, true) ?? []
+                : [];
+            $totalPago = (float) collect($pagamentosJson)->sum('valor');
+            $totalAluguel = (float) ($validated['total'] ?? 0);
+            if (! isset($validated['status']) || in_array($validated['status'], ['pendente', 'pago'], true)) {
+                $validated['status'] = ($totalAluguel > 0 && $totalPago + 0.01 >= $totalAluguel)
+                    ? 'pago'
+                    : 'pendente';
+            }
 
             // Usar transação para garantir consistência
             DB::beginTransaction();
@@ -490,23 +533,8 @@ class AluguelController extends Controller
         }
     }
 
-    private function salvarFluxosDePagamento(Aluguel $aluguel)
+    private function salvarFluxosDePagamento(Aluguel $aluguel, Caixa $caixa)
     {
-        $empresaId = Auth::user()->empresa_id;
-
-        // Busca o caixa aberto da empresa no dia
-        $caixa = Caixa::whereDate('data_abertura', now()->toDateString())
-            ->where('status', 'aberto')
-            ->where('empresa_id', $empresaId)
-            ->where('usuario_id', Auth::id())
-            ->first();
-
-        if (! $caixa) {
-            session()->flash('error', 'Nenhum caixa aberto encontrado para registrar movimentações.');
-
-            return;
-        }
-
         foreach ($aluguel->pagamentos as $pagamento) {
             $formaPagamento = $pagamento->formaPagamento;
 

@@ -6,7 +6,7 @@
     $almocoExcursao = $excursao->almoco ?? null;
     $valorCampo = fn (string $campo, mixed $padrao = 0) => old($campo, $excursao->{$campo} ?? $padrao);
     $formatarMoeda = fn (mixed $valor) => number_format((float) ($valor ?: 0), 2, ',', '.');
-    $recebimentosIniciais = old('recebimentos', [['valor' => '', 'forma_pagamento_id' => '']]);
+    $recebimentosIniciais = old('recebimentos', []);
 @endphp
 
 @section('title', $somenteLeitura ? 'Visualizar excursão' : ($edicao ? 'Editar excursão' : 'Cadastrar excursão'))
@@ -285,7 +285,7 @@
                             <button type="button" id="adicionar-recebimento" class="btn btn-sm btn-success ml-auto"><i class="fas fa-plus mr-1"></i>Adicionar forma</button>
                         </div>
                         <div class="card-body">
-                            <p class="text-muted">Informe um ou mais pagamentos. O total recebido deve ser de pelo menos 50% do valor da excursão.</p>
+                            <p class="text-muted">Informe os pagamentos iniciais, se houver. Não há valor mínimo exigido na hora do agendamento.</p>
                             <div id="recebimentos-container">
                                 @foreach ($recebimentosIniciais as $indice => $recebimento)
                                     <div class="recebimento-row border rounded p-3 mb-3" data-index="{{ $indice }}">
@@ -322,9 +322,10 @@
                                 @endforeach
                             </div>
                             <div class="alert alert-info mb-0">
-                                <div class="row"><div class="col-sm-4">Recebido: <strong id="total-recebido">R$ 0,00</strong></div>
-                                    <div class="col-sm-4">Mínimo (50%): <strong id="minimo-recebido">R$ 0,00</strong></div>
-                                    <div class="col-sm-4">Restante: <strong id="valor-restante">R$ 0,00</strong></div></div>
+                                <div class="row">
+                                    <div class="col-sm-6">Recebido: <strong id="total-recebido">R$ 0,00</strong></div>
+                                    <div class="col-sm-6">Restante: <strong id="valor-restante">R$ 0,00</strong></div>
+                                </div>
                                 <small id="situacao-pagamento" class="d-block mt-2"></small>
                             </div>
                         </div>
@@ -494,22 +495,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const total = subtotal + numero('acrescimo') - numero('desconto');
         const comissao = valorPessoas * (numero('percentual_comissao') / 100);
         const recebido = [...document.querySelectorAll('.pagamento-valor')].reduce((soma, el) => soma + Number(el.value || 0), 0);
-        const minimo = Math.max(total, 0) / 2;
 
         definir('valor-pessoas', valorPessoas); definir('resumo-almoco', totalAlmoco); definir('subtotal', subtotal);
         definir('resumo-acrescimo', numero('acrescimo')); definir('resumo-desconto', numero('desconto'));
         definir('total', total); definir('valor-comissao', comissao); definir('receita-liquida', total - comissao);
-        definir('total-recebido', recebido); definir('minimo-recebido', minimo); definir('valor-restante', Math.max(total - recebido, 0));
+        definir('total-recebido', recebido); definir('valor-restante', Math.max(total - recebido, 0));
         const totalAlmocoCampo = document.getElementById('total_almoco_display');
         if (totalAlmocoCampo) totalAlmocoCampo.value = moeda(totalAlmoco);
         const situacao = document.getElementById('situacao-pagamento');
         if (situacao) {
-            const valido = total > 0 && recebido + 0.01 >= minimo && recebido <= total + 0.01;
-            situacao.className = `d-block mt-2 ${valido ? 'text-success' : 'text-danger'}`;
-            situacao.textContent = recebido > total + 0.01 ? 'O valor recebido não pode superar o total.' :
-                (recebido + 0.01 < minimo ? `Faltam ${moeda(minimo - recebido)} para atingir a entrada mínima.` : 'Entrada mínima atingida.');
+            const excesso = total > 0 && recebido > total + 0.01;
+            situacao.className = `d-block mt-2 ${excesso ? 'text-danger' : (recebido > 0 ? 'text-success' : 'text-muted')}`;
+            if (excesso) {
+                situacao.textContent = 'O valor recebido não pode superar o total.';
+            } else if (recebido > 0) {
+                situacao.textContent = recebido + 0.01 >= total ? 'Valor total recebido.' : `Pagamento inicial informado: ${moeda(recebido)}. Saldo restante: ${moeda(Math.max(total - recebido, 0))}.`;
+            } else {
+                situacao.textContent = 'Nenhum pagamento inicial informado.';
+            }
         }
-        return {total, recebido, minimo};
+        return {total, recebido};
     }
 
     function configurarMoeda(campo) {
@@ -780,12 +785,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!document.getElementById('recebimentos-container')) return;
-        const {total, recebido, minimo} = recalcular();
+        const {total, recebido} = recalcular();
         let mensagem = '';
-        if (!document.querySelector('.recebimento-row')) mensagem = 'Adicione pelo menos uma forma de pagamento.';
-        else if (total <= 0) mensagem = 'O total da excursão deve ser maior que zero.';
-        else if (recebido + 0.01 < minimo) mensagem = 'O pagamento inicial deve ser de pelo menos 50% do total.';
+        if (total <= 0) mensagem = 'O total da excursão deve ser maior que zero.';
         else if (recebido > total + 0.01) mensagem = 'O valor recebido não pode ser maior que o total da excursão.';
+        else if (document.querySelectorAll('.recebimento-row').length > 0) {
+            const linhasZeradas = [...document.querySelectorAll('.pagamento-valor')].some(el => Number(el.value || 0) <= 0);
+            if (linhasZeradas) {
+                mensagem = 'Informe um valor maior que zero para cada pagamento adicionado, ou remova a linha.';
+            }
+        }
         if (mensagem) { event.preventDefault(); Swal.fire({icon: 'warning', title: 'Revise os pagamentos', text: mensagem}); }
     });
     recalcular();

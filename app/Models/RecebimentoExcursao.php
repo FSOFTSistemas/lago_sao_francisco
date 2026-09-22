@@ -82,26 +82,6 @@ class RecebimentoExcursao extends Model
             return 'Recebimentos só podem ser excluídos enquanto a excursão estiver agendada.';
         }
 
-        $totalAposExclusao = $this->totalOutrosRecebimentos($excursao);
-        $pagamentoMinimo = (float) $excursao->total * 0.5;
-
-        if ($totalAposExclusao + 0.01 < $pagamentoMinimo) {
-            return 'O recebimento não pode ser excluído porque o valor pago ficaria abaixo de 50% do total da excursão.';
-        }
-
         return null;
-    }
-
-    private function totalOutrosRecebimentos(Excursao $excursao): float
-    {
-        if ($excursao->relationLoaded('recebimentos')) {
-            return round((float) $excursao->recebimentos
-                ->where('id', '!=', $this->getKey())
-                ->sum('valor'), 2);
-        }
-
-        return round((float) $excursao->recebimentos()
-            ->whereKeyNot($this->getKey())
-            ->sum('valor'), 2);
     }
 }
