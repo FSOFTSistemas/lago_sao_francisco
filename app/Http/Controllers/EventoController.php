@@ -75,6 +75,8 @@ class EventoController extends Controller
                     'observacoes' => $aluguel->observacoes ?? '',
                     'data_inicio' => Carbon::parse($aluguel->data_inicio)->format('d/m/Y'),
                     'data_fim' => Carbon::parse($aluguel->data_fim)->format('d/m/Y'),
+                    'raw_data_inicio' => Carbon::parse($aluguel->data_inicio)->format('Y-m-d'),
+                    'raw_data_fim' => Carbon::parse($aluguel->data_fim)->format('Y-m-d'),
                 ],
             ];
         });
@@ -92,6 +94,7 @@ class EventoController extends Controller
                     'color' => '#6f42c1',
                     'extendedProps' => [
                         'categoria' => 'excursao',
+                        'excursao_id' => $excursao->id,
                         'tipo' => 'Excursão',
                         'qtd_pessoas' => $excursao->qtd_pessoas,
                         'status' => ucfirst(strtolower(str_replace('_', ' ', $excursao->status))),
@@ -101,6 +104,8 @@ class EventoController extends Controller
                         'total_formatado' => 'R$ '.number_format($excursao->total, 2, ',', '.'),
                         'data_inicio' => $excursao->data->format('d/m/Y'),
                         'data_fim' => $excursao->data->format('d/m/Y'),
+                        'raw_data_inicio' => $excursao->data->format('Y-m-d'),
+                        'raw_data_fim' => $excursao->data->format('Y-m-d'),
                     ],
                 ];
             });

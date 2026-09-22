@@ -107,11 +107,11 @@
                                     </div>
                                     <div class="col-md-4 form-group">
                                         <label for="bloqueio_input_inicio"><strong>* Data Início:</strong></label>
-                                        <input type="date" id="bloqueio_input_inicio" class="form-control" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
+                                        <input type="date" id="bloqueio_input_inicio" class="form-control" value="{{ old('data_inicio', $aluguel->data_inicio ?? request('data_inicio', '')) }}">
                                     </div>
                                     <div class="col-md-4 form-group">
                                         <label for="bloqueio_input_fim"><strong>* Data Fim:</strong></label>
-                                        <input type="date" id="bloqueio_input_fim" class="form-control" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
+                                        <input type="date" id="bloqueio_input_fim" class="form-control" value="{{ old('data_fim', $aluguel->data_fim ?? request('data_fim', '')) }}">
                                     </div>
                                 </div>
                                 <div class="alert alert-info py-2 mb-0">
@@ -273,9 +273,9 @@
                                 <div id="selection_feedback" class="mt-2 text-success font-weight-bold"></div>
 
                                 <input type="hidden" id="data_inicio" name="data_inicio"
-                                    value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
+                                    value="{{ old('data_inicio', $aluguel->data_inicio ?? request('data_inicio', '')) }}">
                                 <input type="hidden" id="data_fim" name="data_fim"
-                                    value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
+                                    value="{{ old('data_fim', $aluguel->data_fim ?? request('data_fim', '')) }}">
 
                                 <input type="hidden" id="espaco_id_hidden" name="espaco_id"
                                     value="{{ old('espaco_id', $aluguel->espaco_id ?? '') }}">

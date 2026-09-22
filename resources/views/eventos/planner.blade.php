@@ -45,6 +45,31 @@
         </div>
     </div>
 
+    <!-- Seção de Detalhes do Dia Selecionado -->
+    <div class="card shadow-sm d-none mt-3 border-top border-primary" id="painel-dia-detalhes" style="border-top-width: 3px !important;">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+            <div>
+                <h5 class="mb-0 font-weight-bold text-dark">
+                    <i class="fas fa-calendar-day text-primary mr-1"></i>
+                    Eventos em <span id="painel-dia-data-titulo" class="text-primary">-</span>
+                </h5>
+                <small class="text-muted" id="painel-dia-resumo">Clique em qualquer evento para ver mais detalhes.</small>
+            </div>
+            <div class="d-flex align-items-center">
+                <a href="#" id="painel-dia-btn-agendar-topo" class="btn btn-primary btn-sm mr-2">
+                    <i class="fas fa-plus mr-1"></i> Agendar Evento
+                </a>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="painel-dia-btn-fechar" title="Fechar sessão">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-body p-3" id="painel-dia-conteudo">
+            <!-- Conteúdo dinâmico via JS -->
+        </div>
+    </div>
+
     <!-- Modal Detalhe do Evento / Bloqueio -->
     <div class="modal fade" id="modalDetalheEvento" tabindex="-1" aria-labelledby="modalDetalheEventoLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -145,6 +170,26 @@
             cursor: pointer;
         }
 
+        /* Indicador de cursor e hover para os dias do calendário */
+        .fc .fc-daygrid-day {
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .fc .fc-daygrid-day:hover {
+            background-color: rgba(0, 123, 255, 0.08) !important;
+        }
+
+        .fc .fc-daygrid-day.dia-selecionado {
+            background-color: rgba(0, 123, 255, 0.14) !important;
+            box-shadow: inset 0 0 0 2px #007bff;
+        }
+
+        .fc .fc-timegrid-slot,
+        .fc .fc-list-event {
+            cursor: pointer;
+        }
+
         .fc-toolbar-title {
             font-size: 1.25rem !important;
             font-weight: 600;
@@ -153,6 +198,23 @@
         .badge-excursao {
             color: #fff;
             background-color: #6f42c1;
+        }
+
+        #painel-dia-detalhes {
+            transition: all 0.3s ease-in-out;
+            scroll-margin-top: 20px;
+        }
+
+        #painel-dia-detalhes .table th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #495057;
+            background-color: #f8f9fa;
+        }
+
+        #painel-dia-detalhes .table td {
+            vertical-align: middle;
         }
     </style>
 @stop
@@ -182,15 +244,21 @@
                     list: 'Lista'
                 },
                 dateClick: function(info) {
+                    // Destaque visual da célula selecionada
+                    document.querySelectorAll('.fc-daygrid-day.dia-selecionado').forEach(el => {
+                        el.classList.remove('dia-selecionado');
+                    });
+                    if (info.dayEl) {
+                        info.dayEl.classList.add('dia-selecionado');
+                    }
+
                     const dataInicio = document.getElementById('bloqueio_data_inicio');
                     const dataFim = document.getElementById('bloqueio_data_fim');
                     if (dataInicio && dataFim) {
                         dataInicio.value = info.dateStr;
                         dataFim.value = info.dateStr;
                     }
-                    if (window.$ && typeof $('#modalBloquearData').modal === 'function') {
-                        $('#modalBloquearData').modal('show');
-                    }
+                    renderizarPainelDia(info.dateStr);
                 },
                 events: function(fetchInfo, successCallback, failureCallback) {
                     const url = new URL('/eventos/planner/eventos', window.location.origin);
@@ -204,78 +272,7 @@
                 },
                 eventClick: function(info) {
                     info.jsEvent.preventDefault();
-
-                    const props = info.event.extendedProps;
-                    const isBloqueio = !!props.is_bloqueio;
-                    const excursao = props.categoria === 'excursao';
-
-                    const modalTitle = document.getElementById('modalDetalheEventoLabel');
-                    if (isBloqueio) {
-                        modalTitle.innerText = 'Detalhes do Bloqueio';
-                    } else if (excursao) {
-                        modalTitle.innerText = 'Detalhes da Excursão';
-                    } else {
-                        modalTitle.innerText = 'Detalhes do Evento';
-                    }
-
-                    document.getElementById('detalhe-espaco').innerText = props.espaco || '-';
-                    document.getElementById('detalhe-tipo').innerHTML = isBloqueio
-                        ? '<span class="badge badge-dark">Bloqueio de Data</span>'
-                        : (props.tipo || '-');
-                    document.getElementById('detalhe-cliente').innerText = props.cliente || '-';
-                    document.getElementById('detalhe-status').innerHTML = isBloqueio
-                        ? '<span class="badge badge-dark">Bloqueado</span>'
-                        : (props.status || '-');
-                    document.getElementById('detalhe-total').innerText = props.total_formatado || '-';
-                    document.getElementById('detalhe-periodo').innerText = excursao
-                        ? (props.data_inicio || '-')
-                        : `${props.data_inicio || '-'} a ${props.data_fim || '-'}`;
-
-                    // Exibir / ocultar linhas conforme o tipo
-                    ['detalhe-espaco-linha', 'detalhe-cliente-linha'].forEach(id => {
-                        document.getElementById(id).classList.toggle('d-none', excursao);
-                    });
-
-                    const pessoasLinha = document.getElementById('detalhe-pessoas-linha');
-                    pessoasLinha.classList.toggle('d-none', !excursao);
-                    document.getElementById('detalhe-pessoas').innerText = props.qtd_pessoas || '-';
-                    ['detalhe-responsavel-linha', 'detalhe-telefone-linha', 'detalhe-descricao-linha'].forEach(id => {
-                        document.getElementById(id).classList.toggle('d-none', !excursao);
-                    });
-                    document.getElementById('detalhe-responsavel').innerText = props.responsavel || '-';
-                    document.getElementById('detalhe-telefone').innerText = props.telefone_responsavel || '-';
-                    document.getElementById('detalhe-descricao').innerText = props.descricao || '-';
-
-                    // Observações
-                    const obsLinha = document.getElementById('detalhe-obs-linha');
-                    if (isBloqueio) {
-                        obsLinha.classList.remove('d-none');
-                        document.getElementById('detalhe-obs').innerText = props.observacoes || 'Nenhuma observação informada.';
-                    } else if (props.observacoes) {
-                        obsLinha.classList.remove('d-none');
-                        document.getElementById('detalhe-obs').innerText = props.observacoes;
-                    } else {
-                        obsLinha.classList.add('d-none');
-                    }
-
-                    // Total
-                    const totalLinha = document.getElementById('detalhe-total-linha');
-                    totalLinha.classList.toggle('d-none', isBloqueio);
-
-                    // Botões de ação
-                    const abrirAluguel = document.getElementById('detalhe-abrir-aluguel');
-                    abrirAluguel.classList.toggle('d-none', excursao || isBloqueio);
-                    abrirAluguel.href = (!excursao && !isBloqueio) ? `/aluguel/${props.aluguel_id}/edit` : '#';
-
-                    const btnDesbloquear = document.getElementById('detalhe-btn-desbloquear');
-                    btnDesbloquear.classList.toggle('d-none', !isBloqueio);
-                    if (isBloqueio) {
-                        btnDesbloquear.dataset.aluguelId = props.aluguel_id;
-                    }
-
-                    if (window.$ && typeof $('#modalDetalheEvento').modal === 'function') {
-                        $('#modalDetalheEvento').modal('show');
-                    }
+                    abrirModalDetalhes(info.event);
                 },
                 loading: function(isLoading) {
                     if (isLoading) {
@@ -287,6 +284,313 @@
             });
 
             calendar.render();
+
+            let dataAtualSelecionada = null;
+
+            function abrirModalDetalhes(evento) {
+                if (!evento) return;
+                const props = evento.extendedProps || {};
+                const isBloqueio = !!props.is_bloqueio;
+                const excursao = props.categoria === 'excursao';
+
+                const modalTitle = document.getElementById('modalDetalheEventoLabel');
+                if (modalTitle) {
+                    if (isBloqueio) {
+                        modalTitle.innerText = 'Detalhes do Bloqueio';
+                    } else if (excursao) {
+                        modalTitle.innerText = 'Detalhes da Excursão';
+                    } else {
+                        modalTitle.innerText = 'Detalhes do Evento';
+                    }
+                }
+
+                const espacoEl = document.getElementById('detalhe-espaco');
+                if (espacoEl) espacoEl.innerText = props.espaco || '-';
+
+                const tipoEl = document.getElementById('detalhe-tipo');
+                if (tipoEl) {
+                    tipoEl.innerHTML = isBloqueio
+                        ? '<span class="badge badge-dark">Bloqueio de Data</span>'
+                        : (props.tipo || '-');
+                }
+
+                const clienteEl = document.getElementById('detalhe-cliente');
+                if (clienteEl) clienteEl.innerText = props.cliente || '-';
+
+                const statusEl = document.getElementById('detalhe-status');
+                if (statusEl) {
+                    statusEl.innerHTML = isBloqueio
+                        ? '<span class="badge badge-dark">Bloqueado</span>'
+                        : (props.status || '-');
+                }
+
+                const totalEl = document.getElementById('detalhe-total');
+                if (totalEl) totalEl.innerText = props.total_formatado || '-';
+
+                const periodoEl = document.getElementById('detalhe-periodo');
+                if (periodoEl) {
+                    periodoEl.innerText = excursao
+                        ? (props.data_inicio || '-')
+                        : `${props.data_inicio || '-'} a ${props.data_fim || '-'}`;
+                }
+
+                // Exibir / ocultar linhas conforme o tipo
+                ['detalhe-espaco-linha', 'detalhe-cliente-linha'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.toggle('d-none', excursao);
+                });
+
+                const pessoasLinha = document.getElementById('detalhe-pessoas-linha');
+                if (pessoasLinha) {
+                    pessoasLinha.classList.toggle('d-none', !excursao);
+                    const pessoasVal = document.getElementById('detalhe-pessoas');
+                    if (pessoasVal) pessoasVal.innerText = props.qtd_pessoas || '-';
+                }
+
+                ['detalhe-responsavel-linha', 'detalhe-telefone-linha', 'detalhe-descricao-linha'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.toggle('d-none', !excursao);
+                });
+
+                const respEl = document.getElementById('detalhe-responsavel');
+                if (respEl) respEl.innerText = props.responsavel || '-';
+
+                const telEl = document.getElementById('detalhe-telefone');
+                if (telEl) telEl.innerText = props.telefone_responsavel || '-';
+
+                const descEl = document.getElementById('detalhe-descricao');
+                if (descEl) descEl.innerText = props.descricao || '-';
+
+                // Observações
+                const obsLinha = document.getElementById('detalhe-obs-linha');
+                const obsVal = document.getElementById('detalhe-obs');
+                if (obsLinha && obsVal) {
+                    if (isBloqueio) {
+                        obsLinha.classList.remove('d-none');
+                        obsVal.innerText = props.observacoes || 'Nenhuma observação informada.';
+                    } else if (props.observacoes) {
+                        obsLinha.classList.remove('d-none');
+                        obsVal.innerText = props.observacoes;
+                    } else {
+                        obsLinha.classList.add('d-none');
+                    }
+                }
+
+                // Total
+                const totalLinha = document.getElementById('detalhe-total-linha');
+                if (totalLinha) totalLinha.classList.toggle('d-none', isBloqueio);
+
+                // Botões de ação
+                const abrirAluguel = document.getElementById('detalhe-abrir-aluguel');
+                if (abrirAluguel) {
+                    abrirAluguel.classList.toggle('d-none', isBloqueio);
+                    if (excursao) {
+                        abrirAluguel.href = `/eventos/excursoes/${props.excursao_id}/editar`;
+                    } else if (!isBloqueio) {
+                        abrirAluguel.href = `/aluguel/${props.aluguel_id}/edit`;
+                    } else {
+                        abrirAluguel.href = '#';
+                    }
+                }
+
+                const btnDesbloquear = document.getElementById('detalhe-btn-desbloquear');
+                if (btnDesbloquear) {
+                    btnDesbloquear.classList.toggle('d-none', !isBloqueio);
+                    if (isBloqueio) {
+                        btnDesbloquear.dataset.aluguelId = props.aluguel_id;
+                    }
+                }
+
+                if (window.$ && typeof $('#modalDetalheEvento').modal === 'function') {
+                    $('#modalDetalheEvento').modal('show');
+                }
+            }
+
+            function renderizarPainelDia(dateStr) {
+                dataAtualSelecionada = dateStr;
+
+                const partes = dateStr.split('-');
+                const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+                const tituloEl = document.getElementById('painel-dia-data-titulo');
+                const resumoEl = document.getElementById('painel-dia-resumo');
+                const btnAgendarTopo = document.getElementById('painel-dia-btn-agendar-topo');
+                const conteudoEl = document.getElementById('painel-dia-conteudo');
+                const painelEl = document.getElementById('painel-dia-detalhes');
+
+                if (tituloEl) tituloEl.innerText = dataFormatada;
+                if (btnAgendarTopo) btnAgendarTopo.href = `/aluguel/create?data_inicio=${dateStr}&data_fim=${dateStr}`;
+
+                // Filtrar eventos do calendário que cobrem esta data
+                const eventos = calendar.getEvents().filter(ev => {
+                    const p = ev.extendedProps || {};
+                    const ini = p.raw_data_inicio || (ev.startStr ? ev.startStr.split('T')[0] : '');
+                    const fim = p.raw_data_fim || (ev.endStr ? ev.endStr.split('T')[0] : ini);
+                    return dateStr >= ini && dateStr <= fim;
+                });
+
+                const bloqueios = eventos.filter(ev => ev.extendedProps?.is_bloqueio);
+                const agendamentos = eventos.filter(ev => !ev.extendedProps?.is_bloqueio);
+
+                let html = '';
+
+                // 1. Destaque de Bloqueios de Data
+                if (bloqueios.length > 0) {
+                    html += '<div class="mb-3">';
+                    bloqueios.forEach(b => {
+                        const p = b.extendedProps || {};
+                        html += `
+                            <div class="alert alert-dark d-flex flex-wrap justify-content-between align-items-center mb-2 shadow-sm py-2 px-3">
+                                <div class="mr-2 mb-1 mb-md-0">
+                                    <span class="badge badge-danger mr-2 px-2 py-1"><i class="fas fa-ban mr-1"></i> Data Bloqueada</span>
+                                    <strong>Espaço:</strong> ${p.espaco || 'Todos os Espaços'}
+                                    ${p.observacoes ? `<span class="text-white-50 ml-2">&bull; ${p.observacoes}</span>` : ''}
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-sm btn-outline-light btn-abrir-evento-detalhes" data-evento-id="${b.id}">
+                                        <i class="fas fa-unlock mr-1"></i> Desbloquear
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                // 2. Estado Vazio ou Tabela de Agendamentos
+                if (eventos.length === 0) {
+                    if (resumoEl) resumoEl.innerText = 'Nenhum agendamento para este dia.';
+                    html += `
+                        <div class="text-center py-4">
+                            <div class="mb-2">
+                                <i class="fas fa-calendar-check fa-3x text-muted" style="opacity: 0.4;"></i>
+                            </div>
+                            <h5 class="font-weight-bold text-secondary">Nenhum evento agendado para ${dataFormatada}</h5>
+                            <p class="text-muted mb-3">Todos os espaços estão livres e disponíveis nesta data.</p>
+                            <div>
+                                <a href="/aluguel/create?data_inicio=${dateStr}&data_fim=${dateStr}" class="btn btn-primary px-3 mr-2">
+                                    <i class="fas fa-plus mr-1"></i> Agendar Evento nesta data
+                                </a>
+                                <button type="button" class="btn btn-outline-dark px-3 btn-abrir-bloqueio-modal" data-data="${dateStr}">
+                                    <i class="fas fa-lock mr-1"></i> Bloquear esta data
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const qtdEventos = agendamentos.length;
+                    const qtdBloqueios = bloqueios.length;
+                    let resumoTexto = [];
+                    if (qtdEventos > 0) resumoTexto.push(`${qtdEventos} agendamento(s)`);
+                    if (qtdBloqueios > 0) resumoTexto.push(`${qtdBloqueios} bloqueio(s) de espaço`);
+                    if (resumoEl) resumoEl.innerText = resumoTexto.join(' | ');
+
+                    if (agendamentos.length > 0) {
+                        html += `
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped mb-0 align-middle">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 120px;">Categoria</th>
+                                            <th>Espaço</th>
+                                            <th>Cliente / Responsável</th>
+                                            <th>Tipo</th>
+                                            <th style="width: 120px;">Status</th>
+                                            <th class="text-right" style="width: 140px;">Valor Total</th>
+                                            <th class="text-center" style="width: 110px;">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        agendamentos.forEach(ev => {
+                            const p = ev.extendedProps || {};
+                            const isExcursao = (p.categoria === 'excursao');
+
+                            const catBadge = isExcursao
+                                ? '<span class="badge badge-excursao px-2 py-1"><i class="fas fa-bus mr-1"></i> Excursão</span>'
+                                : '<span class="badge badge-primary px-2 py-1"><i class="fas fa-glass-cheers mr-1"></i> Evento</span>';
+
+                            const statusStr = (p.status || '').toLowerCase();
+                            const statusClass = (statusStr === 'pago')
+                                ? 'badge-success'
+                                : (statusStr === 'cancelado' ? 'badge-danger' : 'badge-warning');
+
+                            const statusBadge = `<span class="badge ${statusClass} px-2 py-1">${p.status || '-'}</span>`;
+
+                            const acoes = isExcursao
+                                ? `<button type="button" class="btn btn-sm btn-info btn-abrir-evento-detalhes mr-1" data-evento-id="${ev.id}" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                                   <a href="/eventos/excursoes/${p.excursao_id}/editar" class="btn btn-sm btn-secondary" title="Editar"><i class="fas fa-edit"></i></a>`
+                                : `<button type="button" class="btn btn-sm btn-info btn-abrir-evento-detalhes mr-1" data-evento-id="${ev.id}" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                                   <a href="/aluguel/${p.aluguel_id}/edit" class="btn btn-sm btn-secondary" title="Editar"><i class="fas fa-edit"></i></a>`;
+
+                            html += `
+                                <tr>
+                                    <td>${catBadge}</td>
+                                    <td><strong>${isExcursao ? 'Complexo / Parque' : (p.espaco || '-')}</strong></td>
+                                    <td>${isExcursao ? `${p.responsavel || '-'} <small class="text-muted">(${p.qtd_pessoas} pessoas)</small>` : (p.cliente || '-')}</td>
+                                    <td>${p.tipo || '-'}</td>
+                                    <td>${statusBadge}</td>
+                                    <td class="text-right font-weight-bold">${p.total_formatado || '-'}</td>
+                                    <td class="text-center">${acoes}</td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    }
+                }
+
+                if (conteudoEl) conteudoEl.innerHTML = html;
+                if (painelEl) {
+                    painelEl.classList.remove('d-none');
+                    painelEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+
+            // Cliques nos botões dinâmicos da sessão do dia
+            document.addEventListener('click', function(e) {
+                // Abrir detalhes do evento (ou bloqueio) no modal
+                const btnDetalhes = e.target.closest('.btn-abrir-evento-detalhes');
+                if (btnDetalhes) {
+                    const eventoId = btnDetalhes.dataset.eventoId;
+                    const ev = calendar.getEventById(eventoId);
+                    if (ev) {
+                        abrirModalDetalhes(ev);
+                    }
+                }
+
+                // Abrir modal de bloqueio pré-preenchido
+                const btnBloq = e.target.closest('.btn-abrir-bloqueio-modal');
+                if (btnBloq) {
+                    const dataStr = btnBloq.dataset.data;
+                    const dataInicio = document.getElementById('bloqueio_data_inicio');
+                    const dataFim = document.getElementById('bloqueio_data_fim');
+                    if (dataInicio && dataFim) {
+                        dataInicio.value = dataStr;
+                        dataFim.value = dataStr;
+                    }
+                    if (window.$ && typeof $('#modalBloquearData').modal === 'function') {
+                        $('#modalBloquearData').modal('show');
+                    }
+                }
+            });
+
+            // Botão fechar sessão do dia
+            const btnFecharPainel = document.getElementById('painel-dia-btn-fechar');
+            if (btnFecharPainel) {
+                btnFecharPainel.addEventListener('click', function() {
+                    const painelEl = document.getElementById('painel-dia-detalhes');
+                    if (painelEl) painelEl.classList.add('d-none');
+                    document.querySelectorAll('.fc-daygrid-day.dia-selecionado').forEach(el => {
+                        el.classList.remove('dia-selecionado');
+                    });
+                });
+            }
 
             // Preencher data atual ao abrir modal de bloqueio caso esteja vazio
             if (window.$) {
