@@ -634,9 +634,34 @@ return [
             ],
         ],
         [
-            'text' => 'Nota Fiscal',
-            'url'  => '/nota-fiscal',
-            'icon' => 'fas fa-file-invoice',
+            'text'    => 'Fiscal / NF-e',
+            'icon'    => 'fas fa-file-invoice',
+            'submenu' => [
+                [
+                    'text'  => 'Busca Receita (DF-e)',
+                    'url'   => '/dfe',
+                    'icon'  => 'fas fa-cloud-download-alt',
+                    'shift' => 'ml-2',
+                ],
+                [
+                    'text'  => 'Notas de Entrada',
+                    'url'   => '/entradas',
+                    'icon'  => 'fas fa-boxes',
+                    'shift' => 'ml-2',
+                ],
+                [
+                    'text'  => 'Importar XML',
+                    'url'   => '/entradas/importar',
+                    'icon'  => 'fas fa-file-upload',
+                    'shift' => 'ml-2',
+                ],
+                [
+                    'text'  => 'Emissão de NF-e',
+                    'url'   => '/nota-fiscal',
+                    'icon'  => 'fas fa-paper-plane',
+                    'shift' => 'ml-2',
+                ],
+            ],
         ],
         [
             'text' => 'Usuários',
