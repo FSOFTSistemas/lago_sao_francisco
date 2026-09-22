@@ -249,7 +249,19 @@ class EntradaXmlService
         $cnpjLimpo = preg_replace('/\D/', '', (string) ($dadosFornecedor['cnpj'] ?? ''));
 
         if (!empty($cnpjLimpo)) {
-            $fornecedor = Fornecedor::whereRaw("REGEXP_REPLACE(cnpj, '[^0-9]', '') = ?", [$cnpjLimpo])->first();
+            $fornecedor = Fornecedor::where('cnpj', $cnpjLimpo)
+                ->orWhere('cnpj', (string) ($dadosFornecedor['cnpj'] ?? ''))
+                ->first();
+
+            if (!$fornecedor) {
+                $driver = DB::connection()->getDriverName();
+                if ($driver === 'mysql') {
+                    $fornecedor = Fornecedor::whereRaw("REGEXP_REPLACE(cnpj, '[^0-9]', '') = ?", [$cnpjLimpo])->first();
+                } else {
+                    $fornecedor = Fornecedor::whereRaw("REPLACE(REPLACE(REPLACE(REPLACE(cnpj, '.', ''), '/', ''), '-', ''), ' ', '') = ?", [$cnpjLimpo])->first();
+                }
+            }
+
             if ($fornecedor) {
                 return $fornecedor;
             }
