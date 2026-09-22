@@ -40,6 +40,21 @@ class AluguelController extends Controller
         return view('aluguel.index', compact('aluguel'));
     }
 
+    public static function getClienteBloqueado(?int $empresaId = null): Cliente
+    {
+        $empresaId = $empresaId ?: (session('empresa_id') ?: Auth::user()?->empresa_id ?: 1);
+
+        return Cliente::firstOrCreate(
+            [
+                'nome_razao_social' => 'Bloqueado',
+                'empresa_id' => $empresaId,
+            ],
+            [
+                'tipo' => 'PJ',
+            ]
+        );
+    }
+
     public function create()
     {
         $empresaId = session('empresa_id') ?: Auth::user()?->empresa_id;
@@ -54,6 +69,7 @@ class AluguelController extends Controller
         }
 
         $clientes = Cliente::all();
+        $clienteBloqueado = self::getClienteBloqueado($empresaId);
         $espacos = Espaco::all();
         $formasPagamento = FormaPagamento::all();
         $adicionais = Adicional::all();
@@ -64,6 +80,7 @@ class AluguelController extends Controller
 
         return view('aluguel.create', compact(
             'clientes',
+            'clienteBloqueado',
             'espacos',
             'formasPagamento',
             'adicionais',
@@ -74,8 +91,99 @@ class AluguelController extends Controller
         ));
     }
 
+    public function bloquearData(Request $request)
+    {
+        $request->validate([
+            'data_inicio' => 'required|date',
+            'data_fim' => 'required|date|after_or_equal:data_inicio',
+            'espaco_id' => 'required',
+            'observacoes' => 'nullable|string',
+        ]);
+
+        $empresaId = session('empresa_id') ?: Auth::user()?->empresa_id ?: 1;
+        $usuarioId = Auth::id();
+
+        $cliente = self::getClienteBloqueado($empresaId);
+        $dataInicio = $request->data_inicio;
+        $dataFim = $request->data_fim;
+
+        $espacosIds = [];
+        if ($request->espaco_id === 'todos' || $request->input('espaco_bloqueio_opcao') === 'todos') {
+            $espacosIds = Espaco::pluck('id')->toArray();
+        } else {
+            $espaco = Espaco::findOrFail($request->espaco_id);
+            $espacosIds = [$espaco->id];
+        }
+
+        // Verificar conflitos
+        $conflito = Aluguel::whereIn('espaco_id', $espacosIds)
+            ->where('status', '!=', 'cancelado')
+            ->where(function ($query) use ($dataInicio, $dataFim) {
+                $query->where('data_inicio', '<=', $dataFim)
+                    ->where('data_fim', '>=', $dataInicio);
+            })
+            ->with('espaco')
+            ->first();
+
+        $isJson = ($request->is('eventos/bloquear-data*') || $request->routeIs('aluguel.bloquear-data') || $request->expectsJson() || $request->ajax() || $request->wantsJson() || $request->isJson());
+
+        if ($conflito) {
+            $nomeEspaco = $conflito->espaco->nome ?? 'selecionado';
+            $msgConflito = "O espaço {$nomeEspaco} já possui um agendamento ou bloqueio no período de ".Carbon::parse($dataInicio)->format('d/m/Y').' a '.Carbon::parse($dataFim)->format('d/m/Y').'.';
+
+            if ($isJson) {
+                return response()->json(['success' => false, 'message' => $msgConflito], 422);
+            }
+
+            return redirect()->back()->withInput()->with('error', $msgConflito);
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($espacosIds as $espId) {
+                Aluguel::create([
+                    'data_inicio' => $dataInicio,
+                    'data_fim' => $dataFim,
+                    'espaco_id' => $espId,
+                    'cliente_id' => $cliente->id,
+                    'tipo' => 'bloqueio',
+                    'status' => 'pago',
+                    'subtotal' => 0,
+                    'total' => 0,
+                    'acrescimo' => 0,
+                    'desconto' => 0,
+                    'observacoes' => $request->observacoes ?: 'Data bloqueada',
+                    'empresa_id' => $empresaId,
+                ]);
+            }
+
+            DB::commit();
+
+            if ($isJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => count($espacosIds) > 1 ? 'Datas bloqueadas para todos os espaços com sucesso!' : 'Data bloqueada com sucesso!',
+                ]);
+            }
+
+            return redirect()->route('aluguel.index')->with('success', count($espacosIds) > 1 ? 'Datas bloqueadas para todos os espaços com sucesso!' : 'Data bloqueada com sucesso!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            if ($isJson) {
+                return response()->json(['success' => false, 'message' => 'Erro ao criar bloqueio: '.$e->getMessage()], 500);
+            }
+
+            return redirect()->back()->withInput()->with('error', 'Erro ao criar bloqueio: '.$e->getMessage());
+        }
+    }
+
     public function store(Request $request)
     {
+        if ($request->input('situacao_aluguel') === 'bloqueio' || $request->input('tipo') === 'bloqueio') {
+            return $this->bloquearData($request);
+        }
+
         try {
             $empresaId = session('empresa_id') ?: Auth::user()?->empresa_id;
             $usuarioId = Auth::id();
@@ -223,11 +331,14 @@ class AluguelController extends Controller
         $refeicaoStaffAtivo = PacoteEvento::whereIn('id', $pacotesEventoIdsSelecionados)
             ->where('categoria', 'refeicao_staff')->exists();
 
+        $clienteBloqueado = self::getClienteBloqueado($aluguel->empresa_id);
+
         return view('aluguel.create', compact(
             'aluguel',
             'espacos',
             'formasPagamento',
             'clientes',
+            'clienteBloqueado',
             'cardapios',
             'adicionais',
             'itensSelecionados',
@@ -242,6 +353,37 @@ class AluguelController extends Controller
 
     public function update(Request $request, Aluguel $aluguel)
     {
+        if ($aluguel->tipo === 'bloqueio' || $request->input('situacao_aluguel') === 'bloqueio' || $request->input('tipo') === 'bloqueio') {
+            $validated = $request->validate([
+                'data_inicio' => 'required|date',
+                'data_fim' => 'required|date|after_or_equal:data_inicio',
+                'espaco_id' => 'required|exists:espacos,id',
+                'observacoes' => 'nullable|string',
+            ]);
+
+            $conflito = Aluguel::where('espaco_id', $validated['espaco_id'])
+                ->where('id', '!=', $aluguel->id)
+                ->where('status', '!=', 'cancelado')
+                ->where(function ($query) use ($validated) {
+                    $query->where('data_inicio', '<=', $validated['data_fim'])
+                        ->where('data_fim', '>=', $validated['data_inicio']);
+                })->first();
+
+            if ($conflito) {
+                return redirect()->back()->withInput()->with('error', 'O espaço selecionado já possui um agendamento ou bloqueio neste período.');
+            }
+
+            $aluguel->update([
+                'data_inicio' => $validated['data_inicio'],
+                'data_fim' => $validated['data_fim'],
+                'espaco_id' => $validated['espaco_id'],
+                'observacoes' => $validated['observacoes'] ?: 'Data bloqueada',
+                'tipo' => 'bloqueio',
+            ]);
+
+            return redirect()->route('aluguel.index')->with('success', 'Bloqueio atualizado com sucesso!');
+        }
+
         try {
             $validated = $request->validate([
                 'data_inicio' => 'required|date',
@@ -342,13 +484,32 @@ class AluguelController extends Controller
                 $aluguel->aluguelCategoriaItems()->delete();
             }
 
+            $isBloqueio = $aluguel->tipo === 'bloqueio';
             $aluguel->delete();
 
             DB::commit();
 
-            return redirect()->route('aluguel.index')->with('success', 'Aluguel excluído com sucesso!');
+            $isJson = request()->expectsJson() || request()->ajax() || request()->wantsJson() || request()->isJson();
+
+            if ($isJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $isBloqueio ? 'Bloqueio removido com sucesso!' : 'Aluguel excluído com sucesso!',
+                ]);
+            }
+
+            return redirect()->route('aluguel.index')->with('success', $isBloqueio ? 'Bloqueio excluído com sucesso!' : 'Aluguel excluído com sucesso!');
         } catch (\Exception $e) {
             DB::rollback();
+
+            $isJson = request()->expectsJson() || request()->ajax() || request()->wantsJson() || request()->isJson();
+
+            if ($isJson) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro ao deletar: '.$e->getMessage(),
+                ], 500);
+            }
 
             return redirect()->back()->with('error', 'Erro ao deletar Aluguel: '.$e->getMessage());
         }

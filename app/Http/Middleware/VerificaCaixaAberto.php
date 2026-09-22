@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Caixa;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\Caixa;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class VerificaCaixaAberto
 {
@@ -29,12 +29,20 @@ class VerificaCaixaAberto
             ->latest('data_abertura')
             ->first();
 
-        if (!$caixaAberto) {
+        if (! $caixaAberto) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['message' => 'Você precisa abrir o caixa do dia para continuar.'], 422);
+            }
+
             return redirect()->route('fluxoCaixa.index')
                 ->with('sweet_error', 'Você precisa abrir o caixa do dia para continuar.');
         }
 
-        if (!Carbon::parse($caixaAberto->data_abertura)->isToday()) {
+        if (! Carbon::parse($caixaAberto->data_abertura)->isToday()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['message' => 'O caixa aberto não é do dia atual. Feche-o para continuar.'], 422);
+            }
+
             return redirect()->route('fluxoCaixa.index')
                 ->with('sweet_error', 'O caixa aberto não é do dia atual. Feche-o para continuar.');
         }

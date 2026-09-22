@@ -8,6 +8,13 @@
 @endsection
 
 @section('content')
+    @php
+        $isEdit = isset($aluguel);
+        $modoInicial = old('situacao_aluguel', ($isEdit && $aluguel->tipo === 'bloqueio') ? 'bloqueio' : 'evento');
+        $isBloqueio = ($modoInicial === 'bloqueio');
+        $clienteBloqueadoId = $clienteBloqueado->id ?? 12;
+    @endphp
+
     <form action="{{ isset($aluguel) ? route('aluguel.update', $aluguel->id) : route('aluguel.store') }}" method="POST"
         id="aluguelform">
         @csrf
@@ -15,12 +22,36 @@
             @method('PUT')
         @endif
 
+        {{-- Switcher de Modo: Agendar Evento x Bloquear Data --}}
+        <div class="card mb-3 shadow-sm border-left-{{ $isBloqueio ? 'dark' : 'primary' }}" id="cardModoRegistro">
+            <div class="card-body py-2 px-3 d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <strong class="text-secondary mr-2"><i class="fas fa-sliders-h mr-1"></i> Finalidade do Registro:</strong>
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-outline-primary btn-sm {{ !$isBloqueio ? 'active' : '' }}" id="lblModoEvento">
+                            <input type="radio" name="situacao_aluguel" id="modoEvento" value="evento" {{ !$isBloqueio ? 'checked' : '' }}>
+                            <i class="fas fa-calendar-check mr-1"></i> Agendar Evento
+                        </label>
+                        <label class="btn btn-outline-dark btn-sm {{ $isBloqueio ? 'active' : '' }}" id="lblModoBloqueio">
+                            <input type="radio" name="situacao_aluguel" id="modoBloqueio" value="bloqueio" {{ $isBloqueio ? 'checked' : '' }}>
+                            <i class="fas fa-lock mr-1"></i> Bloquear Data
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-1 mt-md-0">
+                    <span class="badge {{ $isBloqueio ? 'badge-dark' : 'badge-primary' }} p-2" id="badgeModoStatus">
+                        {{ $isBloqueio ? 'Modo: Bloqueio de Data' : 'Modo: Reserva de Evento' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-body mt-3">
                 <ul class="nav nav-tabs" id="aluguelTabs" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link active editlink" id="info-tab" data-toggle="tab" href="#info"
-                            role="tab">Reserva</a>
+                            role="tab"><span id="tabReservaTitulo">{{ $isBloqueio ? 'Bloqueio de Data' : 'Reserva' }}</span></a>
                     </li>
                     <li class="nav-item" id="buffetAba" style="display: none">
                         <a class="nav-link editlink" id="buffet-tab" data-toggle="tab" href="#tab-buffet"
@@ -49,8 +80,44 @@
                     <div class="tab-pane fade show active" id="info" role="tabpanel">
 
 
-                        <div class="d-flex align-items-center justify-content-end">
+                        <div class="d-flex align-items-center justify-content-end" id="containerBtnProximo">
                             <button type="button" id="btnProximo" class="btn btn-primary w-25">Próximo</button>
+                        </div>
+
+                        {{-- Painel de Bloqueio Rápido --}}
+                        <div id="painelBloqueioRapido" class="{{ $isBloqueio ? '' : 'd-none' }} card card-dark card-outline mb-3">
+                            <div class="card-header py-2">
+                                <h6 class="card-title font-weight-bold mb-0 text-dark">
+                                    <i class="fas fa-lock mr-1 text-dark"></i> Configuração do Bloqueio de Data
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 form-group">
+                                        <label for="bloqueio_select_espaco"><strong>* Espaço a Bloquear:</strong></label>
+                                        <select id="bloqueio_select_espaco" class="form-control">
+                                            @if(!isset($aluguel))
+                                                <option value="todos" {{ old('espaco_id') == 'todos' ? 'selected' : '' }}>Todos os Espaços (Complexo Inteiro)</option>
+                                            @endif
+                                            @foreach($espacos as $esp)
+                                                <option value="{{ $esp->id }}" {{ old('espaco_id', $aluguel->espaco_id ?? '') == $esp->id ? 'selected' : '' }}>{{ $esp->nome }}</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted">Selecione um espaço específico ou todos os espaços.</small>
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label for="bloqueio_input_inicio"><strong>* Data Início:</strong></label>
+                                        <input type="date" id="bloqueio_input_inicio" class="form-control" value="{{ old('data_inicio', $aluguel->data_inicio ?? '') }}">
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label for="bloqueio_input_fim"><strong>* Data Fim:</strong></label>
+                                        <input type="date" id="bloqueio_input_fim" class="form-control" value="{{ old('data_fim', $aluguel->data_fim ?? '') }}">
+                                    </div>
+                                </div>
+                                <div class="alert alert-info py-2 mb-0">
+                                    <i class="fas fa-info-circle mr-1"></i> Você pode preencher as datas acima ou selecioná-las diretamente no mapa de reservas abaixo.
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Busca do cliente --}}
@@ -65,7 +132,7 @@
                             }
                         @endphp
 
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaCliente">
                             <label for="cliente_id" class="col-md-3 label-control">* Cliente</label>
                             <div class="col-sm-4">
                                 <select class="form-control select2" name="cliente_id" id="cliente_id" style="width: 100%;" required>
@@ -83,10 +150,7 @@
                             </div>
                         </div>
 
-
-
-
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaBuffet">
                             <label class="col-md-3 label-control form-lab d-block">* Buffet?</label>
                             <div class="form-check form-switch">
                                 <input type="hidden" name="ativo" value="0">
@@ -100,7 +164,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaTipoEvento">
                             <label for="tipo_evento" class="form-label col-md-3 label-control">* Tipo de Evento:</label>
                             <div class="col-md-3">
                                 <select name="tipo" id="tipo_evento" class="form-control" required>
@@ -132,7 +196,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaCerimonial">
                             <label for="cerimonial_responsavel" class="form-label col-md-3 label-control">Cerimonial
                                 Responsável:</label>
                             <div class="col-md-3">
@@ -142,7 +206,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaIlhas">
                             <label class="col-md-3 label-control form-lab d-block">* Ilhas Adicionais?</label>
                             <div class="form-check form-switch">
                                 <input type="hidden" name="ilhas_ativo" value="0">
@@ -155,7 +219,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group row">
+                        <div class="form-group row" id="linhaStaff">
                             <label class="col-md-3 label-control form-lab d-block">* Refeição Staff?</label>
                             <div class="form-check form-switch">
                                 <input type="hidden" name="staff_ativo" value="0">
@@ -167,9 +231,6 @@
                                 </label>
                             </div>
                         </div>
-
-
-
 
                         {{-- Aba 1: Informações da Reserva --}}
                         <div class="alert alert-secondary">
@@ -245,8 +306,15 @@
                         <div class="form-group row">
                             <label for="observacoes" class="col-md-3 label-control">Observações extras:</label>
                             <div class="col-md-6">
-                                <textarea class="form-control" name="observacoes" rows="3">{{ old('observacoes', $tarifa->observacoes ?? '') }}</textarea>
+                                <textarea class="form-control" name="observacoes" id="observacoes" rows="3" placeholder="Observações extras ou motivo do bloqueio">{{ old('observacoes', $aluguel->observacoes ?? '') }}</textarea>
                             </div>
+                        </div>
+
+                        {{-- Botão de Salvar Bloqueio (visível apenas no modo Bloquear Data) --}}
+                        <div id="containerSubmitBloqueio" class="{{ $isBloqueio ? '' : 'd-none' }} mt-4 mb-3">
+                            <button type="submit" id="btnSalvarBloqueioForm" class="btn btn-dark btn-lg w-100 shadow-sm">
+                                <i class="fas fa-lock mr-1"></i> {{ isset($aluguel) && $aluguel->tipo === 'bloqueio' ? 'Atualizar Bloqueio de Data' : 'Salvar Bloqueio de Data' }}
+                            </button>
                         </div>
 
                     </div>
@@ -1126,6 +1194,9 @@
 
             // Validação antes do envio do formulário
             document.getElementById('aluguelform').addEventListener('submit', function(e) {
+                if (typeof isModoBloqueio === 'function' && isModoBloqueio()) {
+                    return;
+                }
                 const valorRestanteValue = parseFloat(valorRestanteHidden.value) || 0;
                 const clienteSelect = document.getElementById('cliente_id');
                 const clienteSelecionado = clienteSelect && clienteSelect.value;
@@ -1698,6 +1769,53 @@
         });
 
         document.getElementById('aluguelform').addEventListener('submit', function(event) {
+            if (typeof isModoBloqueio === 'function' && isModoBloqueio()) {
+                if (typeof sincronizarBloqueioParaHidden === 'function') {
+                    sincronizarBloqueioParaHidden();
+                }
+
+                const dataInicio = document.getElementById('data_inicio')?.value;
+                const dataFim = document.getElementById('data_fim')?.value;
+                const espaco = document.getElementById('espaco_id_hidden')?.value;
+
+                if (!dataInicio || !dataFim || !espaco) {
+                    event.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Dados incompletos',
+                            text: 'Por favor, informe o espaço e as datas de início e fim do bloqueio.',
+                            confirmButtonText: 'Ok'
+                        });
+                    } else {
+                        alert('Por favor, informe o espaço e as datas de início e fim do bloqueio.');
+                    }
+                    return;
+                }
+
+                if (dataFim < dataInicio) {
+                    event.preventDefault();
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Período inválido',
+                            text: 'A data final do bloqueio não pode ser anterior à data inicial.',
+                            confirmButtonText: 'Ok'
+                        });
+                    } else {
+                        alert('A data final do bloqueio não pode ser anterior à data inicial.');
+                    }
+                    return;
+                }
+
+                const submitBtn = document.getElementById('btnSalvarBloqueioForm') || document.getElementById('btn-submit-aluguel');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Salvando...';
+                }
+                return;
+            }
+
             if (!validarEtapaReserva()) {
                 event.preventDefault();
                 $('#info-tab').tab('show');
@@ -1833,6 +1951,190 @@
             });
 
             atualizarTotais();
+        });
+    </script>
+
+    <script>
+        const clienteBloqueadoId = "{{ $clienteBloqueadoId }}";
+
+        function isModoBloqueio() {
+            const radio = document.querySelector('input[name="situacao_aluguel"]:checked');
+            return radio && radio.value === 'bloqueio';
+        }
+
+        function sincronizarBloqueioParaHidden() {
+            const inicioInput = document.getElementById('bloqueio_input_inicio');
+            const fimInput = document.getElementById('bloqueio_input_fim');
+            const espacoSelect = document.getElementById('bloqueio_select_espaco');
+
+            const dataInicioHidden = document.getElementById('data_inicio');
+            const dataFimHidden = document.getElementById('data_fim');
+            const espacoHidden = document.getElementById('espaco_id_hidden');
+
+            if (inicioInput && dataInicioHidden && inicioInput.value) {
+                dataInicioHidden.value = inicioInput.value;
+            }
+            if (fimInput && dataFimHidden && fimInput.value) {
+                dataFimHidden.value = fimInput.value;
+            }
+            if (espacoSelect && espacoHidden && espacoSelect.value) {
+                espacoHidden.value = espacoSelect.value;
+            }
+        }
+
+        function sincronizarHiddenParaBloqueio() {
+            const dataInicioHidden = document.getElementById('data_inicio');
+            const dataFimHidden = document.getElementById('data_fim');
+            const espacoHidden = document.getElementById('espaco_id_hidden');
+
+            const inicioInput = document.getElementById('bloqueio_input_inicio');
+            const fimInput = document.getElementById('bloqueio_input_fim');
+            const espacoSelect = document.getElementById('bloqueio_select_espaco');
+
+            if (dataInicioHidden && inicioInput && dataInicioHidden.value) {
+                inicioInput.value = dataInicioHidden.value;
+            }
+            if (dataFimHidden && fimInput && dataFimHidden.value) {
+                fimInput.value = dataFimHidden.value;
+            }
+            if (espacoHidden && espacoSelect && espacoHidden.value) {
+                espacoSelect.value = espacoHidden.value;
+            }
+        }
+
+        function aplicarModo(isBloqueio) {
+            const clienteSelect = document.getElementById('cliente_id');
+            const tipoEventoSelect = document.getElementById('tipo_evento');
+            const tabReservaTitulo = document.getElementById('tabReservaTitulo');
+            const badgeModo = document.getElementById('badgeModoStatus');
+            const cardModo = document.getElementById('cardModoRegistro');
+
+            const linhasEvento = ['containerBtnProximo', 'linhaCliente', 'linhaBuffet', 'linhaTipoEvento', 'linhaCerimonial', 'linhaIlhas', 'linhaStaff'];
+            linhasEvento.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('d-none', isBloqueio);
+            });
+
+            const painelBloqueio = document.getElementById('painelBloqueioRapido');
+            if (painelBloqueio) painelBloqueio.classList.toggle('d-none', !isBloqueio);
+
+            const containerSubmitBloqueio = document.getElementById('containerSubmitBloqueio');
+            if (containerSubmitBloqueio) containerSubmitBloqueio.classList.toggle('d-none', !isBloqueio);
+
+            const abasOcultar = ['buffetAba', 'adicionalAba', 'ilhasAba', 'staffAba', 'pagamentoTab'];
+            if (isBloqueio) {
+                abasOcultar.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.setProperty('display', 'none', 'important');
+                });
+                if (tabReservaTitulo) tabReservaTitulo.innerText = 'Bloqueio de Data';
+                if (badgeModo) {
+                    badgeModo.className = 'badge badge-dark p-2';
+                    badgeModo.innerText = 'Modo: Bloqueio de Data';
+                }
+                if (cardModo) {
+                    cardModo.classList.remove('border-left-primary');
+                    cardModo.classList.add('border-left-dark');
+                }
+
+                if (clienteSelect) {
+                    clienteSelect.removeAttribute('required');
+                    if (!clienteSelect.querySelector(`option[value="${clienteBloqueadoId}"]`)) {
+                        const opt = new Option('Bloqueado', clienteBloqueadoId, true, true);
+                        clienteSelect.add(opt);
+                    }
+                    $(clienteSelect).val(clienteBloqueadoId).trigger('change');
+                }
+                if (tipoEventoSelect) {
+                    tipoEventoSelect.removeAttribute('required');
+                    if (!tipoEventoSelect.querySelector('option[value="bloqueio"]')) {
+                        const optTipo = new Option('Bloqueio de Data', 'bloqueio', true, true);
+                        tipoEventoSelect.add(optTipo);
+                    }
+                    $(tipoEventoSelect).val('bloqueio').trigger('change');
+                }
+
+                sincronizarBloqueioParaHidden();
+                $('#info-tab').tab('show');
+            } else {
+                const elAdicional = document.getElementById('adicionalAba');
+                if (elAdicional) elAdicional.style.display = '';
+
+                const elPagamento = document.getElementById('pagamentoTab');
+                if (elPagamento) elPagamento.style.display = '';
+
+                const buffetAtivo = document.getElementById('ativoSwitch')?.checked;
+                const elBuffet = document.getElementById('buffetAba');
+                if (elBuffet) elBuffet.style.display = buffetAtivo ? '' : 'none';
+
+                const ilhasAtivo = document.getElementById('ilhasAtivoSwitch')?.checked;
+                const elIlhas = document.getElementById('ilhasAba');
+                if (elIlhas) elIlhas.style.display = ilhasAtivo ? '' : 'none';
+
+                const staffAtivo = document.getElementById('staffAtivoSwitch')?.checked;
+                const elStaff = document.getElementById('staffAba');
+                if (elStaff) elStaff.style.display = staffAtivo ? '' : 'none';
+
+                if (tabReservaTitulo) tabReservaTitulo.innerText = 'Reserva';
+                if (badgeModo) {
+                    badgeModo.className = 'badge badge-primary p-2';
+                    badgeModo.innerText = 'Modo: Reserva de Evento';
+                }
+                if (cardModo) {
+                    cardModo.classList.remove('border-left-dark');
+                    cardModo.classList.add('border-left-primary');
+                }
+
+                if (clienteSelect) {
+                    clienteSelect.setAttribute('required', 'required');
+                    if (clienteSelect.value == clienteBloqueadoId) {
+                        $(clienteSelect).val('').trigger('change');
+                    }
+                }
+                if (tipoEventoSelect) {
+                    tipoEventoSelect.setAttribute('required', 'required');
+                    if (tipoEventoSelect.value === 'bloqueio') {
+                        $(tipoEventoSelect).val('').trigger('change');
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modoEvento = document.getElementById('modoEvento');
+            const modoBloqueio = document.getElementById('modoBloqueio');
+
+            if (modoEvento) {
+                modoEvento.addEventListener('change', function() {
+                    if (this.checked) aplicarModo(false);
+                });
+            }
+            if (modoBloqueio) {
+                modoBloqueio.addEventListener('change', function() {
+                    if (this.checked) aplicarModo(true);
+                });
+            }
+
+            const inicioInput = document.getElementById('bloqueio_input_inicio');
+            const fimInput = document.getElementById('bloqueio_input_fim');
+            const espacoSelect = document.getElementById('bloqueio_select_espaco');
+
+            if (inicioInput) inicioInput.addEventListener('input', sincronizarBloqueioParaHidden);
+            if (fimInput) fimInput.addEventListener('input', sincronizarBloqueioParaHidden);
+            if (espacoSelect) espacoSelect.addEventListener('change', sincronizarBloqueioParaHidden);
+
+            const dataInicioHidden = document.getElementById('data_inicio');
+            const dataFimHidden = document.getElementById('data_fim');
+            const espacoHidden = document.getElementById('espaco_id_hidden');
+
+            if (dataInicioHidden) dataInicioHidden.addEventListener('change', sincronizarHiddenParaBloqueio);
+            if (dataFimHidden) dataFimHidden.addEventListener('change', sincronizarHiddenParaBloqueio);
+            if (espacoHidden) espacoHidden.addEventListener('change', sincronizarHiddenParaBloqueio);
+
+            const isBloqueioInicial = {{ $isBloqueio ? 'true' : 'false' }};
+            if (isBloqueioInicial) {
+                aplicarModo(true);
+            }
         });
     </script>
 @endsection

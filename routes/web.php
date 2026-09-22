@@ -174,6 +174,7 @@ Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('
 Route::post('aluguel', [AluguelController::class, 'store'])->middleware('caixa.aberto')->name('aluguel.store');
 
 Route::resource('aluguel', AluguelController::class)->except(['create', 'store']);
+Route::post('/eventos/bloquear-data', [AluguelController::class, 'bloquearData'])->name('aluguel.bloquear-data');
 
 Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
 Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('eventos.excursoes.index');
