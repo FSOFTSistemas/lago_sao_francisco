@@ -19,6 +19,7 @@ class EventoController extends Controller
     public function home()
     {
         $proximosEventos = Aluguel::with(['cliente', 'espaco'])
+            ->where('tipo', '!=', 'bloqueio')
             ->where('status', '!=', 'cancelado')
             ->whereDate('data_fim', '>=', Carbon::today())
             ->orderBy('data_inicio')

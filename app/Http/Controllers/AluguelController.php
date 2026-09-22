@@ -35,7 +35,10 @@ class AluguelController extends Controller
 
     public function index()
     {
-        $aluguel = Aluguel::with(['cliente', 'espaco'])->latest()->paginate(15);
+        $aluguel = Aluguel::with(['cliente', 'espaco'])
+            ->where('tipo', '!=', 'bloqueio')
+            ->latest()
+            ->paginate(15);
 
         return view('aluguel.index', compact('aluguel'));
     }
