@@ -94,34 +94,85 @@
                             @method('PUT')
                             @php
                                 $preferencia = $preferencias->firstWhere('empresa_id', $empresa->id);
+                                $certInfo = $preferencia?->getCertificadoInfo();
                             @endphp
+                            <input type="hidden" name="empresa_id" value="{{ $empresa->id }}">
                             <div class="card">
                                 <div class="card-body mt-3">
-                                    <div class="form-group">
-                                        <label>Certificado Digital:</label>
-                                        <input type="file" name="certificado_digital" class="form-control">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Número da Última Nota:</label>
-                                        <input type="number" name="ultima_nota" class="form-control" value="{{ old('ultima_nota', $preferencia->numero_ultima_nota) }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Série:</label>
-                                        <input type="text" name="serie" class="form-control" value="{{ old('serie', $preferencia->serie) }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>CFOP Padrão:</label>
-                                        <input type="text" name="cfop_padrao" class="form-control" value="{{ old('cfop_padrao', $preferencia->cfop_padrao) }}">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Regime Tributário:</label>
-                                        <select name="regime_tributario" class="form-control">
-                                            <option value="Simples Nacional" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Simples Nacional' ? 'selected' : '' }}>Simples Nacional</option>
-                                            <option value="Lucro Presumido" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Lucro Presumido' ? 'selected' : '' }}>Lucro Presumido</option>
-                                            <option value="Lucro Real" {{ old('regime_tributario', $preferencia->regime_tributario) == 'Lucro Real' ? 'selected' : '' }}>Lucro Real</option>
-                                        </select>
+                                    {{-- Status do Certificado Atual --}}
+                                    @if ($certInfo)
+                                        @if (!empty($certInfo['erro']))
+                                            <div class="alert alert-warning py-2 text-sm mb-3">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                <strong>Aviso de Certificado:</strong> {{ $certInfo['erro'] }} (Verifique se a senha foi informada corretamente).
+                                            </div>
+                                        @elseif ($certInfo['expirado'])
+                                            <div class="alert alert-danger py-2 text-sm mb-3">
+                                                <i class="fas fa-times-circle mr-1"></i>
+                                                <strong>Certificado Digital VENCIDO:</strong> Expirou em {{ $certInfo['valido_ate']->format('d/m/Y H:i') }}. Por favor, anexe um novo arquivo .pfx.
+                                            </div>
+                                        @elseif ($certInfo['dias_restantes'] <= 30)
+                                            <div class="alert alert-warning py-2 text-sm mb-3">
+                                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                                <strong>Certificado a Vencer:</strong> Válido até {{ $certInfo['valido_ate']->format('d/m/Y H:i') }} (Restam apenas {{ $certInfo['dias_restantes'] }} dias). Titular: {{ $certInfo['titular'] }} ({{ $certInfo['cnpj'] }}).
+                                            </div>
+                                        @else
+                                            <div class="alert alert-success py-2 text-sm mb-3">
+                                                <i class="fas fa-certificate mr-1"></i>
+                                                <strong>Certificado Digital Ativo:</strong> Válido até {{ $certInfo['valido_ate']->format('d/m/Y H:i') }} ({{ $certInfo['dias_restantes'] }} dias restantes). Titular: {{ $certInfo['titular'] }} ({{ $certInfo['cnpj'] }}).
+                                            </div>
+                                        @endif
+                                    @else
+                                        <div class="alert alert-light border py-2 text-sm mb-3">
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Nenhum Certificado Digital A1 (.pfx) configurado para esta empresa. Anexe o arquivo abaixo para habilitar o DF-e e a emissão de notas.
+                                        </div>
+                                    @endif
 
+                                    <div class="row">
+                                        <div class="col-md-6 form-group">
+                                            <label>Arquivo do Certificado Digital A1 (.pfx):</label>
+                                            <input type="file" name="certificado_digital" class="form-control" accept=".pfx,.p12">
+                                            <small class="text-muted">Selecione o arquivo .pfx fornecido pela autoridade certificadora.</small>
+                                        </div>
+                                        <div class="col-md-6 form-group">
+                                            <label>Senha do Certificado Digital:</label>
+                                            <input type="password" name="senha_certificado" class="form-control" placeholder="{{ !empty($preferencia?->senha_certificado) ? '•••••••• (Preencha apenas para alterar)' : 'Digite a senha do certificado' }}">
+                                            <small class="text-muted">A senha é criptografada e usada apenas para assinar notas e consultar a SEFAZ.</small>
+                                        </div>
+                                    </div>
 
+                                    <div class="row">
+                                        <div class="col-md-6 form-group">
+                                            <label>Ambiente de Emissão / DF-e:</label>
+                                            <select name="ambiente_dfe" class="form-control">
+                                                <option value="1" {{ ($preferencia?->ambiente_dfe ?? 1) == 1 ? 'selected' : '' }}>1 - Produção (Ambiente Oficial da SEFAZ)</option>
+                                                <option value="2" {{ ($preferencia?->ambiente_dfe ?? 1) == 2 ? 'selected' : '' }}>2 - Homologação (Ambiente de Testes)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6 form-group">
+                                            <label>Regime Tributário:</label>
+                                            <select name="regime_tributario" class="form-control">
+                                                <option value="Simples Nacional" {{ old('regime_tributario', $preferencia?->regime_tributario) == 'Simples Nacional' ? 'selected' : '' }}>Simples Nacional</option>
+                                                <option value="Lucro Presumido" {{ old('regime_tributario', $preferencia?->regime_tributario) == 'Lucro Presumido' ? 'selected' : '' }}>Lucro Presumido</option>
+                                                <option value="Lucro Real" {{ old('regime_tributario', $preferencia?->regime_tributario) == 'Lucro Real' ? 'selected' : '' }}>Lucro Real</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4 form-group">
+                                            <label>Número da Última Nota Emitida:</label>
+                                            <input type="number" name="numero_ultima_nota" class="form-control" value="{{ old('numero_ultima_nota', $preferencia?->numero_ultima_nota) }}">
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label>Série:</label>
+                                            <input type="text" name="serie" class="form-control" value="{{ old('serie', $preferencia?->serie) }}">
+                                        </div>
+                                        <div class="col-md-4 form-group">
+                                            <label>CFOP Padrão:</label>
+                                            <input type="text" name="cfop_padrao" class="form-control" value="{{ old('cfop_padrao', $preferencia?->cfop_padrao) }}">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="card-footer text-end">
