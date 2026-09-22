@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AdiantamentoController;
 use App\Http\Controllers\AdicionalController;
+use App\Http\Controllers\AlmoxarifadoCategoriaController;
+use App\Http\Controllers\AlmoxarifadoItemController;
+use App\Http\Controllers\AlmoxarifadoMovimentacaoController;
 use App\Http\Controllers\AluguelController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\CaixaController;
@@ -168,8 +171,10 @@ Route::get('/quartos/disponiveis', [ReservaController::class, 'quartosDisponivei
 Route::get('/mapa-reservas', [MapaReservaController::class, 'index'])->name('mapa.reservas');
 
 Route::get('aluguel/create', [AluguelController::class, 'create'])->middleware('caixa.aberto')->name('aluguel.create');
+Route::post('aluguel', [AluguelController::class, 'store'])->middleware('caixa.aberto')->name('aluguel.store');
 
-Route::resource('aluguel', AluguelController::class)->except(['create']);
+Route::resource('aluguel', AluguelController::class)->except(['create', 'store']);
+Route::post('/eventos/bloquear-data', [AluguelController::class, 'bloquearData'])->name('aluguel.bloquear-data');
 
 Route::get('/eventos', [EventoController::class, 'home'])->name('eventos.home');
 Route::get('/eventos/excursoes', [ExcursaoController::class, 'index'])->name('eventos.excursoes.index');
@@ -205,7 +210,8 @@ Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
 Route::resource('logs', LogController::class)->middleware('permission:gerenciar financeiro');
 
-Route::resource('nota_fiscal', NotaFiscalController::class);
+Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware('auth');
+Route::resource('nota_fiscal', NotaFiscalController::class)->middleware('auth');
 
 Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');
 
@@ -230,6 +236,27 @@ Route::get('/cardapios/{id}/pdf', [CardapioController::class, 'verPdf'])->name('
 Route::resource('cfop', CfopController::class);
 
 Route::resource('categoriaProduto', CategoriaProdutoController::class);
+
+// Almoxarifado - Protegido por permissão
+Route::middleware(['auth', 'permission:gerenciar almoxarifado'])->group(function () {
+    // Categorias
+    Route::resource('almoxarifado/categorias', AlmoxarifadoCategoriaController::class)
+        ->parameters(['categorias' => 'categoria'])
+        ->names('almoxarifado.categorias');
+
+    // Itens
+    Route::get('almoxarifado/itens/search', [AlmoxarifadoItemController::class, 'search'])->name('almoxarifado.itens.search');
+    Route::resource('almoxarifado/itens', AlmoxarifadoItemController::class)
+        ->parameters(['itens' => 'item'])
+        ->names('almoxarifado.itens');
+
+    // Movimentações (Entrada, Saída, Ajuste)
+    Route::get('almoxarifado/movimentacoes/saldo/{item}', [AlmoxarifadoMovimentacaoController::class, 'saldo'])->name('almoxarifado.movimentacoes.saldo');
+    Route::get('almoxarifado/movimentacoes/item/{item}', [AlmoxarifadoMovimentacaoController::class, 'historicoItem'])->name('almoxarifado.movimentacoes.historico-item');
+    Route::resource('almoxarifado/movimentacoes', AlmoxarifadoMovimentacaoController::class)
+        ->parameters(['movimentacoes' => 'movimentacao'])
+        ->names('almoxarifado.movimentacoes');
+});
 
 Route::resource('adicionais', AdicionalController::class);
 

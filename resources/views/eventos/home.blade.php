@@ -82,14 +82,24 @@
                                 @endif
                             </td>
                             <td>{{ $evento->espaco->nome ?? '-' }}</td>
-                            <td>{{ ucfirst(str_replace('_', ' ', $evento->tipo ?? '-')) }}</td>
-                            <td>{{ $evento->cliente->nome_razao_social ?? '-' }}</td>
                             <td>
-                                <span class="badge {{ $evento->status === 'pago' ? 'badge-success' : ($evento->status === 'cancelado' ? 'badge-danger' : 'badge-warning') }}">
-                                    {{ ucfirst($evento->status) }}
-                                </span>
+                                @if($evento->tipo === 'bloqueio')
+                                    <span class="badge badge-dark"><i class="fas fa-ban mr-1"></i>Bloqueio</span>
+                                @else
+                                    {{ ucfirst(str_replace('_', ' ', $evento->tipo ?? '-')) }}
+                                @endif
                             </td>
-                            <td class="text-right">R$ {{ number_format($evento->total ?? 0, 2, ',', '.') }}</td>
+                            <td>{{ $evento->tipo === 'bloqueio' ? 'Data Bloqueada' : ($evento->cliente->nome_razao_social ?? '-') }}</td>
+                            <td>
+                                @if($evento->tipo === 'bloqueio')
+                                    <span class="badge badge-dark">Bloqueado</span>
+                                @else
+                                    <span class="badge {{ $evento->status === 'pago' ? 'badge-success' : ($evento->status === 'cancelado' ? 'badge-danger' : 'badge-warning') }}">
+                                        {{ ucfirst($evento->status) }}
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-right">{{ $evento->tipo === 'bloqueio' ? '-' : 'R$ '.number_format($evento->total ?? 0, 2, ',', '.') }}</td>
                         </tr>
                     @empty
                         <tr>

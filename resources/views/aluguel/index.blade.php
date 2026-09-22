@@ -59,6 +59,7 @@
                 <tbody>
                     @foreach ($aluguel as $evento)
                         @php
+                            $isBloqueio = ($evento->tipo === 'bloqueio');
                             $statusClass = match ($evento->status) {
                                 'pago' => 'status-paid',
                                 'cancelado' => 'status-cancelled',
@@ -67,7 +68,14 @@
                         @endphp
                         <tr>
                             <td><span class="event-id">#{{ $evento->id }}</span></td>
-                            <td class="event-client">{{ $evento->cliente->nome_razao_social ?? 'Cliente não informado' }}</td>
+                            <td class="event-client">
+                                @if($isBloqueio)
+                                    <span class="badge badge-dark mr-1"><i class="fas fa-lock fa-xs"></i> Bloqueio</span>
+                                    <span class="text-muted">Data Bloqueada</span>
+                                @else
+                                    {{ $evento->cliente->nome_razao_social ?? 'Cliente não informado' }}
+                                @endif
+                            </td>
                             <td>
                                 <span class="event-space">
                                     <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
@@ -75,21 +83,27 @@
                                 </span>
                             </td>
                             <td>
-                                <span class="event-status {{ $statusClass }}">
-                                    <span class="event-status-dot" aria-hidden="true"></span>
-                                    {{ ucfirst($evento->status) }}
-                                </span>
+                                @if($isBloqueio)
+                                    <span class="badge badge-dark">
+                                        <i class="fas fa-lock fa-xs mr-1"></i> Bloqueado
+                                    </span>
+                                @else
+                                    <span class="event-status {{ $statusClass }}">
+                                        <span class="event-status-dot" aria-hidden="true"></span>
+                                        {{ ucfirst($evento->status) }}
+                                    </span>
+                                @endif
                             </td>
                             <td>
                                 <div class="event-row-actions">
                                     <a href="{{ route('aluguel.edit', $evento->id) }}" class="btn event-action-edit"
-                                        title="Editar evento" aria-label="Editar evento #{{ $evento->id }}">
+                                        title="{{ $isBloqueio ? 'Editar bloqueio' : 'Editar evento' }}" aria-label="{{ $isBloqueio ? 'Editar bloqueio' : 'Editar evento' }} #{{ $evento->id }}">
                                         <i class="fas fa-edit" aria-hidden="true"></i>
                                     </a>
 
                                     <button type="button" class="btn event-action-delete" data-toggle="modal"
-                                        data-target="#deleteAluguelModal{{ $evento->id }}" title="Excluir evento"
-                                        aria-label="Excluir evento #{{ $evento->id }}">
+                                        data-target="#deleteAluguelModal{{ $evento->id }}" title="{{ $isBloqueio ? 'Remover bloqueio' : 'Excluir evento' }}"
+                                        aria-label="{{ $isBloqueio ? 'Remover bloqueio' : 'Excluir evento' }} #{{ $evento->id }}">
                                         <i class="fas fa-trash-alt" aria-hidden="true"></i>
                                     </button>
                                 </div>

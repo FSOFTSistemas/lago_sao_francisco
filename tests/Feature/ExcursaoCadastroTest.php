@@ -417,11 +417,10 @@ class ExcursaoCadastroTest extends TestCase
                 'responsavel',
                 'telefone_responsavel',
                 'descricao',
-                'recebimentos',
             ]);
     }
 
-    public function test_exige_pagamento_inicial_entre_cinquenta_e_cem_por_cento_do_total(): void
+    public function test_permite_cadastro_de_excursao_sem_pagamento_inicial_ou_com_menos_de_cinquenta_por_cento(): void
     {
         $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
         $dados = [
@@ -431,15 +430,38 @@ class ExcursaoCadastroTest extends TestCase
             'responsavel' => 'Maria Silva',
             'telefone_responsavel' => '(11) 99999-9999',
             'descricao' => 'Excursão escolar',
+            'enviar_email_agendamento' => 0,
         ];
 
+        // Sem recebimentos
+        $this->from(route('eventos.excursoes.create'))
+            ->post(route('eventos.excursoes.store'), $dados)
+            ->assertSessionDoesntHaveErrors('recebimentos')
+            ->assertRedirect(route('eventos.excursoes.index'));
+
+        // Com menos de 50% (ex: 200 de 1000)
         $this->from(route('eventos.excursoes.create'))
             ->post(route('eventos.excursoes.store'), $dados + [
                 'recebimentos' => [
-                    ['valor' => 499.98, 'forma_pagamento_id' => $forma->id],
+                    ['valor' => 200, 'forma_pagamento_id' => $forma->id],
                 ],
             ])
-            ->assertSessionHasErrors('recebimentos');
+            ->assertSessionDoesntHaveErrors('recebimentos')
+            ->assertRedirect(route('eventos.excursoes.index'));
+    }
+
+    public function test_impede_pagamento_inicial_acima_do_total(): void
+    {
+        $forma = FormaPagamento::create(['descricao' => 'Dinheiro']);
+        $dados = [
+            'data' => Carbon::today()->addDay()->toDateString(),
+            'qtd_pessoas' => 10,
+            'valor_pessoa' => 100,
+            'responsavel' => 'Maria Silva',
+            'telefone_responsavel' => '(11) 99999-9999',
+            'descricao' => 'Excursão escolar',
+            'enviar_email_agendamento' => 0,
+        ];
 
         $this->from(route('eventos.excursoes.create'))
             ->post(route('eventos.excursoes.store'), $dados + [

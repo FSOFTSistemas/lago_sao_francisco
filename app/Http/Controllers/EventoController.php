@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Aluguel;
+use App\Models\Espaco;
 use App\Models\Excursao;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -18,6 +19,7 @@ class EventoController extends Controller
     public function home()
     {
         $proximosEventos = Aluguel::with(['cliente', 'espaco'])
+            ->where('tipo', '!=', 'bloqueio')
             ->where('status', '!=', 'cancelado')
             ->whereDate('data_fim', '>=', Carbon::today())
             ->orderBy('data_inicio')
@@ -29,7 +31,9 @@ class EventoController extends Controller
 
     public function planner()
     {
-        return view('eventos.planner');
+        $espacos = Espaco::orderBy('nome')->get();
+
+        return view('eventos.planner', compact('espacos'));
     }
 
     public function plannerEventos(Request $request)
@@ -45,25 +49,34 @@ class EventoController extends Controller
         $alugueis = Aluguel::with(['cliente', 'espaco'])
             ->where('data_inicio', '<=', $fim)
             ->where('data_fim', '>=', $inicio)
+            ->where('status', '!=', 'cancelado')
             ->get();
 
         $eventos = $alugueis->map(function ($aluguel) {
+            $isBloqueio = ($aluguel->tipo === 'bloqueio');
+
             return [
                 'id' => 'aluguel-'.$aluguel->id,
-                'title' => ($aluguel->espaco->nome ?? 'Espaço').' - '.ucfirst(str_replace('_', ' ', $aluguel->tipo ?? 'evento')),
+                'title' => $isBloqueio
+                    ? ($aluguel->espaco->nome ?? 'Espaço').' - [BLOQUEADO]'
+                    : ($aluguel->espaco->nome ?? 'Espaço').' - '.ucfirst(str_replace('_', ' ', $aluguel->tipo ?? 'evento')),
                 'start' => Carbon::parse($aluguel->data_inicio)->format('Y-m-d'),
                 'end' => Carbon::parse($aluguel->data_fim)->addDay()->format('Y-m-d'),
-                'color' => self::CORES_STATUS[$aluguel->status] ?? '#6c757d',
+                'color' => $isBloqueio ? '#343A40' : (self::CORES_STATUS[$aluguel->status] ?? '#6c757d'),
                 'extendedProps' => [
                     'categoria' => 'aluguel',
                     'aluguel_id' => $aluguel->id,
+                    'is_bloqueio' => $isBloqueio,
                     'espaco' => $aluguel->espaco->nome ?? '-',
-                    'tipo' => ucfirst(str_replace('_', ' ', $aluguel->tipo ?? '-')),
-                    'cliente' => $aluguel->cliente->nome_razao_social ?? '-',
-                    'status' => $aluguel->status,
-                    'total_formatado' => 'R$ '.number_format($aluguel->total ?? 0, 2, ',', '.'),
+                    'tipo' => $isBloqueio ? 'Bloqueio de Data' : ucfirst(str_replace('_', ' ', $aluguel->tipo ?? '-')),
+                    'cliente' => $isBloqueio ? 'Data Bloqueada' : ($aluguel->cliente->nome_razao_social ?? '-'),
+                    'status' => $isBloqueio ? 'Bloqueado' : $aluguel->status,
+                    'total_formatado' => $isBloqueio ? 'R$ 0,00' : ('R$ '.number_format($aluguel->total ?? 0, 2, ',', '.')),
+                    'observacoes' => $aluguel->observacoes ?? '',
                     'data_inicio' => Carbon::parse($aluguel->data_inicio)->format('d/m/Y'),
                     'data_fim' => Carbon::parse($aluguel->data_fim)->format('d/m/Y'),
+                    'raw_data_inicio' => Carbon::parse($aluguel->data_inicio)->format('Y-m-d'),
+                    'raw_data_fim' => Carbon::parse($aluguel->data_fim)->format('Y-m-d'),
                 ],
             ];
         });
@@ -81,6 +94,7 @@ class EventoController extends Controller
                     'color' => '#6f42c1',
                     'extendedProps' => [
                         'categoria' => 'excursao',
+                        'excursao_id' => $excursao->id,
                         'tipo' => 'Excursão',
                         'qtd_pessoas' => $excursao->qtd_pessoas,
                         'status' => ucfirst(strtolower(str_replace('_', ' ', $excursao->status))),
@@ -90,6 +104,8 @@ class EventoController extends Controller
                         'total_formatado' => 'R$ '.number_format($excursao->total, 2, ',', '.'),
                         'data_inicio' => $excursao->data->format('d/m/Y'),
                         'data_fim' => $excursao->data->format('d/m/Y'),
+                        'raw_data_inicio' => $excursao->data->format('Y-m-d'),
+                        'raw_data_fim' => $excursao->data->format('Y-m-d'),
                     ],
                 ];
             });

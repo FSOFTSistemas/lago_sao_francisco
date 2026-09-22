@@ -21,6 +21,8 @@ class RecebimentoExcursaoTest extends TestCase
             'data_recebimento',
             'valor',
             'forma_pagamento_id',
+            'fluxo_caixa_id',
+            'fluxo_cancelamento_id',
             'comprovante_path',
         ], $recebimento->getFillable());
         $this->assertSame('date', $recebimento->getCasts()['data_recebimento']);
@@ -31,20 +33,12 @@ class RecebimentoExcursaoTest extends TestCase
         $this->assertSame(FormaPagamento::class, $recebimento->formaPagamento()->getRelated()::class);
     }
 
-    public function test_permite_exclusao_se_restarem_pelo_menos_cinquenta_por_cento_pagos(): void
+    public function test_permite_exclusao_mesmo_sem_atingir_cinquenta_por_cento_pagos(): void
     {
-        $recebimento = $this->criarCenarioParaExclusao(500);
+        $recebimento = $this->criarCenarioParaExclusao(100);
 
         $this->assertTrue($recebimento->podeSerExcluido());
         $this->assertNull($recebimento->motivoBloqueioExclusao());
-    }
-
-    public function test_bloqueia_exclusao_se_pagamento_ficar_abaixo_de_cinquenta_por_cento(): void
-    {
-        $recebimento = $this->criarCenarioParaExclusao(499.98);
-
-        $this->assertFalse($recebimento->podeSerExcluido());
-        $this->assertStringContainsString('abaixo de 50%', $recebimento->motivoBloqueioExclusao());
     }
 
     public function test_bloqueia_exclusao_quando_excursao_nao_esta_agendada(): void

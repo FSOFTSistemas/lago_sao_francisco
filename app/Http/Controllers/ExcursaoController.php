@@ -129,8 +129,15 @@ class ExcursaoController extends Controller
         ));
     }
 
-    public function create(): View
+    public function create(ExcursaoCaixaService $excursaoCaixa): View|RedirectResponse
     {
+        try {
+            $excursaoCaixa->caixaAbertoDoUsuario();
+        } catch (DomainException $e) {
+            return redirect()->route('fluxoCaixa.index')
+                ->with('sweet_error', $e->getMessage());
+        }
+
         $formasPagamento = FormaPagamento::query()
             ->orderBy('descricao')
             ->get()
@@ -148,7 +155,7 @@ class ExcursaoController extends Controller
     ): RedirectResponse {
         $validated = $request->validated();
         $enviarEmailAgendamento = (bool) $validated['enviar_email_agendamento'];
-        $recebimentos = $validated['recebimentos'];
+        $recebimentos = $validated['recebimentos'] ?? [];
         unset($validated['recebimentos'], $validated['enviar_email_agendamento']);
         $dadosAlmoco = [
             'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
@@ -341,68 +348,68 @@ class ExcursaoController extends Controller
             return $this->immutableExcursionRedirect();
         }
 
-            $request->merge([
-                'percentual_comissao' => $request->filled('percentual_comissao') ? $request->input('percentual_comissao') : 0,
-                'possui_almoco' => $request->has('possui_almoco')
-                    ? $request->boolean('possui_almoco')
-                    : ($excursao->almoco()->exists() || $excursao->qtd_almoco > 0),
-                'valor_almoco' => $request->input('valor_almoco', $excursao->valor_almoco),
-                'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
-                'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
-                'desconto' => $request->input('desconto', $excursao->desconto),
-                'email_responsavel' => $request->filled('email_responsavel')
-                    ? trim((string) $request->input('email_responsavel'))
-                    : null,
-                'enviar_email_agendamento' => $request->boolean('enviar_email_agendamento') ? 1 : 0,
-            ]);
-            $validated = $this->validateRequest($request);
-            $enviarEmailAgendamento = (bool) $validated['enviar_email_agendamento'];
-            $emailAlterado = $validated['email_responsavel'] !== $excursao->email_responsavel;
-            $dadosAlmoco = [
-                'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
-                'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
-                'quantidade' => $validated['almoco_quantidade'] ?? 0,
-            ];
-            unset(
-                $validated['possui_almoco'],
-                $validated['cardapio_excursao_id'],
-                $validated['almoco_quantidade'],
-                $validated['enviar_email_agendamento'],
-            );
-            $this->aplicarValoresAlmoco($validated, $dadosAlmoco);
-            $dadosCalculo = array_merge($excursao->only([
-                'valor_almoco',
-                'qtd_almoco',
-                'acrescimo',
-                'desconto',
-                'percentual_comissao',
-            ]), $validated);
-            $calculos = $financeiro->calcular($dadosCalculo, $excursao->recebimentos);
-            $validated['total_almoco'] = $calculos['total_almoco'];
-            $validated['subtotal'] = $calculos['subtotal'];
-            $validated['total'] = $calculos['total'];
-            if ($emailAlterado) {
-                $validated['email_agendamento_enviado_em'] = null;
-                $validated['email_agendamento_tentado_em'] = null;
-                $validated['email_agendamento_tentativas'] = 0;
-                $validated['email_agendamento_erro'] = null;
-            }
-    
-            DB::transaction(function () use ($excursao, $validated, $dadosAlmoco) {
-                $excursao->update($validated);
-                $this->sincronizarAlmoco($excursao, $dadosAlmoco);
-            });
-    
-            $emailEnviado = ! $enviarEmailAgendamento
-                || $this->enviarEmailAgendamento($excursao->fresh());
-    
-            $redirect = redirect()
-                ->route('eventos.excursoes.index')
-                ->with('success', 'Excursão atualizada com sucesso!');
-    
-            return $emailEnviado
-                ? $redirect
-                : $redirect->with('warning', 'A excursão foi atualizada, mas não foi possível enviar o e-mail. Tente novamente na edição.');
+        $request->merge([
+            'percentual_comissao' => $request->filled('percentual_comissao') ? $request->input('percentual_comissao') : 0,
+            'possui_almoco' => $request->has('possui_almoco')
+                ? $request->boolean('possui_almoco')
+                : ($excursao->almoco()->exists() || $excursao->qtd_almoco > 0),
+            'valor_almoco' => $request->input('valor_almoco', $excursao->valor_almoco),
+            'qtd_almoco' => $request->input('qtd_almoco', $excursao->qtd_almoco),
+            'acrescimo' => $request->input('acrescimo', $excursao->acrescimo),
+            'desconto' => $request->input('desconto', $excursao->desconto),
+            'email_responsavel' => $request->filled('email_responsavel')
+                ? trim((string) $request->input('email_responsavel'))
+                : null,
+            'enviar_email_agendamento' => $request->boolean('enviar_email_agendamento') ? 1 : 0,
+        ]);
+        $validated = $this->validateRequest($request);
+        $enviarEmailAgendamento = (bool) $validated['enviar_email_agendamento'];
+        $emailAlterado = $validated['email_responsavel'] !== $excursao->email_responsavel;
+        $dadosAlmoco = [
+            'possui_almoco' => (bool) ($validated['possui_almoco'] ?? false),
+            'cardapio_excursao_id' => $validated['cardapio_excursao_id'] ?? null,
+            'quantidade' => $validated['almoco_quantidade'] ?? 0,
+        ];
+        unset(
+            $validated['possui_almoco'],
+            $validated['cardapio_excursao_id'],
+            $validated['almoco_quantidade'],
+            $validated['enviar_email_agendamento'],
+        );
+        $this->aplicarValoresAlmoco($validated, $dadosAlmoco);
+        $dadosCalculo = array_merge($excursao->only([
+            'valor_almoco',
+            'qtd_almoco',
+            'acrescimo',
+            'desconto',
+            'percentual_comissao',
+        ]), $validated);
+        $calculos = $financeiro->calcular($dadosCalculo, $excursao->recebimentos);
+        $validated['total_almoco'] = $calculos['total_almoco'];
+        $validated['subtotal'] = $calculos['subtotal'];
+        $validated['total'] = $calculos['total'];
+        if ($emailAlterado) {
+            $validated['email_agendamento_enviado_em'] = null;
+            $validated['email_agendamento_tentado_em'] = null;
+            $validated['email_agendamento_tentativas'] = 0;
+            $validated['email_agendamento_erro'] = null;
+        }
+
+        DB::transaction(function () use ($excursao, $validated, $dadosAlmoco) {
+            $excursao->update($validated);
+            $this->sincronizarAlmoco($excursao, $dadosAlmoco);
+        });
+
+        $emailEnviado = ! $enviarEmailAgendamento
+            || $this->enviarEmailAgendamento($excursao->fresh());
+
+        $redirect = redirect()
+            ->route('eventos.excursoes.index')
+            ->with('success', 'Excursão atualizada com sucesso!');
+
+        return $emailEnviado
+            ? $redirect
+            : $redirect->with('warning', 'A excursão foi atualizada, mas não foi possível enviar o e-mail. Tente novamente na edição.');
     }
 
     public function reenviarEmail(Excursao $excursao): RedirectResponse

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Aluguel;
 use App\Models\Espaco;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
@@ -13,8 +14,7 @@ class EspacoDisponibilidadeController extends Controller
     /**
      * Retorna a disponibilidade dos espaços para um determinado período.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getDisponibilidade(Request $request)
     {
@@ -39,18 +39,19 @@ class EspacoDisponibilidadeController extends Controller
         // A lógica busca aluguéis cuja data de início OU fim esteja dentro do intervalo,
         // OU que envolvam completamente o intervalo.
         $alugueis = Aluguel::where(function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('data_inicio', [$startDate, $endDate])
-                      ->orWhereBetween('data_fim', [$startDate, $endDate])
-                      ->orWhere(function ($query) use ($startDate, $endDate) {
-                          $query->where('data_inicio', '<=', $startDate)
-                                ->where('data_fim', '>=', $endDate);
-                      });
-             })
+            $query->whereBetween('data_inicio', [$startDate, $endDate])
+                ->orWhereBetween('data_fim', [$startDate, $endDate])
+                ->orWhere(function ($query) use ($startDate, $endDate) {
+                    $query->where('data_inicio', '<=', $startDate)
+                        ->where('data_fim', '>=', $endDate);
+                });
+        })
+            ->where('status', '!=', 'cancelado')
              // Filtrar pelos IDs dos espaços obtidos anteriormente
-             ->whereIn('espaco_id', $espacos->pluck('id'))
+            ->whereIn('espaco_id', $espacos->pluck('id'))
              // Selecionar apenas os campos necessários
-             ->select('id', 'espaco_id', 'data_inicio', 'data_fim')
-             ->get();
+            ->select('id', 'espaco_id', 'data_inicio', 'data_fim', 'tipo')
+            ->get();
 
         // 4. Estruturar a resposta JSON
         $response = [
@@ -66,7 +67,8 @@ class EspacoDisponibilidadeController extends Controller
                     // Formatar as datas para o padrão YYYY-MM-DD
                     'start' => Carbon::parse($aluguel->data_inicio)->toDateString(),
                     'end' => Carbon::parse($aluguel->data_fim)->toDateString(),
-                    'aluguel_id' => $aluguel->id, // ID do aluguel, pode ser útil
+                    'aluguel_id' => $aluguel->id,
+                    'tipo' => $aluguel->tipo,
                 ];
             })->values(); // Usar values() para garantir um array JSON padrão
 
@@ -80,4 +82,3 @@ class EspacoDisponibilidadeController extends Controller
         return response()->json($response);
     }
 }
-

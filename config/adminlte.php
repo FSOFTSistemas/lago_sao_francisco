@@ -438,6 +438,31 @@ return [
             'can'  => 'gerenciar produto'
         ],
         [
+            'text'    => 'Almoxarifado',
+            'icon'    => 'fas fa-warehouse',
+            'can'     => 'gerenciar almoxarifado',
+            'submenu' => [
+                [
+                    'text'  => 'Itens do Estoque',
+                    'icon'  => 'fas fa-boxes',
+                    'url'   => '/almoxarifado/itens',
+                    'shift' => 'ml-2',
+                ],
+                [
+                    'text'  => 'Movimentações',
+                    'icon'  => 'fas fa-exchange-alt',
+                    'url'   => '/almoxarifado/movimentacoes',
+                    'shift' => 'ml-2',
+                ],
+                [
+                    'text'  => 'Categorias',
+                    'icon'  => 'fas fa-tags',
+                    'url'   => '/almoxarifado/categorias',
+                    'shift' => 'ml-2',
+                ],
+            ],
+        ],
+        [
             'text' => 'Clientes',
             'url'  => '/cliente',
             'icon' => 'fa fa-handshake',
@@ -607,6 +632,11 @@ return [
                 ],
 
             ],
+        ],
+        [
+            'text' => 'Nota Fiscal',
+            'url'  => '/nota-fiscal',
+            'icon' => 'fas fa-file-invoice',
         ],
         [
             'text' => 'Usuários',
