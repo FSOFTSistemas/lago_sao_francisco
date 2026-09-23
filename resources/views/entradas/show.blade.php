@@ -136,8 +136,22 @@
                                     <strong>{{ $item->produto->descricao ?? 'Produto de Venda' }}</strong>
                                 @endif
                             </td>
-                            <td class="text-center font-weight-bold">{{ $item->quantidade_formatada }} {{ $item->unidade }}</td>
-                            <td class="text-right">{{ $item->valor_unitario_formatado }}</td>
+                            <td class="text-center font-weight-bold">
+                                @if ($item->fator_conversao > 1)
+                                    <span class="text-success">{{ $item->quantidade_efetiva_formatada }} UN</span>
+                                    <small class="d-block text-muted">({{ $item->quantidade_formatada }} {{ $item->unidade }} &times; {{ number_format($item->fator_conversao, 0, ',', '.') }})</small>
+                                @else
+                                    {{ $item->quantidade_formatada }} {{ $item->unidade }}
+                                @endif
+                            </td>
+                            <td class="text-right">
+                                @if ($item->fator_conversao > 1)
+                                    <span class="text-success font-weight-bold">{{ $item->valor_unitario_efetivo_formatado }}</span>
+                                    <small class="d-block text-muted">(Nota: {{ $item->valor_unitario_formatado }})</small>
+                                @else
+                                    {{ $item->valor_unitario_formatado }}
+                                @endif
+                            </td>
                             <td class="text-right font-weight-bold text-dark">{{ $item->valor_total_formatado }}</td>
                         </tr>
                     @endforeach

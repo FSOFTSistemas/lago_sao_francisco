@@ -26,8 +26,11 @@ return new class extends Migration
             $table->string('cest', 10)->nullable();
             $table->string('cfop', 10)->nullable();
             $table->string('unidade', 10)->nullable();
+            $table->decimal('fator_conversao', 10, 4)->default(1);
             $table->decimal('quantidade', 15, 4);
+            $table->decimal('quantidade_convertida', 15, 4)->nullable();
             $table->decimal('valor_unitario', 15, 6);
+            $table->decimal('valor_unitario_convertido', 15, 6)->nullable();
             $table->decimal('valor_total', 15, 2);
             $table->decimal('valor_desconto', 15, 2)->default(0);
             $table->decimal('valor_frete', 15, 2)->default(0);

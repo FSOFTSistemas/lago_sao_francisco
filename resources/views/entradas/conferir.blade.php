@@ -98,9 +98,12 @@
                     <thead class="bg-light">
                         <tr>
                             <th style="width: 40px;" class="text-center">#</th>
-                            <th style="min-width: 280px;">Item na Nota do Fornecedor</th>
-                            <th style="width: 90px;" class="text-center">Qtd</th>
-                            <th style="width: 110px;" class="text-right">Unitário (R$)</th>
+                            <th style="min-width: 260px;">Item na Nota do Fornecedor</th>
+                            <th style="width: 90px;" class="text-center">Qtd Nota</th>
+                            <th style="width: 105px;" class="text-right">Unitário Nota</th>
+                            <th style="width: 170px;" class="text-center bg-light border-left border-right">
+                                <i class="fas fa-boxes text-info mr-1"></i> Conversão / Fator
+                            </th>
                             <th style="width: 110px;" class="text-right">Total (R$)</th>
                             <th style="width: 170px;">Destino no Hotel</th>
                             <th style="min-width: 320px;">Vínculo no Sistema (De / Para)</th>
@@ -122,6 +125,84 @@
                                     {{ number_format($item['quantidade'], 2, ',', '.') }} {{ $item['unidade'] }}
                                 </td>
                                 <td class="text-right align-middle">R$ {{ number_format($item['valor_unitario'], 2, ',', '.') }}</td>
+
+                                {{-- Conversão de Embalagem / Caixa para Unidades individuais --}}
+                                @if (!empty($item['is_embalagem']))
+                                    <td class="align-middle border-left border-right" style="background-color: #fffdf2;">
+                                        <div class="text-center mb-1">
+                                            <span class="badge badge-warning text-xs font-weight-bold" title="Unidade coletiva da nota: {{ $item['unidade'] }}">
+                                                <i class="fas fa-box-open mr-1"></i> Embalagem ({{ $item['unidade'] }})
+                                            </span>
+                                        </div>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" 
+                                                   name="itens[{{ $idx }}][fator_conversao]" 
+                                                   class="form-control form-control-sm text-center font-weight-bold input-fator-conversao border-warning" 
+                                                   value="{{ $item['fator_conversao'] ?? 1 }}" 
+                                                   min="0.0001" 
+                                                   step="any"
+                                                   data-index="{{ $idx }}"
+                                                   data-qtd="{{ $item['quantidade'] }}"
+                                                   data-preco="{{ $item['valor_unitario'] }}">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text text-xs font-weight-bold bg-warning-subtle">un/{{ $item['unidade'] }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-1 small preview-conversao-container" id="preview_conversao_{{ $idx }}">
+                                            @php
+                                                $fatorAtual = (float) ($item['fator_conversao'] ?? 1);
+                                                $qtdConvertidaInicial = (float) $item['quantidade'] * ($fatorAtual > 0 ? $fatorAtual : 1);
+                                                $custoConvertidoInicial = $fatorAtual > 0 ? ((float) $item['valor_unitario'] / $fatorAtual) : (float) $item['valor_unitario'];
+                                            @endphp
+                                            <div class="d-flex justify-content-between align-items-center text-xs">
+                                                <span class="text-muted">Entrará:</span>
+                                                <strong class="text-success preview-qtd-convertida">
+                                                    {{ number_format($qtdConvertidaInicial, 2, ',', '.') }} UN
+                                                </strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center text-xs">
+                                                <span class="text-muted">Custo:</span>
+                                                <span class="text-dark font-weight-bold preview-custo-convertido">
+                                                    R$ {{ number_format($custoConvertidoInicial, 2, ',', '.') }}/un
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                @else
+                                    <td class="align-middle text-center border-left border-right bg-light">
+                                        <span class="badge badge-light border text-secondary font-weight-normal py-1 px-2" title="Item unitário na nota fiscal">
+                                            <i class="fas fa-check text-success mr-1"></i> Unitário (1:1)
+                                        </span>
+                                        <input type="hidden" 
+                                               name="itens[{{ $idx }}][fator_conversao]" 
+                                               id="fator_hidden_{{ $idx }}"
+                                               value="1" 
+                                               class="input-fator-conversao" 
+                                               data-index="{{ $idx }}" 
+                                               data-qtd="{{ $item['quantidade'] }}" 
+                                               data-preco="{{ $item['valor_unitario'] }}">
+                                        <div class="mt-1">
+                                            <a href="javascript:void(0)" class="text-xs text-muted btn-abrir-conversao" data-index="{{ $idx }}" style="font-size: 0.72rem;">
+                                                <i class="fas fa-sliders-h mr-1"></i>Converter?
+                                            </a>
+                                        </div>
+                                        <div id="conversao_custom_{{ $idx }}" class="d-none mt-1">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" 
+                                                       class="form-control form-control-sm text-center font-weight-bold input-fator-manual" 
+                                                       value="1" 
+                                                       min="0.0001" 
+                                                       step="any" 
+                                                       data-index="{{ $idx }}">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text text-xs">fator</span>
+                                                </div>
+                                            </div>
+                                            <small class="text-xs text-success font-weight-bold d-block mt-1 preview-manual-txt"></small>
+                                        </div>
+                                    </td>
+                                @endif
+
                                 <td class="text-right font-weight-bold align-middle text-primary">R$ {{ number_format($item['valor_total'], 2, ',', '.') }}</td>
                                 
                                 {{-- Seletor de Destino: Produto vs Almoxarifado --}}
@@ -265,6 +346,14 @@
 
 @section('js')
     <script>
+        function formatarNumeroBr(val, decimais = 2) {
+            return Number(val).toLocaleString('pt-BR', {
+                minimumFractionDigits: decimais,
+                maximumFractionDigits: decimais
+            });
+        }
+
+        // Alternância de Blocos (Produto vs Almoxarifado)
         document.querySelectorAll('.seletor-destino').forEach(function(select) {
             select.addEventListener('change', function() {
                 var idx = this.getAttribute('data-index');
@@ -279,6 +368,77 @@
                     blocoAlmoxarifado.classList.add('d-none');
                 }
             });
+        });
+
+        // Atualização em tempo real do Fator de Conversão (Embalagem -> Unidades)
+        document.querySelectorAll('.input-fator-conversao').forEach(function(input) {
+            function atualizarCalculo() {
+                var idx = input.getAttribute('data-index');
+                var qtdOriginal = parseFloat(input.getAttribute('data-qtd')) || 0;
+                var precoOriginal = parseFloat(input.getAttribute('data-preco')) || 0;
+                var fator = parseFloat(input.value);
+
+                if (isNaN(fator) || fator <= 0) {
+                    fator = 1;
+                }
+
+                var qtdFinal = qtdOriginal * fator;
+                var precoFinal = precoOriginal / fator;
+
+                var container = document.getElementById('preview_conversao_' + idx);
+                if (container) {
+                    var elQtd = container.querySelector('.preview-qtd-convertida');
+                    var elCusto = container.querySelector('.preview-custo-convertido');
+
+                    if (elQtd) {
+                        elQtd.textContent = formatarNumeroBr(qtdFinal, 2) + ' UN';
+                    }
+                    if (elCusto) {
+                        elCusto.textContent = 'R$ ' + formatarNumeroBr(precoFinal, 2) + '/un';
+                    }
+                }
+            }
+
+            input.addEventListener('input', atualizarCalculo);
+            input.addEventListener('change', atualizarCalculo);
+        });
+
+        // Alternar painel manual de conversão para item unitário
+        document.querySelectorAll('.btn-abrir-conversao').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var idx = this.getAttribute('data-index');
+                var painel = document.getElementById('conversao_custom_' + idx);
+                if (painel) {
+                    painel.classList.toggle('d-none');
+                }
+            });
+        });
+
+        // Quando o usuário define um fator manual para um item unitário
+        document.querySelectorAll('.input-fator-manual').forEach(function(manualInput) {
+            function atualizarManual() {
+                var idx = manualInput.getAttribute('data-index');
+                var hiddenInput = document.getElementById('fator_hidden_' + idx);
+                var fator = parseFloat(manualInput.value) || 1;
+                if (fator <= 0) fator = 1;
+
+                if (hiddenInput) {
+                    hiddenInput.value = fator;
+                    var qtdOriginal = parseFloat(hiddenInput.getAttribute('data-qtd')) || 0;
+                    var precoOriginal = parseFloat(hiddenInput.getAttribute('data-preco')) || 0;
+                    var total = qtdOriginal * fator;
+                    var custo = precoOriginal / fator;
+
+                    var container = manualInput.closest('td');
+                    var txt = container.querySelector('.preview-manual-txt');
+                    if (txt) {
+                        txt.textContent = '= ' + formatarNumeroBr(total, 2) + ' UN (R$ ' + formatarNumeroBr(custo, 2) + '/un)';
+                    }
+                }
+            }
+
+            manualInput.addEventListener('input', atualizarManual);
+            manualInput.addEventListener('change', atualizarManual);
         });
     </script>
 @stop

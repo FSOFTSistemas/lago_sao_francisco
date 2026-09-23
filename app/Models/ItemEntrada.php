@@ -27,8 +27,11 @@ class ItemEntrada extends Model
         'cest',
         'cfop',
         'unidade',
+        'fator_conversao',
         'quantidade',
+        'quantidade_convertida',
         'valor_unitario',
+        'valor_unitario_convertido',
         'valor_total',
         'valor_desconto',
         'valor_frete',
@@ -55,25 +58,28 @@ class ItemEntrada extends Model
     ];
 
     protected $casts = [
-        'numero_item'           => 'integer',
-        'quantidade'            => 'decimal:4',
-        'valor_unitario'        => 'decimal:6',
-        'valor_total'           => 'decimal:2',
-        'valor_desconto'        => 'decimal:2',
-        'valor_frete'           => 'decimal:2',
-        'valor_seguro'          => 'decimal:2',
+        'numero_item' => 'integer',
+        'fator_conversao' => 'decimal:4',
+        'quantidade' => 'decimal:4',
+        'quantidade_convertida' => 'decimal:4',
+        'valor_unitario' => 'decimal:6',
+        'valor_unitario_convertido' => 'decimal:6',
+        'valor_total' => 'decimal:2',
+        'valor_desconto' => 'decimal:2',
+        'valor_frete' => 'decimal:2',
+        'valor_seguro' => 'decimal:2',
         'valor_outras_despesas' => 'decimal:2',
-        'base_icms'             => 'decimal:2',
-        'aliquota_icms'         => 'decimal:4',
-        'valor_icms'            => 'decimal:2',
-        'base_icms_st'          => 'decimal:2',
-        'aliquota_icms_st'      => 'decimal:4',
-        'valor_icms_st'         => 'decimal:2',
-        'valor_pis'             => 'decimal:2',
-        'valor_cofins'          => 'decimal:2',
-        'valor_ipi'             => 'decimal:2',
-        'pIBS'                  => 'decimal:4',
-        'pCBS'                  => 'decimal:4',
+        'base_icms' => 'decimal:2',
+        'aliquota_icms' => 'decimal:4',
+        'valor_icms' => 'decimal:2',
+        'base_icms_st' => 'decimal:2',
+        'aliquota_icms_st' => 'decimal:4',
+        'valor_icms_st' => 'decimal:2',
+        'valor_pis' => 'decimal:2',
+        'valor_cofins' => 'decimal:2',
+        'valor_ipi' => 'decimal:2',
+        'pIBS' => 'decimal:4',
+        'pCBS' => 'decimal:4',
     ];
 
     public function entrada(): BelongsTo
@@ -103,17 +109,18 @@ class ItemEntrada extends Model
 
     public function getValorUnitarioFormatadoAttribute(): string
     {
-        return 'R$ ' . number_format((float) ($this->valor_unitario ?? 0), 2, ',', '.');
+        return 'R$ '.number_format((float) ($this->valor_unitario ?? 0), 2, ',', '.');
     }
 
     public function getValorTotalFormatadoAttribute(): string
     {
-        return 'R$ ' . number_format((float) ($this->valor_total ?? 0), 2, ',', '.');
+        return 'R$ '.number_format((float) ($this->valor_total ?? 0), 2, ',', '.');
     }
 
     public function getQuantidadeFormatadaAttribute(): string
     {
         $valor = (float) $this->quantidade;
+
         return floor($valor) == $valor ? number_format($valor, 0, ',', '.') : number_format($valor, 2, ',', '.');
     }
 
@@ -121,7 +128,29 @@ class ItemEntrada extends Model
     {
         return match ($this->destino) {
             'almoxarifado' => 'Almoxarifado (Consumo)',
-            default        => 'Produto (Venda)',
+            default => 'Produto (Venda)',
         };
+    }
+
+    public function getQuantidadeEfetivaAttribute(): float
+    {
+        return (float) ($this->quantidade_convertida ?: $this->quantidade);
+    }
+
+    public function getValorUnitarioEfetivoAttribute(): float
+    {
+        return (float) ($this->valor_unitario_convertido ?: $this->valor_unitario);
+    }
+
+    public function getQuantidadeEfetivaFormatadaAttribute(): string
+    {
+        $valor = $this->quantidade_efetiva;
+
+        return floor($valor) == $valor ? number_format($valor, 0, ',', '.') : number_format($valor, 2, ',', '.');
+    }
+
+    public function getValorUnitarioEfetivoFormatadoAttribute(): string
+    {
+        return 'R$ '.number_format($this->valor_unitario_efetivo, 2, ',', '.');
     }
 }

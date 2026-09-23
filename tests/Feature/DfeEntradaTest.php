@@ -11,6 +11,7 @@ use App\Models\Empresa;
 use App\Models\EmpresaPreferencia;
 use App\Models\Entrada;
 use App\Models\Fornecedor;
+use App\Models\ItemEntrada;
 use App\Models\Produto;
 use App\Models\User;
 use App\Services\DfeService;
@@ -236,8 +237,11 @@ class DfeEntradaTest extends TestCase
             $table->string('cest', 10)->nullable();
             $table->string('cfop', 10)->nullable();
             $table->string('unidade', 10)->nullable();
+            $table->decimal('fator_conversao', 10, 4)->default(1);
             $table->decimal('quantidade', 15, 4);
+            $table->decimal('quantidade_convertida', 15, 4)->nullable();
             $table->decimal('valor_unitario', 15, 6);
+            $table->decimal('valor_unitario_convertido', 15, 6)->nullable();
             $table->decimal('valor_total', 15, 2);
             $table->decimal('valor_desconto', 15, 2)->default(0);
             $table->decimal('valor_frete', 15, 2)->default(0);
@@ -323,7 +327,7 @@ class DfeEntradaTest extends TestCase
         $catProduto = CategoriaProduto::create(['descricao' => 'Bebidas']);
         $user = User::create(['name' => 'Admin', 'email' => 'admin@teste.com', 'password' => '123', 'empresa_id' => $empresa->id]);
 
-        $xml = <<<XML
+        $xml = <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
     <NFe>
@@ -361,15 +365,15 @@ class DfeEntradaTest extends TestCase
 </nfeProc>
 XML;
 
-        $service = new EntradaXmlService();
+        $service = new EntradaXmlService;
         $entrada = $service->processarEntrada([
-            'xml'                  => $xml,
+            'xml' => $xml,
             'gerar_contas_a_pagar' => true,
-            'itens'                => [
+            'itens' => [
                 0 => [
-                    'destino'              => 'produto',
+                    'destino' => 'produto',
                     'categoria_produto_id' => $catProduto->id,
-                    'margem_lucro'         => 50,
+                    'margem_lucro' => 50,
                 ],
             ],
         ], $empresa->id, $user->id);
@@ -389,17 +393,17 @@ XML;
         $this->assertSame(2.0, (float) $produto->preco_custo);
 
         $this->assertDatabaseHas('estoques', [
-            'produto_id'    => $produto->id,
-            'empresa_id'    => $empresa->id,
+            'produto_id' => $produto->id,
+            'empresa_id' => $empresa->id,
             'estoque_atual' => 50,
         ]);
 
         // Verifica Contas a Pagar gerado
         $this->assertDatabaseHas('contas_a_pagar', [
-            'empresa_id'    => $empresa->id,
+            'empresa_id' => $empresa->id,
             'fornecedor_id' => $fornecedor->id,
-            'valor'         => 100.0,
-            'status'        => 'pendente',
+            'valor' => 100.0,
+            'status' => 'pendente',
         ]);
     }
 
@@ -409,7 +413,7 @@ XML;
         $catAlmox = AlmoxarifadoCategoria::create(['nome' => 'Limpeza e Piscina']);
         $user = User::create(['name' => 'Admin', 'email' => 'admin@teste.com', 'password' => '123', 'empresa_id' => $empresa->id]);
 
-        $xml = <<<XML
+        $xml = <<<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
 <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
     <NFe>
@@ -444,12 +448,12 @@ XML;
 </nfeProc>
 XML;
 
-        $service = new EntradaXmlService();
+        $service = new EntradaXmlService;
         $entrada = $service->processarEntrada([
-            'xml'   => $xml,
+            'xml' => $xml,
             'itens' => [
                 0 => [
-                    'destino'                   => 'almoxarifado',
+                    'destino' => 'almoxarifado',
                     'almoxarifado_categoria_id' => $catAlmox->id,
                 ],
             ],
@@ -466,8 +470,8 @@ XML;
         // Verifica movimentação de entrada registrada no histórico
         $this->assertDatabaseHas('almoxarifado_movimentacoes', [
             'empresa_id' => $empresa->id,
-            'item_id'    => $itemAlmox->id,
-            'tipo'       => 'entrada',
+            'item_id' => $itemAlmox->id,
+            'tipo' => 'entrada',
             'quantidade' => 5.0,
         ]);
     }
@@ -476,7 +480,7 @@ XML;
     {
         $empresa = Empresa::create(['razao_social' => 'Empresa Teste', 'cnpj' => '12345678000199']);
         EmpresaPreferencia::create([
-            'empresa_id'   => $empresa->id,
+            'empresa_id' => $empresa->id,
             'ambiente_dfe' => 2,
         ]);
         $user = User::create(['name' => 'Tester', 'email' => 'tester_confirma@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
@@ -484,12 +488,12 @@ XML;
 
         $chave = '35260199999999000199550010000000031000000035';
         $dfeDoc = DfeDocumento::create([
-            'empresa_id'            => $empresa->id,
-            'nsu'                   => '100',
-            'chave'                 => $chave,
-            'numero_nota'           => '999',
-            'serie'                 => '1',
-            'schema'                => 'procNFe',
+            'empresa_id' => $empresa->id,
+            'nsu' => '100',
+            'chave' => $chave,
+            'numero_nota' => '999',
+            'serie' => '1',
+            'schema' => 'procNFe',
             'situacao_manifestacao' => 'ciencia',
         ]);
 
@@ -533,21 +537,21 @@ XML;
             ->once()
             ->with(Mockery::type(Empresa::class), $chave, DfeService::EVENTO_CONFIRMACAO, '', $user->id)
             ->andReturn([
-                'sucesso'   => true,
-                'cStat'     => '135',
+                'sucesso' => true,
+                'cStat' => '135',
                 'protocolo' => '135260000099999',
-                'situacao'  => 'confirmada',
-                'mensagem'  => 'Evento registrado',
+                'situacao' => 'confirmada',
+                'mensagem' => 'Evento registrado',
             ]);
         $this->app->instance(DfeService::class, $mockDfeService);
 
-        $service = new EntradaXmlService();
+        $service = new EntradaXmlService;
         $entrada = $service->processarEntrada([
-            'xml'              => $xml,
+            'xml' => $xml,
             'dfe_documento_id' => $dfeDoc->id,
-            'itens'            => [
+            'itens' => [
                 0 => [
-                    'destino'              => 'produto',
+                    'destino' => 'produto',
                     'categoria_produto_id' => $categoria->id,
                 ],
             ],
@@ -648,18 +652,18 @@ XML;
 XML;
 
         $doc = DfeDocumento::create([
-            'empresa_id'     => $empresa->id,
-            'nsu'            => '101',
-            'chave'          => $chave,
-            'numero_nota'    => '4',
-            'serie'          => '1',
-            'schema'         => 'procNFe',
+            'empresa_id' => $empresa->id,
+            'nsu' => '101',
+            'chave' => $chave,
+            'numero_nota' => '4',
+            'serie' => '1',
+            'schema' => 'procNFe',
             'tipo_documento' => 'NFE',
-            'cnpj_emitente'  => '99999999000199',
-            'nome_emitente'  => 'FORNECEDOR DANFE LTDA',
-            'valor_total'    => 10.00,
-            'situacao_nfe'   => 1,
-            'xml'            => $xml,
+            'cnpj_emitente' => '99999999000199',
+            'nome_emitente' => 'FORNECEDOR DANFE LTDA',
+            'valor_total' => 10.00,
+            'situacao_nfe' => 1,
+            'xml' => $xml,
         ]);
 
         $response = $this->actingAs($user)->get(route('dfe.danfe', $doc->id));
@@ -761,19 +765,19 @@ XML;
 XML;
 
         $entrada = Entrada::create([
-            'empresa_id'        => $empresa->id,
-            'fornecedor_id'     => $fornecedor->id,
-            'usuario_id'        => $user->id,
-            'chave'             => $chave,
-            'numero_nota'       => '5',
-            'serie'             => '1',
+            'empresa_id' => $empresa->id,
+            'fornecedor_id' => $fornecedor->id,
+            'usuario_id' => $user->id,
+            'chave' => $chave,
+            'numero_nota' => '5',
+            'serie' => '1',
             'natureza_operacao' => 'VENDA',
-            'data_emissao'      => now(),
-            'data_entrada'      => now(),
-            'valor_produtos'    => 20.00,
-            'valor_total'       => 20.00,
-            'xml'               => $xml,
-            'status'            => 'confirmada',
+            'data_emissao' => now(),
+            'data_entrada' => now(),
+            'valor_produtos' => 20.00,
+            'valor_total' => 20.00,
+            'xml' => $xml,
+            'status' => 'confirmada',
         ]);
 
         $response = $this->actingAs($user)->get(route('entradas.danfe', $entrada->id));
@@ -786,7 +790,7 @@ XML;
     public function test_recebimento_de_resumo_e_depois_completo_nao_duplica_documento(): void
     {
         $empresa = Empresa::create(['razao_social' => 'Empresa Teste Unicidade', 'cnpj' => '12345678000199']);
-        $service = new DfeService();
+        $service = new DfeService;
 
         $chave = '35260199999999000199550010000000061000000065';
 
@@ -845,34 +849,34 @@ XML;
         $user = User::create(['name' => 'Tester', 'email' => 'filtro_dfe@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
 
         $chaveCompleta = '35260199999999000199550010000001001000000100';
-        $chaveResumo   = '35260199999999000199550010000001011000000101';
+        $chaveResumo = '35260199999999000199550010000001011000000101';
 
         DfeDocumento::create([
-            'empresa_id'   => $empresa->id,
-            'nsu'          => '2001',
-            'chave'        => $chaveCompleta,
-            'schema'       => 'procNFe',
-            'numero_nota'  => '99100',
-            'serie'        => '1',
-            'nome_emitente'=> 'EMITENTE COMPLETO',
+            'empresa_id' => $empresa->id,
+            'nsu' => '2001',
+            'chave' => $chaveCompleta,
+            'schema' => 'procNFe',
+            'numero_nota' => '99100',
+            'serie' => '1',
+            'nome_emitente' => 'EMITENTE COMPLETO',
             'data_emissao' => now(),
-            'valor_total'  => 500.00,
+            'valor_total' => 500.00,
             'situacao_nfe' => 1,
-            'xml'          => '<nfeProc><NFe></NFe></nfeProc>',
+            'xml' => '<nfeProc><NFe></NFe></nfeProc>',
         ]);
 
         DfeDocumento::create([
-            'empresa_id'   => $empresa->id,
-            'nsu'          => '2002',
-            'chave'        => $chaveResumo,
-            'schema'       => 'resNFe',
-            'numero_nota'  => '99101',
-            'serie'        => '1',
-            'nome_emitente'=> 'EMITENTE RESUMO',
+            'empresa_id' => $empresa->id,
+            'nsu' => '2002',
+            'chave' => $chaveResumo,
+            'schema' => 'resNFe',
+            'numero_nota' => '99101',
+            'serie' => '1',
+            'nome_emitente' => 'EMITENTE RESUMO',
             'data_emissao' => now(),
-            'valor_total'  => 250.00,
+            'valor_total' => 250.00,
             'situacao_nfe' => 1,
-            'xml'          => null,
+            'xml' => null,
         ]);
 
         // 1. Por padrão, rota exibe apenas notas com XML Completo
@@ -900,17 +904,17 @@ XML;
     public function test_processamento_de_evento_sefaz_grava_em_dfe_eventos_e_cancela_nota(): void
     {
         $empresa = Empresa::create(['razao_social' => 'Empresa Evento', 'cnpj' => '12345678000199']);
-        $service = new DfeService();
+        $service = new DfeService;
         $chave = '35260199999999000199550010000000071000000075';
 
         // Cria a nota previamente
         $doc = DfeDocumento::create([
-            'empresa_id'   => $empresa->id,
-            'nsu'          => '3001',
-            'chave'        => $chave,
-            'schema'       => 'procNFe',
-            'numero_nota'  => '7',
-            'serie'        => '1',
+            'empresa_id' => $empresa->id,
+            'nsu' => '3001',
+            'chave' => $chave,
+            'schema' => 'procNFe',
+            'numero_nota' => '7',
+            'serie' => '1',
             'situacao_nfe' => 1, // Autorizada
         ]);
 
@@ -973,50 +977,50 @@ XML;
         $chave = '35260199999999000199550010000000081000000085';
 
         $doc = DfeDocumento::create([
-            'empresa_id'   => $empresa->id,
-            'nsu'          => '4001',
-            'chave'        => $chave,
-            'schema'       => 'procNFe',
-            'numero_nota'  => '8',
-            'serie'        => '1',
+            'empresa_id' => $empresa->id,
+            'nsu' => '4001',
+            'chave' => $chave,
+            'schema' => 'procNFe',
+            'numero_nota' => '8',
+            'serie' => '1',
             'situacao_nfe' => 1,
-            'valor_total'  => 1000.00,
+            'valor_total' => 1000.00,
         ]);
 
         DfeEvento::create([
-            'empresa_id'       => $empresa->id,
+            'empresa_id' => $empresa->id,
             'dfe_documento_id' => $doc->id,
-            'chave'            => $chave,
-            'tipo_evento'      => '210210',
-            'nome_evento'      => 'Ciência da Emissão',
+            'chave' => $chave,
+            'tipo_evento' => '210210',
+            'nome_evento' => 'Ciência da Emissão',
             'sequencia_evento' => 1,
-            'protocolo'        => '135260000011111',
-            'data_evento'      => now(),
-            'cstat'            => '135',
-            'motivo'           => 'Evento registrado',
-            'user_id'          => $user->id,
+            'protocolo' => '135260000011111',
+            'data_evento' => now(),
+            'cstat' => '135',
+            'motivo' => 'Evento registrado',
+            'user_id' => $user->id,
         ]);
 
         DfeEvento::create([
-            'empresa_id'       => $empresa->id,
+            'empresa_id' => $empresa->id,
             'dfe_documento_id' => $doc->id,
-            'chave'            => $chave,
-            'tipo_evento'      => '210200',
-            'nome_evento'      => 'Confirmação da Operação',
+            'chave' => $chave,
+            'tipo_evento' => '210200',
+            'nome_evento' => 'Confirmação da Operação',
             'sequencia_evento' => 1,
-            'protocolo'        => '135260000022222',
-            'data_evento'      => now(),
-            'cstat'            => '135',
-            'motivo'           => 'Evento registrado',
-            'user_id'          => $user->id,
+            'protocolo' => '135260000022222',
+            'data_evento' => now(),
+            'cstat' => '135',
+            'motivo' => 'Evento registrado',
+            'user_id' => $user->id,
         ]);
 
         $response = $this->actingAs($user)->getJson(route('dfe.eventos', $chave));
         $response->assertStatus(200);
         $response->assertJson([
             'sucesso' => true,
-            'chave'   => $chave,
-            'numero'  => '8',
+            'chave' => $chave,
+            'numero' => '8',
         ]);
 
         $eventosRetornados = $response->json('eventos');
@@ -1024,5 +1028,171 @@ XML;
         $this->assertSame('Confirmação da Operação', $eventosRetornados[0]['nome_evento']);
         $this->assertSame('Tester Eventos', $eventosRetornados[0]['usuario']);
     }
-}
 
+    public function test_parse_xml_detecta_embalagem_e_fator_conversao(): void
+    {
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+    <NFe>
+        <infNFe Id="NFe35260199999999000199550010000000099000000099" versao="4.00">
+            <ide>
+                <nNF>123</nNF>
+                <serie>1</serie>
+                <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+            </ide>
+            <emit>
+                <CNPJ>99999999000199</CNPJ>
+                <xNome>DISTRIBUIDORA DE BEBIDAS</xNome>
+            </emit>
+            <det nItem="1">
+                <prod>
+                    <cProd>BEB01</cProd>
+                    <xProd>CERVEJA HEINEKEN LN 330ML C/ 24</xProd>
+                    <NCM>22030000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>CX</uCom>
+                    <qCom>2.0000</qCom>
+                    <vUnCom>144.000000</vUnCom>
+                    <vProd>288.00</vProd>
+                </prod>
+            </det>
+            <total><ICMSTot><vProd>288.00</vProd><vNF>288.00</vNF></ICMSTot></total>
+        </infNFe>
+    </NFe>
+</nfeProc>
+XML;
+
+        $service = new EntradaXmlService;
+        $parsed = $service->parseXml($xml);
+
+        $this->assertCount(1, $parsed['itens']);
+        $item = $parsed['itens'][0];
+        $this->assertTrue($item['is_embalagem']);
+        $this->assertSame(24, $item['fator_conversao_sugerido']);
+        $this->assertSame(24, $item['fator_conversao']);
+    }
+
+    public function test_processa_entrada_com_fator_conversao_caixa_multiplica_estoque_e_divide_custo(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Hotel Lago São Francisco', 'cnpj' => '40065099000124']);
+        $catProduto = CategoriaProduto::create(['descricao' => 'Bebidas']);
+        $user = User::create(['name' => 'Admin', 'email' => 'admin@teste.com', 'password' => '123', 'empresa_id' => $empresa->id]);
+
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+    <NFe>
+        <infNFe Id="NFe35260199999999000199550010000000099000000099" versao="4.00">
+            <ide>
+                <nNF>555</nNF>
+                <serie>1</serie>
+                <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+            </ide>
+            <emit>
+                <CNPJ>99999999000199</CNPJ>
+                <xNome>DISTRIBUIDORA LTDA</xNome>
+            </emit>
+            <det nItem="1">
+                <prod>
+                    <cProd>CX01</cProd>
+                    <xProd>AGUA MINERAL CX C/ 12</xProd>
+                    <NCM>22011000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>CX</uCom>
+                    <qCom>3.0000</qCom>
+                    <vUnCom>24.000000</vUnCom>
+                    <vProd>72.00</vProd>
+                </prod>
+            </det>
+            <total><ICMSTot><vProd>72.00</vProd><vNF>72.00</vNF></ICMSTot></total>
+        </infNFe>
+    </NFe>
+</nfeProc>
+XML;
+
+        $service = new EntradaXmlService;
+        $entrada = $service->processarEntrada([
+            'xml' => $xml,
+            'itens' => [
+                0 => [
+                    'destino' => 'produto',
+                    'categoria_produto_id' => $catProduto->id,
+                    'fator_conversao' => 12,
+                    'margem_lucro' => 50,
+                ],
+            ],
+        ], $empresa->id, $user->id);
+
+        $this->assertInstanceOf(Entrada::class, $entrada);
+
+        // 3 caixas x 12 unidades = 36 unidades no estoque
+        $produto = Produto::where('empresa_id', $empresa->id)->where('descricao', 'AGUA MINERAL CX C/ 12')->first();
+        $this->assertNotNull($produto);
+        // Preço de custo unitário: R$ 24,00 / 12 = R$ 2,00
+        $this->assertEquals(2.0, (float) $produto->preco_custo);
+
+        $this->assertDatabaseHas('estoques', [
+            'produto_id' => $produto->id,
+            'empresa_id' => $empresa->id,
+            'estoque_atual' => 36,
+        ]);
+
+        // Verifica ItemEntrada gravado
+        $itemEntrada = ItemEntrada::where('entrada_id', $entrada->id)->first();
+        $this->assertNotNull($itemEntrada);
+        $this->assertEquals(12, (float) $itemEntrada->fator_conversao);
+        $this->assertEquals(3, (float) $itemEntrada->quantidade);
+        $this->assertEquals(36, (float) $itemEntrada->quantidade_convertida);
+        $this->assertEquals(24, (float) $itemEntrada->valor_unitario);
+        $this->assertEquals(2, (float) $itemEntrada->valor_unitario_convertido);
+        $this->assertEquals(36, $itemEntrada->quantidade_efetiva);
+        $this->assertEquals(2, $itemEntrada->valor_unitario_efetivo);
+    }
+
+    public function test_item_em_unidade_un_com_texto_de_capsulas_permanece_unitario_e_nao_caixa(): void
+    {
+        $xml = <<<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+    <NFe>
+        <infNFe Id="NFe26260663400543000388550010019356541851736880" versao="4.00">
+            <ide>
+                <nNF>1935654</nNF>
+                <serie>1</serie>
+                <dhEmi>2026-06-23T10:00:00-03:00</dhEmi>
+            </ide>
+            <emit>
+                <CNPJ>63400543000388</CNPJ>
+                <xNome>DISTRIBUIDORA MED LTDA</xNome>
+            </emit>
+            <det nItem="1">
+                <prod>
+                    <cProd>12345</cProd>
+                    <xProd>CEFALEXINA (CEFAGEL) 500 MG C/10 CAPS (MULTI)</xProd>
+                    <NCM>30042099</NCM>
+                    <CFOP>5405</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>6.0000</qCom>
+                    <vUnCom>18.700000</vUnCom>
+                    <vProd>112.20</vProd>
+                </prod>
+            </det>
+            <total><ICMSTot><vProd>112.20</vProd><vNF>112.20</vNF></ICMSTot></total>
+        </infNFe>
+    </NFe>
+</nfeProc>
+XML;
+
+        $service = new EntradaXmlService;
+        $parsed = $service->parseXml($xml);
+
+        $this->assertCount(1, $parsed['itens']);
+        $item = $parsed['itens'][0];
+
+        // uCom é UN, portanto NÃO é embalagem e fator é rigorosamente 1
+        $this->assertFalse($item['is_embalagem']);
+        $this->assertSame(1, $item['fator_conversao_sugerido']);
+        $this->assertSame(1, $item['fator_conversao']);
+    }
+}
