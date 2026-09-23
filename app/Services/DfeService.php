@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\DfeDocumento;
+use App\Models\DfeEvento;
 use App\Models\Empresa;
 use App\Models\EmpresaPreferencia;
 use Carbon\Carbon;
@@ -295,12 +296,44 @@ class DfeService
                 $infEvento = $xmlObj->retEvento->infEvento ?? $xmlObj->evento->infEvento ?? $xmlObj;
                 $chave = (string) ($infEvento->chNFe ?? '');
                 $tpEvento = (string) ($infEvento->tpEvento ?? '');
+                $xEvento = (string) ($infEvento->xEvento ?? '');
+                $nSeqEvento = (int) ($infEvento->nSeqEvento ?? 1);
+                $dhEvento = (string) ($infEvento->dhEvento ?? $infEvento->dhRecbto ?? '');
+                $nProt = (string) ($infEvento->nProt ?? '');
+                $cStat = (string) ($infEvento->cStat ?? '');
+                $xMotivo = (string) ($infEvento->xMotivo ?? '');
+                $xJust = (string) ($infEvento->xJust ?? '');
+                $xCorrecao = (string) ($infEvento->detEvento->xCorrecao ?? '');
 
-                // Se o evento for de Cancelamento (110111), marca a nota como cancelada
-                if ($tpEvento === '110111' && $chave) {
-                    DfeDocumento::where('empresa_id', $empresa->id)
-                        ->where('chave', $chave)
-                        ->update(['situacao_nfe' => 2]);
+                if ($chave) {
+                    $doc = DfeDocumento::where('empresa_id', $empresa->id)->where('chave', $chave)->first();
+
+                    // Se o evento for de Cancelamento (110111), marca a nota como cancelada
+                    if ($tpEvento === '110111' && $doc) {
+                        $doc->update(['situacao_nfe' => 2]);
+                    }
+
+                    // Registra o evento na tabela dfe_eventos
+                    DfeEvento::updateOrCreate(
+                        [
+                            'empresa_id'       => $empresa->id,
+                            'chave'            => $chave,
+                            'tipo_evento'      => $tpEvento,
+                            'sequencia_evento' => $nSeqEvento,
+                        ],
+                        [
+                            'dfe_documento_id' => $doc?->id,
+                            'nsu'              => $nsu,
+                            'nome_evento'      => $xEvento ?: null,
+                            'protocolo'        => $nProt ?: null,
+                            'data_evento'      => $dhEvento ? Carbon::parse($dhEvento) : null,
+                            'cstat'            => $cStat ?: null,
+                            'motivo'           => $xMotivo ?: null,
+                            'justificativa'    => $xJust ?: null,
+                            'detalhes'         => $xCorrecao ? ['xCorrecao' => $xCorrecao] : null,
+                            'xml'              => $xml,
+                        ]
+                    );
                 }
             }
 
@@ -318,9 +351,10 @@ class DfeService
      * @param string $chave
      * @param string $tipoEvento 210200 (Confirmação), 210210 (Ciência), 210220 (Desconhecimento), 210240 (Não Realizada)
      * @param string $justificativa Obrigatória apenas para 210240 (mínimo 15 caracteres)
+     * @param int|null $userId ID do usuário que solicitou a manifestação
      * @return array
      */
-    public function manifestar(Empresa $empresa, string $chave, string $tipoEvento, string $justificativa = ''): array
+    public function manifestar(Empresa $empresa, string $chave, string $tipoEvento, string $justificativa = '', ?int $userId = null): array
     {
         $eventosValidos = [
             self::EVENTO_CONFIRMACAO,
@@ -367,14 +401,41 @@ class DfeService
 
                 // 135 ou 136: Evento registrado e vinculado
                 if (in_array($cStatEvento, ['135', '136'], true)) {
-                    DfeDocumento::where('empresa_id', $empresa->id)
+                    $doc = DfeDocumento::where('empresa_id', $empresa->id)
                         ->where('chave', $chave)
-                        ->update([
+                        ->first();
+
+                    if ($doc) {
+                        $doc->update([
                             'situacao_manifestacao'  => $nomeSituacao,
                             'data_manifestacao'      => Carbon::now(),
                             'protocolo_manifestacao' => $protocolo,
                             'mensagem_manifestacao'  => $xMotivoEvento,
                         ]);
+                    }
+
+                    // Registra em dfe_eventos para trilha de auditoria
+                    DfeEvento::create([
+                        'empresa_id'       => $empresa->id,
+                        'dfe_documento_id' => $doc?->id,
+                        'chave'            => $chave,
+                        'tipo_evento'      => $tipoEvento,
+                        'nome_evento'      => match ($tipoEvento) {
+                            self::EVENTO_CIENCIA       => 'Ciência da Emissão',
+                            self::EVENTO_CONFIRMACAO   => 'Confirmação da Operação',
+                            self::EVENTO_DESCONHECIDO  => 'Desconhecimento da Operação',
+                            self::EVENTO_NAO_REALIZADO => 'Operação Não Realizada',
+                            default                    => 'Manifestação ' . $tipoEvento,
+                        },
+                        'sequencia_evento' => 1,
+                        'protocolo'        => $protocolo ?: null,
+                        'data_evento'      => Carbon::now(),
+                        'cstat'            => $cStatEvento,
+                        'motivo'           => $xMotivoEvento ?: null,
+                        'justificativa'    => $justificativa ?: null,
+                        'xml'              => is_string($response) ? $response : null,
+                        'user_id'          => $userId,
+                    ]);
 
                     return [
                         'sucesso'    => true,
@@ -387,13 +448,39 @@ class DfeService
 
                 // 573: Rejeição - Duplicidade de evento (já estava registrado)
                 if ($cStatEvento === '573') {
-                    DfeDocumento::where('empresa_id', $empresa->id)
+                    $doc = DfeDocumento::where('empresa_id', $empresa->id)
                         ->where('chave', $chave)
-                        ->update([
+                        ->first();
+
+                    if ($doc) {
+                        $doc->update([
                             'situacao_manifestacao' => $nomeSituacao,
                             'data_manifestacao'     => Carbon::now(),
                             'mensagem_manifestacao' => $xMotivoEvento,
                         ]);
+                    }
+
+                    DfeEvento::create([
+                        'empresa_id'       => $empresa->id,
+                        'dfe_documento_id' => $doc?->id,
+                        'chave'            => $chave,
+                        'tipo_evento'      => $tipoEvento,
+                        'nome_evento'      => match ($tipoEvento) {
+                            self::EVENTO_CIENCIA       => 'Ciência da Emissão',
+                            self::EVENTO_CONFIRMACAO   => 'Confirmação da Operação',
+                            self::EVENTO_DESCONHECIDO  => 'Desconhecimento da Operação',
+                            self::EVENTO_NAO_REALIZADO => 'Operação Não Realizada',
+                            default                    => 'Manifestação ' . $tipoEvento,
+                        },
+                        'sequencia_evento' => 1,
+                        'protocolo'        => $protocolo ?: null,
+                        'data_evento'      => Carbon::now(),
+                        'cstat'            => '573',
+                        'motivo'           => $xMotivoEvento ?: null,
+                        'justificativa'    => $justificativa ?: null,
+                        'xml'              => is_string($response) ? $response : null,
+                        'user_id'          => $userId,
+                    ]);
 
                     return [
                         'sucesso'  => true,

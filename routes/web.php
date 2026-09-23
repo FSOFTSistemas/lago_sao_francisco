@@ -223,6 +223,7 @@ Route::middleware(['auth'])->prefix('dfe')->name('dfe.')->group(function () {
     Route::post('/consultar-chave/{chave}', [DfeController::class, 'consultarChave'])->name('consultar-chave');
     Route::get('/download-xml/{chave}', [DfeController::class, 'downloadXml'])->name('download-xml');
     Route::get('/{id}/danfe', [DfeController::class, 'danfe'])->name('danfe');
+    Route::get('/eventos/{chave}', [DfeController::class, 'eventos'])->name('eventos');
 });
 
 // Notas Fiscais de Entrada (Compras e Estoque/Almoxarifado)

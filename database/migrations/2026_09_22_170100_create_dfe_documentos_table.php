@@ -40,6 +40,29 @@ return new class extends Migration
             $table->index(['empresa_id', 'situacao_manifestacao']);
             $table->index(['empresa_id', 'importado_entrada']);
         });
+
+        Schema::create('dfe_eventos', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('empresa_id')->constrained('empresas')->cascadeOnDelete();
+            $table->foreignId('dfe_documento_id')->nullable()->constrained('dfe_documentos')->nullOnDelete();
+            $table->string('chave', 44)->index();
+            $table->string('nsu', 15)->nullable()->index();
+            $table->string('tipo_evento', 10)->index(); // 210200, 210210, 210220, 210240, 110111, 110110, etc.
+            $table->string('nome_evento', 100)->nullable();
+            $table->integer('sequencia_evento')->default(1);
+            $table->string('protocolo', 30)->nullable();
+            $table->dateTime('data_evento')->nullable();
+            $table->string('cstat', 10)->nullable();
+            $table->string('motivo', 255)->nullable();
+            $table->text('justificativa')->nullable();
+            $table->json('detalhes')->nullable();
+            $table->longText('xml')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+
+            $table->index(['empresa_id', 'chave']);
+            $table->index(['empresa_id', 'tipo_evento']);
+        });
     }
 
     /**
@@ -47,6 +70,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('dfe_eventos');
         Schema::dropIfExists('dfe_documentos');
     }
 };

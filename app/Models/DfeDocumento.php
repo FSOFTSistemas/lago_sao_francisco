@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DfeDocumento extends Model
 {
@@ -54,6 +55,11 @@ class DfeDocumento extends Model
     public function entrada(): BelongsTo
     {
         return $this->belongsTo(Entrada::class, 'entrada_id');
+    }
+
+    public function eventos(): HasMany
+    {
+        return $this->hasMany(DfeEvento::class, 'dfe_documento_id')->orderByDesc('created_at');
     }
 
     public function scopeDaEmpresa(Builder $query, int $empresaId): Builder

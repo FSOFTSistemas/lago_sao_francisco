@@ -6,6 +6,7 @@ use App\Models\AlmoxarifadoCategoria;
 use App\Models\AlmoxarifadoItem;
 use App\Models\CategoriaProduto;
 use App\Models\DfeDocumento;
+use App\Models\DfeEvento;
 use App\Models\Empresa;
 use App\Models\EmpresaPreferencia;
 use App\Models\Entrada;
@@ -170,6 +171,26 @@ class DfeEntradaTest extends TestCase
             $table->unsignedBigInteger('entrada_id')->nullable();
             $table->timestamps();
             $table->unique(['empresa_id', 'chave']);
+        });
+
+        Schema::create('dfe_eventos', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('empresa_id');
+            $table->unsignedBigInteger('dfe_documento_id')->nullable();
+            $table->string('chave', 44);
+            $table->string('nsu', 15)->nullable();
+            $table->string('tipo_evento', 10);
+            $table->string('nome_evento', 100)->nullable();
+            $table->integer('sequencia_evento')->default(1);
+            $table->string('protocolo', 30)->nullable();
+            $table->dateTime('data_evento')->nullable();
+            $table->string('cstat', 10)->nullable();
+            $table->string('motivo', 255)->nullable();
+            $table->text('justificativa')->nullable();
+            $table->json('detalhes')->nullable();
+            $table->longText('xml')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
+            $table->timestamps();
         });
 
         Schema::create('entradas', function (Blueprint $table) {
@@ -510,7 +531,7 @@ XML;
         $mockDfeService = Mockery::mock(DfeService::class);
         $mockDfeService->shouldReceive('manifestar')
             ->once()
-            ->with(Mockery::type(Empresa::class), $chave, DfeService::EVENTO_CONFIRMACAO)
+            ->with(Mockery::type(Empresa::class), $chave, DfeService::EVENTO_CONFIRMACAO, '', $user->id)
             ->andReturn([
                 'sucesso'   => true,
                 'cStat'     => '135',
@@ -874,6 +895,134 @@ XML;
         $chavesTodos = collect($responseTodos->json('data'))->pluck('chave')->all();
         $this->assertContains($chaveCompleta, $chavesTodos);
         $this->assertContains($chaveResumo, $chavesTodos);
+    }
+
+    public function test_processamento_de_evento_sefaz_grava_em_dfe_eventos_e_cancela_nota(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Evento', 'cnpj' => '12345678000199']);
+        $service = new DfeService();
+        $chave = '35260199999999000199550010000000071000000075';
+
+        // Cria a nota previamente
+        $doc = DfeDocumento::create([
+            'empresa_id'   => $empresa->id,
+            'nsu'          => '3001',
+            'chave'        => $chave,
+            'schema'       => 'procNFe',
+            'numero_nota'  => '7',
+            'serie'        => '1',
+            'situacao_nfe' => 1, // Autorizada
+        ]);
+
+        // Chega evento de Cancelamento (110111)
+        $xmlEvento = <<<XML
+<procEventoNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00">
+    <evento versao="1.00">
+        <infEvento Id="ID110111{$chave}01">
+            <cOrgao>35</cOrgao>
+            <tpAmb>2</tpAmb>
+            <CNPJ>99999999000199</CNPJ>
+            <chNFe>{$chave}</chNFe>
+            <dhEvento>2026-09-23T11:00:00-03:00</dhEvento>
+            <tpEvento>110111</tpEvento>
+            <nSeqEvento>1</nSeqEvento>
+            <verEvento>1.00</verEvento>
+            <detEvento versao="1.00">
+                <descEvento>Cancelamento</descEvento>
+                <nProt>135260000099999</nProt>
+                <xJust>Cancelamento solicitado pelo emitente</xJust>
+            </detEvento>
+        </infEvento>
+    </evento>
+    <retEvento versao="1.00">
+        <infEvento>
+            <tpAmb>2</tpAmb>
+            <cOrgao>35</cOrgao>
+            <cStat>135</cStat>
+            <xMotivo>Evento registrado e vinculado a NF-e</xMotivo>
+            <chNFe>{$chave}</chNFe>
+            <tpEvento>110111</tpEvento>
+            <xEvento>Cancelamento homologado</xEvento>
+            <nSeqEvento>1</nSeqEvento>
+            <dhRegEvento>2026-09-23T11:00:05-03:00</dhRegEvento>
+            <nProt>135260000088888</nProt>
+        </infEvento>
+    </retEvento>
+</procEventoNFe>
+XML;
+
+        $service->processarDocumentoXml($empresa, '3002', 'procEventoNFe', $xmlEvento);
+
+        // Verifica se a nota teve seu status alterado para cancelada (situacao_nfe = 2)
+        $doc->refresh();
+        $this->assertSame(2, $doc->situacao_nfe);
+
+        // Verifica se o evento foi gravado na tabela dfe_eventos
+        $evento = DfeEvento::where('empresa_id', $empresa->id)->where('chave', $chave)->first();
+        $this->assertNotNull($evento);
+        $this->assertSame('110111', $evento->tipo_evento);
+        $this->assertSame($doc->id, $evento->dfe_documento_id);
+        $this->assertSame('Cancelamento homologado', $evento->nome_evento);
+        $this->assertSame('135260000088888', $evento->protocolo);
+    }
+
+    public function test_endpoint_eventos_retorna_historico_json(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Endpoint', 'cnpj' => '12345678000199']);
+        $user = User::create(['name' => 'Tester Eventos', 'email' => 'eventos@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
+        $chave = '35260199999999000199550010000000081000000085';
+
+        $doc = DfeDocumento::create([
+            'empresa_id'   => $empresa->id,
+            'nsu'          => '4001',
+            'chave'        => $chave,
+            'schema'       => 'procNFe',
+            'numero_nota'  => '8',
+            'serie'        => '1',
+            'situacao_nfe' => 1,
+            'valor_total'  => 1000.00,
+        ]);
+
+        DfeEvento::create([
+            'empresa_id'       => $empresa->id,
+            'dfe_documento_id' => $doc->id,
+            'chave'            => $chave,
+            'tipo_evento'      => '210210',
+            'nome_evento'      => 'Ciência da Emissão',
+            'sequencia_evento' => 1,
+            'protocolo'        => '135260000011111',
+            'data_evento'      => now(),
+            'cstat'            => '135',
+            'motivo'           => 'Evento registrado',
+            'user_id'          => $user->id,
+        ]);
+
+        DfeEvento::create([
+            'empresa_id'       => $empresa->id,
+            'dfe_documento_id' => $doc->id,
+            'chave'            => $chave,
+            'tipo_evento'      => '210200',
+            'nome_evento'      => 'Confirmação da Operação',
+            'sequencia_evento' => 1,
+            'protocolo'        => '135260000022222',
+            'data_evento'      => now(),
+            'cstat'            => '135',
+            'motivo'           => 'Evento registrado',
+            'user_id'          => $user->id,
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('dfe.eventos', $chave));
+        $response->assertStatus(200);
+        $response->assertJson([
+            'sucesso' => true,
+            'chave'   => $chave,
+            'numero'  => '8',
+        ]);
+
+        $eventosRetornados = $response->json('eventos');
+        $this->assertCount(2, $eventosRetornados);
+        $this->assertSame('Confirmação da Operação', $eventosRetornados[0]['nome_evento']);
+        $this->assertSame('Tester Eventos', $eventosRetornados[0]['usuario']);
     }
 }
 

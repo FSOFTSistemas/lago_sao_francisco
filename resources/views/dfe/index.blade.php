@@ -218,7 +218,7 @@
                         <th style="width: 150px;">Manifestação</th>
                         <th style="width: 100px;">XML</th>
                         <th style="width: 110px;">Entrada</th>
-                        <th style="width: 180px;" class="text-center">Ações</th>
+                        <th style="width: 210px;" class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -287,6 +287,11 @@
                                     {{-- Botão Manifestar --}}
                                     <button type="button" class="btn btn-outline-primary" data-toggle="modal" data-target="#modalManifestar{{ $doc->id }}" title="Manifestar Destinatário">
                                         <i class="fas fa-comment-dots"></i>
+                                    </button>
+
+                                    {{-- Botão Histórico de Eventos --}}
+                                    <button type="button" class="btn btn-outline-info btn-historico-eventos" data-chave="{{ $doc->chave }}" title="Ver Histórico de Eventos / Trilha de Auditoria">
+                                        <i class="fas fa-history"></i>
                                     </button>
 
                                     {{-- Visualizar DANFE (PDF) e Download XML se disponível --}}
@@ -406,6 +411,66 @@
         @endif
     </div>
 
+    {{-- Modal Universal de Histórico de Eventos --}}
+    <div class="modal fade" id="modalHistoricoEventos" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title font-weight-bold">
+                        <i class="fas fa-history mr-1"></i> Histórico de Eventos e Auditoria SEFAZ
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="historicoLoading" class="text-center py-4">
+                        <i class="fas fa-spinner fa-spin fa-2x text-info mb-2"></i>
+                        <div class="text-muted text-sm">Carregando histórico da SEFAZ...</div>
+                    </div>
+
+                    <div id="historicoConteudo" style="display: none;">
+                        <div class="card card-outline card-light shadow-none border mb-3">
+                            <div class="card-body p-2 text-sm bg-light">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Documento:</strong> <span id="histDocNumero">-</span> | Série <span id="histDocSerie">-</span>
+                                    </div>
+                                    <div class="col-md-6 text-md-right">
+                                        <strong>Valor:</strong> <span id="histDocTotal" class="font-weight-bold text-dark">-</span>
+                                    </div>
+                                    <div class="col-12 mt-1">
+                                        <strong>Fornecedor:</strong> <span id="histDocEmitente">-</span>
+                                    </div>
+                                    <div class="col-12 mt-1">
+                                        <small class="text-muted">Chave: <span id="histDocChave" class="text-monospace"></span></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="font-weight-bold text-sm mb-2"><i class="fas fa-stream mr-1"></i> Trilha de Eventos Registrados:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered text-sm mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th style="width: 160px;">Data / Hora</th>
+                                        <th>Evento</th>
+                                        <th style="width: 160px;">Protocolo SEFAZ</th>
+                                        <th style="width: 150px;">Registrado Por</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaEventosBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
         .pagination {
             margin-bottom: 0 !important;
@@ -417,4 +482,52 @@
             max-height: 16px !important;
         }
     </style>
+@stop
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        $('.btn-historico-eventos').on('click', function() {
+            var chave = $(this).data('chave');
+            var url = "{{ route('dfe.eventos', ':chave') }}".replace(':chave', chave);
+
+            $('#historicoLoading').show();
+            $('#historicoConteudo').hide();
+            $('#tabelaEventosBody').empty();
+            $('#modalHistoricoEventos').modal('show');
+
+            $.getJSON(url, function(res) {
+                $('#historicoLoading').hide();
+                $('#historicoConteudo').show();
+
+                $('#histDocNumero').text(res.numero || 'S/N');
+                $('#histDocSerie').text(res.serie || '1');
+                $('#histDocTotal').text(res.total || '-');
+                $('#histDocEmitente').text(res.emitente || '-');
+                $('#histDocChave').text(res.chave || '-');
+
+                if (res.eventos && res.eventos.length > 0) {
+                    $.each(res.eventos, function(idx, ev) {
+                        var row = '<tr>' +
+                            '<td>' + ev.data_evento + '</td>' +
+                            '<td>' +
+                                '<span class="badge ' + ev.badge_classe + ' mr-1">' + ev.nome_evento + '</span>' +
+                                (ev.justificativa ? '<div class="text-xs text-muted mt-1"><em>Motivo: ' + ev.justificativa + '</em></div>' : '') +
+                                (ev.detalhes && ev.detalhes.xCorrecao ? '<div class="text-xs text-info mt-1"><em>Correção: ' + ev.detalhes.xCorrecao + '</em></div>' : '') +
+                            '</td>' +
+                            '<td class="text-monospace small">' + ev.protocolo + '</td>' +
+                            '<td><i class="fas fa-user-edit text-muted mr-1"></i>' + ev.usuario + '</td>' +
+                        '</tr>';
+                        $('#tabelaEventosBody').append(row);
+                    });
+                } else {
+                    $('#tabelaEventosBody').html('<tr><td colspan="4" class="text-center py-3 text-muted"><i class="fas fa-info-circle mr-1"></i> Nenhum evento registrado no histórico para esta nota fiscal.</td></tr>');
+                }
+            }).fail(function() {
+                $('#historicoLoading').hide();
+                alert('Erro ao carregar o histórico de eventos da SEFAZ.');
+            });
+        });
+    });
+</script>
 @stop

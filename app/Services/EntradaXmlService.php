@@ -407,7 +407,7 @@ class EntradaXmlService
                     ->first();
 
                 if (!$dfeDoc || $dfeDoc->situacao_manifestacao !== 'confirmada') {
-                    app(DfeService::class)->manifestar($empresa, $entrada->chave, DfeService::EVENTO_CONFIRMACAO);
+                    app(DfeService::class)->manifestar($empresa, $entrada->chave, DfeService::EVENTO_CONFIRMACAO, '', $usuarioId);
                 }
             }
         } catch (\Throwable $e) {

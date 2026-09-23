@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DfeDocumento;
+use App\Models\DfeEvento;
 use App\Models\Empresa;
 use App\Services\DanfeService;
 use App\Services\DfeService;
@@ -173,7 +174,7 @@ class DfeController extends Controller
         $evento = (string) $request->input('evento');
         $justificativa = (string) $request->input('justificativa', '');
 
-        $resultado = $this->dfeService->manifestar($empresa, $chave, $evento, $justificativa);
+        $resultado = $this->dfeService->manifestar($empresa, $chave, $evento, $justificativa, Auth::id());
 
         if ($request->wantsJson()) {
             return response()->json($resultado);
@@ -198,7 +199,7 @@ class DfeController extends Controller
 
         // Automação: Se ainda não deu ciência ou confirmação, manifesta Ciência da Emissão automaticamente
         if ($doc && !in_array($doc->situacao_manifestacao, ['ciencia', 'confirmada'])) {
-            $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA);
+            $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA, '', Auth::id());
             sleep(1); // Breve pausa para propagação na SEFAZ
         }
 
@@ -232,7 +233,7 @@ class DfeController extends Controller
         // Automação: Ao baixar o arquivo, registra Ciência da Emissão se ainda não manifestada
         if ($documento && !in_array($documento->situacao_manifestacao, ['ciencia', 'confirmada'])) {
             try {
-                $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA);
+                $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA, '', Auth::id());
                 $documento->refresh();
             } catch (\Throwable $e) {
                 // Log e segue com o fluxo
@@ -275,7 +276,7 @@ class DfeController extends Controller
         if (empty($documento->xml)) {
             try {
                 if (!in_array($documento->situacao_manifestacao, ['ciencia', 'confirmada'])) {
-                    $this->dfeService->manifestar($empresa, $documento->chave, DfeService::EVENTO_CIENCIA);
+                    $this->dfeService->manifestar($empresa, $documento->chave, DfeService::EVENTO_CIENCIA, '', Auth::id());
                     sleep(1);
                 }
                 $this->dfeService->consultarPorChave($empresa, $documento->chave);
@@ -304,5 +305,49 @@ class DfeController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->with('error', 'Erro ao gerar o DANFE em PDF: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Retorna o histórico de eventos da nota fiscal em JSON para exibição em modal/timeline.
+     */
+    public function eventos(string $chave): JsonResponse
+    {
+        $empresa = $this->getEmpresaAtiva();
+
+        $documento = DfeDocumento::where('empresa_id', $empresa->id)
+            ->where('chave', $chave)
+            ->first();
+
+        $eventos = DfeEvento::with('usuario:id,name')
+            ->where('empresa_id', $empresa->id)
+            ->where('chave', $chave)
+            ->orderByDesc('data_evento')
+            ->orderByDesc('id')
+            ->get()
+            ->map(function ($ev) {
+                return [
+                    'id'            => $ev->id,
+                    'tipo_evento'   => $ev->tipo_evento,
+                    'nome_evento'   => $ev->nome_evento_formatado,
+                    'badge_classe'  => $ev->badge_classe,
+                    'sequencia'     => $ev->sequencia_evento,
+                    'protocolo'     => $ev->protocolo ?: '-',
+                    'data_evento'   => $ev->data_evento ? $ev->data_evento->format('d/m/Y H:i:s') : ($ev->created_at ? $ev->created_at->format('d/m/Y H:i:s') : '-'),
+                    'motivo'        => $ev->motivo ?: '-',
+                    'justificativa' => $ev->justificativa ?: null,
+                    'detalhes'      => $ev->detalhes,
+                    'usuario'       => $ev->usuario?->name ?? 'SEFAZ / Sistema',
+                ];
+            });
+
+        return response()->json([
+            'sucesso'   => true,
+            'chave'     => $chave,
+            'numero'    => $documento?->numero_nota,
+            'serie'     => $documento?->serie,
+            'emitente'  => $documento?->nome_emitente,
+            'total'     => $documento?->valor_total_formatado,
+            'eventos'   => $eventos,
+        ]);
     }
 }
