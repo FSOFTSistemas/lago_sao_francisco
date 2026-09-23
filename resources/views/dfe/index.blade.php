@@ -348,9 +348,26 @@
             </table>
         </div>
         @if ($documentos->hasPages())
-            <div class="card-footer py-2">
-                {{ $documentos->links() }}
+            <div class="card-footer py-2 d-flex justify-content-between align-items-center flex-wrap">
+                <small class="text-muted">
+                    Exibindo {{ $documentos->firstItem() }} a {{ $documentos->lastItem() }} de {{ $documentos->total() }} documentos
+                </small>
+                <div class="mt-1 mt-md-0">
+                    {{ $documentos->links() }}
+                </div>
             </div>
         @endif
     </div>
+
+    <style>
+        .pagination {
+            margin-bottom: 0 !important;
+        }
+        .pagination svg {
+            width: 1rem !important;
+            height: 1rem !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+        }
+    </style>
 @stop

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Listeners\VerificarCaixaNoLogin;
 use Illuminate\Auth\Events\Login;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,5 +24,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(Login::class, VerificarCaixaNoLogin::class);
+        Paginator::useBootstrapFour();
     }
 }

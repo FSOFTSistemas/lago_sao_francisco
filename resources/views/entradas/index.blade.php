@@ -160,9 +160,26 @@
             </table>
         </div>
         @if ($entradas->hasPages())
-            <div class="card-footer py-2">
-                {{ $entradas->links() }}
+            <div class="card-footer py-2 d-flex justify-content-between align-items-center flex-wrap">
+                <small class="text-muted">
+                    Exibindo {{ $entradas->firstItem() }} a {{ $entradas->lastItem() }} de {{ $entradas->total() }} entradas
+                </small>
+                <div class="mt-1 mt-md-0">
+                    {{ $entradas->links() }}
+                </div>
             </div>
         @endif
     </div>
+
+    <style>
+        .pagination {
+            margin-bottom: 0 !important;
+        }
+        .pagination svg {
+            width: 1rem !important;
+            height: 1rem !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+        }
+    </style>
 @stop
