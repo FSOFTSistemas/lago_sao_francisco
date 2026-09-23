@@ -17,6 +17,9 @@
                 <i class="fas fa-arrow-left mr-1"></i> Voltar à Lista
             </a>
             @if ($entrada->xml)
+                <a href="{{ route('entradas.danfe', $entrada->id) }}" target="_blank" class="btn btn-outline-danger mr-2">
+                    <i class="fas fa-file-pdf mr-1"></i> Imprimir DANFE
+                </a>
                 <a href="{{ route('entradas.download-xml', $entrada->id) }}" class="btn btn-outline-secondary">
                     <i class="fas fa-download mr-1"></i> Baixar XML
                 </a>

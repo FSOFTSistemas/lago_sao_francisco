@@ -233,7 +233,13 @@
                             </td>
                             <td>
                                 @if ($doc->importado_entrada)
-                                    <span class="badge badge-success"><i class="fas fa-check-double mr-1"></i> Entrada OK</span>
+                                    @if ($doc->entrada_id)
+                                        <a href="{{ route('entradas.show', $doc->entrada_id) }}" class="badge badge-success text-white" title="Ver detalhes da entrada no sistema">
+                                            <i class="fas fa-check-double mr-1"></i> Entrada OK
+                                        </a>
+                                    @else
+                                        <span class="badge badge-success"><i class="fas fa-check-double mr-1"></i> Entrada OK</span>
+                                    @endif
                                 @else
                                     <span class="badge badge-light border">Pendente</span>
                                 @endif
@@ -252,8 +258,11 @@
                                         <i class="fas fa-comment-dots"></i>
                                     </button>
 
-                                    {{-- Download XML se disponível --}}
+                                    {{-- Visualizar DANFE (PDF) e Download XML se disponível --}}
                                     @if ($doc->temXmlCompleto())
+                                        <a href="{{ route('dfe.danfe', $doc->id) }}" target="_blank" class="btn btn-outline-danger" title="Visualizar / Imprimir DANFE (PDF)">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
                                         <a href="{{ route('dfe.download-xml', $doc->chave) }}" class="btn btn-outline-secondary" title="Baixar XML">
                                             <i class="fas fa-download"></i>
                                         </a>

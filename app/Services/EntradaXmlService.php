@@ -8,12 +8,14 @@ use App\Models\AlmoxarifadoMovimentacao;
 use App\Models\CategoriaProduto;
 use App\Models\ContasAPagar;
 use App\Models\DfeDocumento;
+use App\Models\Empresa;
 use App\Models\Entrada;
 use App\Models\Estoque;
 use App\Models\Fornecedor;
 use App\Models\ItemEntrada;
 use App\Models\ParcelaContasAPagar;
 use App\Models\Produto;
+use App\Services\DfeService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -286,7 +288,7 @@ class EntradaXmlService
      */
     public function processarEntrada(array $dadosPayload, int $empresaId, int $usuarioId): Entrada
     {
-        return DB::transaction(function () use ($dadosPayload, $empresaId, $usuarioId) {
+        $entrada = DB::transaction(function () use ($dadosPayload, $empresaId, $usuarioId) {
             $parsed = $this->parseXml($dadosPayload['xml']);
 
             // 1. Fornecedor
@@ -395,6 +397,24 @@ class EntradaXmlService
 
             return $entrada;
         });
+
+        // 6. Automação: Manifestar Confirmação da Operação (210200) na SEFAZ se ainda não confirmada
+        try {
+            $empresa = Empresa::with('preferencia')->find($empresaId);
+            if ($empresa && !empty($entrada->chave)) {
+                $dfeDoc = DfeDocumento::where('empresa_id', $empresaId)
+                    ->where('chave', $entrada->chave)
+                    ->first();
+
+                if (!$dfeDoc || $dfeDoc->situacao_manifestacao !== 'confirmada') {
+                    app(DfeService::class)->manifestar($empresa, $entrada->chave, DfeService::EVENTO_CONFIRMACAO);
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning("Falha ao registrar manifestação automática de confirmação na SEFAZ [Chave: {$entrada->chave}]: " . $e->getMessage());
+        }
+
+        return $entrada;
     }
 
     /**

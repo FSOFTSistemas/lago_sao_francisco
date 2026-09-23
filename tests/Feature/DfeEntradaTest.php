@@ -12,10 +12,12 @@ use App\Models\Entrada;
 use App\Models\Fornecedor;
 use App\Models\Produto;
 use App\Models\User;
+use App\Services\DfeService;
 use App\Services\EntradaXmlService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Mockery;
 use Tests\TestCase;
 
 class DfeEntradaTest extends TestCase
@@ -148,6 +150,8 @@ class DfeEntradaTest extends TestCase
             $table->unsignedBigInteger('empresa_id');
             $table->string('nsu', 15);
             $table->string('chave', 44);
+            $table->string('numero_nota', 20)->nullable();
+            $table->string('serie', 10)->nullable();
             $table->string('schema', 30);
             $table->string('tipo_documento', 10)->default('NFE');
             $table->string('cnpj_emitente', 20)->nullable();
@@ -274,6 +278,20 @@ class DfeEntradaTest extends TestCase
             $table->unsignedBigInteger('empresa_id')->nullable();
             $table->boolean('ativo')->default(true);
             $table->timestamps();
+        });
+
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('guard_name')->default('web');
+            $table->timestamps();
+        });
+
+        Schema::create('model_has_roles', function (Blueprint $table) {
+            $table->unsignedBigInteger('role_id');
+            $table->string('model_type');
+            $table->unsignedBigInteger('model_id');
+            $table->index(['model_id', 'model_type']);
         });
     }
 
@@ -430,5 +448,316 @@ XML;
             'tipo'       => 'entrada',
             'quantidade' => 5.0,
         ]);
+    }
+
+    public function test_processar_entrada_dispara_confirmacao_automatica_sefaz(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Teste', 'cnpj' => '12345678000199']);
+        EmpresaPreferencia::create([
+            'empresa_id'   => $empresa->id,
+            'ambiente_dfe' => 2,
+        ]);
+        $user = User::create(['name' => 'Tester', 'email' => 'tester_confirma@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
+        $categoria = CategoriaProduto::create(['descricao' => 'Geral']);
+
+        $chave = '35260199999999000199550010000000031000000035';
+        $dfeDoc = DfeDocumento::create([
+            'empresa_id'            => $empresa->id,
+            'nsu'                   => '100',
+            'chave'                 => $chave,
+            'numero_nota'           => '999',
+            'serie'                 => '1',
+            'schema'                => 'procNFe',
+            'situacao_manifestacao' => 'ciencia',
+        ]);
+
+        $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe Id="NFe{$chave}" versao="4.00">
+            <ide>
+                <nNF>999</nNF>
+                <serie>1</serie>
+                <natOp>VENDA</natOp>
+                <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+            </ide>
+            <emit>
+                <CNPJ>99999999000199</CNPJ>
+                <xNome>FORNECEDOR CONFIRMACAO LTDA</xNome>
+            </emit>
+            <det nItem="1">
+                <prod>
+                    <cProd>ITEM1</cProd>
+                    <xProd>PRODUTO TESTE CONFIRMACAO</xProd>
+                    <NCM>22021000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>1.0000</qCom>
+                    <vUnCom>10.000000</vUnCom>
+                    <vProd>10.00</vProd>
+                </prod>
+                <imposto><ICMS><ICMS00><orig>0</orig><CST>00</CST><vBC>10.00</vBC><pICMS>18.00</pICMS><vICMS>1.80</vICMS></ICMS00></ICMS></imposto>
+            </det>
+            <total><ICMSTot><vProd>10.00</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc><vOutro>0.00</vOutro><vNF>10.00</vNF></ICMSTot></total>
+        </infNFe>
+    </NFe>
+    <protNFe versao="4.00"><infProt><chNFe>{$chave}</chNFe><nProt>135260000099999</nProt><cStat>100</cStat></infProt></protNFe>
+</nfeProc>
+XML;
+
+        $mockDfeService = Mockery::mock(DfeService::class);
+        $mockDfeService->shouldReceive('manifestar')
+            ->once()
+            ->with(Mockery::type(Empresa::class), $chave, DfeService::EVENTO_CONFIRMACAO)
+            ->andReturn([
+                'sucesso'   => true,
+                'cStat'     => '135',
+                'protocolo' => '135260000099999',
+                'situacao'  => 'confirmada',
+                'mensagem'  => 'Evento registrado',
+            ]);
+        $this->app->instance(DfeService::class, $mockDfeService);
+
+        $service = new EntradaXmlService();
+        $entrada = $service->processarEntrada([
+            'xml'              => $xml,
+            'dfe_documento_id' => $dfeDoc->id,
+            'itens'            => [
+                0 => [
+                    'destino'              => 'produto',
+                    'categoria_produto_id' => $categoria->id,
+                ],
+            ],
+        ], $empresa->id, $user->id);
+
+        $this->assertInstanceOf(Entrada::class, $entrada);
+        $this->assertTrue((bool) DfeDocumento::find($dfeDoc->id)->importado_entrada);
+    }
+
+    public function test_danfe_dfe_rota_retorna_pdf_inline(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Teste', 'cnpj' => '12345678000199']);
+        $user = User::create(['name' => 'Tester', 'email' => 'danfe_dfe@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
+
+        $chave = '35260199999999000199550010000000041000000045';
+        $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe Id="NFe{$chave}" versao="4.00">
+            <ide>
+                <cUF>35</cUF>
+                <cNF>00000004</cNF>
+                <natOp>VENDA MERCADORIA</natOp>
+                <mod>55</mod>
+                <serie>1</serie>
+                <nNF>4</nNF>
+                <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+                <tpNF>1</tpNF>
+                <idDest>1</idDest>
+                <cMunFG>3550308</cMunFG>
+                <tpImp>1</tpImp>
+                <tpEmis>1</tpEmis>
+                <cDV>5</cDV>
+                <tpAmb>2</tpAmb>
+                <finNFe>1</finNFe>
+                <indFinal>0</indFinal>
+                <indPres>1</indPres>
+                <procEmi>0</procEmi>
+                <verProc>1.0</verProc>
+            </ide>
+            <emit>
+                <CNPJ>99999999000199</CNPJ>
+                <xNome>FORNECEDOR DANFE LTDA</xNome>
+                <enderEmit>
+                    <xLgr>RUA DAS FLORES</xLgr>
+                    <nro>100</nro>
+                    <xBairro>CENTRO</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>SAO PAULO</xMun>
+                    <UF>SP</UF>
+                    <CEP>01001000</CEP>
+                </enderEmit>
+                <IE>123456789012</IE>
+                <CRT>3</CRT>
+            </emit>
+            <dest>
+                <CNPJ>12345678000199</CNPJ>
+                <xNome>HOTEL LAGO SAO FRANCISCO</xNome>
+                <enderDest>
+                    <xLgr>RODOVIA SP</xLgr>
+                    <nro>KM 10</nro>
+                    <xBairro>ZONA RURAL</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>SAO PAULO</xMun>
+                    <UF>SP</UF>
+                    <CEP>14000000</CEP>
+                </enderDest>
+                <indIEDest>1</indIEDest>
+                <IE>987654321098</IE>
+            </dest>
+            <det nItem="1">
+                <prod>
+                    <cProd>ITEM1</cProd>
+                    <cEAN>SEM GTIN</cEAN>
+                    <xProd>PRODUTO TESTE DANFE</xProd>
+                    <NCM>22021000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>1.0000</qCom>
+                    <vUnCom>10.000000</vUnCom>
+                    <vProd>10.00</vProd>
+                    <cEANTrib>SEM GTIN</cEANTrib>
+                    <uTrib>UN</uTrib>
+                    <qTrib>1.0000</qTrib>
+                    <vUnTrib>10.000000</vUnTrib>
+                    <indTot>1</indTot>
+                </prod>
+                <imposto><ICMS><ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>10.00</vBC><pICMS>18.00</pICMS><vICMS>1.80</vICMS></ICMS00></ICMS><PIS><PISAliq><CST>01</CST><vBC>10.00</vBC><pPIS>1.65</pPIS><vPIS>0.17</vPIS></PISAliq></PIS><COFINS><COFINSAliq><CST>01</CST><vBC>10.00</vBC><pCOFINS>7.60</pCOFINS><vCOFINS>0.76</vCOFINS></COFINSAliq></COFINS></imposto>
+            </det>
+            <total><ICMSTot><vBC>10.00</vBC><vICMS>1.80</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>10.00</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>0.17</vPIS><vCOFINS>0.76</vCOFINS><vOutro>0.00</vOutro><vNF>10.00</vNF></ICMSTot></total>
+            <transp><modFrete>9</modFrete></transp>
+            <pag><detPag><tPag>01</tPag><vPag>10.00</vPag></detPag></pag>
+        </infNFe>
+    </NFe>
+    <protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>1.0</verAplic><chNFe>{$chave}</chNFe><dhRecbto>2026-09-22T10:00:00-03:00</dhRecbto><nProt>135260000099998</nProt><digVal>abcdef123456789=</digVal><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>
+</nfeProc>
+XML;
+
+        $doc = DfeDocumento::create([
+            'empresa_id'     => $empresa->id,
+            'nsu'            => '101',
+            'chave'          => $chave,
+            'numero_nota'    => '4',
+            'serie'          => '1',
+            'schema'         => 'procNFe',
+            'tipo_documento' => 'NFE',
+            'cnpj_emitente'  => '99999999000199',
+            'nome_emitente'  => 'FORNECEDOR DANFE LTDA',
+            'valor_total'    => 10.00,
+            'situacao_nfe'   => 1,
+            'xml'            => $xml,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dfe.danfe', $doc->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_danfe_entrada_rota_retorna_pdf_inline(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Teste', 'cnpj' => '12345678000199']);
+        $user = User::create(['name' => 'Tester', 'email' => 'danfe_entrada@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
+        $fornecedor = Fornecedor::create(['razao_social' => 'Fornecedor Teste', 'cnpj' => '99999999000199']);
+
+        $chave = '35260199999999000199550010000000051000000055';
+        $xml = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe Id="NFe{$chave}" versao="4.00">
+            <ide>
+                <cUF>35</cUF>
+                <cNF>00000005</cNF>
+                <natOp>VENDA MERCADORIA</natOp>
+                <mod>55</mod>
+                <serie>1</serie>
+                <nNF>5</nNF>
+                <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+                <tpNF>1</tpNF>
+                <idDest>1</idDest>
+                <cMunFG>3550308</cMunFG>
+                <tpImp>1</tpImp>
+                <tpEmis>1</tpEmis>
+                <cDV>5</cDV>
+                <tpAmb>2</tpAmb>
+                <finNFe>1</finNFe>
+                <indFinal>0</indFinal>
+                <indPres>1</indPres>
+                <procEmi>0</procEmi>
+                <verProc>1.0</verProc>
+            </ide>
+            <emit>
+                <CNPJ>99999999000199</CNPJ>
+                <xNome>FORNECEDOR ENTRADA LTDA</xNome>
+                <enderEmit>
+                    <xLgr>RUA DAS FLORES</xLgr>
+                    <nro>100</nro>
+                    <xBairro>CENTRO</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>SAO PAULO</xMun>
+                    <UF>SP</UF>
+                    <CEP>01001000</CEP>
+                </enderEmit>
+                <IE>123456789012</IE>
+                <CRT>3</CRT>
+            </emit>
+            <dest>
+                <CNPJ>12345678000199</CNPJ>
+                <xNome>HOTEL LAGO SAO FRANCISCO</xNome>
+                <enderDest>
+                    <xLgr>RODOVIA SP</xLgr>
+                    <nro>KM 10</nro>
+                    <xBairro>ZONA RURAL</xBairro>
+                    <cMun>3550308</cMun>
+                    <xMun>SAO PAULO</xMun>
+                    <UF>SP</UF>
+                    <CEP>14000000</CEP>
+                </enderDest>
+                <indIEDest>1</indIEDest>
+                <IE>987654321098</IE>
+            </dest>
+            <det nItem="1">
+                <prod>
+                    <cProd>ITEM1</cProd>
+                    <cEAN>SEM GTIN</cEAN>
+                    <xProd>PRODUTO TESTE ENTRADA DANFE</xProd>
+                    <NCM>22021000</NCM>
+                    <CFOP>5102</CFOP>
+                    <uCom>UN</uCom>
+                    <qCom>1.0000</qCom>
+                    <vUnCom>20.000000</vUnCom>
+                    <vProd>20.00</vProd>
+                    <cEANTrib>SEM GTIN</cEANTrib>
+                    <uTrib>UN</uTrib>
+                    <qTrib>1.0000</qTrib>
+                    <vUnTrib>20.000000</vUnTrib>
+                    <indTot>1</indTot>
+                </prod>
+                <imposto><ICMS><ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>20.00</vBC><pICMS>18.00</pICMS><vICMS>3.60</vICMS></ICMS00></ICMS><PIS><PISAliq><CST>01</CST><vBC>20.00</vBC><pPIS>1.65</pPIS><vPIS>0.33</vPIS></PISAliq></PIS><COFINS><COFINSAliq><CST>01</CST><vBC>20.00</vBC><pCOFINS>7.60</pCOFINS><vCOFINS>1.52</vCOFINS></COFINSAliq></COFINS></imposto>
+            </det>
+            <total><ICMSTot><vBC>20.00</vBC><vICMS>3.60</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>20.00</vProd><vFrete>0.00</vFrete><vSeg>0.00</vSeg><vDesc>0.00</vDesc><vII>0.00</vII><vIPI>0.00</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>0.33</vPIS><vCOFINS>1.52</vCOFINS><vOutro>0.00</vOutro><vNF>20.00</vNF></ICMSTot></total>
+            <transp><modFrete>9</modFrete></transp>
+            <pag><detPag><tPag>01</tPag><vPag>20.00</vPag></detPag></pag>
+        </infNFe>
+    </NFe>
+    <protNFe versao="4.00"><infProt><tpAmb>2</tpAmb><verAplic>1.0</verAplic><chNFe>{$chave}</chNFe><dhRecbto>2026-09-22T10:00:00-03:00</dhRecbto><nProt>135260000099997</nProt><digVal>abcdef123456788=</digVal><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>
+</nfeProc>
+XML;
+
+        $entrada = Entrada::create([
+            'empresa_id'        => $empresa->id,
+            'fornecedor_id'     => $fornecedor->id,
+            'usuario_id'        => $user->id,
+            'chave'             => $chave,
+            'numero_nota'       => '5',
+            'serie'             => '1',
+            'natureza_operacao' => 'VENDA',
+            'data_emissao'      => now(),
+            'data_entrada'      => now(),
+            'valor_produtos'    => 20.00,
+            'valor_total'       => 20.00,
+            'xml'               => $xml,
+            'status'            => 'confirmada',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('entradas.danfe', $entrada->id));
+
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 }

@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignId('empresa_id')->constrained('empresas')->cascadeOnDelete();
             $table->string('nsu', 15)->index();
             $table->string('chave', 44)->index();
+            $table->string('numero_nota', 20)->nullable()->index();
+            $table->string('serie', 10)->nullable();
             $table->string('schema', 30); // resNFe, procNFe, resEvento, procEventoNFe
             $table->string('tipo_documento', 10)->default('NFE'); // NFE, CTE, EVENTO
             $table->string('cnpj_emitente', 20)->nullable()->index();

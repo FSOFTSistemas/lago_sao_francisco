@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DfeDocumento;
 use App\Models\Empresa;
+use App\Services\DanfeService;
 use App\Services\DfeService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -17,10 +18,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class DfeController extends Controller
 {
     protected DfeService $dfeService;
+    protected DanfeService $danfeService;
 
-    public function __construct(DfeService $dfeService)
+    public function __construct(DfeService $dfeService, DanfeService $danfeService)
     {
         $this->dfeService = $dfeService;
+        $this->danfeService = $danfeService;
     }
 
     /**
@@ -180,10 +183,20 @@ class DfeController extends Controller
 
     /**
      * Força a consulta direta de uma chave específica na SEFAZ para buscar o XML.
+     * Registra automaticamente a Ciência da Emissão se ainda não manifestada.
      */
     public function consultarChave(string $chave): RedirectResponse|JsonResponse
     {
         $empresa = $this->getEmpresaAtiva();
+
+        $doc = DfeDocumento::where('empresa_id', $empresa->id)->where('chave', $chave)->first();
+
+        // Automação: Se ainda não deu ciência ou confirmação, manifesta Ciência da Emissão automaticamente
+        if ($doc && !in_array($doc->situacao_manifestacao, ['ciencia', 'confirmada'])) {
+            $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA);
+            sleep(1); // Breve pausa para propagação na SEFAZ
+        }
+
         $resultado = $this->dfeService->consultarPorChave($empresa, $chave);
 
         if (request()->wantsJson()) {
@@ -191,26 +204,48 @@ class DfeController extends Controller
         }
 
         if (!$resultado['sucesso']) {
-            return redirect()->back()->with('info', $resultado['mensagem'] ?? $resultado['erro'] ?? 'XML ainda não disponibilizado.');
+            return redirect()->back()->with('info', 'Ciência da Emissão registrada na SEFAZ. O XML completo estará disponível para download/entrada em instantes.');
         }
 
-        return redirect()->back()->with('success', 'XML obtido com sucesso da SEFAZ!');
+        return redirect()->back()->with('success', 'Ciência registrada e XML completo obtido com sucesso da SEFAZ!');
     }
 
     /**
      * Download do arquivo .xml da nota fiscal.
+     * Se o XML ainda não foi baixado, tenta manifestar ciência e obter o XML da SEFAZ automaticamente.
+     * Ao baixar, registra Ciência da Emissão automaticamente se ainda não manifestada.
      */
     public function downloadXml(string $chave): StreamedResponse|RedirectResponse
     {
-        $empresaId = $this->getEmpresaId();
+        $empresa = $this->getEmpresaAtiva();
+        $empresaId = $empresa->id;
 
         $documento = DfeDocumento::where('empresa_id', $empresaId)
             ->where('chave', $chave)
-            ->whereNotNull('xml')
             ->first();
 
+        // Automação: Ao baixar o arquivo, registra Ciência da Emissão se ainda não manifestada
+        if ($documento && !in_array($documento->situacao_manifestacao, ['ciencia', 'confirmada'])) {
+            try {
+                $this->dfeService->manifestar($empresa, $chave, DfeService::EVENTO_CIENCIA);
+                $documento->refresh();
+            } catch (\Throwable $e) {
+                // Log e segue com o fluxo
+            }
+        }
+
         if (!$documento || empty($documento->xml)) {
-            return redirect()->back()->with('error', 'O XML completo desta nota ainda não está disponível no sistema.');
+            // Tenta obter o XML da SEFAZ
+            $this->dfeService->consultarPorChave($empresa, $chave);
+
+            $documento = DfeDocumento::where('empresa_id', $empresaId)
+                ->where('chave', $chave)
+                ->whereNotNull('xml')
+                ->first();
+
+            if (!$documento || empty($documento->xml)) {
+                return redirect()->back()->with('info', 'Ciência da Emissão transmitida à SEFAZ. O XML completo estará liberado para download em instantes.');
+            }
         }
 
         $filename = "NFe_{$chave}.xml";
@@ -220,5 +255,49 @@ class DfeController extends Controller
         }, $filename, [
             'Content-Type' => 'application/xml',
         ]);
+    }
+
+    /**
+     * Gera e exibe o DANFE (PDF) de uma nota fiscal do DF-e no navegador.
+     */
+    public function danfe(int $id): Response|RedirectResponse
+    {
+        $empresa = $this->getEmpresaAtiva();
+
+        $documento = DfeDocumento::where('empresa_id', $empresa->id)->findOrFail($id);
+
+        // Se o XML não estiver disponível, tenta manifestar ciência e consultar na SEFAZ
+        if (empty($documento->xml)) {
+            try {
+                if (!in_array($documento->situacao_manifestacao, ['ciencia', 'confirmada'])) {
+                    $this->dfeService->manifestar($empresa, $documento->chave, DfeService::EVENTO_CIENCIA);
+                    sleep(1);
+                }
+                $this->dfeService->consultarPorChave($empresa, $documento->chave);
+                $documento->refresh();
+            } catch (\Throwable $e) {
+                // segue para a checagem abaixo
+            }
+        }
+
+        if (empty($documento->xml)) {
+            return redirect()->back()->with('warning', 'O XML desta nota ainda não está disponível na SEFAZ para emissão do DANFE. Foi registrada a Ciência da Emissão; tente novamente em instantes.');
+        }
+
+        try {
+            $isCancelada = ($documento->situacao_nfe == 2);
+            $pdfBytes = $this->danfeService->gerarPdf($documento->xml, null, $isCancelada);
+
+            $filename = "DANFE_{$documento->chave}.pdf";
+
+            return response($pdfBytes, 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                'Cache-Control'       => 'private, max-age=0, must-revalidate',
+                'Pragma'              => 'public',
+            ]);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Erro ao gerar o DANFE em PDF: ' . $e->getMessage());
+        }
     }
 }

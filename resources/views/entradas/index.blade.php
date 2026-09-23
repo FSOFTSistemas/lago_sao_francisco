@@ -141,6 +141,9 @@
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     @if ($entrada->xml)
+                                        <a href="{{ route('entradas.danfe', $entrada->id) }}" target="_blank" class="btn btn-outline-danger" title="Visualizar / Imprimir DANFE (PDF)">
+                                            <i class="fas fa-file-pdf"></i>
+                                        </a>
                                         <a href="{{ route('entradas.download-xml', $entrada->id) }}" class="btn btn-outline-secondary" title="Baixar XML">
                                             <i class="fas fa-download"></i>
                                         </a>
