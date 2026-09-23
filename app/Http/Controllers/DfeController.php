@@ -54,7 +54,7 @@ class DfeController extends Controller
 
         $busca = trim((string) $request->input('busca', ''));
         $manifestacao = $request->input('manifestacao');
-        $comXml = $request->input('com_xml');
+        $comXml = $request->input('com_xml', '1'); // Padrão: 1 (Apenas notas com XML completo)
         $importado = $request->input('importado');
         $dataInicio = $request->input('data_inicio');
         $dataFim = $request->input('data_fim');
@@ -75,11 +75,15 @@ class DfeController extends Controller
                 $q->where('situacao_manifestacao', $manifestacao);
             })
             ->when($comXml === '1', function ($q) {
-                $q->whereNotNull('xml')->where('xml', '!=', '');
+                $q->whereNotNull('xml')
+                  ->where('xml', '!=', '')
+                  ->whereIn('schema', ['procNFe', 'nfeProc']);
             })
             ->when($comXml === '0', function ($q) {
                 $q->where(function ($sub) {
-                    $sub->whereNull('xml')->orWhere('xml', '');
+                    $sub->whereNull('xml')
+                        ->orWhere('xml', '')
+                        ->orWhere('schema', 'resNFe');
                 });
             })
             ->when($importado !== null && $importado !== '', function ($q) use ($importado) {
@@ -104,8 +108,8 @@ class DfeController extends Controller
         $totaisBase = DfeDocumento::where('empresa_id', $empresaId);
         $totalGeral = (clone $totaisBase)->count();
         $totalSemManifestacao = (clone $totaisBase)->where('situacao_manifestacao', 'sem_manifestacao')->count();
-        $totalComXml = (clone $totaisBase)->whereNotNull('xml')->where('xml', '!=', '')->count();
-        $totalPendentesImportacao = (clone $totaisBase)->whereNotNull('xml')->where('xml', '!=', '')->where('importado_entrada', false)->count();
+        $totalComXml = (clone $totaisBase)->whereNotNull('xml')->where('xml', '!=', '')->whereIn('schema', ['procNFe', 'nfeProc'])->count();
+        $totalPendentesImportacao = (clone $totaisBase)->whereNotNull('xml')->where('xml', '!=', '')->whereIn('schema', ['procNFe', 'nfeProc'])->where('importado_entrada', false)->count();
 
         $preferencia = $empresa->preferencia;
 
@@ -116,7 +120,8 @@ class DfeController extends Controller
             'totalGeral',
             'totalSemManifestacao',
             'totalComXml',
-            'totalPendentesImportacao'
+            'totalPendentesImportacao',
+            'comXml'
         ));
     }
 

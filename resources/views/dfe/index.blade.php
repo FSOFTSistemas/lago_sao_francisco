@@ -57,40 +57,48 @@
     {{-- Cards Informativos --}}
     <div class="row">
         <div class="col-md-3 col-sm-6 col-12">
-            <div class="info-box shadow-sm">
-                <span class="info-box-icon bg-info"><i class="fas fa-inbox"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Total Localizadas</span>
-                    <span class="info-box-number">{{ number_format($totalGeral, 0, ',', '.') }}</span>
+            <a href="{{ route('dfe.index', ['com_xml' => 'todos']) }}" class="text-decoration-none text-dark" title="Clique para ver todas as notas">
+                <div class="info-box shadow-sm">
+                    <span class="info-box-icon bg-info"><i class="fas fa-inbox"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Localizadas</span>
+                        <span class="info-box-number">{{ number_format($totalGeral, 0, ',', '.') }}</span>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3 col-sm-6 col-12">
-            <div class="info-box shadow-sm">
-                <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Sem Manifestação</span>
-                    <span class="info-box-number">{{ number_format($totalSemManifestacao, 0, ',', '.') }}</span>
+            <a href="{{ route('dfe.index', ['manifestacao' => 'sem_manifestacao', 'com_xml' => 'todos']) }}" class="text-decoration-none text-dark" title="Clique para filtrar notas sem manifestação">
+                <div class="info-box shadow-sm">
+                    <span class="info-box-icon bg-warning"><i class="fas fa-clock"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Sem Manifestação</span>
+                        <span class="info-box-number">{{ number_format($totalSemManifestacao, 0, ',', '.') }}</span>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3 col-sm-6 col-12">
-            <div class="info-box shadow-sm">
-                <span class="info-box-icon bg-success"><i class="fas fa-file-code"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Com XML Pronto</span>
-                    <span class="info-box-number">{{ number_format($totalComXml, 0, ',', '.') }}</span>
+            <a href="{{ route('dfe.index', ['com_xml' => '1']) }}" class="text-decoration-none text-dark" title="Clique para filtrar apenas com XML completo">
+                <div class="info-box shadow-sm {{ ($comXml ?? request('com_xml', '1')) === '1' ? 'border border-success' : '' }}">
+                    <span class="info-box-icon bg-success"><i class="fas fa-file-code"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Com XML Pronto</span>
+                        <span class="info-box-number">{{ number_format($totalComXml, 0, ',', '.') }}</span>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
         <div class="col-md-3 col-sm-6 col-12">
-            <div class="info-box shadow-sm">
-                <span class="info-box-icon bg-primary"><i class="fas fa-truck-loading"></i></span>
-                <div class="info-box-content">
-                    <span class="info-box-text">Prontas p/ Entrada</span>
-                    <span class="info-box-number">{{ number_format($totalPendentesImportacao, 0, ',', '.') }}</span>
+            <a href="{{ route('dfe.index', ['com_xml' => '1', 'importado' => '0']) }}" class="text-decoration-none text-dark" title="Clique para filtrar prontas para entrada no estoque">
+                <div class="info-box shadow-sm">
+                    <span class="info-box-icon bg-primary"><i class="fas fa-truck-loading"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Prontas p/ Entrada</span>
+                        <span class="info-box-number">{{ number_format($totalPendentesImportacao, 0, ',', '.') }}</span>
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
     </div>
 
@@ -102,15 +110,15 @@
                     <strong>Empresa Ativa:</strong> {{ $empresa->razao_social }} ({{ $empresa->cnpj }})
                 </div>
                 <div class="col-md-3">
-                    <strong>Último NSU Sincronizado:</strong> <span class="badge badge-light border">{{ $preferencia->ult_nsu ?? '0' }}</span> / Max: {{ $preferencia->max_nsu ?? '0' }}
+                    <strong>Último NSU Sincronizado:</strong> <span class="badge badge-light border">{{ $preferencia?->ult_nsu ?? '0' }}</span> / Max: {{ $preferencia?->max_nsu ?? '0' }}
                 </div>
                 <div class="col-md-3">
-                    <strong>Última Consulta SEFAZ:</strong> {{ $preferencia->data_ultima_consulta_dfe ? $preferencia->data_ultima_consulta_dfe->format('d/m/Y H:i:s') : 'Nunca' }}
+                    <strong>Última Consulta SEFAZ:</strong> {{ $preferencia?->data_ultima_consulta_dfe ? $preferencia->data_ultima_consulta_dfe->format('d/m/Y H:i:s') : 'Nunca' }}
                 </div>
                 <div class="col-md-3 text-right">
                     <strong>Ambiente:</strong>
-                    <span class="badge {{ ($preferencia->ambiente_dfe ?? 1) == 1 ? 'badge-success' : 'badge-warning' }}">
-                        {{ ($preferencia->ambiente_dfe ?? 1) == 1 ? 'Produção' : 'Homologação' }}
+                    <span class="badge {{ ($preferencia?->ambiente_dfe ?? 1) == 1 ? 'badge-success' : 'badge-warning' }}">
+                        {{ ($preferencia?->ambiente_dfe ?? 1) == 1 ? 'Produção' : 'Homologação' }}
                     </span>
                 </div>
             </div>
@@ -141,11 +149,11 @@
                         </select>
                     </div>
                     <div class="col-md-2 mb-2">
-                        <label class="text-xs">XML Disponível?</label>
+                        <label class="text-xs">Status do XML</label>
                         <select name="com_xml" class="form-control form-control-sm">
-                            <option value="">Todos</option>
-                            <option value="1" {{ request('com_xml') === '1' ? 'selected' : '' }}>Sim (Com XML)</option>
-                            <option value="0" {{ request('com_xml') === '0' ? 'selected' : '' }}>Não (Apenas Resumo)</option>
+                            <option value="1" {{ ($comXml ?? request('com_xml', '1')) === '1' ? 'selected' : '' }}>Apenas XML Completo</option>
+                            <option value="0" {{ ($comXml ?? request('com_xml')) === '0' ? 'selected' : '' }}>Apenas Resumo</option>
+                            <option value="todos" {{ in_array(($comXml ?? request('com_xml')), ['todos', 'all']) ? 'selected' : '' }}>Todas as Notas</option>
                         </select>
                     </div>
                     <div class="col-md-2 mb-2">
@@ -171,6 +179,29 @@
             </form>
         </div>
     </div>
+
+    {{-- Banner de Status do Filtro XML --}}
+    @if (($comXml ?? request('com_xml', '1')) === '1')
+        <div class="alert alert-light border d-flex justify-content-between align-items-center py-2 px-3 mb-2 shadow-sm">
+            <span class="text-sm text-dark font-weight-500">
+                <i class="fas fa-check-circle text-success mr-1"></i>
+                Exibindo apenas notas com <strong>XML Completo</strong> ({{ $documentos->total() }} encontradas).
+            </span>
+            <a href="{{ route('dfe.index', array_merge(request()->except('page'), ['com_xml' => 'todos'])) }}" class="btn btn-outline-secondary btn-xs font-weight-bold">
+                <i class="fas fa-eye mr-1"></i> Ver todas as notas (incluindo resumos)
+            </a>
+        </div>
+    @elseif (($comXml ?? request('com_xml')) === '0')
+        <div class="alert alert-light border d-flex justify-content-between align-items-center py-2 px-3 mb-2 shadow-sm">
+            <span class="text-sm text-dark font-weight-500">
+                <i class="fas fa-info-circle text-warning mr-1"></i>
+                Exibindo apenas <strong>Resumos de NF-e</strong> ({{ $documentos->total() }} encontradas).
+            </span>
+            <a href="{{ route('dfe.index', array_merge(request()->except('page'), ['com_xml' => '1'])) }}" class="btn btn-outline-success btn-xs font-weight-bold">
+                <i class="fas fa-file-code mr-1"></i> Ver notas com XML Completo
+            </a>
+        </div>
+    @endif
 
     {{-- Tabela de Documentos --}}
     <div class="card shadow-sm">

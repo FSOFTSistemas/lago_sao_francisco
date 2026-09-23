@@ -817,4 +817,63 @@ XML;
         $this->assertSame(1, DfeDocumento::where('empresa_id', $empresa->id)->where('chave', $chave)->count());
         $this->assertSame($doc1->id, $doc2->id);
     }
+
+    public function test_filtro_status_xml_retorna_apenas_notas_completas_por_padrao(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Filtro', 'cnpj' => '12345678000199']);
+        $user = User::create(['name' => 'Tester', 'email' => 'filtro_dfe@teste.com', 'password' => bcrypt('123'), 'empresa_id' => $empresa->id]);
+
+        $chaveCompleta = '35260199999999000199550010000001001000000100';
+        $chaveResumo   = '35260199999999000199550010000001011000000101';
+
+        DfeDocumento::create([
+            'empresa_id'   => $empresa->id,
+            'nsu'          => '2001',
+            'chave'        => $chaveCompleta,
+            'schema'       => 'procNFe',
+            'numero_nota'  => '99100',
+            'serie'        => '1',
+            'nome_emitente'=> 'EMITENTE COMPLETO',
+            'data_emissao' => now(),
+            'valor_total'  => 500.00,
+            'situacao_nfe' => 1,
+            'xml'          => '<nfeProc><NFe></NFe></nfeProc>',
+        ]);
+
+        DfeDocumento::create([
+            'empresa_id'   => $empresa->id,
+            'nsu'          => '2002',
+            'chave'        => $chaveResumo,
+            'schema'       => 'resNFe',
+            'numero_nota'  => '99101',
+            'serie'        => '1',
+            'nome_emitente'=> 'EMITENTE RESUMO',
+            'data_emissao' => now(),
+            'valor_total'  => 250.00,
+            'situacao_nfe' => 1,
+            'xml'          => null,
+        ]);
+
+        // 1. Por padrão, rota exibe apenas notas com XML Completo
+        $responsePadrao = $this->actingAs($user)->getJson(route('dfe.index'));
+        $responsePadrao->assertStatus(200);
+        $chavesPadrao = collect($responsePadrao->json('data'))->pluck('chave')->all();
+        $this->assertContains($chaveCompleta, $chavesPadrao);
+        $this->assertNotContains($chaveResumo, $chavesPadrao);
+
+        // 2. Filtro com_xml=0 exibe apenas resumos
+        $responseResumo = $this->actingAs($user)->getJson(route('dfe.index', ['com_xml' => '0']));
+        $responseResumo->assertStatus(200);
+        $chavesResumo = collect($responseResumo->json('data'))->pluck('chave')->all();
+        $this->assertContains($chaveResumo, $chavesResumo);
+        $this->assertNotContains($chaveCompleta, $chavesResumo);
+
+        // 3. Filtro com_xml=todos exibe ambas as notas
+        $responseTodos = $this->actingAs($user)->getJson(route('dfe.index', ['com_xml' => 'todos']));
+        $responseTodos->assertStatus(200);
+        $chavesTodos = collect($responseTodos->json('data'))->pluck('chave')->all();
+        $this->assertContains($chaveCompleta, $chavesTodos);
+        $this->assertContains($chaveResumo, $chavesTodos);
+    }
 }
+
