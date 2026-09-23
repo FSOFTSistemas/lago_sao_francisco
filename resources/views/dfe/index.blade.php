@@ -127,7 +127,7 @@
                 <div class="row">
                     <div class="col-md-3 mb-2">
                         <label class="text-xs">Busca Geral</label>
-                        <input type="text" name="busca" class="form-control form-control-sm" placeholder="Chave, Fornecedor ou CNPJ" value="{{ request('busca') }}">
+                        <input type="text" name="busca" class="form-control form-control-sm" placeholder="Nº da Nota, Série, Fornecedor, CNPJ ou NSU" value="{{ request('busca') }}">
                     </div>
                     <div class="col-md-2 mb-2">
                         <label class="text-xs">Manifestação</label>
@@ -178,20 +178,27 @@
             <table class="table table-hover table-striped mb-0 text-sm">
                 <thead class="bg-light">
                     <tr>
+                        <th style="width: 130px;">Nº Nota / Série</th>
                         <th style="width: 80px;">NSU</th>
                         <th style="width: 120px;">Emissão</th>
                         <th>Fornecedor / Emitente</th>
-                        <th style="width: 140px;">Valor Total</th>
-                        <th style="width: 100px;">SEFAZ</th>
-                        <th style="width: 160px;">Manifestação</th>
-                        <th style="width: 110px;">XML</th>
-                        <th style="width: 120px;">Entrada</th>
+                        <th style="width: 130px;">Valor Total</th>
+                        <th style="width: 90px;">SEFAZ</th>
+                        <th style="width: 150px;">Manifestação</th>
+                        <th style="width: 100px;">XML</th>
+                        <th style="width: 110px;">Entrada</th>
                         <th style="width: 180px;" class="text-center">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse ($documentos as $doc)
                         <tr>
+                            <td>
+                                <strong class="text-primary d-block font-weight-bold">
+                                    {{ $doc->numero_nota ? 'Nº ' . $doc->numero_nota : 'S/N' }}
+                                </strong>
+                                <small class="text-muted">Série: {{ $doc->serie ?: '1' }}</small>
+                            </td>
                             <td><span class="badge badge-light border">{{ $doc->nsu }}</span></td>
                             <td>{{ $doc->data_emissao ? $doc->data_emissao->format('d/m/Y H:i') : '-' }}</td>
                             <td>
@@ -338,7 +345,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="text-center py-4 text-muted">
+                            <td colspan="10" class="text-center py-4 text-muted">
                                 <i class="fas fa-inbox fa-3x mb-2 d-block text-secondary"></i>
                                 Nenhum documento fiscal localizado. Clique em <strong>"Consultar SEFAZ Agora"</strong> para sincronizar as notas emitidas contra o CNPJ da empresa.
                             </td>

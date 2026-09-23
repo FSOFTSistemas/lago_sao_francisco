@@ -61,6 +61,8 @@ class DfeController extends Controller
             ->when($busca !== '', function ($q) use ($busca) {
                 $q->where(function ($sub) use ($busca) {
                     $sub->where('chave', 'like', "%{$busca}%")
+                        ->orWhere('numero_nota', 'like', "%{$busca}%")
+                        ->orWhere('serie', 'like', "%{$busca}%")
                         ->orWhere('nome_emitente', 'like', "%{$busca}%")
                         ->orWhere('cnpj_emitente', 'like', "%{$busca}%")
                         ->orWhere('nsu', 'like', "%{$busca}%");

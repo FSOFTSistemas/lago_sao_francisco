@@ -222,6 +222,9 @@ class DfeService
                 $tpNF = isset($xmlObj->tpNF) ? (int) $xmlObj->tpNF : 1;
                 $cSitNFe = isset($xmlObj->cSitNFe) ? (int) $xmlObj->cSitNFe : 1;
 
+                $numeroNota = (strlen($chave) === 44) ? (string) (int) substr($chave, 25, 9) : null;
+                $serie = (strlen($chave) === 44) ? (string) (int) substr($chave, 22, 3) : null;
+
                 return DfeDocumento::updateOrCreate(
                     [
                         'empresa_id' => $empresa->id,
@@ -230,6 +233,8 @@ class DfeService
                     ],
                     [
                         'nsu'            => $nsu,
+                        'numero_nota'    => $numeroNota,
+                        'serie'          => $serie,
                         'tipo_documento' => 'NFE',
                         'cnpj_emitente'  => $cnpj,
                         'nome_emitente'  => $nome,
@@ -255,6 +260,9 @@ class DfeService
                 $dhEmi = (string) ($infNFe->ide->dhEmi ?? '');
                 $tpNF = isset($infNFe->ide->tpNF) ? (int) $infNFe->ide->tpNF : 1;
 
+                $numeroNota = (string) ($infNFe->ide->nNF ?? ((strlen($chave) === 44) ? (string) (int) substr($chave, 25, 9) : null));
+                $serie = (string) ($infNFe->ide->serie ?? ((strlen($chave) === 44) ? (string) (int) substr($chave, 22, 3) : null));
+
                 // Salva o documento com schema procNFe e o XML completo
                 $doc = DfeDocumento::updateOrCreate(
                     [
@@ -264,6 +272,8 @@ class DfeService
                     ],
                     [
                         'nsu'            => $nsu,
+                        'numero_nota'    => $numeroNota,
+                        'serie'          => $serie,
                         'tipo_documento' => 'NFE',
                         'cnpj_emitente'  => $cnpj,
                         'nome_emitente'  => $nome,
@@ -276,11 +286,15 @@ class DfeService
                     ]
                 );
 
-                // Atualiza também o registro resNFe existente (se houver), injetando o XML
+                // Atualiza também o registro resNFe existente (se houver), injetando o XML, numero_nota e serie
                 DfeDocumento::where('empresa_id', $empresa->id)
                     ->where('chave', $chave)
                     ->where('schema', 'resNFe')
-                    ->update(['xml' => $xml]);
+                    ->update([
+                        'xml'         => $xml,
+                        'numero_nota' => $numeroNota,
+                        'serie'       => $serie,
+                    ]);
 
                 return $doc;
             }

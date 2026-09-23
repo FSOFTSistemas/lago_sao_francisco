@@ -17,6 +17,8 @@ class DfeDocumento extends Model
         'empresa_id',
         'nsu',
         'chave',
+        'numero_nota',
+        'serie',
         'schema',
         'tipo_documento',
         'cnpj_emitente',
@@ -109,6 +111,28 @@ class DfeDocumento extends Model
     public function getValorTotalFormatadoAttribute(): string
     {
         return 'R$ ' . number_format((float) ($this->valor_total ?? 0), 2, ',', '.');
+    }
+
+    public function getNumeroNotaAttribute(): ?string
+    {
+        if (!empty($this->attributes['numero_nota'])) {
+            return (string) $this->attributes['numero_nota'];
+        }
+        if (!empty($this->chave) && strlen($this->chave) === 44) {
+            return (string) (int) substr($this->chave, 25, 9);
+        }
+        return null;
+    }
+
+    public function getSerieAttribute(): ?string
+    {
+        if (!empty($this->attributes['serie'])) {
+            return (string) $this->attributes['serie'];
+        }
+        if (!empty($this->chave) && strlen($this->chave) === 44) {
+            return (string) (int) substr($this->chave, 22, 3);
+        }
+        return null;
     }
 
     public function temXmlCompleto(): bool
