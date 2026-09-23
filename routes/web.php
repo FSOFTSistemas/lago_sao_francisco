@@ -232,6 +232,7 @@ Route::middleware(['auth'])->prefix('entradas')->name('entradas.')->group(functi
     Route::post('/', [EntradaController::class, 'store'])->name('store');
     Route::get('/{id}', [EntradaController::class, 'show'])->name('show');
     Route::get('/{id}/download-xml', [EntradaController::class, 'downloadXml'])->name('download-xml');
+    Route::get('/{id}/danfe', [EntradaController::class, 'danfe'])->name('danfe');
 });
 
 Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');

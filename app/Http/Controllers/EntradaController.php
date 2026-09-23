@@ -10,11 +10,13 @@ use App\Models\Empresa;
 use App\Models\Entrada;
 use App\Models\PlanoDeConta;
 use App\Models\Produto;
+use App\Services\DanfeService;
 use App\Services\EntradaXmlService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,10 +24,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class EntradaController extends Controller
 {
     protected EntradaXmlService $entradaXmlService;
+    protected DanfeService $danfeService;
 
-    public function __construct(EntradaXmlService $entradaXmlService)
+    public function __construct(EntradaXmlService $entradaXmlService, DanfeService $danfeService)
     {
         $this->entradaXmlService = $entradaXmlService;
+        $this->danfeService = $danfeService;
     }
 
     /**
@@ -236,5 +240,35 @@ class EntradaController extends Controller
         }, $filename, [
             'Content-Type' => 'application/xml',
         ]);
+    }
+
+    /**
+     * Gera e exibe o DANFE (PDF) da nota fiscal de entrada no navegador.
+     */
+    public function danfe(int $id): Response|RedirectResponse
+    {
+        $empresaId = $this->getEmpresaId();
+
+        $entrada = Entrada::where('empresa_id', $empresaId)->findOrFail($id);
+
+        if (empty($entrada->xml)) {
+            return redirect()->back()->with('error', 'O arquivo XML desta entrada não está disponível para gerar o DANFE.');
+        }
+
+        try {
+            $isCancelada = ($entrada->status === 'cancelada');
+            $pdfBytes = $this->danfeService->gerarPdf($entrada->xml, null, $isCancelada);
+
+            $filename = "DANFE_{$entrada->chave}.pdf";
+
+            return response($pdfBytes, 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => "inline; filename=\"{$filename}\"",
+                'Cache-Control'       => 'private, max-age=0, must-revalidate',
+                'Pragma'              => 'public',
+            ]);
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Erro ao gerar o DANFE em PDF: ' . $e->getMessage());
+        }
     }
 }
