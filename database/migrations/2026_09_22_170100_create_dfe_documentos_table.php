@@ -36,7 +36,7 @@ return new class extends Migration
             $table->unsignedBigInteger('entrada_id')->nullable()->index();
             $table->timestamps();
 
-            $table->unique(['empresa_id', 'chave', 'schema']);
+            $table->unique(['empresa_id', 'chave']);
             $table->index(['empresa_id', 'situacao_manifestacao']);
             $table->index(['empresa_id', 'importado_entrada']);
         });

@@ -169,6 +169,7 @@ class DfeEntradaTest extends TestCase
             $table->boolean('importado_entrada')->default(false);
             $table->unsignedBigInteger('entrada_id')->nullable();
             $table->timestamps();
+            $table->unique(['empresa_id', 'chave']);
         });
 
         Schema::create('entradas', function (Blueprint $table) {
@@ -759,5 +760,61 @@ XML;
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_recebimento_de_resumo_e_depois_completo_nao_duplica_documento(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Empresa Teste Unicidade', 'cnpj' => '12345678000199']);
+        $service = new DfeService();
+
+        $chave = '35260199999999000199550010000000061000000065';
+
+        // 1. Chega o resumo da nota (resNFe)
+        $xmlResumo = <<<XML
+<resNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.01">
+    <chNFe>{$chave}</chNFe>
+    <CNPJ>99999999000199</CNPJ>
+    <xNome>FORNECEDOR UNICIDADE LTDA</xNome>
+    <vNF>150.00</vNF>
+    <dhEmi>2026-09-22T10:00:00-03:00</dhEmi>
+    <tpNF>1</tpNF>
+    <cSitNFe>1</cSitNFe>
+</resNFe>
+XML;
+
+        $doc1 = $service->processarDocumentoXml($empresa, '1001', 'resNFe', $xmlResumo);
+        $this->assertNotNull($doc1);
+        $this->assertSame('resNFe', $doc1->schema);
+        $this->assertFalse($doc1->temXmlCompleto());
+
+        // Deve existir exatamente 1 registro no banco
+        $this->assertSame(1, DfeDocumento::where('empresa_id', $empresa->id)->where('chave', $chave)->count());
+
+        // 2. Posteriormente, chega a nota completa (procNFe)
+        $xmlCompleto = <<<XML
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+    <NFe>
+        <infNFe Id="NFe{$chave}" versao="4.00">
+            <ide><nNF>6</nNF><serie>1</serie><dhEmi>2026-09-22T10:00:00-03:00</dhEmi><tpNF>1</tpNF></ide>
+            <emit><CNPJ>99999999000199</CNPJ><xNome>FORNECEDOR UNICIDADE LTDA</xNome></emit>
+            <det nItem="1">
+                <prod><cProd>P1</cProd><xProd>PROD 1</xProd><uCom>UN</uCom><qCom>1</qCom><vUnCom>150</vUnCom><vProd>150.00</vProd></prod>
+                <imposto><ICMS><ICMS00><orig>0</orig><CST>00</CST><vBC>150</vBC><pICMS>18</pICMS><vICMS>27</vICMS></ICMS00></ICMS></imposto>
+            </det>
+            <total><ICMSTot><vProd>150.00</vProd><vNF>150.00</vNF></ICMSTot></total>
+        </infNFe>
+    </NFe>
+    <protNFe versao="4.00"><infProt><chNFe>{$chave}</chNFe><nProt>135260000099990</nProt><cStat>100</cStat></infProt></protNFe>
+</nfeProc>
+XML;
+
+        $doc2 = $service->processarDocumentoXml($empresa, '1005', 'procNFe', $xmlCompleto);
+        $this->assertNotNull($doc2);
+        $this->assertSame('procNFe', $doc2->schema);
+        $this->assertTrue($doc2->temXmlCompleto());
+
+        // AINDA deve existir exatamente 1 registro no banco (mesmo ID atualizado, sem duplicar)
+        $this->assertSame(1, DfeDocumento::where('empresa_id', $empresa->id)->where('chave', $chave)->count());
+        $this->assertSame($doc1->id, $doc2->id);
     }
 }

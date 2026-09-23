@@ -213,38 +213,41 @@ class DfeService
 
             // 1. Resumo da NF-e (resNFe)
             if ($schema === 'resNFe' || str_contains($schema, 'resNFe') || $rootName === 'resNFe') {
-                $chave = (string) $xmlObj->chNFe;
+                $chave = (string) ($xmlObj->chNFe ?? '');
                 $cnpj = (string) ($xmlObj->CNPJ ?? $xmlObj->CPF ?? '');
-                $nome = (string) $xmlObj->xNome;
+                $nome = (string) ($xmlObj->xNome ?? '');
                 $ie = (string) ($xmlObj->IE ?? '');
                 $valor = (float) ($xmlObj->vNF ?? 0);
-                $dhEmi = (string) $xmlObj->dhEmi;
+                $dhEmi = (string) ($xmlObj->dhEmi ?? '');
                 $tpNF = isset($xmlObj->tpNF) ? (int) $xmlObj->tpNF : 1;
                 $cSitNFe = isset($xmlObj->cSitNFe) ? (int) $xmlObj->cSitNFe : 1;
 
                 $numeroNota = (strlen($chave) === 44) ? (string) (int) substr($chave, 25, 9) : null;
                 $serie = (strlen($chave) === 44) ? (string) (int) substr($chave, 22, 3) : null;
 
-                return DfeDocumento::updateOrCreate(
-                    [
-                        'empresa_id' => $empresa->id,
-                        'chave'      => $chave,
-                        'schema'     => 'resNFe',
-                    ],
-                    [
-                        'nsu'            => $nsu,
-                        'numero_nota'    => $numeroNota,
-                        'serie'          => $serie,
-                        'tipo_documento' => 'NFE',
-                        'cnpj_emitente'  => $cnpj,
-                        'nome_emitente'  => $nome,
-                        'ie_emitente'    => $ie,
-                        'valor_total'    => $valor,
-                        'data_emissao'   => $dhEmi ? Carbon::parse($dhEmi) : null,
-                        'tipo_nfe'       => $tpNF,
-                        'situacao_nfe'   => $cSitNFe,
-                    ]
-                );
+                $doc = DfeDocumento::firstOrNew([
+                    'empresa_id' => $empresa->id,
+                    'chave'      => $chave,
+                ]);
+
+                // Se já existe e já tem XML completo (procNFe), não regride para resumo nem apaga o XML
+                if (!$doc->exists || !$doc->temXmlCompleto()) {
+                    $doc->schema = 'resNFe';
+                    $doc->nsu = $nsu;
+                    $doc->numero_nota = $numeroNota;
+                    $doc->serie = $serie;
+                    $doc->tipo_documento = 'NFE';
+                    $doc->cnpj_emitente = $cnpj;
+                    $doc->nome_emitente = $nome;
+                    $doc->ie_emitente = $ie;
+                    $doc->valor_total = $valor;
+                    $doc->data_emissao = $dhEmi ? Carbon::parse($dhEmi) : null;
+                    $doc->tipo_nfe = $tpNF;
+                }
+                $doc->situacao_nfe = $cSitNFe;
+                $doc->save();
+
+                return $doc;
             }
 
             // 2. NF-e Completa (procNFe / nfeProc)
@@ -263,15 +266,15 @@ class DfeService
                 $numeroNota = (string) ($infNFe->ide->nNF ?? ((strlen($chave) === 44) ? (string) (int) substr($chave, 25, 9) : null));
                 $serie = (string) ($infNFe->ide->serie ?? ((strlen($chave) === 44) ? (string) (int) substr($chave, 22, 3) : null));
 
-                // Salva o documento com schema procNFe e o XML completo
-                $doc = DfeDocumento::updateOrCreate(
+                // Atualiza ou cria a única linha do documento para essa empresa e chave
+                return DfeDocumento::updateOrCreate(
                     [
                         'empresa_id' => $empresa->id,
                         'chave'      => $chave,
-                        'schema'     => 'procNFe',
                     ],
                     [
                         'nsu'            => $nsu,
+                        'schema'         => 'procNFe',
                         'numero_nota'    => $numeroNota,
                         'serie'          => $serie,
                         'tipo_documento' => 'NFE',
@@ -285,18 +288,6 @@ class DfeService
                         'xml'            => $xml,
                     ]
                 );
-
-                // Atualiza também o registro resNFe existente (se houver), injetando o XML, numero_nota e serie
-                DfeDocumento::where('empresa_id', $empresa->id)
-                    ->where('chave', $chave)
-                    ->where('schema', 'resNFe')
-                    ->update([
-                        'xml'         => $xml,
-                        'numero_nota' => $numeroNota,
-                        'serie'       => $serie,
-                    ]);
-
-                return $doc;
             }
 
             // 3. Evento (Cancelamento, Carta de Correção, etc.)
