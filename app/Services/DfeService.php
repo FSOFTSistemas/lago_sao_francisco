@@ -127,23 +127,12 @@ class DfeService
                 $preferencia->max_nsu = $novoMaxNSU;
                 $preferencia->save();
 
+                $documentosExtraidos = $this->extrairDocZips($response);
                 $qtdProcessados = 0;
 
-                if (isset($std->loteDistDFeInt->docZip)) {
-                    $docs = is_array($std->loteDistDFeInt->docZip)
-                        ? $std->loteDistDFeInt->docZip
-                        : [$std->loteDistDFeInt->docZip];
-
-                    foreach ($docs as $doc) {
-                        $schema = (string) $doc->attributes()->schema;
-                        $nsu = (string) $doc->attributes()->NSU;
-                        $conteudoXml = gzdecode(base64_decode((string) $doc));
-
-                        if ($conteudoXml) {
-                            $this->processarDocumentoXml($empresa, $nsu, $schema, $conteudoXml);
-                            $qtdProcessados++;
-                        }
-                    }
+                foreach ($documentosExtraidos as $docItem) {
+                    $this->processarDocumentoXml($empresa, $docItem['nsu'], $docItem['schema'], $docItem['xml']);
+                    $qtdProcessados++;
                 }
 
                 $temMais = ((int) $novoUltNSU < (int) $novoMaxNSU);
@@ -223,7 +212,7 @@ class DfeService
             $rootName = $xmlObj->getName();
 
             // 1. Resumo da NF-e (resNFe)
-            if ($schema === 'resNFe' || $rootName === 'resNFe') {
+            if ($schema === 'resNFe' || str_contains($schema, 'resNFe') || $rootName === 'resNFe') {
                 $chave = (string) $xmlObj->chNFe;
                 $cnpj = (string) ($xmlObj->CNPJ ?? $xmlObj->CPF ?? '');
                 $nome = (string) $xmlObj->xNome;
@@ -254,7 +243,7 @@ class DfeService
             }
 
             // 2. NF-e Completa (procNFe / nfeProc)
-            if (in_array($schema, ['procNFe', 'nfeProc']) || in_array($rootName, ['nfeProc', 'NFe'])) {
+            if (in_array($schema, ['procNFe', 'nfeProc']) || str_contains($schema, 'procNFe') || str_contains($schema, 'nfeProc') || in_array($rootName, ['nfeProc', 'NFe'])) {
                 $infNFe = $xmlObj->NFe->infNFe ?? $xmlObj->infNFe ?? null;
                 $protNFe = $xmlObj->protNFe->infProt ?? null;
 
@@ -297,7 +286,7 @@ class DfeService
             }
 
             // 3. Evento (Cancelamento, Carta de Correção, etc.)
-            if (in_array($schema, ['resEvento', 'procEventoNFe']) || in_array($rootName, ['resEvento', 'procEventoNFe'])) {
+            if (in_array($schema, ['resEvento', 'procEventoNFe']) || str_contains($schema, 'Evento') || in_array($rootName, ['resEvento', 'procEventoNFe'])) {
                 $infEvento = $xmlObj->retEvento->infEvento ?? $xmlObj->evento->infEvento ?? $xmlObj;
                 $chave = (string) ($infEvento->chNFe ?? '');
                 $tpEvento = (string) ($infEvento->tpEvento ?? '');
@@ -445,25 +434,17 @@ class DfeService
             $st = new Standardize($response);
             $std = $st->toStd();
 
-            if (isset($std->cStat) && (string) $std->cStat === '138' && isset($std->loteDistDFeInt->docZip)) {
-                $docs = is_array($std->loteDistDFeInt->docZip)
-                    ? $std->loteDistDFeInt->docZip
-                    : [$std->loteDistDFeInt->docZip];
+            if (isset($std->cStat) && (string) $std->cStat === '138') {
+                $documentosExtraidos = $this->extrairDocZips($response);
 
-                foreach ($docs as $doc) {
-                    $schema = (string) $doc->attributes()->schema;
-                    $nsu = (string) $doc->attributes()->NSU;
-                    $conteudoXml = gzdecode(base64_decode((string) $doc));
-
-                    if ($conteudoXml) {
-                        $documento = $this->processarDocumentoXml($empresa, $nsu, $schema, $conteudoXml);
-                        if ($documento && $documento->xml) {
-                            return [
-                                'sucesso'   => true,
-                                'xml'       => $documento->xml,
-                                'documento' => $documento,
-                            ];
-                        }
+                foreach ($documentosExtraidos as $docItem) {
+                    $documento = $this->processarDocumentoXml($empresa, $docItem['nsu'], $docItem['schema'], $docItem['xml']);
+                    if ($documento && $documento->xml) {
+                        return [
+                            'sucesso'   => true,
+                            'xml'       => $documento->xml,
+                            'documento' => $documento,
+                        ];
                     }
                 }
             }
@@ -479,6 +460,52 @@ class DfeService
                 'erro'    => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Extrai os documentos compactados do XML de retorno da SEFAZ (<docZip>).
+     * Utiliza DOMDocument para evitar falhas de conversão de atributos em stdClass.
+     *
+     * @param string $rawXml
+     * @return array Array de itens contendo ['nsu', 'schema', 'xml']
+     */
+    protected function extrairDocZips(string $rawXml): array
+    {
+        $resultados = [];
+
+        try {
+            $dom = new \DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom->loadXML($rawXml);
+            libxml_clear_errors();
+
+            $docZips = $dom->getElementsByTagName('docZip');
+
+            foreach ($docZips as $docZip) {
+                /** @var \DOMElement $docZip */
+                $nsu = $docZip->getAttribute('NSU') ?: $docZip->getAttribute('nsu') ?: '0';
+                $schema = $docZip->getAttribute('schema') ?: '';
+                $base64 = trim($docZip->nodeValue ?? '');
+
+                if (empty($base64)) {
+                    continue;
+                }
+
+                $descompactado = @gzdecode(base64_decode($base64));
+
+                if (!empty($descompactado)) {
+                    $resultados[] = [
+                        'nsu'    => $nsu,
+                        'schema' => $schema,
+                        'xml'    => $descompactado,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Falha ao extrair docZips do XML da SEFAZ: ' . $e->getMessage());
+        }
+
+        return $resultados;
     }
 
     /**
