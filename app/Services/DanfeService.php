@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use InvalidArgumentException;
-use NFePHP\DA\NFe\Danfe;
 use RuntimeException;
 use Throwable;
 
@@ -12,9 +11,9 @@ class DanfeService
     /**
      * Gera o documento auxiliar da NF-e (DANFE) em formato binário PDF.
      *
-     * @param string $xml Conteúdo textual do XML da NF-e (procNFe ou NFe).
-     * @param string|null $logoPath Caminho opcional para a imagem do logotipo do emitente.
-     * @param bool $cancelada Força a exibição da marca d'água de cancelamento se true.
+     * @param  string  $xml  Conteúdo textual do XML da NF-e (procNFe ou NFe).
+     * @param  string|null  $logoPath  Caminho opcional para a imagem do logotipo do emitente.
+     * @param  bool  $cancelada  Força a exibição da marca d'água de cancelamento se true.
      * @return string Bytes binários do PDF gerado.
      *
      * @throws InvalidArgumentException Se o XML for vazio ou não contiver estrutura de NF-e.
@@ -28,7 +27,7 @@ class DanfeService
         }
 
         // Verifica presença das tags essenciais de NF-e
-        if (!str_contains($xml, '<infNFe') && !str_contains($xml, '<NFe')) {
+        if (! str_contains($xml, '<infNFe') && ! str_contains($xml, '<NFe')) {
             throw new InvalidArgumentException('O documento informado não possui a estrutura básica de uma NF-e (<infNFe> ou <NFe>).');
         }
 
@@ -39,12 +38,12 @@ class DanfeService
         libxml_clear_errors();
 
         if ($xmlObj === false) {
-            $primeiroErro = !empty($xmlErrors) ? trim($xmlErrors[0]->message) : 'Sintaxe XML malformada.';
+            $primeiroErro = ! empty($xmlErrors) ? trim($xmlErrors[0]->message) : 'Sintaxe XML malformada.';
             throw new InvalidArgumentException("Falha na estrutura sintática do XML da NF-e: {$primeiroErro}");
         }
 
         // Configuração dos Parâmetros Gráficos de Layout (A4, Retrato, Margens e Exibição)
-        $danfe = new Danfe($xml);
+        $danfe = new LagoDanfe($xml);
         $danfe->printParameters('P', 'A4', 2, 2);
         $danfe->exibirTextoFatura = true;
         $danfe->exibirPIS = true;
@@ -54,7 +53,7 @@ class DanfeService
         $danfe->setExibirEmailDestinatario(true);
         $danfe->setOcultarUnidadeTributavel(false);
 
-        if (!empty($logoPath) && file_exists($logoPath)) {
+        if (! empty($logoPath) && file_exists($logoPath)) {
             $danfe->logoParameters($logoPath, 'C');
         }
 
@@ -77,7 +76,7 @@ class DanfeService
 
             return $pdfContent;
         } catch (Throwable $e) {
-            throw new RuntimeException('Falha ao renderizar o DANFE em PDF: ' . $e->getMessage(), 0, $e);
+            throw new RuntimeException('Falha ao renderizar o DANFE em PDF: '.$e->getMessage(), 0, $e);
         }
     }
 }
