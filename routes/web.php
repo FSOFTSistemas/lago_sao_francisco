@@ -21,12 +21,14 @@ use App\Http\Controllers\ContaCorrenteLancamentoController;
 use App\Http\Controllers\ContasAPagarController;
 use App\Http\Controllers\ContasAReceberController;
 use App\Http\Controllers\DayUseController;
+use App\Http\Controllers\DfeController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\EmpresaContadorController;
 use App\Http\Controllers\EmpresaController;
 use App\Http\Controllers\EmpresaPreferenciaController;
 use App\Http\Controllers\EmpresaRTController;
 use App\Http\Controllers\EnderecoController;
+use App\Http\Controllers\EntradaController;
 use App\Http\Controllers\EspacoController;
 use App\Http\Controllers\EspacoDisponibilidadeController;
 use App\Http\Controllers\EstoqueController;
@@ -212,6 +214,28 @@ Route::resource('logs', LogController::class)->middleware('permission:gerenciar 
 
 Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware('auth');
 Route::resource('nota_fiscal', NotaFiscalController::class)->middleware('auth');
+
+// DF-e (Busca de Notas na SEFAZ e Manifestação)
+Route::middleware(['auth'])->prefix('dfe')->name('dfe.')->group(function () {
+    Route::get('/', [DfeController::class, 'index'])->name('index');
+    Route::post('/sincronizar', [DfeController::class, 'sincronizar'])->name('sincronizar');
+    Route::post('/manifestar/{chave}', [DfeController::class, 'manifestar'])->name('manifestar');
+    Route::post('/consultar-chave/{chave}', [DfeController::class, 'consultarChave'])->name('consultar-chave');
+    Route::get('/download-xml/{chave}', [DfeController::class, 'downloadXml'])->name('download-xml');
+    Route::get('/{id}/danfe', [DfeController::class, 'danfe'])->name('danfe');
+    Route::get('/eventos/{chave}', [DfeController::class, 'eventos'])->name('eventos');
+});
+
+// Notas Fiscais de Entrada (Compras e Estoque/Almoxarifado)
+Route::middleware(['auth'])->prefix('entradas')->name('entradas.')->group(function () {
+    Route::get('/', [EntradaController::class, 'index'])->name('index');
+    Route::get('/importar', [EntradaController::class, 'create'])->name('create');
+    Route::match(['get', 'post'], '/conferir/{dfe_id?}', [EntradaController::class, 'conferir'])->name('conferir');
+    Route::post('/', [EntradaController::class, 'store'])->name('store');
+    Route::get('/{id}', [EntradaController::class, 'show'])->name('show');
+    Route::get('/{id}/download-xml', [EntradaController::class, 'downloadXml'])->name('download-xml');
+    Route::get('/{id}/danfe', [EntradaController::class, 'danfe'])->name('danfe');
+});
 
 Route::get('/cardapios/{id}/dados', [CardapioController::class, 'dados'])->name('cardapios.dados');
 

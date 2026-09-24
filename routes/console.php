@@ -10,8 +10,13 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+use App\Console\Commands\SincronizarDfeCommand;
+
 // Agendamento do comando para rodar diariamente às 01:00
 Schedule::command(AtualizarStatusContasAtrasadas::class)->dailyAt('01:00');
 
 // Notificações de contas a pagar vencendo e movimentação do dia
 Schedule::command(EnviarNotificacoesDiarias::class)->dailyAt('06:00');
+
+// Sincronização periódica de documentos fiscais da SEFAZ (DF-e) a cada hora
+Schedule::command(SincronizarDfeCommand::class)->hourly();

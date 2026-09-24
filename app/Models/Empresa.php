@@ -30,4 +30,14 @@ class Empresa extends Model
         return $this->belongsTo(EmpresaRT::class, 'responsavel_tecnico_id');
     }
 
+    public function preferencia(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(EmpresaPreferencia::class, 'empresa_id');
+    }
+
+    public function endereco(): BelongsTo
+    {
+        return $this->belongsTo(Endereco::class, 'endereco_id');
+    }
+
 }

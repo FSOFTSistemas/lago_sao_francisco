@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use NFePHP\Common\Exception\ValidatorException;
 use NFePHP\DA\NFe\Daevento;
-use NFePHP\DA\NFe\Danfe;
+use App\Services\LagoDanfe as Danfe;
 
 class PedidosController extends Controller
 {
