@@ -20,6 +20,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class DfeEntradaTest extends TestCase
@@ -306,6 +308,25 @@ class DfeEntradaTest extends TestCase
             $table->timestamps();
         });
 
+        // Notificações do Laravel necessárias para a navbar do AdminLTE
+        Schema::create('notifications', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->string('type');
+            $table->morphs('notifiable');
+            $table->text('data');
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+        });
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        Schema::create('permissions', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('guard_name')->default('web');
+            $table->timestamps();
+        });
+
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -313,11 +334,24 @@ class DfeEntradaTest extends TestCase
             $table->timestamps();
         });
 
+        Schema::create('model_has_permissions', function (Blueprint $table) {
+            $table->unsignedBigInteger('permission_id');
+            $table->string('model_type');
+            $table->unsignedBigInteger('model_id');
+            $table->primary(['permission_id', 'model_id', 'model_type']);
+        });
+
         Schema::create('model_has_roles', function (Blueprint $table) {
             $table->unsignedBigInteger('role_id');
             $table->string('model_type');
             $table->unsignedBigInteger('model_id');
-            $table->index(['model_id', 'model_type']);
+            $table->primary(['role_id', 'model_id', 'model_type']);
+        });
+
+        Schema::create('role_has_permissions', function (Blueprint $table) {
+            $table->unsignedBigInteger('permission_id');
+            $table->unsignedBigInteger('role_id');
+            $table->primary(['permission_id', 'role_id']);
         });
     }
 
@@ -666,6 +700,9 @@ XML;
             'xml' => $xml,
         ]);
 
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar NFe', 'guard_name' => 'web']);
+        $user->givePermissionTo($permission);
+
         $response = $this->actingAs($user)->get(route('dfe.danfe', $doc->id));
 
         $response->assertStatus(200);
@@ -780,6 +817,9 @@ XML;
             'status' => 'confirmada',
         ]);
 
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar NFe', 'guard_name' => 'web']);
+        $user->givePermissionTo($permission);
+
         $response = $this->actingAs($user)->get(route('entradas.danfe', $entrada->id));
 
         $response->assertStatus(200);
@@ -878,6 +918,9 @@ XML;
             'situacao_nfe' => 1,
             'xml' => null,
         ]);
+
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar NFe', 'guard_name' => 'web']);
+        $user->givePermissionTo($permission);
 
         // 1. Por padrão, rota exibe apenas notas com XML Completo
         $responsePadrao = $this->actingAs($user)->getJson(route('dfe.index'));
@@ -1014,6 +1057,9 @@ XML;
             'motivo' => 'Evento registrado',
             'user_id' => $user->id,
         ]);
+
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar NFe', 'guard_name' => 'web']);
+        $user->givePermissionTo($permission);
 
         $response = $this->actingAs($user)->getJson(route('dfe.eventos', $chave));
         $response->assertStatus(200);
@@ -1194,5 +1240,64 @@ XML;
         $this->assertFalse($item['is_embalagem']);
         $this->assertSame(1, $item['fator_conversao_sugerido']);
         $this->assertSame(1, $item['fator_conversao']);
+    }
+
+    public function test_usuario_sem_permissao_nao_acessa_dfe(): void
+    {
+        $userSemPermissao = User::create([
+            'name' => 'Sem Permissao',
+            'email' => 'sem.dfe@permissao.com',
+            'password' => bcrypt('12345678'),
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($userSemPermissao);
+
+        $response = $this->get(route('dfe.index'));
+        $response->assertForbidden();
+    }
+
+    public function test_usuario_sem_permissao_nao_acessa_entradas(): void
+    {
+        $userSemPermissao = User::create([
+            'name' => 'Sem Permissao',
+            'email' => 'sem.entradas@permissao.com',
+            'password' => bcrypt('12345678'),
+            'ativo' => true,
+        ]);
+
+        $this->actingAs($userSemPermissao);
+
+        $responseIndex = $this->get(route('entradas.index'));
+        $responseIndex->assertForbidden();
+
+        $responseImportar = $this->get(route('entradas.create'));
+        $responseImportar->assertForbidden();
+    }
+
+    public function test_usuario_com_permissao_acessa_dfe_e_entradas(): void
+    {
+        $empresa = Empresa::create(['razao_social' => 'Hotel Lago', 'cnpj' => '12345678000199']);
+        $userComPermissao = User::create([
+            'name' => 'Com Permissao',
+            'email' => 'com@permissao.com',
+            'password' => bcrypt('12345678'),
+            'empresa_id' => $empresa->id,
+            'ativo' => true,
+        ]);
+
+        $permission = Permission::firstOrCreate(['name' => 'gerenciar NFe', 'guard_name' => 'web']);
+        $userComPermissao->givePermissionTo($permission);
+
+        $this->actingAs($userComPermissao);
+
+        $responseDfe = $this->get(route('dfe.index'));
+        $responseDfe->assertOk();
+
+        $responseEntradas = $this->get(route('entradas.index'));
+        $responseEntradas->assertOk();
+
+        $responseImportar = $this->get(route('entradas.create'));
+        $responseImportar->assertOk();
     }
 }

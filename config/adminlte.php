@@ -1,6 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Auth;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter;
+use JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter;
 
 return [
 
@@ -308,171 +315,171 @@ return [
             'topnav_right' => false,
         ],
         [
-            'text'    => 'Lago',
-            'icon'    => 'fas fa-place-of-worship',
+            'text' => 'Lago',
+            'icon' => 'fas fa-place-of-worship',
             'submenu' => [
                 ['header' => 'Day Use'],
 
                 [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-ticket-alt',
-                    'url'  => '/dayuse/create',
-                    'can'  => 'vender dayuse',
-                    'shift' => 'ml-2'
+                    'url' => '/dayuse/create',
+                    'can' => 'vender dayuse',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
-                    'url'  => '/dayuse',
-                    'can'  => 'gerenciar dayuse',
-                    'shift' => 'ml-2'
+                    'url' => '/dayuse',
+                    'can' => 'gerenciar dayuse',
+                    'shift' => 'ml-2',
                 ],
             ],
         ],
         [
-            'text'    => 'Eventos',
-            'icon'    => 'fas fa-campground',
+            'text' => 'Eventos',
+            'icon' => 'fas fa-campground',
             'submenu' => [
                 [
                     'text' => 'Home',
                     'icon' => 'fas fa-home',
-                    'url'  => '/eventos',
-                    'can'  => 'gerenciar aluguel',
-                    'shift' => 'ml-2'
+                    'url' => '/eventos',
+                    'can' => 'gerenciar aluguel',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Planner',
                     'icon' => 'fas fa-calendar-alt',
-                    'url'  => '/eventos/planner',
-                    'can'  => 'gerenciar aluguel',
-                    'shift' => 'ml-2'
+                    'url' => '/eventos/planner',
+                    'can' => 'gerenciar aluguel',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Cadastrar',
                     'icon' => 'fas fa-plus',
-                    'url'  => '/aluguel/create',
-                    'can'  => 'cadastrar aluguel',
-                    'shift' => 'ml-2'
+                    'url' => '/aluguel/create',
+                    'can' => 'cadastrar aluguel',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Excursões',
                     'icon' => 'fas fa-bus',
-                    'url'  => '/eventos/excursoes',
-                    'can'  => 'cadastrar aluguel',
-                    'shift' => 'ml-2'
+                    'url' => '/eventos/excursoes',
+                    'can' => 'cadastrar aluguel',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
-                    'url'  => '/aluguel',
-                    'can'  => 'gerenciar aluguel',
-                    'shift' => 'ml-2'
+                    'url' => '/aluguel',
+                    'can' => 'gerenciar aluguel',
+                    'shift' => 'ml-2',
                 ],
             ],
         ],
         [
-            'text'    => 'Hotel',
-            'icon'    => 'fas fa-hotel',
-            'can'     => 'hotel',
+            'text' => 'Hotel',
+            'icon' => 'fas fa-hotel',
+            'can' => 'hotel',
             'submenu' => [
                 [
                     'text' => 'Home',
                     'icon' => 'fas fa-home',
-                    'url'  => '/mapaQuarto',
-                    'shift' => 'ml-2'
+                    'url' => '/mapaQuarto',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Mapa',
                     'icon' => 'fas fa-map',
-                    'url'  => '/mapa',
-                    'shift' => 'ml-2'
+                    'url' => '/mapa',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Reservas',
                     'icon' => 'fas fa-bed',
-                    'url'  => '/reserva',
-                    'shift' => 'ml-2'
+                    'url' => '/reserva',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Acomodações',
                     'icon' => 'fas fa-caravan',
-                    'url'  => '/quarto',
-                    'shift' => 'ml-2'
+                    'url' => '/quarto',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Motorhomes',
                     'icon' => 'fas fa-truck-pickup',
-                    'url'  => '/motorhome',
-                    'shift' => 'ml-2'
+                    'url' => '/motorhome',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Hóspedes',
                     'icon' => 'fas fa-user',
-                    'url'  => '/hospede',
-                    'shift' => 'ml-2'
+                    'url' => '/hospede',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Transações',
                     'icon' => 'fas fa-credit-card',
-                    'url'  => '/transacao',
-                    'shift' => 'ml-2'
+                    'url' => '/transacao',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-alt',
-                    'url'  => '/relatorios/produtos',
-                    'shift' => 'ml-2'
+                    'url' => '/relatorios/produtos',
+                    'shift' => 'ml-2',
                 ],
                 [
                     'text' => 'Café da manhã',
                     'icon' => 'fas fa-mug-hot',
-                    'url'  => '/relatorios/cafe-da-manha',
-                    'shift' => 'ml-2'
+                    'url' => '/relatorios/cafe-da-manha',
+                    'shift' => 'ml-2',
                 ],
             ],
         ],
         [
             'text' => 'Produtos',
-            'url'  => '/produto',
+            'url' => '/produto',
             'icon' => 'fas fa-boxes',
-            'can'  => 'gerenciar produto'
+            'can' => 'gerenciar produto',
         ],
         [
-            'text'    => 'Almoxarifado',
-            'icon'    => 'fas fa-warehouse',
-            'can'     => 'gerenciar almoxarifado',
+            'text' => 'Almoxarifado',
+            'icon' => 'fas fa-warehouse',
+            'can' => 'gerenciar almoxarifado',
             'submenu' => [
                 [
-                    'text'  => 'Itens do Estoque',
-                    'icon'  => 'fas fa-boxes',
-                    'url'   => '/almoxarifado/itens',
+                    'text' => 'Itens do Estoque',
+                    'icon' => 'fas fa-boxes',
+                    'url' => '/almoxarifado/itens',
                     'shift' => 'ml-2',
                 ],
                 [
-                    'text'  => 'Movimentações',
-                    'icon'  => 'fas fa-exchange-alt',
-                    'url'   => '/almoxarifado/movimentacoes',
+                    'text' => 'Movimentações',
+                    'icon' => 'fas fa-exchange-alt',
+                    'url' => '/almoxarifado/movimentacoes',
                     'shift' => 'ml-2',
                 ],
                 [
-                    'text'  => 'Categorias',
-                    'icon'  => 'fas fa-tags',
-                    'url'   => '/almoxarifado/categorias',
+                    'text' => 'Categorias',
+                    'icon' => 'fas fa-tags',
+                    'url' => '/almoxarifado/categorias',
                     'shift' => 'ml-2',
                 ],
             ],
         ],
         [
             'text' => 'Clientes',
-            'url'  => '/cliente',
+            'url' => '/cliente',
             'icon' => 'fa fa-handshake',
-            'can'  => 'gerenciar cliente',
+            'can' => 'gerenciar cliente',
         ],
         [
             'text' => 'Funcionários',
-            'url'  => '/funcionario',
+            'url' => '/funcionario',
             'icon' => 'fas fa-user',
-            'can'  => 'gerenciar funcionario',
+            'can' => 'gerenciar funcionario',
         ],
         // [
         //     'text' => '!Caixa',
@@ -482,200 +489,203 @@ return [
         // ],
         [
             'text' => 'Caixa',
-            'url'  => '/fluxoCaixa',
+            'url' => '/fluxoCaixa',
             'icon' => 'fas fa-money-bill-alt',
-            'can'  => 'gerenciar caixa',
+            'can' => 'gerenciar caixa',
         ],
         [
             'text' => 'Empresas',
-            'url'  => '/empresa',
+            'url' => '/empresa',
             'icon' => 'fas fa-building',
-            'can'  => 'gerenciar empresa',
+            'can' => 'gerenciar empresa',
         ],
         [
             'text' => 'Fornecedores',
-            'url'  => '/fornecedor',
+            'url' => '/fornecedor',
             'icon' => 'fas fa-truck',
-            'can'  => 'gerenciar fornecedor',
+            'can' => 'gerenciar fornecedor',
         ],
         [
-            'text'    => 'Financeiro',
-            'icon'    => 'fas fa-money-check-alt',
-            'can'     => 'gerenciar financeiro',
+            'text' => 'Financeiro',
+            'icon' => 'fas fa-money-check-alt',
+            'can' => 'gerenciar financeiro',
             'submenu' => [
 
                 [
                     'text' => 'Adiantamentos',
-                    'url'  => '/adiantamento',
+                    'url' => '/adiantamento',
                     'icon' => 'fas fa-cash-register',
-                    'can'  => 'gerenciar adiantamento',
+                    'can' => 'gerenciar adiantamento',
                 ],
                 [
                     'text' => 'Banco',
-                    'url'  => '/bancos',
+                    'url' => '/bancos',
                     'icon' => 'fas fa-university',
-                    'can'  => 'gerenciar banco',
+                    'can' => 'gerenciar banco',
                 ],
 
-
                 [
-                    'text'    => 'Conta Corrente',
-                    'url'     => '#', // Alterado para '#' para que o item principal apenas abra o submenu.
-                    'icon'    => 'fas fa-landmark', // Ícone mais representativo para "contas".
-                    'can'     => 'gerenciar conta corrente',
+                    'text' => 'Conta Corrente',
+                    'url' => '#', // Alterado para '#' para que o item principal apenas abra o submenu.
+                    'icon' => 'fas fa-landmark', // Ícone mais representativo para "contas".
+                    'can' => 'gerenciar conta corrente',
                     'submenu' => [
                         [
-                            'text'  => 'Contas', // Texto simplificado e mais direto.
-                            'url'   => '/contaCorrente',
-                            'icon'  => 'fas fa-university', // Ícone específico para a lista de contas.
-                            'shift' => 'ml-2'
+                            'text' => 'Contas', // Texto simplificado e mais direto.
+                            'url' => '/contaCorrente',
+                            'icon' => 'fas fa-university', // Ícone específico para a lista de contas.
+                            'shift' => 'ml-2',
                         ],
                         [
-                            'text'  => 'Lançamentos',
-                            'url'   => '/lancamentos', // URL padronizada e mais limpa.
-                            'icon'  => 'fas fa-list-ul',
-                            'shift' => 'ml-2'
+                            'text' => 'Lançamentos',
+                            'url' => '/lancamentos', // URL padronizada e mais limpa.
+                            'icon' => 'fas fa-list-ul',
+                            'shift' => 'ml-2',
                         ],
                     ],
                 ],
                 [
                     'text' => 'Contas a Pagar',
-                    'url'  => '/contas-a-pagar/calendario',
+                    'url' => '/contas-a-pagar/calendario',
                     'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar contas a pagar',
+                    'can' => 'gerenciar contas a pagar',
                 ],
                 [
                     'text' => 'Contas a Receber',
-                    'url'  => '/contasAReceber',
+                    'url' => '/contasAReceber',
                     'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar contas a receber',
+                    'can' => 'gerenciar contas a receber',
                 ],
                 [
                     'text' => 'Receitas Avulsas',
-                    'url'  => '/financeiro/receitas-avulsas',
+                    'url' => '/financeiro/receitas-avulsas',
                     'icon' => 'fas fa-plus-circle',
-                    'can'  => 'gerenciar financeiro',
+                    'can' => 'gerenciar financeiro',
                 ],
                 [
                     'text' => 'Projeção Financeira',
-                    'url'  => '/financeiro/projecao',
+                    'url' => '/financeiro/projecao',
                     'icon' => 'fas fa-chart-line',
-                    'can'  => 'gerenciar financeiro',
+                    'can' => 'gerenciar financeiro',
                 ],
                 [
                     'text' => 'Plano de Contas',
-                    'url'  => '/planoDeConta',
+                    'url' => '/planoDeConta',
                     'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar plano de conta',
+                    'can' => 'gerenciar plano de conta',
                 ],
                 [
                     'text' => 'DRE',
-                    'url'  => '/relatorio/plano-de-contas',
+                    'url' => '/relatorio/plano-de-contas',
                     'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar plano de conta',
+                    'can' => 'gerenciar plano de conta',
                 ],
                 [
                     'text' => 'Logs',
-                    'url'  => '/logs',
+                    'url' => '/logs',
                     'icon' => 'fas fa-history',
-                    'can'  => 'gerenciar financeiro',
+                    'can' => 'gerenciar financeiro',
                 ],
                 [
-                    'text'    => 'NFe',
-                    'icon'    => 'far fa-file-alt',
-                    'can'     => 'gerenciar NFe',
+                    'text' => 'NFe',
+                    'icon' => 'far fa-file-alt',
+                    'can' => 'gerenciar NFe',
                     'submenu' => [
                         [
-                            'text'        => 'Emitir NFe',
-                            'url'         => '/nota_fiscal/create',
-                            'icon'        => 'fas fa-upload',
-                            'shift' => 'ml-2'
+                            'text' => 'Emitir NFe',
+                            'url' => '/nota_fiscal/create',
+                            'icon' => 'fas fa-upload',
+                            'shift' => 'ml-2',
                         ],
                         [
-                            'text'        => 'Notas Emitidas (NFe)',
-                            'url'         => '/nota_fiscal',
-                            'icon'        => 'fas fa-list-ul',
-                            'shift' => 'ml-2'
+                            'text' => 'Notas Emitidas (NFe)',
+                            'url' => '/nota_fiscal',
+                            'icon' => 'fas fa-list-ul',
+                            'shift' => 'ml-2',
                         ],
                         [
-                            'text'        => 'Baixar XML (NFe)',
-                            'url'         => '/notas',
-                            'icon'        => 'fas fa-download',
-                            'shift' => 'ml-2'
+                            'text' => 'Baixar XML (NFe)',
+                            'url' => '/notas',
+                            'icon' => 'fas fa-download',
+                            'shift' => 'ml-2',
                         ],
                         [
-                            'text'        => 'Relatórios (NFe)',
-                            'url'         => '/relatorios',
-                            'icon'        => 'fas fa-chart-area',
-                            'shift' => 'ml-2'
+                            'text' => 'Relatórios (NFe)',
+                            'url' => '/relatorios',
+                            'icon' => 'fas fa-chart-area',
+                            'shift' => 'ml-2',
                         ],
                     ],
                 ],
                 [
                     'text' => 'Relatórios',
                     'icon' => 'fas fa-file-invoice',
-                    'can'  => 'gerenciar financeiro',
+                    'can' => 'gerenciar financeiro',
                     'submenu' => [
                         [
                             'text' => 'Comissão',
-                            'url'  => '/relatorios/comissao-vendedor',
+                            'url' => '/relatorios/comissao-vendedor',
                             'icon' => 'fas fa-piggy-bank',
-                            'shift' => 'ml-2'
+                            'shift' => 'ml-2',
                         ],
                         [
                             'text' => 'Vendas por Vendedor',
-                            'url'  => '/relatorios/vendas-vendedor',
+                            'url' => '/relatorios/vendas-vendedor',
                             'icon' => 'far fa-file-alt',
-                            'shift' => 'ml-2'
-                        ]
-                    ]
+                            'shift' => 'ml-2',
+                        ],
+                    ],
                 ],
 
             ],
         ],
         [
-            'text'    => 'Fiscal / NF-e',
-            'icon'    => 'fas fa-file-invoice',
+            'text' => 'Fiscal / NF-e',
+            'icon' => 'fas fa-file-invoice',
+            'can' => 'gerenciar NFe',
             'submenu' => [
                 [
-                    'text'  => 'Busca Receita (DF-e)',
-                    'url'   => '/dfe',
-                    'icon'  => 'fas fa-cloud-download-alt',
+                    'text' => 'Busca Receita (DF-e)',
+                    'url' => '/dfe',
+                    'icon' => 'fas fa-cloud-download-alt',
                     'shift' => 'ml-2',
+                    'can' => 'gerenciar NFe',
                 ],
                 [
-                    'text'  => 'Notas de Entrada',
-                    'url'   => '/entradas',
-                    'icon'  => 'fas fa-boxes',
+                    'text' => 'Notas de Entrada',
+                    'url' => '/entradas',
+                    'icon' => 'fas fa-boxes',
                     'shift' => 'ml-2',
+                    'can' => 'gerenciar NFe',
                 ],
                 [
-                    'text'  => 'Importar XML',
-                    'url'   => '/entradas/importar',
-                    'icon'  => 'fas fa-file-upload',
+                    'text' => 'Importar XML',
+                    'url' => '/entradas/importar',
+                    'icon' => 'fas fa-file-upload',
                     'shift' => 'ml-2',
+                    'can' => 'gerenciar NFe',
                 ],
                 [
-                    'text'  => 'Emissão de NF-e',
-                    'url'   => '/nota-fiscal',
-                    'icon'  => 'fas fa-paper-plane',
+                    'text' => 'Emissão de NF-e',
+                    'url' => '/nota-fiscal',
+                    'icon' => 'fas fa-paper-plane',
                     'shift' => 'ml-2',
+                    'can' => 'gerenciar NFe',
                 ],
             ],
         ],
         [
             'text' => 'Usuários',
-            'url'  => '/usuarios',
+            'url' => '/usuarios',
             'icon' => 'fas fa-users',
-            'can'  => 'gerenciar usuarios'
+            'can' => 'gerenciar usuarios',
         ],
         [
             'text' => 'Preferências',
-            'url'  => '/preferencias',
+            'url' => '/preferencias',
             'icon' => 'fas fa-cogs',
-            'can'  => 'gerenciar preferencias'
+            'can' => 'gerenciar preferencias',
         ],
-
 
     ],
 
@@ -692,13 +702,13 @@ return [
     */
 
     'filters' => [
-        JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\ClassesFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\LangFilter::class,
-        JeroenNoten\LaravelAdminLte\Menu\Filters\DataFilter::class,
+        GateFilter::class,
+        HrefFilter::class,
+        SearchFilter::class,
+        ActiveFilter::class,
+        ClassesFilter::class,
+        LangFilter::class,
+        DataFilter::class,
     ],
 
     /*

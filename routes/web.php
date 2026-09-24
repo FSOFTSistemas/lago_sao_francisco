@@ -212,11 +212,11 @@ Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 
 Route::resource('logs', LogController::class)->middleware('permission:gerenciar financeiro');
 
-Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware('auth');
-Route::resource('nota_fiscal', NotaFiscalController::class)->middleware('auth');
+Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware(['auth', 'permission:gerenciar NFe']);
+Route::resource('nota_fiscal', NotaFiscalController::class)->middleware(['auth', 'permission:gerenciar NFe']);
 
 // DF-e (Busca de Notas na SEFAZ e Manifestação)
-Route::middleware(['auth'])->prefix('dfe')->name('dfe.')->group(function () {
+Route::middleware(['auth', 'permission:gerenciar NFe'])->prefix('dfe')->name('dfe.')->group(function () {
     Route::get('/', [DfeController::class, 'index'])->name('index');
     Route::post('/sincronizar', [DfeController::class, 'sincronizar'])->name('sincronizar');
     Route::post('/manifestar/{chave}', [DfeController::class, 'manifestar'])->name('manifestar');
@@ -227,7 +227,7 @@ Route::middleware(['auth'])->prefix('dfe')->name('dfe.')->group(function () {
 });
 
 // Notas Fiscais de Entrada (Compras e Estoque/Almoxarifado)
-Route::middleware(['auth'])->prefix('entradas')->name('entradas.')->group(function () {
+Route::middleware(['auth', 'permission:gerenciar NFe'])->prefix('entradas')->name('entradas.')->group(function () {
     Route::get('/', [EntradaController::class, 'index'])->name('index');
     Route::get('/importar', [EntradaController::class, 'create'])->name('create');
     Route::match(['get', 'post'], '/conferir/{dfe_id?}', [EntradaController::class, 'conferir'])->name('conferir');
