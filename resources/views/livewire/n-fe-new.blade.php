@@ -1,4 +1,22 @@
 <div>
+    <!-- Mensagens de Feedback -->
+    @if (session()->has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> {{ session('error') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+    @if (session()->has('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
+
     <!-- Cabeçalho da nota -->
     <div class="border-bottom pb-3 mb-4">
         <div class="row g-3">
@@ -120,10 +138,11 @@
                                     <th>Desconto</th>
                                     <th>Acrescimo</th>
                                     <th>Total</th>
+                                    <th class="text-center" style="width: 70px;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($itens as $item)
+                                @foreach ($itens as $index => $item)
                                     <tr>
                                         <td>{{ $item['produto'] }}</td>
                                         <td>{{ $item['quantidade'] }}</td>
@@ -134,6 +153,11 @@
                                         <td>{{ number_format($item['desconto'] ?? 0, 2, ',', '.') }}</td>
                                         <td>{{ number_format($item['acrescimo'] ?? 0, 2, ',', '.') }}</td>
                                         <td>{{ number_format($item['total'], 2, ',', '.') }}</td>
+                                        <td class="text-center">
+                                            <button type="button" wire:click="removerItem({{ $index }})" class="btn btn-sm btn-outline-danger" title="Remover item">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -288,8 +312,13 @@
                         @if ($mostrarTributaria)
                             <div class="row g-3 mt-2">
                                 <div class="col-md-3">
-                                    <label for="cst" class="form-label">CST</label>
-                                    <input type="text" id="cst" wire:model="novoItem.cst"
+                                    <label for="ncm" class="form-label">NCM</label>
+                                    <input type="text" id="ncm" wire:model="novoItem.ncm"
+                                        class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="un" class="form-label">Unidade</label>
+                                    <input type="text" id="un" wire:model="novoItem.un"
                                         class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-3">
@@ -303,18 +332,23 @@
                                         class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
                                 <div class="col-md-3">
+                                    <label for="cst" class="form-label">CST</label>
+                                    <input type="text" id="cst" wire:model="novoItem.cst"
+                                        class="form-control" wire:key="prodBusca-{{ $keyProd }}" />
+                                </div>
+                                <div class="col-md-3">
                                     <label for="aliquota" class="form-label">Alíquota (%)</label>
                                     <input type="number" id="aliquota" wire:model="novoItem.aliquota"
                                         class="form-control" step="0.01"
                                         wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="valor_icms" class="form-label">Valor do ICMS</label>
                                     <input type="number" id="valor_icms" wire:model="novoItem.valor_icms"
                                         class="form-control" step="0.01"
                                         wire:key="prodBusca-{{ $keyProd }}" />
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <label for="base_calculo" class="form-label">Base de Cálculo</label>
                                     <input type="number" id="base_calculo" wire:model="novoItem.base_calculo"
                                         class="form-control" step="0.01"
