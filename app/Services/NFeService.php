@@ -169,7 +169,12 @@ class NFeService
         // 6. TAG dest (Destinatário)
         $stdDest = new \stdClass;
         $nomeDest = $clienteObj ? ($clienteObj->nome_razao_social ?? $clienteObj->nome ?? 'CONSUMIDOR') : ($dados['cliente']['razao_social'] ?? 'CONSUMIDOR FINAL');
-        $stdDest->xNome = FormatationUtil::retiraAcentos(substr($nomeDest, 0, 60));
+        // SEFAZ exige razão social padronizada em ambiente de homologação (evita Rejeição 598)
+        if ($ambiente === 2) {
+            $stdDest->xNome = 'NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL';
+        } else {
+            $stdDest->xNome = FormatationUtil::retiraAcentos(substr($nomeDest, 0, 60));
+        }
 
         $docDest = preg_replace('/\D/', '', (string) ($clienteObj->cpf_cnpj ?? $dados['cliente']['cpf_cnpj'] ?? $dados['cpf_cnpj'] ?? ''));
         $ieDest = preg_replace('/\D/', '', (string) ($clienteObj->rg_ie ?? $dados['cliente']['rg_ie'] ?? ''));
@@ -539,8 +544,9 @@ class NFeService
 
         $chave = $notaFiscal->chave;
         $xmlBruto = null;
+        $ambienteDfe = (int) ($empresa->preferencia->ambiente_dfe ?? 2);
 
-        // 1. Tenta ler o XML gerado do storage
+        // 1. Tenta ler o XML gerado do storage (apenas se for compatível com o ambiente atual)
         if ($chave) {
             $caminhos = [
                 storage_path("app/nfe/geradas/{$chave}.xml"),
@@ -548,8 +554,16 @@ class NFeService
             ];
             foreach ($caminhos as $c) {
                 if (File::exists($c)) {
-                    $xmlBruto = file_get_contents($c);
-                    break;
+                    $conteudo = file_get_contents($c);
+                    if (preg_match('/<tpAmb>([12])<\/tpAmb>/', $conteudo, $mAmb)) {
+                        if ((int) $mAmb[1] === $ambienteDfe) {
+                            $xmlBruto = $conteudo;
+                            break;
+                        }
+                    } else {
+                        $xmlBruto = $conteudo;
+                        break;
+                    }
                 }
             }
         }
@@ -774,8 +788,24 @@ class NFeService
             ];
         }
 
-        // 1. Se ainda não possui XML assinado, executa a assinatura
-        if (! $notaFiscal->isAssinada()) {
+        $chave = $notaFiscal->chave;
+        $caminhoAssinado = $chave ? storage_path("app/nfe/assinadas/{$chave}.xml") : null;
+        $ambienteConfigurado = (int) ($empresa->preferencia->ambiente_dfe ?? 2);
+
+        $precisaAssinar = ! $notaFiscal->isAssinada() || ! $caminhoAssinado || ! File::exists($caminhoAssinado);
+
+        // Se o XML assinado já existe mas pertence a outro ambiente (ex: Produção vs Homologação), força regeneração e assinatura
+        if (! $precisaAssinar && $caminhoAssinado && File::exists($caminhoAssinado)) {
+            $conteudoAssinado = file_get_contents($caminhoAssinado);
+            if (preg_match('/<tpAmb>([12])<\/tpAmb>/', $conteudoAssinado, $mAmb)) {
+                if ((int) $mAmb[1] !== $ambienteConfigurado) {
+                    $precisaAssinar = true;
+                }
+            }
+        }
+
+        // 1. Se ainda não possui XML assinado ou se o ambiente divergiu, assina/re-assina
+        if ($precisaAssinar) {
             $resAssinatura = $this->assinarNotaFiscal($notaFiscal);
             if (! ($resAssinatura['sucesso'] ?? false)) {
                 return [
@@ -783,10 +813,9 @@ class NFeService
                     'erro' => 'Não foi possível assinar a nota fiscal antes da transmissão: '.($resAssinatura['erro'] ?? ''),
                 ];
             }
+            $chave = $notaFiscal->fresh()->chave;
+            $caminhoAssinado = storage_path("app/nfe/assinadas/{$chave}.xml");
         }
-
-        $chave = $notaFiscal->chave;
-        $caminhoAssinado = storage_path("app/nfe/assinadas/{$chave}.xml");
         if (! File::exists($caminhoAssinado)) {
             return [
                 'sucesso' => false,

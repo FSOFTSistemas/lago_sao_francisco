@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('protocolo', 60)->nullable()->after('cstat');
             $table->string('motivo_status', 255)->nullable()->after('protocolo');
             $table->timestamp('data_autorizacao')->nullable()->after('motivo_status');
+            if (! Schema::hasColumn('nota_fiscals', 'total_notas')) {
+                $table->double('total_notas')->default(0)->nullable()->after('total_nota');
+            }
         });
     }
 
@@ -26,7 +29,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('nota_fiscals', function (Blueprint $table) {
-            $table->dropColumn(['status', 'cstat', 'protocolo', 'motivo_status', 'data_autorizacao']);
+            $colunas = ['status', 'cstat', 'protocolo', 'motivo_status', 'data_autorizacao'];
+            if (Schema::hasColumn('nota_fiscals', 'total_notas')) {
+                $colunas[] = 'total_notas';
+            }
+            $table->dropColumn($colunas);
         });
     }
 };
