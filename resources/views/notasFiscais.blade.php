@@ -107,6 +107,14 @@
                                             </button>
                                         </form>
                                     @endif
+                                    @if ($nota->chave && !$nota->isAutorizada())
+                                        <form action="{{ route('nota_fiscal.transmitir', $nota->id) }}" method="POST" class="d-inline me-1" onsubmit="return confirm('Deseja transmitir a NF-e nº {{ $nota->numero }} para autorização na SEFAZ?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Transmitir para SEFAZ">
+                                                <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     @if ($nota->chave)
                                         <a href="{{ route('nota_fiscal.xml', $nota->id) }}" class="btn btn-sm btn-outline-info me-1" title="Baixar XML {{ $nota->isAssinada() ? 'Assinado' : 'Gerado' }}">
                                             <i class="fas fa-file-code"></i> XML

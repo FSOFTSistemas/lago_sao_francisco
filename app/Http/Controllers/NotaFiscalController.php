@@ -273,6 +273,27 @@ class NotaFiscalController extends Controller
     }
 
     /**
+     * Transmite a nota fiscal para autorização na SEFAZ.
+     */
+    public function transmitir(string $id)
+    {
+        $nota = NotaFiscal::with(['cliente', 'empresa', 'itens.produto'])->findOrFail($id);
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->transmitirNotaFiscal($nota);
+
+        if ($resultado['sucesso'] ?? false) {
+            $protocolo = $resultado['protocolo'] ?? '';
+            $mensagem = "Nota Fiscal nº {$nota->numero} AUTORIZADA pela SEFAZ com sucesso! Protocolo: {$protocolo}";
+
+            return redirect()->back()->with('success', $mensagem);
+        }
+
+        $erro = $resultado['erro'] ?? 'Erro desconhecido ao transmitir para a SEFAZ.';
+
+        return redirect()->back()->with('error', $erro);
+    }
+
+    /**
      * Verifica e retorna informações do certificado digital da empresa logada.
      */
     public function verificarCertificado()

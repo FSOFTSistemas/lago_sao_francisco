@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use Mockery;
 use NFePHP\Common\Certificate;
 use NFePHP\NFe\Tools;
 use Tests\TestCase;
@@ -592,5 +593,83 @@ class NotaFiscalPersistenceTest extends TestCase
 
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertTrue(session()->has('error') || session()->has('success'));
+    }
+
+    public function test_controller_transmitir_nota_fiscal_autorizada(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 26,
+            'total_produtos' => 35.0,
+            'total_nota' => 35.0,
+        ]);
+
+        $mockNFeService = Mockery::mock(NFeService::class);
+        $mockNFeService->shouldReceive('transmitirNotaFiscal')
+            ->once()
+            ->andReturn([
+                'sucesso' => true,
+                'autorizada' => true,
+                'protocolo' => '126240001234567',
+                'chave' => '26260938090491000181550010000000261420590740',
+                'caminho' => storage_path('app/nfe/autorizadas/dummy.xml'),
+            ]);
+
+        $this->app->instance(NFeService::class, $mockNFeService);
+
+        $controller = new NotaFiscalController;
+        $response = $controller->transmitir((string) $nota->id);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertTrue(session()->has('success'));
+        $this->assertStringContainsString('AUTORIZADA', session('success'));
+        $this->assertStringContainsString('126240001234567', session('success'));
+    }
+
+    public function test_controller_transmitir_nota_fiscal_com_erro(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 27,
+            'total_produtos' => 35.0,
+            'total_nota' => 35.0,
+        ]);
+
+        $mockNFeService = Mockery::mock(NFeService::class);
+        $mockNFeService->shouldReceive('transmitirNotaFiscal')
+            ->once()
+            ->andReturn([
+                'sucesso' => false,
+                'autorizada' => false,
+                'rejeitada' => true,
+                'erro' => 'Rejeição: Duplicidade de NF-e',
+            ]);
+
+        $this->app->instance(NFeService::class, $mockNFeService);
+
+        $controller = new NotaFiscalController;
+        $response = $controller->transmitir((string) $nota->id);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertTrue(session()->has('error'));
+        $this->assertStringContainsString('Duplicidade', session('error'));
     }
 }

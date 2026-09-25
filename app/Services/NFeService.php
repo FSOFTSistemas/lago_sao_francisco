@@ -602,50 +602,196 @@ class NFeService
     }
 
     /**
-     * Transmite a NF-e assinada para a SEFAZ e salva o arquivo autorizado.
+     * Transmite a NF-e assinada para a SEFAZ (síncrono ou assíncrono),
+     * consulta o recibo se necessário e gera o XML autorizado com Complements::toAuthorize.
      */
-    public function transmitir(string $signXml, string $chave, Empresa $empresa, string $caminhoStorage = 'storage/app/nfe/autorizadas'): array
-    {
+    public function transmitir(
+        string $signXml,
+        string $chave,
+        Empresa $empresa,
+        int $indSinc = 1,
+        string $caminhoStorage = 'app/nfe/autorizadas'
+    ): array {
         try {
             $tools = $this->obterTools($empresa);
             $idLote = str_pad((string) mt_rand(1, 99999999), 15, '0', STR_PAD_LEFT);
 
-            // Envia o lote de forma síncrona/assíncrona
-            $resp = $tools->sefazEnviaLote([$signXml], $idLote);
+            // 1. Envia o lote para a SEFAZ
+            $respEnvia = $tools->sefazEnviaLote([$signXml], $idLote, $indSinc);
 
             $st = new Standardize;
-            $std = $st->toStd($resp);
+            $stdEnvia = $st->toStd($respEnvia);
 
-            if ($std->cStat != 103) {
+            $cStatLote = (string) ($stdEnvia->cStat ?? '');
+            $xMotivoLote = (string) ($stdEnvia->xMotivo ?? '');
+
+            $respProtocolo = null;
+            $recibo = null;
+
+            // CASO A: Envio Síncrono direto (cStat 104 - Lote processado)
+            if ($cStatLote === '104') {
+                $respProtocolo = $respEnvia;
+            }
+            // CASO B: Envio Assíncrono (cStat 103 - Lote recebido com sucesso)
+            elseif ($cStatLote === '103') {
+                $recibo = (string) ($stdEnvia->infRec->nRec ?? '');
+                if (empty($recibo)) {
+                    return [
+                        'sucesso' => false,
+                        'cStat' => $cStatLote,
+                        'erro' => "SEFAZ confirmou recebimento do lote mas não retornou número de recibo. Motivo: {$xMotivoLote}",
+                    ];
+                }
+
+                // Consulta de recibo com até 3 tentativas para aguardar processamento (cStat 105)
+                $tentativas = 0;
+                $maxTentativas = 3;
+                while ($tentativas < $maxTentativas) {
+                    $tentativas++;
+                    sleep(2);
+
+                    $respConsulta = $tools->sefazConsultaRecibo($recibo);
+                    $stdConsulta = $st->toStd($respConsulta);
+                    $cStatConsulta = (string) ($stdConsulta->cStat ?? '');
+
+                    if ($cStatConsulta === '104') {
+                        $respProtocolo = $respConsulta;
+                        break;
+                    } elseif ($cStatConsulta === '105') {
+                        continue;
+                    } else {
+                        return [
+                            'sucesso' => false,
+                            'cStat' => $cStatConsulta,
+                            'erro' => "Falha ao consultar recibo [{$recibo}]: [{$cStatConsulta}] ".($stdConsulta->xMotivo ?? ''),
+                        ];
+                    }
+                }
+
+                if (! $respProtocolo) {
+                    return [
+                        'sucesso' => false,
+                        'cStat' => '105',
+                        'recibo' => $recibo,
+                        'erro' => "Lote em processamento na SEFAZ após {$maxTentativas} tentativas. Recibo: {$recibo}. Consulte novamente em instantes.",
+                    ];
+                }
+            }
+            // CASO C: Rejeição no envio do lote (ex: erro de schema, certificado, etc.)
+            else {
                 return [
                     'sucesso' => false,
-                    'erro' => "[$std->cStat] - $std->xMotivo",
+                    'cStat' => $cStatLote,
+                    'erro' => "Rejeição no envio do lote para a SEFAZ: [{$cStatLote}] {$xMotivoLote}",
                 ];
             }
 
-            $recibo = $std->infRec->nRec;
-            sleep(2);
+            // 2. Extrai os dados do protNFe
+            $stdFinal = $st->toStd($respProtocolo);
+            $infProt = $stdFinal->protNFe->infProt ?? null;
 
-            $protocolo = $tools->sefazConsultaRecibo($recibo);
-            $xmlAutorizado = Complements::toAuthorize($signXml, $protocolo);
-
-            $dir = base_path($caminhoStorage);
-            if (! File::exists($dir)) {
-                File::makeDirectory($dir, 0755, true, true);
+            if (! $infProt) {
+                return [
+                    'sucesso' => false,
+                    'erro' => 'A resposta da SEFAZ não contém o bloco infProt com os dados da autorização.',
+                ];
             }
-            file_put_contents($dir.DIRECTORY_SEPARATOR.$chave.'.xml', $xmlAutorizado);
 
-            return [
-                'sucesso' => true,
-                'recibo' => $recibo,
-                'xml_autorizado' => $xmlAutorizado,
-            ];
-        } catch (\Throwable $e) {
+            $cStatProt = (string) ($infProt->cStat ?? '');
+            $xMotivoProt = (string) ($infProt->xMotivo ?? '');
+            $nProt = (string) ($infProt->nProt ?? '');
+            $dhRecbto = (string) ($infProt->dhRecbto ?? '');
+
+            // 3. Verifica se foi autorizada (100 = Autorizado, 150 = Autorizado fora do prazo)
+            if (in_array($cStatProt, ['100', '150'])) {
+                // Anexa o protocolo de autorização ao XML assinado gerando o XML de distribuição (-procNFe.xml)
+                $xmlAutorizado = Complements::toAuthorize($signXml, $respProtocolo);
+
+                $dir = storage_path($caminhoStorage);
+                if (! File::exists($dir)) {
+                    File::makeDirectory($dir, 0755, true, true);
+                }
+
+                $caminhoArquivo = $dir.DIRECTORY_SEPARATOR.$chave.'.xml';
+                file_put_contents($caminhoArquivo, $xmlAutorizado);
+
+                Log::info("NF-e Chave: {$chave} autorizada pela SEFAZ. Protocolo: {$nProt}");
+
+                return [
+                    'sucesso' => true,
+                    'autorizada' => true,
+                    'cStat' => $cStatProt,
+                    'xMotivo' => $xMotivoProt,
+                    'protocolo' => $nProt,
+                    'data_autorizacao' => $dhRecbto,
+                    'recibo' => $recibo,
+                    'xml_autorizado' => $xmlAutorizado,
+                    'caminho' => $caminhoArquivo,
+                    'chave' => $chave,
+                ];
+            }
+
+            // 4. Denegada ou Rejeitada pela SEFAZ
+            $ehDenegada = in_array($cStatProt, ['110', '205', '301', '302', '303']);
+            Log::warning("NF-e Chave: {$chave} não autorizada pela SEFAZ. cStat: {$cStatProt} - {$xMotivoProt}");
+
             return [
                 'sucesso' => false,
-                'erro' => $e->getMessage(),
+                'autorizada' => false,
+                'denegada' => $ehDenegada,
+                'rejeitada' => ! $ehDenegada,
+                'cStat' => $cStatProt,
+                'xMotivo' => $xMotivoProt,
+                'protocolo' => $nProt,
+                'erro' => "SEFAZ [{$cStatProt}]: {$xMotivoProt}",
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Erro na comunicação com a SEFAZ: '.$e->getMessage());
+
+            return [
+                'sucesso' => false,
+                'erro' => 'Falha na comunicação com a SEFAZ: '.$e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Garante que a nota fiscal está assinada e a transmite para a SEFAZ.
+     */
+    public function transmitirNotaFiscal(NotaFiscal $notaFiscal, int $indSinc = 1): array
+    {
+        $empresa = $notaFiscal->empresa ?? Empresa::find($notaFiscal->empresa_id);
+        if (! $empresa) {
+            return [
+                'sucesso' => false,
+                'erro' => 'Empresa emitente não vinculada à nota fiscal.',
+            ];
+        }
+
+        // 1. Se ainda não possui XML assinado, executa a assinatura
+        if (! $notaFiscal->isAssinada()) {
+            $resAssinatura = $this->assinarNotaFiscal($notaFiscal);
+            if (! ($resAssinatura['sucesso'] ?? false)) {
+                return [
+                    'sucesso' => false,
+                    'erro' => 'Não foi possível assinar a nota fiscal antes da transmissão: '.($resAssinatura['erro'] ?? ''),
+                ];
+            }
+        }
+
+        $chave = $notaFiscal->chave;
+        $caminhoAssinado = storage_path("app/nfe/assinadas/{$chave}.xml");
+        if (! File::exists($caminhoAssinado)) {
+            return [
+                'sucesso' => false,
+                'erro' => "Arquivo XML assinado não encontrado em: {$caminhoAssinado}",
+            ];
+        }
+
+        $signXml = file_get_contents($caminhoAssinado);
+
+        // 2. Transmite para a SEFAZ
+        return $this->transmitir($signXml, $chave, $empresa, $indSinc);
     }
 
     /**
