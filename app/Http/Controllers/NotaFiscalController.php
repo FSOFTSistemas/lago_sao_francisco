@@ -2,155 +2,314 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Cliente;
 use App\Models\Empresa;
+use App\Models\EmpresaPreferencia;
 use App\Models\NotaFiscal;
-use App\Models\Produto;
+use App\Models\NotaFiscalItem;
+use App\Services\NFeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class NotaFiscalController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Exibe a listagem de notas fiscais da empresa.
      */
     public function index()
     {
+        $empresaId = Auth::user()->empresa_id ?? 1;
 
-        return view('notasFiscais');
+        $notas = NotaFiscal::with(['cliente', 'itens.produto'])
+            ->where('empresa_id', $empresaId)
+            ->orderBy('id', 'desc')
+            ->paginate(15);
+
+        return view('notasFiscais', compact('notas'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Exibe o formulário de emissão de nova nota fiscal.
      */
     public function create()
     {
-        return View('NFe.create');
+        return view('NFe.create');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Grava a nota fiscal e seus itens no banco de dados e gera o XML correspondente.
      */
     public function store(Request $request)
     {
+        $usuario = Auth::user();
+        $empresaId = (int) ($request->input('empresa_id') ?: ($usuario?->empresa_id ?: 1));
+        $usuarioId = (int) ($usuario?->id ?: 1);
 
-        dd($request->all());
-        try{
-            $request->validate([
-                'id' => 'required|integer',
-                'cliente_id' => 'required|exists:clientes,id',
-                'mcm_id' => 'required|exists:mcm,id',
-                'cfop_id' => 'required|exists:cfop,id',
-                'data' => 'required|date',
-                'chave' => 'required|string',
-                'numero' => 'required|integer',
-                'serie' => 'nullable|string',
-                'observacoes' => 'nullable|string',
-                'info_complementares' => 'nullable|string',
-                'peso_liquido' => 'nullable|numeric',
-                'peso_bruto' => 'nullable|numeric',
-                'pt_frete' => 'nullable|string',
-                'pt_transporte' => 'nullable|string',
-                'pt_nota' => 'nullable|string',
-                'nfe_referenciavel' => 'nullable|string',
-                'total_produtos' => 'nullable|numeric',
-                'total_notas' => 'nullable|numeric',
-                'total_desconto' => 'nullable|numeric',
-                'outras_despesas' => 'nullable|numeric',
-                'base_ICMS' => 'nullable|numeric',
-                'vICMS' => 'nullable|numeric',
-                'base_ST' => 'nullable|numeric',
-                'vST' => 'nullable|numeric',
+        // Validação dos dados essenciais recebidos
+        $request->validate([
+            'numero' => 'required|integer|min:1',
+            'serie' => 'required|integer|min:1',
+            'itens' => 'required|array|min:1',
+            'cliente' => 'required',
         ]);
-        $request['empresa_id'] = Auth::user()->empresa_id;
-        $request['usuario_id'] = Auth::user()->id;
-        NotaFiscal::created($request->all());
-        return redirect()->route('nota_fiscal.index')->with('sucess', 'Erro ao criar nota fiscal');
-       }catch(\Exception $e){
-        dd($e->getMessage());
-        return redirect()->route('nota_fiscal.index')->with('error', 'Erro ao criar nota fiscal');
-       }
+
+        $clienteId = is_array($request->input('cliente'))
+            ? ($request->input('cliente')['id'] ?? null)
+            : $request->input('cliente_id', $request->input('cliente'));
+
+        if (! $clienteId) {
+            return redirect()->back()->with('error', 'Selecione um cliente para emitir a nota fiscal.');
+        }
+
+        try {
+            $notaFiscal = DB::transaction(function () use ($request, $empresaId, $usuarioId, $clienteId) {
+                $itens = $request->input('itens', []);
+
+                // Determina CFOP e NCM para os campos obrigatórios da tabela nota_fiscals
+                $cfopCode = (string) ($request->input('cfop') ?: ($itens[0]['cfop'] ?? '5102'));
+                $cfopId = DB::table('cfops')->where('cfop', $cfopCode)->value('id') ?: 1;
+
+                $firstNcm = (string) ($itens[0]['ncm'] ?? '21069090');
+                $ncmId = DB::table('ncms')->where('ncm', $firstNcm)->value('id')
+                    ?: (DB::table('ncms')->where('ncm', 'like', substr($firstNcm, 0, 4).'%')->value('id') ?: 1);
+
+                $totalProdutos = (float) ($request->input('subtotal') ?: collect($itens)->sum('subtotal'));
+                $totalDesconto = (float) ($request->input('desconto') ?: collect($itens)->sum('desconto'));
+                $totalNota = (float) ($request->input('total') ?: max(0, $totalProdutos - $totalDesconto));
+
+                $baseIcms = (float) collect($itens)->sum('base_calculo');
+                $vIcms = (float) collect($itens)->sum('valor_icms');
+
+                $dataEmissao = $request->input('data_emissao') ?: now()->toDateString();
+                $numero = (int) $request->input('numero');
+                $serie = (int) $request->input('serie');
+
+                $tipoNota = in_array((string) $request->input('tipo_nota'), ['0', 'entrada']) ? 0 : 1;
+
+                // 1. Criação do cabeçalho da Nota Fiscal
+                $notaFiscal = NotaFiscal::create([
+                    'cliente_id' => $clienteId,
+                    'ncm_id' => $ncmId,
+                    'cfop_id' => $cfopId,
+                    'usuario_id' => $usuarioId,
+                    'empresa_id' => $empresaId,
+                    'data' => $dataEmissao,
+                    'chave' => $request->input('chave'),
+                    'serie' => $serie,
+                    'numero' => $numero,
+                    'observacoes' => (string) ($request->input('observacoes') ?: ''),
+                    'info_complementares' => (string) ($request->input('informacoes_complementares') ?: ''),
+                    'peso_liquido' => (float) ($request->input('peso_liquido') ?: 0),
+                    'peso_bruto' => (float) ($request->input('peso_bruto') ?: 0),
+                    'tp_frete' => (int) ($request->input('tp_frete') ?: 9),
+                    'tp_transporte' => (int) ($request->input('tp_transporte') ?: 0),
+                    'tp_nota' => $tipoNota,
+                    'nfe_referenciavel' => $request->input('chave_nfe_referenciada') ?: $request->input('nfe_referenciada'),
+                    'total_produtos' => $totalProdutos,
+                    'total_nota' => $totalNota,
+                    'total_notas' => $totalNota,
+                    'total_desconto' => $totalDesconto,
+                    'outras_despesas' => (float) ($request->input('outras_despesas') ?: 0),
+                    'base_ICMS' => $baseIcms,
+                    'vICMS' => $vIcms,
+                    'base_ST' => 0,
+                    'v_ST' => 0,
+                ]);
+
+                // 2. Criação dos Itens da Nota Fiscal
+                foreach ($itens as $item) {
+                    $itemCfopCode = (string) ($item['cfop'] ?? $cfopCode);
+                    $itemCfopId = DB::table('cfops')->where('cfop', $itemCfopCode)->value('id') ?: $cfopId;
+
+                    $qtd = (int) max(1, round((float) ($item['quantidade'] ?? 1)));
+                    $vUnit = (float) ($item['valor_unitario'] ?? $item['v_unitario'] ?? 0);
+                    $sub = (float) ($item['subtotal'] ?? ($qtd * $vUnit));
+                    $desc = (float) ($item['desconto'] ?? 0);
+                    $tot = (float) ($item['total'] ?? max(0, $sub - $desc));
+
+                    $baseItem = (float) ($item['base_calculo'] ?? $tot);
+                    $vIcmsItem = (float) ($item['valor_icms'] ?? 0);
+
+                    NotaFiscalItem::create([
+                        'nota_fiscal_id' => $notaFiscal->id,
+                        'produto_id' => $item['produto_id'] ?? $item['id'],
+                        'quantidade' => $qtd,
+                        'v_unitario' => $vUnit,
+                        'desconto' => $desc,
+                        'subtotal' => $sub,
+                        'cst' => (string) ($item['cst'] ?? '00'),
+                        'cfop_id' => $itemCfopId,
+                        'csosm' => (string) ($item['csosn'] ?? $item['csosm'] ?? '102'),
+                        'total' => $tot,
+                        'base_ICMS' => $baseItem,
+                        'vICMS' => $vIcmsItem,
+                        'base_ST' => 0,
+                        'v_ST' => 0,
+                    ]);
+                }
+
+                // 3. Atualizar número da última nota nas preferências da empresa se for maior
+                $preferencia = EmpresaPreferencia::where('empresa_id', $empresaId)->first();
+                if ($preferencia && $numero > ($preferencia->numero_ultima_nota ?? 0)) {
+                    $preferencia->update(['numero_ultima_nota' => $numero]);
+                }
+
+                return $notaFiscal;
+            });
+
+            // 4. Invocar o construtor de XML (NFeService)
+            $nfeService = app(NFeService::class);
+            $resultadoXml = $nfeService->gerarXml($notaFiscal);
+
+            if ($resultadoXml['sucesso'] ?? false) {
+                $chave = $resultadoXml['chave'];
+                $xml = $resultadoXml['xml'];
+
+                // Atualiza a chave de 44 dígitos no registro do banco
+                $notaFiscal->update(['chave' => $chave]);
+
+                // Salva o XML gerado no storage (storage/app/nfe/geradas/{chave}.xml)
+                $dir = storage_path('app/nfe/geradas');
+                if (! File::exists($dir)) {
+                    File::makeDirectory($dir, 0755, true, true);
+                }
+                file_put_contents($dir.DIRECTORY_SEPARATOR.$chave.'.xml', $xml);
+
+                Log::info("XML da NF-e nº {$notaFiscal->numero} gerado com sucesso. Chave: {$chave}");
+                $mensagem = "Nota Fiscal nº {$notaFiscal->numero} gravada e XML gerado com sucesso! Chave: {$chave}";
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'sucesso' => true,
+                        'mensagem' => $mensagem,
+                        'chave' => $chave,
+                        'nota_fiscal' => $notaFiscal->load('itens'),
+                    ]);
+                }
+
+                return redirect()->route('nota_fiscal.index')->with('success', $mensagem);
+            } else {
+                $erros = implode(', ', $resultadoXml['erros'] ?? ['Erro desconhecido ao gerar XML']);
+                Log::warning("Nota Fiscal nº {$notaFiscal->numero} gravada, mas o XML necessita de ajustes: {$erros}");
+                $mensagemAlerta = "Nota Fiscal nº {$notaFiscal->numero} gravada, mas houve inconsistência no XML: {$erros}";
+
+                if ($request->wantsJson()) {
+                    return response()->json([
+                        'sucesso' => false,
+                        'mensagem' => $mensagemAlerta,
+                        'erros' => $resultadoXml['erros'] ?? [],
+                        'nota_fiscal' => $notaFiscal->load('itens'),
+                    ], 422);
+                }
+
+                return redirect()->route('nota_fiscal.index')->with('warning', $mensagemAlerta);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Erro ao gravar nota fiscal: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return redirect()->back()->with('error', 'Erro ao gravar nota fiscal: '.$e->getMessage());
+        }
     }
 
     /**
-     * Display the specified resource.
+     * Faz o download do XML da nota fiscal.
+     */
+    public function baixarXml(string $id)
+    {
+        $nota = NotaFiscal::findOrFail($id);
+
+        if (! $nota->chave) {
+            return redirect()->back()->with('error', 'Esta nota fiscal ainda não possui chave ou XML gerado.');
+        }
+
+        $caminhos = [
+            storage_path('app/nfe/autorizadas/'.$nota->chave.'.xml'),
+            storage_path('app/nfe/geradas/'.$nota->chave.'.xml'),
+            public_path('xml/'.$nota->chave.'.xml'),
+        ];
+
+        foreach ($caminhos as $caminho) {
+            if (File::exists($caminho)) {
+                return response()->download($caminho, "NFe-{$nota->numero}-{$nota->chave}.xml", [
+                    'Content-Type' => 'application/xml',
+                ]);
+            }
+        }
+
+        // Se o arquivo físico não estiver no disco, gera dinamicamente a partir dos dados do banco
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->gerarXml($nota);
+        if ($resultado['sucesso'] ?? false) {
+            return response($resultado['xml'], 200, [
+                'Content-Type' => 'application/xml',
+                'Content-Disposition' => "attachment; filename=\"NFe-{$nota->numero}-{$nota->chave}.xml\"",
+            ]);
+        }
+
+        return redirect()->back()->with('error', 'Arquivo XML não encontrado para esta nota fiscal.');
+    }
+
+    /**
+     * Gera ou regenera manualmente o XML para uma nota gravada sem chave.
+     */
+    public function gerarXmlManual(string $id)
+    {
+        $nota = NotaFiscal::with(['cliente', 'empresa', 'itens.produto'])->findOrFail($id);
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->gerarXml($nota);
+
+        if ($resultado['sucesso'] ?? false) {
+            $chave = $resultado['chave'];
+            $xml = $resultado['xml'];
+
+            $nota->update(['chave' => $chave]);
+
+            $dir = storage_path('app/nfe/geradas');
+            if (! File::exists($dir)) {
+                File::makeDirectory($dir, 0755, true, true);
+            }
+            file_put_contents($dir.DIRECTORY_SEPARATOR.$chave.'.xml', $xml);
+
+            return redirect()->back()->with('success', "XML gerado com sucesso! Chave: {$chave}");
+        }
+
+        $erros = implode(', ', $resultado['erros'] ?? []);
+
+        return redirect()->back()->with('error', "Erro ao gerar XML: {$erros}");
+    }
+
+    /**
+     * Exibe os detalhes de uma nota fiscal.
      */
     public function show(string $id)
     {
-        //
+        $nota = NotaFiscal::with(['cliente', 'empresa', 'itens.produto', 'usuario'])->findOrFail($id);
+
+        return view('notasFiscaisDetalhes', compact('nota'));
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        try{
-            $notaFiscal = NotaFiscal::findOrFail($id);
-            $request->validate([
-                    'id' => 'required|integer',
-                    'cliente_id' => 'required|exists:clientes,id',
-                    'mcm_id' => 'required|exists:mcm,id',
-                    'cfop_id' => 'required|exists:cfop,id',
-                    'data' => 'required|date',
-                    'chave' => 'required|string',
-                    'numero' => 'required|integer',
-                    'serie' => 'nullable|string',
-                    'observacoes' => 'nullable|string',
-                    'info_complementares' => 'nullable|string',
-                    'peso_liquido' => 'nullable|numeric',
-                    'peso_bruto' => 'nullable|numeric',
-                    'pt_frete' => 'nullable|string',
-                    'pt_transporte' => 'nullable|string',
-                    'pt_nota' => 'nullable|string',
-                    'nfe_referenciavel' => 'nullable|string',
-                    'total_produtos' => 'nullable|numeric',
-                    'total_notas' => 'nullable|numeric',
-                    'total_desconto' => 'nullable|numeric',
-                    'outras_despesas' => 'nullable|numeric',
-                    'base_ICMS' => 'nullable|numeric',
-                    'vICMS' => 'nullable|numeric',
-                    'base_ST' => 'nullable|numeric',
-                    'vST' => 'nullable|numeric',
-            ]);
-            $request['empresa_id'] = Auth::user()->empresa_id;
-            $request['usuario_id'] = Auth::user()->id;
-            $notaFiscal->update($request->all());
-            return redirect()->route('nota_fiscal.index')->with('sucess', 'nota fiscal atualizada com sucesso');
-        }catch(\Exception $e){
-            dd($e->getMessage());
-            return redirect()->back()->with('error', 'Erro ao atualizar nota fiscal');
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
+     * Remove uma nota fiscal do banco de dados.
      */
     public function destroy(string $id)
     {
-        try{
+        try {
             $notaFiscal = NotaFiscal::findOrFail($id);
+            $numero = $notaFiscal->numero;
             $notaFiscal->delete();
-            return redirect()->route('nota_fiscal.index')->with('success', 'nota fiscal excluída com sucesso!');
-        }catch(\Exception $e){
-            dd($e->getMessage());
-            return redirect()->back()->with('error', 'Erro ao excluir nota fiscal'); 
+
+            return redirect()->route('nota_fiscal.index')->with('success', "Nota Fiscal nº {$numero} excluída com sucesso!");
+        } catch (\Throwable $e) {
+            Log::error('Erro ao excluir nota fiscal: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Erro ao excluir nota fiscal: '.$e->getMessage());
         }
     }
 
-    public function getEmpresaCurrent(){
+    public function getEmpresaCurrent()
+    {
         return Empresa::where('id', Auth::user()->empresa_id)->get();
     }
-
-    
 }

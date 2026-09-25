@@ -8,6 +8,14 @@
             </button>
         </div>
     @endif
+    @if (session()->has('warning'))
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> {{ session('warning') }}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    @endif
     @if (session()->has('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -166,35 +174,6 @@
                         <p class="m-3">Nenhum item adicionado.</p>
                     @endif
                 </div>
-
-                <div class="p-3 border-top bg-light" style="background: white;">
-                    <div class="row text-end">
-                        <div class="col-md-3 offset-md-6">
-                            <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
-                        </div>
-                        <div class="col-md-3 offset-md-6">
-                            <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
-                        </div>
-                    </div>
-                    <div class="col-12 text-end mt-3">
-                        <button type="button" wire:click="salvarNfe" class="btn btn-success me-2">
-                            <i class="fas fa-save"></i> Gravar Nota
-                        </button>
-
-                        <a href="{{ route('nota_fiscal.index') }}">
-                            <button type="button" class="btn btn-secondary">
-                                <i class="fas fa-times"></i> Cancelar
-                            </button>
-                        </a>
-
-                    </div>
-                </div>
             </div>
         @elseif($aba == 'faturamento')
             <div x-data="{ forma: '' }" role="tabpanel" class="tab-pane active">
@@ -257,6 +236,34 @@
                 </div>
             </div>
         @endif
+    </div>
+
+    <!-- Barra de Totais e Ações (acessível em todas as abas) -->
+    <div class="p-3 border-top bg-light mt-4 rounded shadow-sm">
+        <div class="row text-end">
+            <div class="col-md-3 offset-md-6">
+                <strong>Subtotal:</strong> R$ {{ number_format($this->subtotalNota, 2, ',', '.') }}
+            </div>
+            <div class="col-md-3">
+                <strong>Descontos:</strong> R$ {{ number_format($this->descontoNota, 2, ',', '.') }}
+            </div>
+            <div class="col-md-3 offset-md-6">
+                <strong>Acréscimos:</strong> R$ {{ number_format($this->acrescimoNota, 2, ',', '.') }}
+            </div>
+            <div class="col-md-3">
+                <strong>Total da Nota:</strong> R$ {{ number_format($this->totalNota, 2, ',', '.') }}
+            </div>
+        </div>
+        <div class="col-12 text-end mt-3">
+            <button type="button" wire:click="salvarNfe" wire:loading.attr="disabled" class="btn btn-success me-2">
+                <span wire:loading wire:target="salvarNfe" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i wire:loading.remove wire:target="salvarNfe" class="fas fa-save me-1"></i> Gravar e Gerar XML
+            </button>
+
+            <a href="{{ route('nota_fiscal.index') }}" class="btn btn-secondary">
+                <i class="fas fa-times me-1"></i> Cancelar
+            </a>
+        </div>
     </div>
 
     <!-- Modal para adicionar item -->

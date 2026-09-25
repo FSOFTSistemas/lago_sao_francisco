@@ -9,8 +9,6 @@ use App\Models\NotaFiscal;
 use App\Utils\FormatationUtil;
 use App\Utils\ValidationEAN13Util;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use NFePHP\Common\Certificate;
 use NFePHP\NFe\Common\Standardize;
 use NFePHP\NFe\Complements;
 use NFePHP\NFe\Make;
@@ -31,6 +29,7 @@ class NFeService
     public function setTools(Tools $tools): self
     {
         $this->tools = $tools;
+
         return $this;
     }
 
@@ -50,26 +49,23 @@ class NFeService
 
         $dfeService = app(DfeService::class);
         $this->tools = $dfeService->inicializarTools($empresa);
+
         return $this->tools;
     }
 
     /**
      * Constrói o XML da NF-e (modelo 55 layout 4.00) utilizando a classe Make do SPED-NFe.
-     *
-     * @param array|NotaFiscal $dados
-     * @param Empresa|null $empresa
-     * @return array
      */
     public function gerarXml(array|NotaFiscal $dados, ?Empresa $empresa = null): array
     {
-        $nfe = new Make();
+        $nfe = new Make;
 
         // 1. Resolver a Empresa emitente
         $empresa = $this->resolverEmpresa($dados, $empresa);
-        if (!$empresa) {
+        if (! $empresa) {
             return [
                 'sucesso' => false,
-                'erros'   => ['Empresa emitente não informada ou não encontrada.'],
+                'erros' => ['Empresa emitente não informada ou não encontrada.'],
             ];
         }
 
@@ -77,7 +73,7 @@ class NFeService
         $enderecoEmit = $empresa->endereco ?? $this->obterEnderecoPadrao();
 
         // 2. TAG infNFe
-        $stdInNFe = new \stdClass();
+        $stdInNFe = new \stdClass;
         $stdInNFe->versao = '4.00';
         $stdInNFe->Id = null;
         $stdInNFe->pk_nItem = null;
@@ -85,9 +81,9 @@ class NFeService
 
         // 3. TAG ide (Identificação da NF-e)
         $numeroNFe = (int) ($dados['numero'] ?? $dados->numero ?? (($preferencia->numero_ultima_nota ?? 0) + 1));
-        $serieNFe  = (int) ($dados['serie'] ?? $dados->serie ?? ($preferencia->serie ?? 1));
-        $ufEmit    = strtoupper(trim($enderecoEmit->uf ?? 'PE'));
-        $cUFEmit   = Empresa::getCUF($ufEmit);
+        $serieNFe = (int) ($dados['serie'] ?? $dados->serie ?? ($preferencia->serie ?? 1));
+        $ufEmit = strtoupper(trim($enderecoEmit->uf ?? 'PE'));
+        $cUFEmit = Empresa::getCUF($ufEmit);
 
         $tipoNotaStr = strtolower((string) ($dados['tipo_nota'] ?? $dados->tp_nota ?? '1'));
         $tpNF = in_array($tipoNotaStr, ['0', 'entrada']) ? 0 : 1;
@@ -97,12 +93,12 @@ class NFeService
         $ufDest = strtoupper(trim($enderecoDest->uf ?? ($dados['uf_cliente'] ?? $ufEmit)));
         $idDest = ($ufDest !== $ufEmit) ? 2 : 1;
 
-        $dhEmi = !empty($dados['data_emissao']) ? date("Y-m-d\TH:i:sP", strtotime($dados['data_emissao'])) : date("Y-m-d\TH:i:sP");
-        $dhSaiEnt = !empty($dados['data_saida']) ? date("Y-m-d\TH:i:sP", strtotime($dados['data_saida'])) : $dhEmi;
+        $dhEmi = ! empty($dados['data_emissao']) ? date("Y-m-d\TH:i:sP", strtotime($dados['data_emissao'])) : date("Y-m-d\TH:i:sP");
+        $dhSaiEnt = ! empty($dados['data_saida']) ? date("Y-m-d\TH:i:sP", strtotime($dados['data_saida'])) : $dhEmi;
 
         $ambiente = (int) ($preferencia->ambiente_dfe ?? 2); // 1 = Produção, 2 = Homologação
 
-        $stdIde = new \stdClass();
+        $stdIde = new \stdClass;
         $stdIde->cUF = (int) $cUFEmit;
         $stdIde->cNF = str_pad((string) mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
         $stdIde->natOp = substr(FormatationUtil::retiraAcentos((string) ($dados['natureza_operacao'] ?? $dados['natOp'] ?? 'VENDA DE MERCADORIA')), 0, 60);
@@ -128,13 +124,13 @@ class NFeService
         // Se houver chave referenciada
         $refNfe = $dados['nfe_referenciada'] ?? $dados['ref_nfe'] ?? ($dados->nfe_referenciavel ?? null);
         if ($refNfe) {
-            $stdRef = new \stdClass();
+            $stdRef = new \stdClass;
             $stdRef->refNFe = preg_replace('/\D/', '', $refNfe);
             $nfe->tagrefNFe($stdRef);
         }
 
         // 4. TAG emit (Emitente)
-        $stdEmit = new \stdClass();
+        $stdEmit = new \stdClass;
         $stdEmit->xNome = FormatationUtil::retiraAcentos(substr($empresa->razao_social, 0, 60));
         $stdEmit->xFant = FormatationUtil::retiraAcentos(substr($empresa->nome_fantasia ?: $empresa->razao_social, 0, 60));
         $stdEmit->IE = FormatationUtil::retiraPontuacoes($empresa->inscricao_estadual);
@@ -152,10 +148,10 @@ class NFeService
         $nfe->tagemit($stdEmit);
 
         // 5. TAG enderEmit (Endereço do Emitente)
-        $stdEnderEmit = new \stdClass();
+        $stdEnderEmit = new \stdClass;
         $stdEnderEmit->xLgr = FormatationUtil::retiraAcentos($enderecoEmit->logradouro ?? 'Rua');
         $stdEnderEmit->nro = $enderecoEmit->numero ?? 'S/N';
-        $stdEnderEmit->xCpl = !empty($enderecoEmit->complemento) ? FormatationUtil::retiraAcentos($enderecoEmit->complemento) : null;
+        $stdEnderEmit->xCpl = ! empty($enderecoEmit->complemento) ? FormatationUtil::retiraAcentos($enderecoEmit->complemento) : null;
         $stdEnderEmit->xBairro = FormatationUtil::retiraAcentos($enderecoEmit->bairro ?? 'Centro');
         $stdEnderEmit->cMun = FormatationUtil::retiraPontuacoes((string) ($enderecoEmit->ibge ?? '2606002'));
         $stdEnderEmit->xMun = FormatationUtil::retiraAcentos($enderecoEmit->cidade ?? 'Garanhuns');
@@ -163,22 +159,22 @@ class NFeService
         $stdEnderEmit->CEP = FormatationUtil::retiraPontuacoes((string) ($enderecoEmit->cep ?? '55299560'));
         $stdEnderEmit->cPais = '1058';
         $stdEnderEmit->xPais = 'BRASIL';
-        if (!empty($empresa->telefone)) {
+        if (! empty($empresa->telefone)) {
             $stdEnderEmit->fone = FormatationUtil::retiraPontuacoes($empresa->telefone);
         }
         $nfe->tagenderEmit($stdEnderEmit);
 
         // 6. TAG dest (Destinatário)
-        $stdDest = new \stdClass();
+        $stdDest = new \stdClass;
         $nomeDest = $clienteObj ? ($clienteObj->nome_razao_social ?? $clienteObj->nome ?? 'CONSUMIDOR') : ($dados['cliente']['razao_social'] ?? 'CONSUMIDOR FINAL');
         $stdDest->xNome = FormatationUtil::retiraAcentos(substr($nomeDest, 0, 60));
 
         $docDest = preg_replace('/\D/', '', (string) ($clienteObj->cpf_cnpj ?? $dados['cliente']['cpf_cnpj'] ?? $dados['cpf_cnpj'] ?? ''));
-        $ieDest  = preg_replace('/\D/', '', (string) ($clienteObj->rg_ie ?? $dados['cliente']['rg_ie'] ?? ''));
+        $ieDest = preg_replace('/\D/', '', (string) ($clienteObj->rg_ie ?? $dados['cliente']['rg_ie'] ?? ''));
 
         if (strlen($docDest) === 14) {
             $stdDest->CNPJ = $docDest;
-            if (!empty($ieDest) && strtoupper($ieDest) !== 'ISENTO') {
+            if (! empty($ieDest) && strtoupper($ieDest) !== 'ISENTO') {
                 $stdDest->indIEDest = '1'; // Contribuinte
                 $stdDest->IE = $ieDest;
             } elseif (strtoupper((string) ($clienteObj->rg_ie ?? '')) === 'ISENTO') {
@@ -197,10 +193,10 @@ class NFeService
 
         // 7. TAG enderDest (Endereço do Destinatário)
         if ($enderecoDest || strlen($docDest) > 0) {
-            $stdEnderDest = new \stdClass();
+            $stdEnderDest = new \stdClass;
             $stdEnderDest->xLgr = FormatationUtil::retiraAcentos($enderecoDest->logradouro ?? $enderecoEmit->logradouro ?? 'Rua');
             $stdEnderDest->nro = $enderecoDest->numero ?? 'S/N';
-            $stdEnderDest->xCpl = !empty($enderecoDest->complemento) ? FormatationUtil::retiraAcentos($enderecoDest->complemento) : null;
+            $stdEnderDest->xCpl = ! empty($enderecoDest->complemento) ? FormatationUtil::retiraAcentos($enderecoDest->complemento) : null;
             $stdEnderDest->xBairro = FormatationUtil::retiraAcentos($enderecoDest->bairro ?? $enderecoEmit->bairro ?? 'Centro');
             $stdEnderDest->cMun = FormatationUtil::retiraPontuacoes((string) ($enderecoDest->ibge ?? $enderecoEmit->ibge ?? '2606002'));
             $stdEnderDest->xMun = FormatationUtil::retiraAcentos($enderecoDest->cidade ?? $enderecoEmit->cidade ?? 'Garanhuns');
@@ -208,7 +204,7 @@ class NFeService
             $stdEnderDest->CEP = FormatationUtil::retiraPontuacoes((string) ($enderecoDest->cep ?? $enderecoEmit->cep ?? '55299560'));
             $stdEnderDest->cPais = '1058';
             $stdEnderDest->xPais = 'BRASIL';
-            if ($clienteObj && !empty($clienteObj->telefone)) {
+            if ($clienteObj && ! empty($clienteObj->telefone)) {
                 $stdEnderDest->fone = FormatationUtil::retiraPontuacoes($clienteObj->telefone);
             }
             $nfe->tagenderDest($stdEnderDest);
@@ -222,22 +218,32 @@ class NFeService
         foreach ($itens as $key => $item) {
             $nItem = $key + 1;
 
-            $stdProd = new \stdClass();
+            $stdProd = new \stdClass;
             $stdProd->item = $nItem;
             $stdProd->cProd = (string) ($item['produto_id'] ?? $item['id'] ?? $nItem);
 
-            $ean = $item['ean'] ?? '';
-            $eanValido = (!empty($ean) && ValidationEAN13Util::validate_EAN13Barcode($ean));
+            $descProd = is_array($item['produto'] ?? null)
+                ? ($item['produto']['descricao'] ?? 'PRODUTO')
+                : ($item['produto'] ?? $item['descricao'] ?? 'PRODUTO');
+            $stdProd->xProd = FormatationUtil::retiraAcentos(substr($descProd, 0, 120));
+
+            $eanRaw = is_array($item['produto'] ?? null)
+                ? ($item['produto']['ean'] ?? $item['ean'] ?? '')
+                : ($item['ean'] ?? '');
+            $ean = (string) $eanRaw;
+            $eanValido = (! empty($ean) && ValidationEAN13Util::validate_EAN13Barcode($ean));
             $stdProd->cEAN = $eanValido ? $ean : 'SEM GTIN';
             $stdProd->cEANTrib = $eanValido ? $ean : 'SEM GTIN';
 
-            $descProd = $item['produto'] ?? $item['descricao'] ?? 'PRODUTO';
-            $stdProd->xProd = FormatationUtil::retiraAcentos(substr($descProd, 0, 120));
-
-            $ncm = preg_replace('/\D/', '', (string) ($item['ncm'] ?? '21069090'));
+            $ncmRaw = is_array($item['produto'] ?? null)
+                ? ($item['produto']['ncm'] ?? $item['ncm'] ?? '21069090')
+                : ($item['ncm'] ?? '21069090');
+            $ncm = preg_replace('/\D/', '', (string) $ncmRaw);
             $stdProd->NCM = strlen($ncm) >= 2 ? str_pad($ncm, 8, '0', STR_PAD_RIGHT) : '21069090';
 
-            $stdProd->CFOP = preg_replace('/\D/', '', (string) ($item['cfop'] ?? ($preferencia->cfop_padrao ?? '5102')));
+            $cfopRaw = $item['cfop'] ?? (is_array($item['produto'] ?? null) ? ($item['produto']['cfop_interno'] ?? null) : null) ?? ($preferencia->cfop_padrao ?? '5102');
+            $stdProd->CFOP = preg_replace('/\D/', '', (string) $cfopRaw);
+
             $stdProd->uCom = strtoupper(substr(trim((string) ($item['un'] ?? $item['unidade'] ?? 'UN')), 0, 6));
             $stdProd->qCom = FormatationUtil::format((float) ($item['quantidade'] ?? 1), 4);
 
@@ -262,17 +268,17 @@ class NFeService
             $totalProdutos += $vProd;
 
             // Bloco de Impostos do Item
-            $stdImposto = new \stdClass();
+            $stdImposto = new \stdClass;
             $stdImposto->item = $nItem;
             $nfe->tagimposto($stdImposto);
 
             // ICMS
             if ($crt === 1) {
                 // Simples Nacional
-                $stdICMS = new \stdClass();
+                $stdICMS = new \stdClass;
                 $stdICMS->item = $nItem;
                 $stdICMS->orig = 0; // Nacional
-                $csosn = (string) ($item['csosn'] ?? '102');
+                $csosn = (string) ($item['csosn'] ?? $item['csosm'] ?? (is_array($item['produto'] ?? null) ? ($item['produto']['csosn'] ?? '102') : '102'));
                 $stdICMS->CSOSN = $csosn;
 
                 if (in_array($csosn, ['101', '201'])) {
@@ -283,7 +289,7 @@ class NFeService
                 $nfe->tagICMSSN($stdICMS);
             } else {
                 // Regime Normal (CRT 3)
-                $stdICMS = new \stdClass();
+                $stdICMS = new \stdClass;
                 $stdICMS->item = $nItem;
                 $stdICMS->orig = 0;
                 $stdICMS->CST = (string) ($item['cst'] ?? '00');
@@ -296,7 +302,7 @@ class NFeService
             }
 
             // PIS (CST 99 Outras Operações com valor zero para Simples Nacional)
-            $stdPIS = new \stdClass();
+            $stdPIS = new \stdClass;
             $stdPIS->item = $nItem;
             $stdPIS->CST = ($crt === 1) ? '99' : (string) ($item['cst_pis'] ?? '07');
             $stdPIS->vBC = '0.00';
@@ -305,7 +311,7 @@ class NFeService
             $nfe->tagPIS($stdPIS);
 
             // COFINS (CST 99 Outras Operações com valor zero para Simples Nacional)
-            $stdCOFINS = new \stdClass();
+            $stdCOFINS = new \stdClass;
             $stdCOFINS->item = $nItem;
             $stdCOFINS->CST = ($crt === 1) ? '99' : (string) ($item['cst_cofins'] ?? '07');
             $stdCOFINS->vBC = '0.00';
@@ -315,14 +321,14 @@ class NFeService
         }
 
         // 9. TAG transp (Transporte)
-        $stdTransp = new \stdClass();
+        $stdTransp = new \stdClass;
         $stdTransp->modFrete = 9; // 9 = Sem Ocorrência de Transporte
         $nfe->tagtransp($stdTransp);
 
         // 10. TAG ICMSTot (Totalizadores da NF-e)
         $totalNota = max(0, $totalProdutos - $totalDescontos);
 
-        $stdTot = new \stdClass();
+        $stdTot = new \stdClass;
         $stdTot->vBC = '0.00';
         $stdTot->vICMS = '0.00';
         $stdTot->vICMSDeson = '0.00';
@@ -346,28 +352,28 @@ class NFeService
         $nfe->tagICMSTot($stdTot);
 
         // 11. TAG pag & detPag (Formas de Pagamento)
-        $stdPag = new \stdClass();
+        $stdPag = new \stdClass;
         $stdPag->vTroco = '0.00';
         $nfe->tagpag($stdPag);
 
         $formaPagamento = $dados['forma_pagamento_detalhada'] ?? $dados['forma_pagamento'] ?? '01';
-        $stdDetPag = new \stdClass();
+        $stdDetPag = new \stdClass;
         $stdDetPag->indPag = 0; // 0 = Pagamento à Vista
 
         // Mapeamento de Códigos de Pagamento SEFAZ
         $codigoPag = match ((string) $formaPagamento) {
-            'Dinheiro', '01'            => '01',
-            'Cheque', '02'              => '02',
-            'Cartão de Crédito', '03'   => '03',
-            'Cartão de Débito', '04'    => '04',
-            'Crédito Loja', '05'        => '05',
-            'Vale Alimentação', '10'    => '10',
-            'Vale Refeição', '11'       => '11',
-            'Boleto Bancário', '15'     => '15',
-            'Depósito Bancário', '16'   => '16',
-            'PIX', '17'                 => '17',
-            'Sem Pagamento', '90'       => '90',
-            default                     => '01',
+            'Dinheiro', '01' => '01',
+            'Cheque', '02' => '02',
+            'Cartão de Crédito', '03' => '03',
+            'Cartão de Débito', '04' => '04',
+            'Crédito Loja', '05' => '05',
+            'Vale Alimentação', '10' => '10',
+            'Vale Refeição', '11' => '11',
+            'Boleto Bancário', '15' => '15',
+            'Depósito Bancário', '16' => '16',
+            'PIX', '17' => '17',
+            'Sem Pagamento', '90' => '90',
+            default => '01',
         };
 
         $stdDetPag->tPag = $codigoPag;
@@ -381,16 +387,16 @@ class NFeService
 
         // 12. TAG infAdic (Informações Adicionais / Complementares)
         $infoCpl = trim((string) ($dados['info_complementares'] ?? $dados['observacoes'] ?? ($dados->info_complementares ?? '')));
-        if (!empty($infoCpl)) {
-            $stdInfAdic = new \stdClass();
+        if (! empty($infoCpl)) {
+            $stdInfAdic = new \stdClass;
             $stdInfAdic->infCpl = FormatationUtil::retiraAcentos($infoCpl);
             $nfe->taginfAdic($stdInfAdic);
         }
 
         // 13. TAG infRespTec (Responsável Técnico do Software)
         $rt = $empresa->responsavelTecnico;
-        if ($rt && !empty($rt->cnpj)) {
-            $stdRT = new \stdClass();
+        if ($rt && ! empty($rt->cnpj)) {
+            $stdRT = new \stdClass;
             $stdRT->CNPJ = preg_replace('/\D/', '', (string) $rt->cnpj);
             $stdRT->xContato = FormatationUtil::retiraAcentos(substr((string) $rt->nome, 0, 60));
             $stdRT->email = substr((string) $rt->email, 0, 60);
@@ -403,25 +409,25 @@ class NFeService
             $nfe->montaNFe();
             $erros = $nfe->getErrors();
 
-            if (!empty($erros)) {
+            if (! empty($erros)) {
                 return [
                     'sucesso' => false,
-                    'erros'   => $erros,
+                    'erros' => $erros,
                 ];
             }
 
             return [
                 'sucesso' => true,
-                'chave'   => $nfe->getChave(),
-                'xml'     => $nfe->getXML(),
-                'nNF'     => $numeroNFe,
-                'serie'   => $serieNFe,
-                'modelo'  => 55,
+                'chave' => $nfe->getChave(),
+                'xml' => $nfe->getXML(),
+                'nNF' => $numeroNFe,
+                'serie' => $serieNFe,
+                'modelo' => 55,
             ];
         } catch (\Throwable $e) {
             return [
                 'sucesso' => false,
-                'erros'   => [$e->getMessage()],
+                'erros' => [$e->getMessage()],
             ];
         }
     }
@@ -432,6 +438,7 @@ class NFeService
     public function assinarXml(string $xml, Empresa $empresa): string
     {
         $tools = $this->obterTools($empresa);
+
         return $tools->signNFe($xml);
     }
 
@@ -447,13 +454,13 @@ class NFeService
             // Envia o lote de forma síncrona/assíncrona
             $resp = $tools->sefazEnviaLote([$signXml], $idLote);
 
-            $st = new Standardize();
+            $st = new Standardize;
             $std = $st->toStd($resp);
 
             if ($std->cStat != 103) {
                 return [
                     'sucesso' => false,
-                    'erro'    => "[$std->cStat] - $std->xMotivo",
+                    'erro' => "[$std->cStat] - $std->xMotivo",
                 ];
             }
 
@@ -464,20 +471,20 @@ class NFeService
             $xmlAutorizado = Complements::toAuthorize($signXml, $protocolo);
 
             $dir = base_path($caminhoStorage);
-            if (!File::exists($dir)) {
+            if (! File::exists($dir)) {
                 File::makeDirectory($dir, 0755, true, true);
             }
-            file_put_contents($dir . DIRECTORY_SEPARATOR . $chave . '.xml', $xmlAutorizado);
+            file_put_contents($dir.DIRECTORY_SEPARATOR.$chave.'.xml', $xmlAutorizado);
 
             return [
-                'sucesso'        => true,
-                'recibo'         => $recibo,
+                'sucesso' => true,
+                'recibo' => $recibo,
                 'xml_autorizado' => $xmlAutorizado,
             ];
         } catch (\Throwable $e) {
             return [
                 'sucesso' => false,
-                'erro'    => $e->getMessage(),
+                'erro' => $e->getMessage(),
             ];
         }
     }
@@ -497,7 +504,7 @@ class NFeService
 
             return [
                 'sucesso' => in_array($std->infInut->cStat ?? null, [102, 563]),
-                'dados'   => $arr,
+                'dados' => $arr,
             ];
         } catch (\Throwable $e) {
             return ['sucesso' => false, 'erro' => $e->getMessage()];
@@ -518,9 +525,10 @@ class NFeService
             $arr = $st->toArray();
 
             $cStat = $std->retEvento->infEvento->cStat ?? null;
+
             return [
                 'sucesso' => in_array($cStat, ['135', '136']),
-                'dados'   => $arr,
+                'dados' => $arr,
             ];
         } catch (\Throwable $e) {
             return ['sucesso' => false, 'erro' => $e->getMessage()];
@@ -541,9 +549,10 @@ class NFeService
             $arr = $st->toArray();
 
             $cStat = $std->retEvento->infEvento->cStat ?? null;
+
             return [
                 'sucesso' => in_array($cStat, ['101', '135', '155']),
-                'dados'   => $arr,
+                'dados' => $arr,
             ];
         } catch (\Throwable $e) {
             return ['sucesso' => false, 'erro' => $e->getMessage()];
@@ -604,7 +613,7 @@ class NFeService
             return $endereco;
         }
 
-        $padrao = new Endereco();
+        $padrao = new Endereco;
         $padrao->logradouro = 'Rua Principal';
         $padrao->numero = 'S/N';
         $padrao->bairro = 'Centro';
@@ -612,6 +621,7 @@ class NFeService
         $padrao->uf = 'PE';
         $padrao->cep = '55299560';
         $padrao->ibge = '2606002';
+
         return $padrao;
     }
 }
