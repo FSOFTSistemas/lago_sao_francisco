@@ -5,9 +5,14 @@
 @section('content_header')
     <div class="d-flex justify-content-between align-items-center">
         <h1 class="m-0 text-dark font-weight-bold">Notas Fiscais Eletrônicas (NF-e)</h1>
-        <a href="{{ route('nota_fiscal.create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Nova NF-e
-        </a>
+        <div>
+            <a href="{{ route('nota_fiscal.verificar_certificado') }}" class="btn btn-outline-info me-2" title="Testar Certificado Digital">
+                <i class="fas fa-certificate me-1"></i> Certificado A1
+            </a>
+            <a href="{{ route('nota_fiscal.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Nova NF-e
+            </a>
+        </div>
     </div>
 @stop
 
@@ -56,8 +61,8 @@
                             <th>Cliente / Destinatário</th>
                             <th style="width: 100px;">Itens</th>
                             <th style="width: 140px;">Valor Total</th>
-                            <th>Chave de Acesso</th>
-                            <th style="width: 150px;" class="text-center">Ações</th>
+                            <th>Status / Chave</th>
+                            <th style="width: 170px;" class="text-center">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,18 +82,33 @@
                                     R$ {{ number_format($nota->total_nota ?? $nota->total_produtos, 2, ',', '.') }}
                                 </td>
                                 <td>
-                                    @if ($nota->chave)
-                                        <small class="text-monospace text-muted">{{ $nota->chave }}</small>
+                                    @if ($nota->isAutorizada())
+                                        <span class="badge badge-success mb-1"><i class="fas fa-check-double me-1"></i> Autorizada</span>
+                                    @elseif ($nota->isAssinada())
+                                        <span class="badge badge-primary mb-1"><i class="fas fa-file-signature me-1"></i> Assinada</span>
+                                    @elseif ($nota->chave)
+                                        <span class="badge badge-secondary mb-1"><i class="fas fa-file-code me-1"></i> XML Gerado</span>
                                     @else
-                                        <span class="badge badge-warning">Pendente de XML</span>
+                                        <span class="badge badge-warning mb-1"><i class="fas fa-clock me-1"></i> Pendente de XML</span>
+                                    @endif
+                                    @if ($nota->chave)
+                                        <br><small class="text-monospace text-muted">{{ $nota->chave }}</small>
                                     @endif
                                 </td>
                                 <td class="text-center text-nowrap">
                                     <a href="{{ route('nota_fiscal.show', $nota->id) }}" class="btn btn-sm btn-outline-primary me-1" title="Visualizar Detalhes">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    @if ($nota->chave && !$nota->isAssinada() && !$nota->isAutorizada())
+                                        <form action="{{ route('nota_fiscal.assinar', $nota->id) }}" method="POST" class="d-inline me-1">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Assinar XML com Certificado A1">
+                                                <i class="fas fa-file-signature"></i>
+                                            </button>
+                                        </form>
+                                    @endif
                                     @if ($nota->chave)
-                                        <a href="{{ route('nota_fiscal.xml', $nota->id) }}" class="btn btn-sm btn-outline-info me-1" title="Baixar XML">
+                                        <a href="{{ route('nota_fiscal.xml', $nota->id) }}" class="btn btn-sm btn-outline-info me-1" title="Baixar XML {{ $nota->isAssinada() ? 'Assinado' : 'Gerado' }}">
                                             <i class="fas fa-file-code"></i> XML
                                         </a>
                                     @else

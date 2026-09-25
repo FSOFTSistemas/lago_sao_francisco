@@ -6,6 +6,7 @@ use App\Http\Controllers\NotaFiscalController;
 use App\Models\NotaFiscal;
 use App\Models\NotaFiscalItem;
 use App\Models\User;
+use App\Services\NFeService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use NFePHP\Common\Certificate;
+use NFePHP\NFe\Tools;
 use Tests\TestCase;
 
 class NotaFiscalPersistenceTest extends TestCase
@@ -486,5 +489,108 @@ class NotaFiscalPersistenceTest extends TestCase
         $this->assertInstanceOf(RedirectResponse::class, $response);
         $this->assertDatabaseMissing('nota_fiscals', ['id' => $nota->id]);
         $this->assertTrue(session()->has('success'));
+    }
+
+    public function test_controller_assinar_nota_fiscal_com_sucesso(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 25,
+            'total_produtos' => 35.0,
+            'total_nota' => 35.0,
+        ]);
+
+        NotaFiscalItem::create([
+            'nota_fiscal_id' => $nota->id,
+            'produto_id' => 1,
+            'quantidade' => 1,
+            'v_unitario' => 35.0,
+            'subtotal' => 35.0,
+            'total' => 35.0,
+            'cfop_id' => 1,
+            'csosm' => '102',
+        ]);
+
+        // Mock ou instancia de NFeService com Tools
+        $dn = [
+            'countryName' => 'BR',
+            'stateOrProvinceName' => 'PE',
+            'localityName' => 'Garanhuns',
+            'organizationName' => 'HOTEL LAGO LTDA:38090491000181',
+            'commonName' => 'HOTEL LAGO LTDA:38090491000181',
+        ];
+        $configArgs = [];
+        $possiveisCnf = ['C:/php84/extras/ssl/openssl.cnf', 'C:/Program Files/Git/mingw64/etc/ssl/openssl.cnf'];
+        foreach ($possiveisCnf as $cnf) {
+            if (file_exists($cnf)) {
+                $configArgs = ['config' => $cnf];
+                break;
+            }
+        }
+        $privkey = openssl_pkey_new(array_merge(['private_key_bits' => 1024, 'private_key_type' => OPENSSL_KEYTYPE_RSA], $configArgs));
+        $csr = openssl_csr_new($dn, $privkey, array_merge(['digest_alg' => 'sha256'], $configArgs));
+        $x509 = openssl_csr_sign($csr, null, $privkey, 365, array_merge(['digest_alg' => 'sha256'], $configArgs));
+        $pfx = '';
+        openssl_pkcs12_export($x509, $pfx, $privkey, '123456');
+
+        $cert = Certificate::readPfx($pfx, '123456');
+        $tools = new Tools(json_encode([
+            'atualizacao' => date('Y-m-d H:i:s'),
+            'tpAmb' => 2,
+            'razaosocial' => 'HOTEL LAGO LTDA',
+            'siglaUF' => 'PE',
+            'cnpj' => '38090491000181',
+            'schemes' => 'PL_009_V4',
+            'versao' => '4.00',
+            'tokenIBPT' => '',
+            'CSC' => '',
+            'CSCid' => '',
+        ]), $cert);
+        $tools->model('55');
+
+        $nfeService = app(NFeService::class);
+        $nfeService->setTools($tools);
+        $this->app->instance(NFeService::class, $nfeService);
+
+        $controller = new NotaFiscalController;
+        $response = $controller->assinar((string) $nota->id);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertTrue(session()->has('success'));
+
+        $nota->refresh();
+        $this->assertNotNull($nota->chave);
+        $this->assertTrue($nota->isAssinada());
+
+        // Limpeza dos arquivos gerados
+        $caminhoAssinado = storage_path('app/nfe/assinadas/'.$nota->chave.'.xml');
+        if (File::exists($caminhoAssinado)) {
+            File::delete($caminhoAssinado);
+        }
+        $caminhoGerado = storage_path('app/nfe/geradas/'.$nota->chave.'.xml');
+        if (File::exists($caminhoGerado)) {
+            File::delete($caminhoGerado);
+        }
+    }
+
+    public function test_controller_verificar_certificado_retorna_feedback(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        $controller = new NotaFiscalController;
+        $response = $controller->verificarCertificado();
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertTrue(session()->has('error') || session()->has('success'));
     }
 }

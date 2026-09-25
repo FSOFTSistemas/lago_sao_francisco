@@ -4,11 +4,13 @@ namespace App\Services;
 
 use App\Models\Cliente;
 use App\Models\Empresa;
+use App\Models\EmpresaPreferencia;
 use App\Models\Endereco;
 use App\Models\NotaFiscal;
 use App\Utils\FormatationUtil;
 use App\Utils\ValidationEAN13Util;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use NFePHP\NFe\Common\Standardize;
 use NFePHP\NFe\Complements;
 use NFePHP\NFe\Make;
@@ -433,13 +435,170 @@ class NFeService
     }
 
     /**
-     * Assina o XML da NF-e com o certificado digital da empresa.
+     * Valida a existência, leitura e data de validade do Certificado Digital A1 da empresa.
      */
-    public function assinarXml(string $xml, Empresa $empresa): string
+    public function verificarCertificado(Empresa $empresa): array
     {
-        $tools = $this->obterTools($empresa);
+        $preferencia = $empresa->preferencia ?? EmpresaPreferencia::where('empresa_id', $empresa->id)->first();
 
-        return $tools->signNFe($xml);
+        if (! $preferencia) {
+            return [
+                'valido' => false,
+                'erro' => "A empresa [{$empresa->razao_social}] não possui registro de preferências fiscais configurado.",
+            ];
+        }
+
+        try {
+            $info = $preferencia->getCertificadoInfo();
+            if (! $info) {
+                return [
+                    'valido' => false,
+                    'erro' => "Arquivo de Certificado Digital (.pfx) não localizado para a empresa [{$empresa->razao_social}].",
+                ];
+            }
+
+            if (! empty($info['erro'])) {
+                return [
+                    'valido' => false,
+                    'erro' => "Falha ao ler o certificado digital: {$info['erro']}",
+                ];
+            }
+
+            if ($info['expirado'] ?? false) {
+                $dtValidade = $info['valido_ate'] ? $info['valido_ate']->format('d/m/Y H:i') : 'data desconhecida';
+
+                return [
+                    'valido' => false,
+                    'expirado' => true,
+                    'erro' => "O Certificado Digital da empresa expirou em {$dtValidade}.",
+                    'dados' => $info,
+                ];
+            }
+
+            return [
+                'valido' => true,
+                'expirado' => false,
+                'dados' => $info,
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'valido' => false,
+                'erro' => 'Erro ao verificar certificado digital: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Assina digitalmente o XML da NF-e com o certificado digital A1 da empresa
+     * e valida a estrutura contra os schemas XSD oficiais da SEFAZ.
+     */
+    public function assinarXml(string $xml, Empresa $empresa, bool $validarXsd = true): array
+    {
+        try {
+            if (empty(trim($xml))) {
+                return [
+                    'sucesso' => false,
+                    'erro' => 'O conteúdo do XML para assinatura está vazio.',
+                ];
+            }
+
+            $tools = $this->obterTools($empresa);
+            $xmlAssinado = $tools->signNFe($xml, $validarXsd ? 1 : 0);
+
+            // Extrai a chave de acesso de 44 dígitos do XML assinado
+            preg_match('/Id="NFe([0-9]{44})"/i', $xmlAssinado, $matches);
+            $chave = $matches[1] ?? null;
+
+            return [
+                'sucesso' => true,
+                'xml' => $xmlAssinado,
+                'chave' => $chave,
+            ];
+        } catch (\Throwable $e) {
+            Log::error("Erro ao assinar XML da NF-e para a empresa [{$empresa->razao_social}]: ".$e->getMessage());
+
+            return [
+                'sucesso' => false,
+                'erro' => 'Falha na assinatura digital / validação XSD: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Localiza o XML de uma NotaFiscal, assina digitalmente e armazena na pasta nfe/assinadas.
+     */
+    public function assinarNotaFiscal(NotaFiscal $notaFiscal, bool $validarXsd = true): array
+    {
+        $empresa = $notaFiscal->empresa ?? Empresa::find($notaFiscal->empresa_id);
+        if (! $empresa) {
+            return [
+                'sucesso' => false,
+                'erro' => 'Empresa emitente não vinculada à nota fiscal.',
+            ];
+        }
+
+        $chave = $notaFiscal->chave;
+        $xmlBruto = null;
+
+        // 1. Tenta ler o XML gerado do storage
+        if ($chave) {
+            $caminhos = [
+                storage_path("app/nfe/geradas/{$chave}.xml"),
+                public_path("xml/{$chave}.xml"),
+            ];
+            foreach ($caminhos as $c) {
+                if (File::exists($c)) {
+                    $xmlBruto = file_get_contents($c);
+                    break;
+                }
+            }
+        }
+
+        // 2. Se ainda não houver XML gerado em disco, constrói via gerarXml
+        if (! $xmlBruto) {
+            $resultadoGeracao = $this->gerarXml($notaFiscal, $empresa);
+            if (! ($resultadoGeracao['sucesso'] ?? false)) {
+                return [
+                    'sucesso' => false,
+                    'erro' => 'Não foi possível gerar o XML para assinatura: '.implode(', ', $resultadoGeracao['erros'] ?? []),
+                ];
+            }
+            $xmlBruto = $resultadoGeracao['xml'];
+            $chave = $resultadoGeracao['chave'];
+            $notaFiscal->update(['chave' => $chave]);
+
+            $dirGeradas = storage_path('app/nfe/geradas');
+            if (! File::exists($dirGeradas)) {
+                File::makeDirectory($dirGeradas, 0755, true, true);
+            }
+            file_put_contents($dirGeradas.DIRECTORY_SEPARATOR.$chave.'.xml', $xmlBruto);
+        }
+
+        // 3. Executa a assinatura e validação XSD
+        $resultadoAssinatura = $this->assinarXml($xmlBruto, $empresa, $validarXsd);
+        if (! ($resultadoAssinatura['sucesso'] ?? false)) {
+            return $resultadoAssinatura;
+        }
+
+        $xmlAssinado = $resultadoAssinatura['xml'];
+        $chaveAssinada = $resultadoAssinatura['chave'] ?: $chave;
+
+        // 4. Salva o XML assinado no storage (storage/app/nfe/assinadas/{chave}.xml)
+        $dirAssinadas = storage_path('app/nfe/assinadas');
+        if (! File::exists($dirAssinadas)) {
+            File::makeDirectory($dirAssinadas, 0755, true, true);
+        }
+        $caminhoAssinado = $dirAssinadas.DIRECTORY_SEPARATOR.$chaveAssinada.'.xml';
+        file_put_contents($caminhoAssinado, $xmlAssinado);
+
+        Log::info("NF-e nº {$notaFiscal->numero} (Chave: {$chaveAssinada}) assinada digitalmente com sucesso.");
+
+        return [
+            'sucesso' => true,
+            'chave' => $chaveAssinada,
+            'xml' => $xmlAssinado,
+            'caminho' => $caminhoAssinado,
+        ];
     }
 
     /**

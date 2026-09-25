@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\File;
 
 class NotaFiscal extends Model
 {
@@ -37,7 +38,7 @@ class NotaFiscal extends Model
         'vICMS',
         'base_ST',
         'v_ST',
-        'vST'
+        'vST',
     ];
 
     public function cliente()
@@ -68,5 +69,39 @@ class NotaFiscal extends Model
     public function itens()
     {
         return $this->hasMany(NotaFiscalItem::class, 'nota_fiscal_id');
+    }
+
+    public function isAssinada(): bool
+    {
+        return ! empty($this->chave) && File::exists(storage_path("app/nfe/assinadas/{$this->chave}.xml"));
+    }
+
+    public function isAutorizada(): bool
+    {
+        return ! empty($this->chave) && File::exists(storage_path("app/nfe/autorizadas/{$this->chave}.xml"));
+    }
+
+    public function isGerada(): bool
+    {
+        return ! empty($this->chave) && (
+            File::exists(storage_path("app/nfe/geradas/{$this->chave}.xml"))
+            || $this->isAssinada()
+            || $this->isAutorizada()
+        );
+    }
+
+    public function getStatusFormatadoAttribute(): string
+    {
+        if ($this->isAutorizada()) {
+            return 'Autorizada';
+        }
+        if ($this->isAssinada()) {
+            return 'Assinada';
+        }
+        if ($this->isGerada()) {
+            return 'XML Gerado';
+        }
+
+        return 'Pendente';
     }
 }

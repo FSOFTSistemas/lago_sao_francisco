@@ -213,8 +213,10 @@ Route::resource('nota_fiscal_itens', NotaFiscalItensController::class);
 Route::resource('logs', LogController::class)->middleware('permission:gerenciar financeiro');
 
 Route::get('/nota-fiscal', [NotaFiscalController::class, 'index'])->name('nota-fiscal.index')->middleware(['auth', 'permission:gerenciar NFe']);
+Route::get('/nota-fiscal/verificar-certificado', [NotaFiscalController::class, 'verificarCertificado'])->name('nota_fiscal.verificar_certificado')->middleware(['auth', 'permission:gerenciar NFe']);
 Route::get('/nota-fiscal/{id}/xml', [NotaFiscalController::class, 'baixarXml'])->name('nota_fiscal.xml')->middleware(['auth', 'permission:gerenciar NFe']);
 Route::post('/nota-fiscal/{id}/gerar-xml', [NotaFiscalController::class, 'gerarXmlManual'])->name('nota_fiscal.gerar_xml')->middleware(['auth', 'permission:gerenciar NFe']);
+Route::post('/nota-fiscal/{id}/assinar', [NotaFiscalController::class, 'assinar'])->name('nota_fiscal.assinar')->middleware(['auth', 'permission:gerenciar NFe']);
 Route::resource('nota_fiscal', NotaFiscalController::class)->middleware(['auth', 'permission:gerenciar NFe']);
 
 // DF-e (Busca de Notas na SEFAZ e Manifestação)

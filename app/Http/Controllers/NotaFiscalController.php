@@ -226,6 +226,7 @@ class NotaFiscalController extends Controller
 
         $caminhos = [
             storage_path('app/nfe/autorizadas/'.$nota->chave.'.xml'),
+            storage_path('app/nfe/assinadas/'.$nota->chave.'.xml'),
             storage_path('app/nfe/geradas/'.$nota->chave.'.xml'),
             public_path('xml/'.$nota->chave.'.xml'),
         ];
@@ -249,6 +250,53 @@ class NotaFiscalController extends Controller
         }
 
         return redirect()->back()->with('error', 'Arquivo XML não encontrado para esta nota fiscal.');
+    }
+
+    /**
+     * Assina digitalmente o XML da nota fiscal com o certificado A1 da empresa.
+     */
+    public function assinar(string $id)
+    {
+        $nota = NotaFiscal::with(['cliente', 'empresa', 'itens.produto'])->findOrFail($id);
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->assinarNotaFiscal($nota);
+
+        if ($resultado['sucesso'] ?? false) {
+            $chave = $resultado['chave'];
+
+            return redirect()->back()->with('success', "Nota Fiscal nº {$nota->numero} assinada digitalmente com sucesso! (Chave: {$chave})");
+        }
+
+        $erro = $resultado['erro'] ?? 'Erro desconhecido ao assinar NF-e.';
+
+        return redirect()->back()->with('error', "Falha ao assinar NF-e: {$erro}");
+    }
+
+    /**
+     * Verifica e retorna informações do certificado digital da empresa logada.
+     */
+    public function verificarCertificado()
+    {
+        $empresa = Empresa::find(Auth::user()->empresa_id ?? 1);
+        if (! $empresa) {
+            return redirect()->back()->with('error', 'Empresa não encontrada.');
+        }
+
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->verificarCertificado($empresa);
+
+        if ($resultado['valido'] ?? false) {
+            $dados = $resultado['dados'] ?? [];
+            $titular = $dados['titular'] ?? 'N/A';
+            $validoAte = isset($dados['valido_ate']) ? $dados['valido_ate']->format('d/m/Y H:i') : 'N/A';
+            $dias = $dados['dias_restantes'] ?? 0;
+
+            return redirect()->back()->with('success', "Certificado Digital Válido! Titular: {$titular} | Vencimento: {$validoAte} ({$dias} dias restantes).");
+        }
+
+        $erro = $resultado['erro'] ?? 'Certificado digital inválido ou não configurado.';
+
+        return redirect()->back()->with('error', $erro);
     }
 
     /**

@@ -14,9 +14,17 @@
             <a href="{{ route('nota_fiscal.index') }}" class="btn btn-outline-secondary me-2">
                 <i class="fas fa-arrow-left me-1"></i> Voltar
             </a>
+            @if ($nota->chave && !$nota->isAssinada() && !$nota->isAutorizada())
+                <form action="{{ route('nota_fiscal.assinar', $nota->id) }}" method="POST" class="d-inline me-1">
+                    @csrf
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-file-signature me-1"></i> Assinar Digitalmente (A1)
+                    </button>
+                </form>
+            @endif
             @if ($nota->chave)
                 <a href="{{ route('nota_fiscal.xml', $nota->id) }}" class="btn btn-info">
-                    <i class="fas fa-download me-1"></i> Baixar XML
+                    <i class="fas fa-download me-1"></i> Baixar XML {{ $nota->isAssinada() ? 'Assinado' : '' }}
                 </a>
             @else
                 <form action="{{ route('nota_fiscal.gerar_xml', $nota->id) }}" method="POST" class="d-inline">
@@ -56,10 +64,14 @@
                 <i class="fas fa-key me-1 text-primary"></i> Chave de Acesso & Identificação
             </h3>
             <div class="card-tools">
-                @if ($nota->chave)
-                    <span class="badge badge-success px-3 py-2 fs-6">XML Gerado</span>
+                @if ($nota->isAutorizada())
+                    <span class="badge badge-success px-3 py-2 fs-6"><i class="fas fa-check-double me-1"></i> Autorizada</span>
+                @elseif ($nota->isAssinada())
+                    <span class="badge badge-primary px-3 py-2 fs-6"><i class="fas fa-file-signature me-1"></i> Assinada Digitalmente</span>
+                @elseif ($nota->chave)
+                    <span class="badge badge-secondary px-3 py-2 fs-6"><i class="fas fa-file-code me-1"></i> XML Gerado</span>
                 @else
-                    <span class="badge badge-warning px-3 py-2 fs-6">Pendente de XML</span>
+                    <span class="badge badge-warning px-3 py-2 fs-6"><i class="fas fa-clock me-1"></i> Pendente de XML</span>
                 @endif
             </div>
         </div>
