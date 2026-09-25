@@ -29,31 +29,44 @@ class NotaFiscal extends Model
         'pt_nota',
         'nfe_referenciavel',
         'total_produtos',
+        'total_nota',
         'total_notas',
         'total_desconto',
         'outras_despesas',
         'base_ICMS',
         'vICMS',
         'base_ST',
+        'v_ST',
         'vST'
     ];
 
-    public function cliente (){
+    public function cliente()
+    {
         return $this->belongsTo(Cliente::class, 'cliente_id');
     }
-    public function empresa(){
+
+    public function empresa()
+    {
         return $this->belongsTo(Empresa::class, 'empresa_id');
     }
 
-    public function usuario(){
+    public function usuario()
+    {
         return $this->belongsTo(User::class, 'usuario_id');
     }
 
-    public function cfop(){
+    public function cfop()
+    {
         return $this->belongsTo(CFOP::class, 'cfop_id');
     }
 
-    public function ncm(){
-        return $this->belongsTo(NCM::class, 'mcp_id');
+    public function ncm()
+    {
+        return $this->belongsTo(NCM::class, 'ncm_id');
+    }
+
+    public function itens()
+    {
+        return $this->hasMany(NotaFiscalItem::class, 'nota_fiscal_id');
     }
 }

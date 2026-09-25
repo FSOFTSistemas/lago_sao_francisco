@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "61cffbc772df40e382e1ca192c521cee",
+    "content-hash": "8a915c073e3a88b1360e3ec7a15080af",
     "packages": [
         {
             "name": "almasaeed2010/adminlte",
@@ -3223,16 +3223,16 @@
         },
         {
             "name": "nfephp-org/sped-nfe",
-            "version": "v5.2.5",
+            "version": "v5.2.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nfephp-org/sped-nfe.git",
-                "reference": "f49d543e735d30afacd92c3fe286c677a7d0ee35"
+                "reference": "759fb2365e3c20141e9e445592893a01afa638a5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nfephp-org/sped-nfe/zipball/f49d543e735d30afacd92c3fe286c677a7d0ee35",
-                "reference": "f49d543e735d30afacd92c3fe286c677a7d0ee35",
+                "url": "https://api.github.com/repos/nfephp-org/sped-nfe/zipball/759fb2365e3c20141e9e445592893a01afa638a5",
+                "reference": "759fb2365e3c20141e9e445592893a01afa638a5",
                 "shasum": ""
             },
             "require": {
@@ -3299,9 +3299,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nfephp-org/sped-nfe/issues",
-                "source": "https://github.com/nfephp-org/sped-nfe/tree/v5.2.5"
+                "source": "https://github.com/nfephp-org/sped-nfe/tree/v5.2.8"
             },
-            "time": "2026-02-04T13:27:20+00:00"
+            "time": "2026-07-27T19:27:25+00:00"
         },
         {
             "name": "nikic/php-parser",
