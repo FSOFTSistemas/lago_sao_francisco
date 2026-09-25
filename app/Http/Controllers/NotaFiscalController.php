@@ -167,8 +167,11 @@ class NotaFiscalController extends Controller
                 $chave = $resultadoXml['chave'];
                 $xml = $resultadoXml['xml'];
 
-                // Atualiza a chave de 44 dígitos no registro do banco
-                $notaFiscal->update(['chave' => $chave]);
+                // Atualiza a chave de 44 dígitos e status no registro do banco
+                $notaFiscal->update([
+                    'chave' => $chave,
+                    'status' => NotaFiscal::STATUS_GERADA,
+                ]);
 
                 // Salva o XML gerado no storage (storage/app/nfe/geradas/{chave}.xml)
                 $dir = storage_path('app/nfe/geradas');
@@ -333,7 +336,10 @@ class NotaFiscalController extends Controller
             $chave = $resultado['chave'];
             $xml = $resultado['xml'];
 
-            $nota->update(['chave' => $chave]);
+            $nota->update([
+                'chave' => $chave,
+                'status' => NotaFiscal::STATUS_GERADA,
+            ]);
 
             $dir = storage_path('app/nfe/geradas');
             if (! File::exists($dir)) {

@@ -74,6 +74,12 @@
             <div class="card-tools">
                 @if ($nota->isAutorizada())
                     <span class="badge badge-success px-3 py-2 fs-6"><i class="fas fa-check-double me-1"></i> Autorizada</span>
+                @elseif ($nota->isRejeitada())
+                    <span class="badge badge-danger px-3 py-2 fs-6"><i class="fas fa-times-circle me-1"></i> Rejeitada</span>
+                @elseif ($nota->isDenegada())
+                    <span class="badge badge-dark px-3 py-2 fs-6"><i class="fas fa-ban me-1"></i> Uso Denegado</span>
+                @elseif ($nota->isCancelada())
+                    <span class="badge badge-warning px-3 py-2 fs-6"><i class="fas fa-ban me-1"></i> Cancelada</span>
                 @elseif ($nota->isAssinada())
                     <span class="badge badge-primary px-3 py-2 fs-6"><i class="fas fa-file-signature me-1"></i> Assinada Digitalmente</span>
                 @elseif ($nota->chave)
@@ -98,6 +104,35 @@
                     </div>
                 </div>
             </div>
+            @if ($nota->protocolo || $nota->cstat || $nota->motivo_status || $nota->data_autorizacao)
+                <hr class="my-3">
+                <div class="row pt-1">
+                    @if ($nota->protocolo)
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Protocolo de Autorização:</small>
+                            <span class="font-weight-bold text-success"><i class="fas fa-file-contract me-1"></i> {{ $nota->protocolo }}</span>
+                        </div>
+                    @endif
+                    @if ($nota->cstat)
+                        <div class="col-md-2">
+                            <small class="text-muted d-block">cStat SEFAZ:</small>
+                            <span class="font-weight-bold">{{ $nota->cstat }}</span>
+                        </div>
+                    @endif
+                    @if ($nota->data_autorizacao)
+                        <div class="col-md-3">
+                            <small class="text-muted d-block">Data de Autorização:</small>
+                            <span class="font-weight-bold">{{ $nota->data_autorizacao->format('d/m/Y H:i:s') }}</span>
+                        </div>
+                    @endif
+                    @if ($nota->motivo_status)
+                        <div class="col-md-{{ $nota->protocolo ? '4' : '7' }}">
+                            <small class="text-muted d-block">Mensagem da SEFAZ:</small>
+                            <span class="{{ $nota->isAutorizada() ? 'text-success' : 'text-danger font-weight-bold' }}">{{ $nota->motivo_status }}</span>
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
     </div>
 

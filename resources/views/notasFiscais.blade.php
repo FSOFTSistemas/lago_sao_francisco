@@ -84,6 +84,18 @@
                                 <td>
                                     @if ($nota->isAutorizada())
                                         <span class="badge badge-success mb-1"><i class="fas fa-check-double me-1"></i> Autorizada</span>
+                                        @if ($nota->protocolo)
+                                            <br><small class="text-success"><i class="fas fa-file-contract"></i> {{ $nota->protocolo }}</small>
+                                        @endif
+                                    @elseif ($nota->isRejeitada())
+                                        <span class="badge badge-danger mb-1" title="{{ $nota->motivo_status }}"><i class="fas fa-times-circle me-1"></i> Rejeitada</span>
+                                        @if ($nota->cstat)
+                                            <br><small class="text-danger font-weight-bold">cStat {{ $nota->cstat }}</small>
+                                        @endif
+                                    @elseif ($nota->isDenegada())
+                                        <span class="badge badge-dark mb-1" title="{{ $nota->motivo_status }}"><i class="fas fa-ban me-1"></i> Denegada</span>
+                                    @elseif ($nota->isCancelada())
+                                        <span class="badge badge-warning mb-1"><i class="fas fa-ban me-1"></i> Cancelada</span>
                                     @elseif ($nota->isAssinada())
                                         <span class="badge badge-primary mb-1"><i class="fas fa-file-signature me-1"></i> Assinada</span>
                                     @elseif ($nota->chave)

@@ -98,6 +98,11 @@ class NFeTransmissaoTest extends TestCase
             $table->unsignedBigInteger('empresa_id')->default(1);
             $table->date('data');
             $table->string('chave')->nullable();
+            $table->string('status')->default('pendente');
+            $table->string('cstat')->nullable();
+            $table->string('protocolo')->nullable();
+            $table->string('motivo_status')->nullable();
+            $table->timestamp('data_autorizacao')->nullable();
             $table->integer('serie');
             $table->integer('numero');
             $table->string('observacoes')->default('');
@@ -591,14 +596,207 @@ class NFeTransmissaoTest extends TestCase
         $this->assertEquals('126240007777777', $resultado['protocolo']);
         $this->assertFileExists($resultado['caminho']);
 
-        // Verifica helpers do modelo NotaFiscal
+        // Verifica persistência no banco de dados e helpers do modelo NotaFiscal
+        $nota->refresh();
+        $this->assertEquals(NotaFiscal::STATUS_AUTORIZADA, $nota->status);
+        $this->assertEquals('126240007777777', $nota->protocolo);
+        $this->assertEquals('100', $nota->cstat);
+        $this->assertEquals('Autorizado o uso da NF-e', $nota->motivo_status);
+        $this->assertNotNull($nota->data_autorizacao);
         $this->assertTrue($nota->isAutorizada());
         $this->assertEquals('Autorizada', $nota->status_formatado);
+        $this->assertEquals('bg-success', $nota->status_badge_class);
 
         // Limpeza dos arquivos gerados
         if (File::exists($resultado['caminho'])) {
             File::delete($resultado['caminho']);
         }
+        $caminhoAssinado = storage_path('app/nfe/assinadas/'.$chave.'.xml');
+        if (File::exists($caminhoAssinado)) {
+            File::delete($caminhoAssinado);
+        }
+        $caminhoGerado = storage_path('app/nfe/geradas/'.$chave.'.xml');
+        if (File::exists($caminhoGerado)) {
+            File::delete($caminhoGerado);
+        }
+    }
+
+    public function test_transmitir_nota_fiscal_rejeitada_persiste_status_e_motivo(): void
+    {
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 33,
+            'total_produtos' => 45.0,
+            'total_nota' => 45.0,
+        ]);
+
+        NotaFiscalItem::create([
+            'nota_fiscal_id' => $nota->id,
+            'produto_id' => 1,
+            'quantidade' => 1,
+            'v_unitario' => 45.0,
+            'subtotal' => 45.0,
+            'total' => 45.0,
+            'cfop_id' => 1,
+            'csosm' => '102',
+        ]);
+
+        $pfx = $this->gerarPfxTeste('123456');
+        $cert = Certificate::readPfx($pfx, '123456');
+        $tools = new Tools(json_encode([
+            'atualizacao' => date('Y-m-d H:i:s'),
+            'tpAmb' => 2,
+            'razaosocial' => 'HOTEL LAGO LTDA',
+            'siglaUF' => 'PE',
+            'cnpj' => '38090491000181',
+            'schemes' => 'PL_009_V4',
+            'versao' => '4.00',
+            'tokenIBPT' => '',
+            'CSC' => '',
+            'CSCid' => '',
+        ]), $cert);
+        $tools->model('55');
+
+        $nfeService = new NFeService($tools);
+        $resAssinatura = $nfeService->assinarNotaFiscal($nota);
+        $chave = $resAssinatura['chave'];
+
+        $xmlRejeicao = '<?xml version="1.0" encoding="UTF-8"?>
+        <retEnviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+            <tpAmb>2</tpAmb>
+            <verAplic>SVRS202609</verAplic>
+            <cStat>104</cStat>
+            <xMotivo>Lote processado</xMotivo>
+            <cUF>26</cUF>
+            <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+            <protNFe versao="4.00">
+                <infProt>
+                    <tpAmb>2</tpAmb>
+                    <verAplic>SVRS202609</verAplic>
+                    <chNFe>'.$chave.'</chNFe>
+                    <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+                    <cStat>204</cStat>
+                    <xMotivo>Rejeicao: Duplicidade de NF-e</xMotivo>
+                </infProt>
+            </protNFe>
+        </retEnviNFe>';
+
+        $mockTools = Mockery::mock(Tools::class);
+        $mockTools->shouldReceive('sefazEnviaLote')->once()->andReturn($xmlRejeicao);
+        $nfeService->setTools($mockTools);
+
+        $resultado = $nfeService->transmitirNotaFiscal($nota, 1);
+
+        $this->assertFalse($resultado['sucesso']);
+        $this->assertTrue($resultado['rejeitada']);
+
+        $nota->refresh();
+        $this->assertEquals(NotaFiscal::STATUS_REJEITADA, $nota->status);
+        $this->assertEquals('204', $nota->cstat);
+        $this->assertStringContainsString('Duplicidade', $nota->motivo_status);
+        $this->assertTrue($nota->isRejeitada());
+        $this->assertEquals('Rejeitada', $nota->status_formatado);
+        $this->assertEquals('bg-danger', $nota->status_badge_class);
+
+        $caminhoAssinado = storage_path('app/nfe/assinadas/'.$chave.'.xml');
+        if (File::exists($caminhoAssinado)) {
+            File::delete($caminhoAssinado);
+        }
+        $caminhoGerado = storage_path('app/nfe/geradas/'.$chave.'.xml');
+        if (File::exists($caminhoGerado)) {
+            File::delete($caminhoGerado);
+        }
+    }
+
+    public function test_transmitir_nota_fiscal_denegada_persiste_status_e_motivo(): void
+    {
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 34,
+            'total_produtos' => 45.0,
+            'total_nota' => 45.0,
+        ]);
+
+        NotaFiscalItem::create([
+            'nota_fiscal_id' => $nota->id,
+            'produto_id' => 1,
+            'quantidade' => 1,
+            'v_unitario' => 45.0,
+            'subtotal' => 45.0,
+            'total' => 45.0,
+            'cfop_id' => 1,
+            'csosm' => '102',
+        ]);
+
+        $pfx = $this->gerarPfxTeste('123456');
+        $cert = Certificate::readPfx($pfx, '123456');
+        $tools = new Tools(json_encode([
+            'atualizacao' => date('Y-m-d H:i:s'),
+            'tpAmb' => 2,
+            'razaosocial' => 'HOTEL LAGO LTDA',
+            'siglaUF' => 'PE',
+            'cnpj' => '38090491000181',
+            'schemes' => 'PL_009_V4',
+            'versao' => '4.00',
+            'tokenIBPT' => '',
+            'CSC' => '',
+            'CSCid' => '',
+        ]), $cert);
+        $tools->model('55');
+
+        $nfeService = new NFeService($tools);
+        $resAssinatura = $nfeService->assinarNotaFiscal($nota);
+        $chave = $resAssinatura['chave'];
+
+        $xmlDenegada = '<?xml version="1.0" encoding="UTF-8"?>
+        <retEnviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+            <tpAmb>2</tpAmb>
+            <verAplic>SVRS202609</verAplic>
+            <cStat>104</cStat>
+            <xMotivo>Lote processado</xMotivo>
+            <cUF>26</cUF>
+            <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+            <protNFe versao="4.00">
+                <infProt>
+                    <tpAmb>2</tpAmb>
+                    <verAplic>SVRS202609</verAplic>
+                    <chNFe>'.$chave.'</chNFe>
+                    <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+                    <cStat>302</cStat>
+                    <xMotivo>Uso Denegado: Irregularidade fiscal do destinatario</xMotivo>
+                </infProt>
+            </protNFe>
+        </retEnviNFe>';
+
+        $mockTools = Mockery::mock(Tools::class);
+        $mockTools->shouldReceive('sefazEnviaLote')->once()->andReturn($xmlDenegada);
+        $nfeService->setTools($mockTools);
+
+        $resultado = $nfeService->transmitirNotaFiscal($nota, 1);
+
+        $this->assertFalse($resultado['sucesso']);
+        $this->assertTrue($resultado['denegada']);
+
+        $nota->refresh();
+        $this->assertEquals(NotaFiscal::STATUS_DENEGADA, $nota->status);
+        $this->assertEquals('302', $nota->cstat);
+        $this->assertStringContainsString('Denegado', $nota->motivo_status);
+        $this->assertTrue($nota->isDenegada());
+        $this->assertEquals('Uso Denegado', $nota->status_formatado);
+        $this->assertEquals('bg-dark', $nota->status_badge_class);
+
         $caminhoAssinado = storage_path('app/nfe/assinadas/'.$chave.'.xml');
         if (File::exists($caminhoAssinado)) {
             File::delete($caminhoAssinado);

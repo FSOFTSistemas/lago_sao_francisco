@@ -131,6 +131,11 @@ class NotaFiscalPersistenceTest extends TestCase
             $table->unsignedBigInteger('empresa_id')->default(1);
             $table->date('data');
             $table->string('chave')->nullable();
+            $table->string('status')->default('pendente');
+            $table->string('cstat')->nullable();
+            $table->string('protocolo')->nullable();
+            $table->string('motivo_status')->nullable();
+            $table->timestamp('data_autorizacao')->nullable();
             $table->integer('serie');
             $table->integer('numero');
             $table->string('observacoes')->default('');

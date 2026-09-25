@@ -95,6 +95,11 @@ class NFeAssinaturaTest extends TestCase
             $table->unsignedBigInteger('empresa_id')->default(1);
             $table->date('data');
             $table->string('chave')->nullable();
+            $table->string('status')->default('pendente');
+            $table->string('cstat')->nullable();
+            $table->string('protocolo')->nullable();
+            $table->string('motivo_status')->nullable();
+            $table->timestamp('data_autorizacao')->nullable();
             $table->integer('serie');
             $table->integer('numero');
             $table->string('observacoes')->default('');
@@ -424,6 +429,7 @@ class NFeAssinaturaTest extends TestCase
         // Verifica helpers do modelo NotaFiscal
         $this->assertTrue($nota->isGerada());
         $this->assertTrue($nota->isAssinada());
+        $this->assertEquals(NotaFiscal::STATUS_ASSINADA, $nota->status);
         $this->assertEquals('Assinada', $nota->status_formatado);
 
         // Limpeza dos arquivos gerados

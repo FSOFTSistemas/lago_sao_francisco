@@ -591,6 +591,12 @@ class NFeService
         $caminhoAssinado = $dirAssinadas.DIRECTORY_SEPARATOR.$chaveAssinada.'.xml';
         file_put_contents($caminhoAssinado, $xmlAssinado);
 
+        // Atualiza a chave e o status na nota fiscal no banco
+        $notaFiscal->update([
+            'chave' => $chaveAssinada,
+            'status' => NotaFiscal::STATUS_ASSINADA,
+        ]);
+
         Log::info("NF-e nº {$notaFiscal->numero} (Chave: {$chaveAssinada}) assinada digitalmente com sucesso.");
 
         return [
@@ -791,7 +797,35 @@ class NFeService
         $signXml = file_get_contents($caminhoAssinado);
 
         // 2. Transmite para a SEFAZ
-        return $this->transmitir($signXml, $chave, $empresa, $indSinc);
+        $resultado = $this->transmitir($signXml, $chave, $empresa, $indSinc);
+
+        // 3. Atualiza o status e os metadados fiscais no banco de dados
+        if ($resultado['autorizada'] ?? false) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_AUTORIZADA,
+                'cstat' => $resultado['cStat'] ?? '100',
+                'protocolo' => $resultado['protocolo'] ?? null,
+                'motivo_status' => $resultado['xMotivo'] ?? 'Autorizado o uso da NF-e',
+                'data_autorizacao' => ! empty($resultado['data_autorizacao'])
+                    ? date('Y-m-d H:i:s', strtotime($resultado['data_autorizacao']))
+                    : now(),
+            ]);
+        } elseif ($resultado['denegada'] ?? false) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_DENEGADA,
+                'cstat' => $resultado['cStat'] ?? null,
+                'protocolo' => $resultado['protocolo'] ?? null,
+                'motivo_status' => $resultado['xMotivo'] ?? ($resultado['erro'] ?? 'Uso Denegado'),
+            ]);
+        } elseif ($resultado['rejeitada'] ?? false) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_REJEITADA,
+                'cstat' => $resultado['cStat'] ?? null,
+                'motivo_status' => $resultado['xMotivo'] ?? ($resultado['erro'] ?? 'Rejeição SEFAZ'),
+            ]);
+        }
+
+        return $resultado;
     }
 
     /**
