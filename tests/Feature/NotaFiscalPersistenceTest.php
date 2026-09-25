@@ -677,4 +677,98 @@ class NotaFiscalPersistenceTest extends TestCase
         $this->assertTrue(session()->has('error'));
         $this->assertStringContainsString('Duplicidade', session('error'));
     }
+
+    public function test_controller_consultar_status_sucesso(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 28,
+            'chave' => '26260938090491000181550010000000281420590740',
+            'status' => 'gerada',
+            'total_produtos' => 35.0,
+            'total_nota' => 35.0,
+        ]);
+
+        $mockNFeService = Mockery::mock(NFeService::class);
+        $mockNFeService->shouldReceive('consultarNotaFiscal')
+            ->once()
+            ->andReturn([
+                'sucesso' => true,
+                'autorizada' => true,
+                'cStat' => '100',
+                'xMotivo' => 'Autorizado o uso da NF-e',
+                'protocolo' => '126240008888888',
+            ]);
+
+        $this->app->instance(NFeService::class, $mockNFeService);
+
+        $controller = new NotaFiscalController;
+        $response = $controller->consultarStatus((string) $nota->id);
+
+        $this->assertInstanceOf(RedirectResponse::class, $response);
+        $this->assertTrue(session()->has('success'));
+        $this->assertStringContainsString('100', session('success'));
+        $this->assertStringContainsString('Autorizado', session('success'));
+    }
+
+    public function test_controller_index_com_filtro_por_status_e_termo(): void
+    {
+        $user = new User(['id' => 1, 'name' => 'Admin', 'email' => 'admin@teste.com', 'password' => 'secret', 'empresa_id' => 1]);
+        Auth::setUser($user);
+
+        NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 991,
+            'status' => 'autorizada',
+            'total_produtos' => 100.0,
+            'total_nota' => 100.0,
+        ]);
+
+        NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 992,
+            'status' => 'rejeitada',
+            'total_produtos' => 200.0,
+            'total_nota' => 200.0,
+        ]);
+
+        $controller = new NotaFiscalController;
+
+        // Filtro por status autorizada
+        $request = new Request(['status' => 'autorizada']);
+        $response = $controller->index($request);
+
+        $this->assertInstanceOf(View::class, $response);
+        $notas = $response->getData()['notas'];
+        $this->assertTrue($notas->contains('numero', 991));
+        $this->assertFalse($notas->contains('numero', 992));
+
+        // Filtro por termo específico
+        $requestTermo = new Request(['termo' => '992']);
+        $responseTermo = $controller->index($requestTermo);
+        $notasTermo = $responseTermo->getData()['notas'];
+        $this->assertFalse($notasTermo->contains('numero', 991));
+        $this->assertTrue($notasTermo->contains('numero', 992));
+    }
 }

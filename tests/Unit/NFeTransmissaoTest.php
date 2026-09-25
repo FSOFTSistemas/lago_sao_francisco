@@ -806,4 +806,108 @@ class NFeTransmissaoTest extends TestCase
             File::delete($caminhoGerado);
         }
     }
+
+    public function test_consultar_status_sefaz_autorizada(): void
+    {
+        $empresa = Empresa::find(1);
+        $chave = '26260938090491000181550010000000351420590740';
+
+        $xmlRetConsulta = '<?xml version="1.0" encoding="UTF-8"?>
+        <retConsSitNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+            <tpAmb>2</tpAmb>
+            <verAplic>SVRS202609</verAplic>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso da NF-e</xMotivo>
+            <cUF>26</cUF>
+            <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+            <chNFe>'.$chave.'</chNFe>
+            <protNFe versao="4.00">
+                <infProt>
+                    <tpAmb>2</tpAmb>
+                    <verAplic>SVRS202609</verAplic>
+                    <chNFe>'.$chave.'</chNFe>
+                    <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+                    <nProt>126240008888888</nProt>
+                    <digVal>dummyDigest=</digVal>
+                    <cStat>100</cStat>
+                    <xMotivo>Autorizado o uso da NF-e</xMotivo>
+                </infProt>
+            </protNFe>
+        </retConsSitNFe>';
+
+        $mockTools = Mockery::mock(Tools::class);
+        $mockTools->shouldReceive('sefazConsultaChave')
+            ->once()
+            ->with($chave)
+            ->andReturn($xmlRetConsulta);
+
+        $nfeService = new NFeService($mockTools);
+        $resultado = $nfeService->consultarStatus($chave, $empresa);
+
+        $this->assertTrue($resultado['sucesso']);
+        $this->assertTrue($resultado['autorizada']);
+        $this->assertEquals('100', $resultado['cStat']);
+        $this->assertEquals('126240008888888', $resultado['protocolo']);
+        $this->assertEquals('Autorizado o uso da NF-e', $resultado['xMotivo']);
+    }
+
+    public function test_consultar_nota_fiscal_sincroniza_com_sucesso(): void
+    {
+        $nota = NotaFiscal::create([
+            'cliente_id' => 1,
+            'ncm_id' => 1,
+            'cfop_id' => 1,
+            'usuario_id' => 1,
+            'empresa_id' => 1,
+            'data' => '2026-09-25',
+            'serie' => 1,
+            'numero' => 36,
+            'chave' => '26260938090491000181550010000000361420590740',
+            'status' => 'gerada',
+            'total_produtos' => 45.0,
+            'total_nota' => 45.0,
+        ]);
+
+        $xmlRetConsulta = '<?xml version="1.0" encoding="UTF-8"?>
+        <retConsSitNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+            <tpAmb>2</tpAmb>
+            <verAplic>SVRS202609</verAplic>
+            <cStat>100</cStat>
+            <xMotivo>Autorizado o uso da NF-e</xMotivo>
+            <cUF>26</cUF>
+            <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+            <chNFe>'.$nota->chave.'</chNFe>
+            <protNFe versao="4.00">
+                <infProt>
+                    <tpAmb>2</tpAmb>
+                    <verAplic>SVRS202609</verAplic>
+                    <chNFe>'.$nota->chave.'</chNFe>
+                    <dhRecbto>2026-09-25T14:00:00-03:00</dhRecbto>
+                    <nProt>126240008888888</nProt>
+                    <digVal>dummyDigest=</digVal>
+                    <cStat>100</cStat>
+                    <xMotivo>Autorizado o uso da NF-e</xMotivo>
+                </infProt>
+            </protNFe>
+        </retConsSitNFe>';
+
+        $mockTools = Mockery::mock(Tools::class);
+        $mockTools->shouldReceive('sefazConsultaChave')
+            ->once()
+            ->with($nota->chave)
+            ->andReturn($xmlRetConsulta);
+
+        $nfeService = new NFeService($mockTools);
+        $resultado = $nfeService->consultarNotaFiscal($nota);
+
+        $this->assertTrue($resultado['sucesso']);
+        $this->assertTrue($resultado['autorizada']);
+
+        $nota->refresh();
+        $this->assertEquals(NotaFiscal::STATUS_AUTORIZADA, $nota->status);
+        $this->assertEquals('126240008888888', $nota->protocolo);
+        $this->assertEquals('100', $nota->cstat);
+        $this->assertEquals('Autorizado o uso da NF-e', $nota->motivo_status);
+        $this->assertTrue($nota->isAutorizada());
+    }
 }

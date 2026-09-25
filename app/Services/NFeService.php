@@ -829,6 +829,131 @@ class NFeService
     }
 
     /**
+     * Consulta a situação atual da NF-e na SEFAZ pela chave de 44 dígitos.
+     */
+    public function consultarStatus(string $chave, Empresa $empresa): array
+    {
+        try {
+            $tools = $this->obterTools($empresa);
+            $response = $tools->sefazConsultaChave($chave);
+
+            $st = new Standardize;
+            $std = $st->toStd($response);
+
+            $cStat = (string) ($std->cStat ?? '');
+            $xMotivo = (string) ($std->xMotivo ?? '');
+
+            // protNFe pode estar presente no retorno da SEFAZ
+            $infProt = $std->protNFe->infProt ?? null;
+            $nProt = (string) ($infProt->nProt ?? '');
+            $dhRecbto = (string) ($infProt->dhRecbto ?? ($std->dhRecbto ?? ''));
+            $cStatProt = (string) ($infProt->cStat ?? $cStat);
+            $xMotivoProt = (string) ($infProt->xMotivo ?? $xMotivo);
+
+            $isAutorizada = in_array($cStatProt, ['100', '150']);
+            $isCancelada = in_array($cStatProt, ['101', '151', '155']);
+            $isDenegada = in_array($cStatProt, ['110', '205', '301', '302', '303']);
+
+            // Se autorizada e existir XML assinado mas ainda não existir XML autorizado, anexa protocolo
+            $caminhoAutorizado = storage_path("app/nfe/autorizadas/{$chave}.xml");
+            if ($isAutorizada && ! File::exists($caminhoAutorizado)) {
+                $caminhoAssinado = storage_path("app/nfe/assinadas/{$chave}.xml");
+                if (File::exists($caminhoAssinado)) {
+                    $signXml = file_get_contents($caminhoAssinado);
+                    try {
+                        $procNFe = Complements::toAuthorize($signXml, $response);
+                        $dir = storage_path('app/nfe/autorizadas');
+                        if (! File::exists($dir)) {
+                            File::makeDirectory($dir, 0755, true, true);
+                        }
+                        file_put_contents($caminhoAutorizado, $procNFe);
+                    } catch (\Throwable $e) {
+                        Log::warning("Não foi possível gerar -procNFe na consulta da chave {$chave}: {$e->getMessage()}");
+                    }
+                }
+            }
+
+            return [
+                'sucesso' => true,
+                'cStat' => $cStatProt,
+                'xMotivo' => $xMotivoProt,
+                'protocolo' => $nProt,
+                'data_autorizacao' => $dhRecbto,
+                'autorizada' => $isAutorizada,
+                'cancelada' => $isCancelada,
+                'denegada' => $isDenegada,
+                'xml_retorno' => $response,
+            ];
+        } catch (\Throwable $e) {
+            Log::error("Erro ao consultar status da NF-e [{$chave}] na SEFAZ: ".$e->getMessage());
+
+            return [
+                'sucesso' => false,
+                'erro' => 'Falha na consulta com a SEFAZ: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Consulta a situação da NotaFiscal na SEFAZ e sincroniza o banco de dados.
+     */
+    public function consultarNotaFiscal(NotaFiscal $notaFiscal): array
+    {
+        if (empty($notaFiscal->chave)) {
+            return [
+                'sucesso' => false,
+                'erro' => 'A nota fiscal não possui chave de acesso para consulta.',
+            ];
+        }
+
+        $empresa = $notaFiscal->empresa ?? Empresa::find($notaFiscal->empresa_id);
+        if (! $empresa) {
+            return [
+                'sucesso' => false,
+                'erro' => 'Empresa emitente não vinculada à nota fiscal.',
+            ];
+        }
+
+        $res = $this->consultarStatus($notaFiscal->chave, $empresa);
+
+        if (! ($res['sucesso'] ?? false)) {
+            return $res;
+        }
+
+        // Atualiza status no banco de dados conforme retorno oficial da SEFAZ
+        if ($res['autorizada']) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_AUTORIZADA,
+                'cstat' => $res['cStat'],
+                'protocolo' => $res['protocolo'] ?: $notaFiscal->protocolo,
+                'motivo_status' => $res['xMotivo'],
+                'data_autorizacao' => ! empty($res['data_autorizacao'])
+                    ? date('Y-m-d H:i:s', strtotime($res['data_autorizacao']))
+                    : ($notaFiscal->data_autorizacao ?? now()),
+            ]);
+        } elseif ($res['cancelada']) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_CANCELADA,
+                'cstat' => $res['cStat'],
+                'motivo_status' => $res['xMotivo'],
+            ]);
+        } elseif ($res['denegada']) {
+            $notaFiscal->update([
+                'status' => NotaFiscal::STATUS_DENEGADA,
+                'cstat' => $res['cStat'],
+                'motivo_status' => $res['xMotivo'],
+            ]);
+        } else {
+            $notaFiscal->update([
+                'cstat' => $res['cStat'],
+                'motivo_status' => $res['xMotivo'],
+            ]);
+        }
+
+        return $res;
+    }
+
+    /**
      * Inutiliza uma faixa de numeração de NF-e na SEFAZ.
      */
     public function inutilizarNum(int $serie, int $numI, int $numF, string $xJust, Empresa $empresa): array

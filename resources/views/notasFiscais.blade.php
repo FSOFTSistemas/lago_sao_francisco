@@ -44,6 +44,88 @@
         </div>
     @endif
 
+    <!-- Cards de Resumo Rápido -->
+    <div class="row mb-3">
+        <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-info"><i class="fas fa-file-invoice"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Total de Notas</span>
+                    <span class="info-box-number">{{ $totalEmitidas ?? $notas->total() }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-success"><i class="fas fa-check-double"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Autorizadas</span>
+                    <span class="info-box-number">{{ $totalAutorizadas ?? 0 }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-warning"><i class="fas fa-clock text-white"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Pendentes / Assinadas</span>
+                    <span class="info-box-number">{{ $totalPendentes ?? 0 }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 col-12">
+            <div class="info-box shadow-sm">
+                <span class="info-box-icon bg-danger"><i class="fas fa-exclamation-triangle"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Rejeitadas</span>
+                    <span class="info-box-number">{{ $totalRejeitadas ?? 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barra de Filtros e Pesquisa -->
+    <div class="card card-outline card-secondary shadow-sm mb-4">
+        <div class="card-body py-2">
+            <form action="{{ route('nota-fiscal.index') }}" method="GET" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="termo" class="form-control" placeholder="Buscar por número, chave ou cliente..." value="{{ request('termo') }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-control form-control-sm">
+                        <option value="">Todos os status</option>
+                        <option value="autorizada" {{ request('status') === 'autorizada' ? 'selected' : '' }}>Autorizadas</option>
+                        <option value="assinada" {{ request('status') === 'assinada' ? 'selected' : '' }}>Assinadas</option>
+                        <option value="gerada" {{ request('status') === 'gerada' ? 'selected' : '' }}>XML Gerado</option>
+                        <option value="pendente" {{ request('status') === 'pendente' ? 'selected' : '' }}>Pendentes</option>
+                        <option value="rejeitada" {{ request('status') === 'rejeitada' ? 'selected' : '' }}>Rejeitadas</option>
+                        <option value="denegada" {{ request('status') === 'denegada' ? 'selected' : '' }}>Uso Denegado</option>
+                        <option value="cancelada" {{ request('status') === 'cancelada' ? 'selected' : '' }}>Canceladas</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="data_inicio" class="form-control form-control-sm" title="Data Inicial" value="{{ request('data_inicio') }}">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="data_fim" class="form-control form-control-sm" title="Data Final" value="{{ request('data_fim') }}">
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-primary flex-fill" title="Aplicar Filtros">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    @if (request()->hasAny(['termo', 'status', 'data_inicio', 'data_fim']))
+                        <a href="{{ route('nota-fiscal.index') }}" class="btn btn-sm btn-outline-secondary" title="Limpar Filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card card-outline card-primary shadow-sm">
         <div class="card-header">
             <h3 class="card-title font-weight-bold">
@@ -124,6 +206,14 @@
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-primary" title="Transmitir para SEFAZ">
                                                 <i class="fas fa-paper-plane"></i>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    @if ($nota->chave)
+                                        <form action="{{ route('nota_fiscal.consultar_status', $nota->id) }}" method="POST" class="d-inline me-1">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Consultar Situação na SEFAZ">
+                                                <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </form>
                                     @endif

@@ -18,16 +18,46 @@ class NotaFiscalController extends Controller
     /**
      * Exibe a listagem de notas fiscais da empresa.
      */
-    public function index()
+    public function index(Request $request)
     {
         $empresaId = Auth::user()->empresa_id ?? 1;
 
-        $notas = NotaFiscal::with(['cliente', 'itens.produto'])
-            ->where('empresa_id', $empresaId)
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        $query = NotaFiscal::with(['cliente', 'itens.produto'])
+            ->where('empresa_id', $empresaId);
 
-        return view('notasFiscais', compact('notas'));
+        if ($request->filled('termo')) {
+            $termo = trim($request->input('termo'));
+            $query->where(function ($q) use ($termo) {
+                $q->where('numero', 'like', "%{$termo}%")
+                    ->orWhere('chave', 'like', "%{$termo}%")
+                    ->orWhereHas('cliente', function ($cq) use ($termo) {
+                        $cq->where('nome_razao_social', 'like', "%{$termo}%")
+                            ->orWhere('cpf_cnpj', 'like', "%{$termo}%");
+                    });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('data_inicio')) {
+            $query->whereDate('data', '>=', $request->input('data_inicio'));
+        }
+
+        if ($request->filled('data_fim')) {
+            $query->whereDate('data', '<=', $request->input('data_fim'));
+        }
+
+        $notas = $query->orderBy('id', 'desc')->paginate(15)->appends($request->query());
+
+        // Contadores para os cards da dashboard
+        $totalEmitidas = NotaFiscal::where('empresa_id', $empresaId)->count();
+        $totalAutorizadas = NotaFiscal::where('empresa_id', $empresaId)->where('status', NotaFiscal::STATUS_AUTORIZADA)->count();
+        $totalPendentes = NotaFiscal::where('empresa_id', $empresaId)->whereIn('status', [NotaFiscal::STATUS_PENDENTE, NotaFiscal::STATUS_GERADA, NotaFiscal::STATUS_ASSINADA])->count();
+        $totalRejeitadas = NotaFiscal::where('empresa_id', $empresaId)->where('status', NotaFiscal::STATUS_REJEITADA)->count();
+
+        return view('notasFiscais', compact('notas', 'totalEmitidas', 'totalAutorizadas', 'totalPendentes', 'totalRejeitadas'));
     }
 
     /**
@@ -292,6 +322,28 @@ class NotaFiscalController extends Controller
         }
 
         $erro = $resultado['erro'] ?? 'Erro desconhecido ao transmitir para a SEFAZ.';
+
+        return redirect()->back()->with('error', $erro);
+    }
+
+    /**
+     * Consulta a situação da nota fiscal na SEFAZ e sincroniza o status no banco.
+     */
+    public function consultarStatus(string $id)
+    {
+        $nota = NotaFiscal::with(['cliente', 'empresa'])->findOrFail($id);
+        $nfeService = app(NFeService::class);
+        $resultado = $nfeService->consultarNotaFiscal($nota);
+
+        if ($resultado['sucesso'] ?? false) {
+            $cStat = $resultado['cStat'] ?? '';
+            $motivo = $resultado['xMotivo'] ?? '';
+            $mensagem = "Situação na SEFAZ consultada com sucesso! [{$cStat}] {$motivo}";
+
+            return redirect()->back()->with('success', $mensagem);
+        }
+
+        $erro = $resultado['erro'] ?? 'Erro ao consultar situação na SEFAZ.';
 
         return redirect()->back()->with('error', $erro);
     }

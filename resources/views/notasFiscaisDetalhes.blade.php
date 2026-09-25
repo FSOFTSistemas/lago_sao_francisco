@@ -31,6 +31,14 @@
                 </form>
             @endif
             @if ($nota->chave)
+                <form action="{{ route('nota_fiscal.consultar_status', $nota->id) }}" method="POST" class="d-inline me-1">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary" title="Consultar Situação da NF-e na SEFAZ">
+                        <i class="fas fa-sync-alt me-1"></i> Consultar Status SEFAZ
+                    </button>
+                </form>
+            @endif
+            @if ($nota->chave)
                 <a href="{{ route('nota_fiscal.xml', $nota->id) }}" class="btn btn-info">
                     <i class="fas fa-download me-1"></i> Baixar XML {{ $nota->isAssinada() ? 'Assinado' : '' }}
                 </a>
